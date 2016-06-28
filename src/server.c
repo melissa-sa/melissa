@@ -25,19 +25,41 @@ struct field_s /**< Structure for a linked list of output fields */
 typedef struct field_s field_t; /**< type corresponding to field_s */
 typedef field_t* field_ptr; /**< pointer to a structure */
 
+struct pull_data_s
+{
+    int   *pull_rank;
+    int   *push_rank;
+    int   *message_sizes;
+    int    total_nb_messages;
+    int    local_nb_messages;
+};
+typedef struct pull_data_s pull_data_t;
+
 static inline void comm_n_to_m_init (int           *rcounts,
                                      int           *rdispls,
                                      const int      global_vect_size,
                                      const int     *server_vect_size,
                                      int           *client_vect_size,
                                      const int      nb_proc_client,
-                                     const int      rank)
+                                     const int      rank,
+                                     pull_data_t   *pull_data)
 {
     int i;
-    int client_rank  = 0;
+    int client_rank = 0;
     int client_count = 0;
-    int server_rank  = 0;
+    int server_rank = 0;
     int server_count = 0;
+    int new_message = 0;
+    int nb_messages = 0;
+    int nb_elem_message = 0;
+
+    pull_data->total_nb_messages = 1;
+    pull_data->local_nb_messages = 0;
+
+    if (rank == 0)
+    {
+        pull_data->local_nb_messages = 1;
+    }
 
     for (i=0; i<global_vect_size; i++)
     {
@@ -49,6 +71,7 @@ static inline void comm_n_to_m_init (int           *rcounts,
         {
             client_count = 1;
             client_rank += 1;
+            new_message = 1;
         }
         if (server_count < server_vect_size[server_rank])
         {
@@ -58,10 +81,21 @@ static inline void comm_n_to_m_init (int           *rcounts,
         {
             server_count = 1;
             server_rank += 1;
+            new_message = 1;
         }
         if (server_rank == rank)
         {
             rcounts[client_rank] += 1;
+        }
+
+        if (new_message == 1)
+        {
+            pull_data->total_nb_messages += 1;
+            if (server_rank == rank)
+            {
+                pull_data->local_nb_messages += 1;
+            }
+            new_message = 0;
         }
     }
 
@@ -70,6 +104,55 @@ static inline void comm_n_to_m_init (int           *rcounts,
     {
         rdispls[i+1] = rdispls[i] + rcounts[i];
     }
+
+    new_message = 0;
+
+    pull_data->push_rank = malloc (pull_data->total_nb_messages * sizeof(int));
+    pull_data->pull_rank = malloc (pull_data->total_nb_messages * sizeof(int));
+    pull_data->message_sizes = malloc (pull_data->total_nb_messages * sizeof(int));
+
+    pull_data->push_rank[0] = 0;
+    pull_data->pull_rank[0] = 0;
+    client_rank  = 0;
+    client_count = 0;
+    server_rank  = 0;
+    server_count = 0;
+    for (i=0; i<global_vect_size; i++)
+    {
+        if (client_count < client_vect_size[client_rank])
+        {
+            client_count += 1;
+        }
+        else
+        {
+            client_count = 1;
+            client_rank += 1;
+            new_message = 1;
+        }
+        if (server_count < server_vect_size[server_rank])
+        {
+            server_count += 1;
+        }
+        else
+        {
+            server_count = 1;
+            server_rank += 1;
+            new_message = 1;
+        }
+
+        if (new_message == 1)
+        {
+            nb_messages += 1;
+            pull_data->push_rank[nb_messages] = client_rank;
+            pull_data->pull_rank[nb_messages] = server_rank;
+            pull_data->message_sizes[nb_messages - 1] = nb_elem_message;
+            new_message = 0;
+            nb_elem_message = 0;
+        }
+        nb_elem_message += 1;
+    }
+
+    pull_data->message_sizes [pull_data->total_nb_messages - 1 ] = nb_elem_message;
 }
 
 static inline void add_field (field_ptr *field, char* field_name, int data_size)
@@ -145,7 +228,6 @@ static inline void finalize_field_data (field_ptr field, comm_data_t *comm_data,
 int main (int argc, char **argv)
 {
     stats_options_t     stats_options;
-    int                 nb_senders;
     stats_data_t       *data_ptr;
     field_ptr           field = NULL;
     char                field_name[MAX_FIELD_NAME];
@@ -164,12 +246,13 @@ int main (int argc, char **argv)
     char                node_name[MPI_MAX_PROCESSOR_NAME];
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void               *init_responder = zmq_socket (context, ZMQ_REP);
-    void               *data_responder = zmq_socket (context, ZMQ_REP);
+    void               *data_puller = zmq_socket (context, ZMQ_PULL);
     int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
     int                *client_vect_sizes, *local_vect_sizes;
     int                 global_vect_size;
+    pull_data_t         pull_data;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -194,9 +277,9 @@ int main (int argc, char **argv)
     }
     nb_iterations *= stats_options.nb_time_steps ;
 
-    port_no = 21012 + comm_data.rank;
+    port_no = 32123 + comm_data.rank;
     sprintf (port_name, "tcp://*:%d", port_no);
-    ret = zmq_bind (data_responder, port_name);
+    ret = zmq_bind (data_puller, port_name);
     if (ret != 0)
     {
         fprintf(stderr,"ERROR on binding\n");
@@ -238,7 +321,8 @@ int main (int argc, char **argv)
         zmq_pollitem_t items [] = {
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
             { init_responder, 0, ZMQ_POLLIN, 0 },
-            { data_responder, 0, ZMQ_POLLIN, 0 }
+//            { data_responder, 0, ZMQ_POLLIN, 0 }
+            { data_puller, 0, ZMQ_POLLIN, 0 }
         };
         zmq_poll (items, 3, -1);
 
@@ -308,23 +392,16 @@ int main (int argc, char **argv)
                               local_vect_sizes,
                               client_vect_sizes,
                               comm_data.client_comm_size,
-                              comm_data.rank);
-            nb_senders = 0;
-            for (i=0; i<comm_data.client_comm_size; i++)
-            {
-                if (comm_data.rcounts[i] > 0)
-                {
-                    nb_senders += 1;
-                }
-            }
-            nb_iterations *= nb_senders;
+                              comm_data.rank,
+                              &pull_data);
+            nb_iterations *= pull_data.local_nb_messages;
             in_vect = calloc (local_vect_sizes[comm_data.rank], sizeof(double));
             first_connect = 0;
         }
 
         if (items[2].revents & ZMQ_POLLIN)
         {
-            zmq_recv (data_responder, buffer, buff_size, 0);
+            zmq_recv (data_puller, buffer, buff_size, 0);
 
             buf_ptr = buffer;
             memcpy(&time_step, buf_ptr, sizeof(int));
@@ -357,9 +434,6 @@ int main (int argc, char **argv)
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
             memcpy(&in_vect[comm_data.rdispls[client_rank]], buf_ptr, comm_data.rcounts[client_rank] * sizeof(double));
 
-            i = 0;
-            zmq_send (data_responder, &i, sizeof(int), 0);
-
             printf("t = %d, server rank = %d, client rank = %d \n", time_step, comm_data.rank, client_rank);
             printf(" parameters");
             for (i=0; i<stats_options.nb_parameters; i++)
@@ -382,7 +456,7 @@ int main (int argc, char **argv)
 
     zmq_close (connexion_responder);
     zmq_close (init_responder);
-    zmq_close (data_responder);
+    zmq_close (data_puller);
     zmq_ctx_destroy (context);
 
     if (comm_data.rank == 0)
