@@ -69,7 +69,7 @@ if(BUILD_WITH_MPI)
   endif(MPI_FOUND)
 endif(BUILD_WITH_MPI)
 
-option(BUILD_WITH_OpenMP "Build with OpenMP" ON)
+option(BUILD_WITH_OpenMP "Build with OpenMP" OFF)
 
 if(BUILD_WITH_OpenMP)
   find_package(OpenMP)
