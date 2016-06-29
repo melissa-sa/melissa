@@ -253,6 +253,7 @@ int main (int argc, char **argv)
     int                *client_vect_sizes, *local_vect_sizes;
     int                 global_vect_size;
     pull_data_t         pull_data;
+    int                 nb_bufferized_messages = 50;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -279,6 +280,7 @@ int main (int argc, char **argv)
 
     port_no = 32123 + comm_data.rank;
     sprintf (port_name, "tcp://*:%d", port_no);
+    zmq_setsockopt (data_puller, ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
     ret = zmq_bind (data_puller, port_name);
     if (ret != 0)
     {

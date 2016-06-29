@@ -327,8 +327,8 @@ void connect_to_stats (const int *nb_parameters,
     {
         if (*rank == zmq_data.push_rank[i])
         {
-            zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
             zmq_data.data_pusher[j] = zmq_socket (zmq_data.context, ZMQ_PUSH);
+            zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
             port_no = 32123 + zmq_data.pull_rank[i];
             sprintf (zmq_data.port_name, "tcp://%s:%d", &node_names[server_name_size * zmq_data.pull_rank[i]], port_no);
             printf ("j=%d\n", j);
