@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 set(ALL_SRCS stats_base.c
              cond_mean.c
              cond_var.c
+             covariance.c
              sobol.c
              get_options.c
              stats_data.c

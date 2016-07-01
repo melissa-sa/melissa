@@ -93,6 +93,27 @@ typedef struct min_max_s min_max_t; /**< type corresponding to min_max_s */
 /**
  *******************************************************************************
  *
+ * @ingroup stats_base
+ *
+ * @struct covariance_s
+ *
+ * Structure containing an array of covariances and the corresponding mean structures
+ *
+ *******************************************************************************/
+
+struct covariance_s
+{
+    double *covariance; /**< covariance[vect_size] */
+    mean_t  mean1;      /**< corresponding mean    */
+    mean_t  mean2;      /**< corresponding mean    */
+    int     increment;  /**< increment             */
+};
+
+typedef struct covariance_s covariance_t; /**< type corresponding to covariance_s */
+
+/**
+ *******************************************************************************
+ *
  * @ingroup sobol
  *
  * @struct conditional_mean_s

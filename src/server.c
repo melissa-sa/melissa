@@ -25,15 +25,15 @@ struct field_s /**< Structure for a linked list of output fields */
 typedef struct field_s field_t; /**< type corresponding to field_s */
 typedef field_t* field_ptr; /**< pointer to a structure */
 
-struct pull_data_s
+struct pull_data_s /**< Helper structure for push pull socket */
 {
-    int   *pull_rank;
-    int   *push_rank;
-    int   *message_sizes;
-    int    total_nb_messages;
-    int    local_nb_messages;
+    int   *pull_rank;         /**< array of receiver ranks, size total_nb_messages */
+    int   *push_rank;         /**< array of sender ranks, size total_nb_messages   */
+    int   *message_sizes;     /**< messages sizes, size total_nb_messages          */
+    int    total_nb_messages; /**< total number of messages                        */
+    int    local_nb_messages; /**< local number of messages                        */
 };
-typedef struct pull_data_s pull_data_t;
+typedef struct pull_data_s pull_data_t; /**< type corresponding to pull_data_s */
 
 static inline void comm_n_to_m_init (int           *rcounts,
                                      int           *rdispls,
