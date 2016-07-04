@@ -293,7 +293,7 @@ void min_and_max (double     in_vect[],
                   min_max_t *min_max,
                   const int  vect_size);
 
-void increment_covariance (double        in_vect2[],
+void increment_covariance (double        in_vect1[],
                            double        in_vect2[],
                            covariance_t *partial_covariance,
                            const int     vect_size);
@@ -303,10 +303,10 @@ void update_mean (mean_t    *mean1,
                   mean_t    *updated_mean,
                   const int  vect_size);
 
-void update_variance (covariance_t *variance1,
-                      covariance_t *variance2,
-                      covariance_t *updated_variance,
-                      const int     vect_size);
+void update_variance (variance_t *variance1,
+                      variance_t *variance2,
+                      variance_t *updated_variance,
+                      const int   vect_size);
 
 void update_covariance (covariance_t *covariance1,
                         covariance_t *covariance2,

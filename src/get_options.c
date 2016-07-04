@@ -19,14 +19,14 @@ static inline void stats_usage ()
 {
     fprintf(stderr,
             " Usage:\n"
-            " -p <int[]> : array of sizes of parameter sets of the study (mandatory)\n"
+            " -p <int[]> : size array of the study parameter sets (mandatory)\n"
             "              example: -p 2:5:4\n"
             "              study with 3 variables parameters:\n"
             "               - the first can take two values,\n"
             "               - the second can take five values,\n"
             "               - the third can take four values.\n"
             " -t <int>   : number of time steps of the study\n"
-            " -o <op>    : operations to be performed, separated with semicolons\n"
+            " -o <op>    : operations separated by semicolons\n"
             "              possibles values :\n"
             "              mean\n"
             "              variance\n"
@@ -36,7 +36,7 @@ static inline void stats_usage ()
             "              sobol_indices\n"
             "              (default: mean:variance)\n"
             " -e <double>: threshold for threshold exceedance computaion\n"
-            " -s <int>   : maximum order for sobol indices\n"
+//            " -s <int>   : maximum order for sobol indices\n"
             "\n"
             );
 }
