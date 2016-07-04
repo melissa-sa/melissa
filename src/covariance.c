@@ -29,8 +29,8 @@
  *
  *******************************************************************************/
 
-void init_covariance (covariance_t    *covariance,
-                      const int        vect_size)
+void init_covariance (covariance_t *covariance,
+                      const int     vect_size)
 {
     covariance->covariance = calloc (vect_size, sizeof(double));
     init_mean (&covariance->mean1, vect_size);
@@ -62,10 +62,10 @@ void init_covariance (covariance_t    *covariance,
  *
  *******************************************************************************/
 
-void increment_covariance (double     in_vect1[],
-                      double     in_vect2[],
-                      covariance_t   *covariance,
-                      const int  vect_size)
+void increment_covariance (double        in_vect1[],
+                           double        in_vect2[],
+                           covariance_t *covariance,
+                           const int     vect_size)
 {
     double  temp;
     int     i;
@@ -106,10 +106,10 @@ void increment_covariance (double     in_vect1[],
  *
  *******************************************************************************/
 
-void update_covariance (covariance_t   *covariance1,
-                   covariance_t   *covariance2,
-                   covariance_t   *updated_covariance,
-                   const int  vect_size)
+void update_covariance (covariance_t *covariance1,
+                        covariance_t *covariance2,
+                        covariance_t *updated_covariance,
+                        const int     vect_size)
 {
     int     i;
 

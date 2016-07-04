@@ -274,6 +274,9 @@ void init_variance(variance_t *variance,
 void init_min_max(min_max_t *min_max,
                   const int  vect_size);
 
+void init_covariance(covariance_t *covariance,
+                     const int     vect_size);
+
 void increment_mean (double     in_vect[],
                      mean_t    *partial_mean,
                      const int  vect_size);
@@ -290,15 +293,25 @@ void min_and_max (double     in_vect[],
                   min_max_t *min_max,
                   const int  vect_size);
 
+void increment_covariance (double        in_vect2[],
+                           double        in_vect2[],
+                           covariance_t *partial_covariance,
+                           const int     vect_size);
+
 void update_mean (mean_t    *mean1,
                   mean_t    *mean2,
                   mean_t    *updated_mean,
                   const int  vect_size);
 
-void update_variance (variance_t *variance1,
-                      variance_t *variance2,
-                      variance_t *updated_variance,
-                      const int   vect_size);
+void update_variance (covariance_t *variance1,
+                      covariance_t *variance2,
+                      covariance_t *updated_variance,
+                      const int     vect_size);
+
+void update_covariance (covariance_t *covariance1,
+                        covariance_t *covariance2,
+                        covariance_t *updated_covariance,
+                        const int     vect_size);
 
 #ifdef BUILD_WITH_MPI
 void update_global_mean (mean_t    *mean,
@@ -330,6 +343,8 @@ void free_mean(mean_t *mean);
 void free_variance (variance_t *variance);
 
 void free_min_max (min_max_t *min_max);
+
+void free_covariance (covariance_t *covariance);
 
 void init_conditional_means (conditional_mean_t *conditional_means,
                              stats_data_t       *data);
