@@ -342,17 +342,6 @@ void finalize_stats (stats_data_t *data)
         return;
     }
 
-    if (data->options->variance_op == 1)
-    {
-        for (i=0; i<data->options->nb_time_steps; i++)
-        {
-            for (j=0; j<data->vect_size; j++)
-            {
-                data->variances[i].variance[j] = data->variances[i].variance[j] / data->variances[i].mean_structure.increment;
-            }
-        }
-    }
-
     if (data->options->sobol_op == 1)
     {
         int *indices_to_fix;

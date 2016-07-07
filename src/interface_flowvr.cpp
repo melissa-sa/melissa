@@ -9,6 +9,10 @@ extern "C" {
 #include "stats.h"
 }
 
+#ifndef MAX_FIELD_NAME
+#define MAX_FIELD_NAME 128
+#endif
+
 class StatsInputPort : public flowvr::InputPort
 {
 public:
@@ -16,15 +20,18 @@ public:
     : InputPort(name),
       StampT("T",flowvr::TypeInt::create()),
       StampRank("Rank",flowvr::TypeInt::create()),
-      StampParam("Param",flowvr::TypeArray::create(size,flowvr::TypeInt::create()))
+      StampParam("Param",flowvr::TypeArray::create(size,flowvr::TypeInt::create())),
+      StampName("Name",flowvr::TypeString::create())
   {
     stamps->add(&StampT); // add the stamp T to the stamps list for this port
     stamps->add(&StampRank); // add the stamp Rank to the stamps list for this port
     stamps->add(&StampParam); // add the stamp Param to the stamps list for this port
+    stamps->add(&StampName); // add the stamp Name to the stamps list for this port
   }
   flowvr::StampInfo StampT;
   flowvr::StampInfo StampRank;
   flowvr::StampInfo StampParam;
+  flowvr::StampInfo StampName;
 };
 
 int main(int argc, char** argv)
@@ -38,6 +45,7 @@ int main(int argc, char** argv)
     int              i;
     int              opt;
     int              client_rank;
+    std::string      field_name;
 
     stats_get_options (argc, argv, &stats_options);
     print_options (&stats_options);
@@ -92,6 +100,7 @@ int main(int argc, char** argv)
 //        vect.stamps.read(port_vector.StampRank,client_rank);
         for (i=0; i<stats_options.nb_parameters; i++)
             vect.stamps.read(port_vector.StampParam[i],parameters[i]);
+        vect.stamps.read(port_vector.StampName,field_name);
 
         // Print stamps
         printf("parameters");

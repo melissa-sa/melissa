@@ -19,15 +19,18 @@ public:
     : OutputPort(name),
       StampT("T",flowvr::TypeInt::create()),
       StampRank("Rank",flowvr::TypeInt::create()),
-      StampParam("Param",flowvr::TypeArray::create(size,flowvr::TypeInt::create()))
+      StampParam("Param",flowvr::TypeArray::create(size,flowvr::TypeInt::create())),
+      StampName("Name",flowvr::TypeString::create())
   {
     stamps->add(&StampT); // add the stamp T to the stamps list for this port
     stamps->add(&StampRank); // add the stamp Rank to the stamps list for this port
     stamps->add(&StampParam); // add the stamp Param to the stamps list for this port
+    stamps->add(&StampName); // add the stamp Name to the stamps list for this port
   }
   flowvr::StampInfo StampT;
   flowvr::StampInfo StampRank;
   flowvr::StampInfo StampParam;
+  flowvr::StampInfo StampName;
 };
 
 static inline void gen_data (stats_data_t     *data,
@@ -155,10 +158,12 @@ int main(int argc, char** argv)
       vect1.stamps.write(port_vector1.StampRank,rank);
       for (i=0; i<stats_options.nb_parameters; i++)
           vect1.stamps.write(port_vector1.StampParam[i],parameters[i]);
+      vect1.stamps.write(port_vector1.StampName,"field1");
       vect2.stamps.write(port_vector2.StampT,time_step);
       vect2.stamps.write(port_vector1.StampRank,rank);
       for (i=0; i<stats_options.nb_parameters; i++)
           vect2.stamps.write(port_vector2.StampParam[i],parameters[i]);
+      vect2.stamps.write(port_vector2.StampName,"field2");
 
       // Write messages
       memcpy (vect1.data.writeAccess(), out_vect, my_vect_size * sizeof(double));

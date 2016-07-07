@@ -159,7 +159,9 @@ void increment_mean_and_variance (double      in_vect[],
     {
         temp = partial_variance->mean_structure.mean[i];
         partial_variance->mean_structure.mean[i] = temp + (in_vect[i] - temp)/partial_variance->mean_structure.increment;
-        partial_variance->variance[i] += (in_vect[i] - temp) * (in_vect[i] - partial_variance->mean_structure.mean[i]);
+        partial_variance->variance[i] = (partial_variance->variance[i]*(partial_variance->mean_structure.increment-1)
+                                        + (in_vect[i] - temp) * (in_vect[i] - partial_variance->mean_structure.mean[i]))
+                                        / partial_variance->mean_structure.increment;
     }
 }
 
@@ -188,9 +190,9 @@ void increment_variance (double      in_vect[],
                          variance_t *partial_variance,
                          const int   vect_size)
 {
-    increment_mean_and_variance(in_vect,
-                                partial_variance,
-                                vect_size);
+    increment_mean_and_variance (in_vect,
+                                 partial_variance,
+                                 vect_size);
 }
 
 /**

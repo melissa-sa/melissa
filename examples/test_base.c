@@ -105,7 +105,7 @@ int main (int argc, char **argv)
     int        *my_threshold_exceedance = NULL, *my_temp_exceedance = NULL;
     double     *tab_ptr = NULL, *temp_variance = NULL;
     int         i, j;
-    int         n = 3; // n expériences
+    int         n = 5; // n expériences
     int         vect_size = 5; // size points de l'espace
     int         compteur;
     int         comm_size, rank;
@@ -160,7 +160,7 @@ int main (int argc, char **argv)
 
     fprintf (stdout, "variance:             {");
     for (i=0; i<vect_size; i++)
-        fprintf (stdout, " %g", my_variance.variance[i]/n);
+        fprintf (stdout, " %g", my_variance.variance[i]);
     printf (" }\n");
 
     fprintf (stdout, "min:                  {");
@@ -190,7 +190,7 @@ int main (int argc, char **argv)
     if (rank == 0)
         fprintf (stdout, "local variance   ");
     for (i=0; i<vect_size; i++)
-        temp_variance[i] = my_variance.variance[i]/(n);
+        temp_variance[i] = my_variance.variance[i];
     d_print_vector (temp_variance, vect_size, rank, comm_size, MPI_COMM_WORLD);
 
     if (rank == 0)
@@ -230,7 +230,7 @@ int main (int argc, char **argv)
 
         fprintf (stdout, "global variance:             {");
         for (i=0; i<vect_size; i++)
-            fprintf (stdout, " %g", my_variance.variance[i]/(comm_size*n));
+            fprintf (stdout, " %g", my_variance.variance[i]);
         printf (" }\n");
 
         fprintf (stdout, "global min:                  {");
