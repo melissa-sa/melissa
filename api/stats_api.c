@@ -62,6 +62,22 @@ typedef struct zmq_data_s zmq_data_t; /**< type corresponding to zmq_data_s */
 
 static zmq_data_t zmq_data;
 
+#ifdef BUILD_WITH_PROBES
+static double total_comm_time = 0;
+static double start_comm_time;
+static double end_comm_time;
+static int total_bytes_sent = 0;
+#endif // BUILD_WITH_PROBES
+
+static double stats_get_time ()
+{
+#ifdef BUILD_WITH_MPI
+    return MPI_Wtime();
+#else // BUILD_WITH_MPI
+    return (double)time(NULL);
+#endif // BUILD_WITH_MPI
+}
+
 static inline void comm_1_to_m_init (zmq_data_t *data)
 {
     int  i;
@@ -331,7 +347,6 @@ void connect_to_stats (const int *nb_parameters,
             zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
             port_no = 32123 + zmq_data.pull_rank[i];
             sprintf (zmq_data.port_name, "tcp://%s:%d", &node_names[server_name_size * zmq_data.pull_rank[i]], port_no);
-            printf ("j=%d\n", j);
             zmq_connect (zmq_data.data_pusher[j], zmq_data.port_name);
             j += 1;
         }
@@ -526,6 +541,9 @@ void send_to_stats (const int  *time_step,
     memcpy (buff_ptr, field_name, MAX_FIELD_NAME);
     buff_ptr += MAX_FIELD_NAME * sizeof(char);
 
+#ifdef BUILD_WITH_PROBES
+    start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
     j = 0;
     for (i=0; i<zmq_data.total_nb_messages; i++)
     {
@@ -536,6 +554,11 @@ void send_to_stats (const int  *time_step,
             j += 1;
         }
     }
+#ifdef BUILD_WITH_PROBES
+    end_comm_time = stats_get_time();
+    total_comm_time += end_comm_time - start_comm_time;
+    total_bytes_sent += zmq_data.buff_size;
+#endif // BUILD_WITH_PROBES
 }
 
 /**
@@ -603,4 +626,9 @@ void disconnect_from_stats ()
     free(zmq_data.sdispls);
     free(zmq_data.server_vect_size);
     free(zmq_data.buffer);
+
+#ifdef BUILD_WITH_PROBES
+    fprintf (stdout, " --- Simulation comm time: %g s\n",total_comm_time);
+    fprintf (stdout, " --- Bytes sent: %d bytes\n",total_bytes_sent);
+#endif // BUILD_WITH_PROBES
 }

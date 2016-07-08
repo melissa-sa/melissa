@@ -135,6 +135,11 @@ if(BUILD_DOCUMENTATION)
     SOURCES ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
 endif(BUILD_DOCUMENTATION)
 
+option(BUILD_WITH_PROBES "Set probes for bench" ON)
+if(BUILD_WITH_PROBES)
+    add_definitions( -DBUILD_WITH_PROBES )
+endif(BUILD_WITH_PROBES)
+
 include_directories("${PROJECT_SOURCE_DIR}/src")
 add_subdirectory(src)
 

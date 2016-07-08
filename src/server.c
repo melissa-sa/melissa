@@ -35,6 +35,29 @@ struct pull_data_s /**< Helper structure for push pull socket */
 };
 typedef struct pull_data_s pull_data_t; /**< type corresponding to pull_data_s */
 
+#ifdef BUILD_WITH_PROBES
+static double start_time;
+static double total_comm_time = 0;
+static double start_comm_time;
+static double end_comm_time;
+static double total_computation_time = 0;
+static double start_computation_time;
+static double end_computation_time;
+static double total_wait_time = 0;
+static double start_wait_time;
+static double end_wait_time;
+static int total_bytes_recv = 0;
+#endif // BUILD_WITH_PROBES
+
+static double stats_get_time ()
+{
+#ifdef BUILD_WITH_MPI
+    return MPI_Wtime();
+#else // BUILD_WITH_MPI
+    return (double)time(NULL);
+#endif // BUILD_WITH_MPI
+}
+
 static inline void comm_n_to_m_init (int           *rcounts,
                                      int           *rdispls,
                                      const int      global_vect_size,
@@ -268,6 +291,10 @@ int main (int argc, char **argv)
     gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
 
+#ifdef BUILD_WITH_PROBES
+    start_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
+
     stats_get_options (argc, argv, &stats_options);
     print_options (&stats_options);
     parameters = calloc (stats_options.nb_parameters, sizeof(int));
@@ -320,6 +347,9 @@ int main (int argc, char **argv)
     sinit_tab[1] = MPI_MAX_PROCESSOR_NAME;
     while (1)
     {
+#ifdef BUILD_WITH_PROBES
+        start_wait_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
         zmq_pollitem_t items [] = {
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
             { init_responder, 0, ZMQ_POLLIN, 0 },
@@ -327,11 +357,18 @@ int main (int argc, char **argv)
             { data_puller, 0, ZMQ_POLLIN, 0 }
         };
         zmq_poll (items, 3, -1);
+#ifdef BUILD_WITH_PROBES
+        end_wait_time = stats_get_time();
+        total_wait_time += end_wait_time - start_wait_time;
+#endif // BUILD_WITH_PROBES
 
         if (items[0].revents & ZMQ_POLLIN)
         {
             if (comm_data.rank == 0)
             {
+#ifdef BUILD_WITH_PROBES
+                start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
                 // new simulation wants to connect
                 zmq_recv (connexion_responder, rinit_tab, 2 * sizeof(int), 0);
                 zmq_send (connexion_responder, sinit_tab, 2 * sizeof(int), 0);
@@ -339,6 +376,10 @@ int main (int argc, char **argv)
                 {
                     first_init = 1;
                 }
+#ifdef BUILD_WITH_PROBES
+                end_comm_time = stats_get_time();
+                total_comm_time += end_comm_time - start_comm_time;
+#endif // BUILD_WITH_PROBES
             }
         }
 
@@ -356,6 +397,9 @@ int main (int argc, char **argv)
         {
             if (comm_data.rank == 0)
             {
+#ifdef BUILD_WITH_PROBES
+                start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
                 // new simulation wants to connect, step two
                 zmq_recv (init_responder, client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
                 zmq_send (init_responder, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
@@ -363,6 +407,10 @@ int main (int argc, char **argv)
                 {
                     first_connect = 1;
                 }
+#ifdef BUILD_WITH_PROBES
+                end_comm_time = stats_get_time();
+                total_comm_time += end_comm_time - start_comm_time;
+#endif // BUILD_WITH_PROBES
             }
         }
         if (first_connect == 1 && first_init == 0)
@@ -403,7 +451,14 @@ int main (int argc, char **argv)
 
         if (items[2].revents & ZMQ_POLLIN)
         {
+#ifdef BUILD_WITH_PROBES
+            start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
             zmq_recv (data_puller, buffer, buff_size, 0);
+#ifdef BUILD_WITH_PROBES
+            end_comm_time = stats_get_time();
+            total_comm_time += end_comm_time - start_comm_time;
+#endif // BUILD_WITH_PROBES
 
             buf_ptr = buffer;
             memcpy(&time_step, buf_ptr, sizeof(int));
@@ -435,16 +490,26 @@ int main (int argc, char **argv)
             }
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
             memcpy(&in_vect[comm_data.rdispls[client_rank]], buf_ptr, comm_data.rcounts[client_rank] * sizeof(double));
-
+#ifdef BUILD_WITH_PROBES
+            total_bytes_recv += 2 * sizeof(int) + stats_options.nb_parameters * sizeof(int) + MAX_FIELD_NAME * sizeof(char)
+                              + comm_data.rcounts[client_rank] * sizeof(double);
+            start_computation_time = stats_get_time();
+#else // BUILD_WITH_PROBES
             printf("t = %d, server rank = %d, client rank = %d \n", time_step, comm_data.rank, client_rank);
             printf(" parameters");
             for (i=0; i<stats_options.nb_parameters; i++)
                 printf(" %d", parameters[i]);
             printf(", rank = %d, field: %s\n", comm_data.rank, field_name);
+#endif // BUILD_WITH_PROBES
 
             compute_stats (&data_ptr[client_rank], parameters, &in_vect[comm_data.rdispls[client_rank]], time_step-1);
             iteration++;
+#ifdef BUILD_WITH_PROBES
+            end_computation_time = stats_get_time();
+            total_computation_time += end_computation_time - start_computation_time;
+#else // BUILD_WITH_PROBES
             printf("iteration %d / %d\n", iteration, nb_iterations*nb_fields);
+#endif // BUILD_WITH_PROBES
         }
 
         if (nb_fields > 0)
@@ -472,6 +537,14 @@ int main (int argc, char **argv)
     free (parameters);
     free (comm_data.rcounts);
     free (comm_data.rdispls);
+
+#ifdef BUILD_WITH_PROBES
+    fprintf (stdout, " --- Total server comm time: %g s\n",total_comm_time);
+    fprintf (stdout, " --- Total bytes recieved: %d bytes\n",total_bytes_recv);
+    fprintf (stdout, " --- Total calcul time: %g s\n",total_computation_time);
+    fprintf (stdout, " --- Waiting time: %g s\n", total_wait_time);
+    fprintf (stdout, " --- Total time: %g s\n", stats_get_time() - start_time);
+#endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
     MPI_Finalize ();
