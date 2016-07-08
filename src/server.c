@@ -501,8 +501,7 @@ int main (int argc, char **argv)
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
             memcpy(&in_vect[comm_data.rdispls[client_rank]], buf_ptr, comm_data.rcounts[client_rank] * sizeof(double));
 #ifdef BUILD_WITH_PROBES
-            total_bytes_recv += 2 * sizeof(int) + stats_options.nb_parameters * sizeof(int) + MAX_FIELD_NAME * sizeof(char)
-                              + comm_data.rcounts[client_rank] * sizeof(double);
+            total_bytes_recv += buff_size;
             start_computation_time = stats_get_time();
 #else // BUILD_WITH_PROBES
             printf("t = %d, server rank = %d, client rank = %d \n", time_step, comm_data.rank, client_rank);
@@ -517,9 +516,8 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
-#else // BUILD_WITH_PROBES
-            printf("iteration %d / %d\n", iteration, nb_iterations*nb_fields);
 #endif // BUILD_WITH_PROBES
+            printf("iteration %d / %d\n", iteration, nb_iterations*nb_fields);
         }
 
         if (nb_fields > 0)

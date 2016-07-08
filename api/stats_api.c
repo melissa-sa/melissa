@@ -552,12 +552,14 @@ void send_to_stats (const int  *time_step,
             memcpy (buff_ptr, &send_vect[zmq_data.sdispls[zmq_data.pull_rank[i]]], zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
             zmq_send (zmq_data.data_pusher[j], zmq_data.buffer, zmq_data.buff_size, 0);
             j += 1;
+#ifdef BUILD_WITH_PROBES
+            total_bytes_sent += zmq_data.buff_size;
+#endif // BUILD_WITH_PROBES
         }
     }
 #ifdef BUILD_WITH_PROBES
     end_comm_time = stats_get_time();
     total_comm_time += end_comm_time - start_comm_time;
-    total_bytes_sent += zmq_data.buff_size;
 #endif // BUILD_WITH_PROBES
 }
 
