@@ -46,6 +46,9 @@ static double end_computation_time;
 static double total_wait_time = 0;
 static double start_wait_time;
 static double end_wait_time;
+static double total_write_time = 0;
+static double start_write_time;
+static double end_write_time;
 static int total_bytes_recv = 0;
 #endif // BUILD_WITH_PROBES
 
@@ -227,12 +230,19 @@ static inline void finalize_field_data (field_ptr field, comm_data_t *comm_data,
             }
         }
 
+#ifdef BUILD_WITH_PROBES
+        start_write_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
         write_stats (&(field->stats_data),
                      options,
                      in_vect,
                      comm_data,
                      local_vect_sizes,
                      field->name);
+#ifdef BUILD_WITH_PROBES
+        end_write_time = stats_get_time();
+        total_write_time += end_write_time - start_write_time;
+#endif // BUILD_WITH_PROBES
 
         for (i=0; i<comm_data->client_comm_size; i++)
         {
@@ -539,11 +549,12 @@ int main (int argc, char **argv)
     free (comm_data.rdispls);
 
 #ifdef BUILD_WITH_PROBES
-    fprintf (stdout, " --- Total server comm time: %g s\n",total_comm_time);
-    fprintf (stdout, " --- Total bytes recieved: %d bytes\n",total_bytes_recv);
-    fprintf (stdout, " --- Total calcul time: %g s\n",total_computation_time);
-    fprintf (stdout, " --- Waiting time: %g s\n", total_wait_time);
-    fprintf (stdout, " --- Total time: %g s\n", stats_get_time() - start_time);
+    fprintf (stdout, " --- Communication time: %g s\n",total_comm_time);
+    fprintf (stdout, " --- Bytes recieved:     %d bytes\n",total_bytes_recv);
+    fprintf (stdout, " --- Calcul time:        %g s\n",total_computation_time);
+    fprintf (stdout, " --- Waiting time:       %g s\n", total_wait_time);
+    fprintf (stdout, " --- Writing time:       %g s\n", total_write_time);
+    fprintf (stdout, " --- Total time:         %g s\n", stats_get_time() - start_time);
 #endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
