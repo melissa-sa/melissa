@@ -32,7 +32,9 @@ struct pull_data_s /**< Helper structure for push pull socket */
     int   *message_sizes;     /**< messages sizes, size total_nb_messages          */
     int    total_nb_messages; /**< total number of messages                        */
     int    local_nb_messages; /**< local number of messages                        */
+    int    buff_size;         /**< recieve buffer size                             */
 };
+int    local_nb_messages; /**< local number of messages                        */
 typedef struct pull_data_s pull_data_t; /**< type corresponding to pull_data_s */
 
 #ifdef BUILD_WITH_PROBES
@@ -81,6 +83,7 @@ static inline void comm_n_to_m_init (int           *rcounts,
 
     pull_data->total_nb_messages = 1;
     pull_data->local_nb_messages = 0;
+    pull_data->buff_size = 0;
 
     if (rank == 0)
     {
@@ -173,6 +176,10 @@ static inline void comm_n_to_m_init (int           *rcounts,
             pull_data->pull_rank[nb_messages] = server_rank;
             pull_data->message_sizes[nb_messages - 1] = nb_elem_message;
             new_message = 0;
+            if (nb_elem_message > pull_data->buff_size)
+            {
+                pull_data->buff_size = nb_elem_message;
+            }
             nb_elem_message = 0;
         }
         nb_elem_message += 1;
@@ -433,8 +440,6 @@ int main (int argc, char **argv)
             {
                 global_vect_size += client_vect_sizes[i];
             }
-            buff_size = (global_vect_size / comm_data.comm_size) * sizeof(double) + MAX_FIELD_NAME * sizeof(char) + (stats_options.nb_parameters+2) * sizeof(int);
-            buffer = malloc (buff_size);
             local_vect_sizes = malloc (comm_data.comm_size * sizeof(int));
             for (i=0; i<comm_data.comm_size; i++)
             {
@@ -456,6 +461,8 @@ int main (int argc, char **argv)
                               &pull_data);
             nb_iterations *= pull_data.local_nb_messages;
             in_vect = calloc (local_vect_sizes[comm_data.rank], sizeof(double));
+            buff_size = pull_data.buff_size * sizeof(double) + MAX_FIELD_NAME * sizeof(char) + (stats_options.nb_parameters+2) * sizeof(int);
+            buffer = malloc (buff_size);
             first_connect = 0;
         }
 

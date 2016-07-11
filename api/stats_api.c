@@ -112,6 +112,7 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
 
     data->total_nb_messages = 1;
     data->local_nb_messages = 0;
+    data->buff_size = 0;
 
     if (rank == 0)
     {
@@ -207,6 +208,10 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
             data->pull_rank[nb_messages] = server_rank;
             data->message_sizes[nb_messages - 1] = nb_elem_message;
             new_message = 0;
+            if (nb_elem_message > data->buff_size)
+            {
+                data->buff_size = nb_elem_message;
+            }
             nb_elem_message = 0;
         }
         nb_elem_message += 1;
@@ -352,7 +357,8 @@ void connect_to_stats (const int *nb_parameters,
         }
     }
 
-    zmq_data.buff_size = (*nb_parameters+2) * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + zmq_data.server_vect_size[0] * sizeof(double);
+    zmq_data.buff_size *= sizeof(double);
+    zmq_data.buff_size += (*nb_parameters+2) * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
     zmq_data.buffer   = malloc (zmq_data.buff_size);
 
     free (my_vect_size);
