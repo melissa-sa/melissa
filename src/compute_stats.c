@@ -221,7 +221,7 @@ void write_stats (stats_data_t    **data,
                     memcpy(&in_vect[comm_data->rdispls[i]], (*data)[i].min_max[t].min, comm_data->rcounts[i] * sizeof(double));
                 }
             }
-            sprintf(file_name, "%s_min_%.*d", field, max_size_time, t);
+            sprintf(file_name, "%s_min_%.*d", field, max_size_time, t+1);
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
             MPI_File_write_at (f, offset, in_vect, local_vect_sizes[comm_data->rank], MPI_DOUBLE, &status);
@@ -234,7 +234,10 @@ void write_stats (stats_data_t    **data,
             }
             fclose(f);
 #endif // BUILD_WITH_MPI
+        }
 
+        for (t=0; t<options->nb_time_steps; t++)
+        {
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)

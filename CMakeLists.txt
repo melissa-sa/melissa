@@ -18,6 +18,9 @@ set(ALL_API stats_api.c
             stats_api_no_mpi.h)
 set(ALL_API_fortran stats_api_fortran.f90)
 
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   # Set install directory to ../install
   set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)

@@ -34,7 +34,6 @@ struct pull_data_s /**< Helper structure for push pull socket */
     int    local_nb_messages; /**< local number of messages                        */
     int    buff_size;         /**< recieve buffer size                             */
 };
-int    local_nb_messages; /**< local number of messages                        */
 typedef struct pull_data_s pull_data_t; /**< type corresponding to pull_data_s */
 
 #ifdef BUILD_WITH_PROBES
@@ -219,7 +218,12 @@ static inline stats_data_t* get_data_ptr (field_ptr field, char* field_name)
     return NULL;
 }
 
-static inline void finalize_field_data (field_ptr field, comm_data_t *comm_data, stats_options_t  *options, double *in_vect, int *local_vect_sizes)
+static inline void finalize_field_data (field_ptr        field,
+                                        comm_data_t     *comm_data,
+                                        pull_data_t     *pull_data,
+                                        stats_options_t *options,
+                                        double          *in_vect,
+                                        int             *local_vect_sizes)
 {
     int i;
     if (field == NULL)
@@ -228,10 +232,10 @@ static inline void finalize_field_data (field_ptr field, comm_data_t *comm_data,
     }
     else
     {
-        finalize_field_data (field->next, comm_data, options, in_vect, local_vect_sizes);
-        for (i=0; i<comm_data->client_comm_size; i++)
+        finalize_field_data (field->next, comm_data, pull_data, options, in_vect, local_vect_sizes);
+        for (i=0; i<pull_data->total_nb_messages; i++)
         {
-            if (comm_data->rcounts[i] > 0)
+            if (comm_data->rank == pull_data->push_rank[i])
             {
                 finalize_stats (&field->stats_data[i]);
             }
@@ -251,9 +255,9 @@ static inline void finalize_field_data (field_ptr field, comm_data_t *comm_data,
         total_write_time += end_write_time - start_write_time;
 #endif // BUILD_WITH_PROBES
 
-        for (i=0; i<comm_data->client_comm_size; i++)
+        for (i=0; i<pull_data->total_nb_messages; i++)
         {
-            if (comm_data->rcounts[i] > 0)
+            if (comm_data->rank == pull_data->push_rank[i])
             {
                 free_data (&field->stats_data[i]);
             }
@@ -545,7 +549,7 @@ int main (int argc, char **argv)
     {
         free(node_names);
     }
-    finalize_field_data (field, &comm_data, &stats_options, in_vect, local_vect_sizes);
+    finalize_field_data (field, &comm_data, &pull_data, &stats_options, in_vect, local_vect_sizes);
     free_options (&stats_options);
     free (buffer);
     free (in_vect);
