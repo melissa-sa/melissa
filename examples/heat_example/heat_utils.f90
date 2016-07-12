@@ -11,24 +11,24 @@ module heat_utils
     implicit none
     real*8::func,x,y,t,lx,ly
     !func=2*(y-y**2+x-x**2)
-    func=sin(x)+cos(y)
-    !func=(exp(-(x-lx/2.)**2))*(exp(-(y-ly/2.)**2))*cos(t*acos(0.0)/2)
+    !func=sin(x)+cos(y)
+    func=(exp(-(x-lx/2.)**2))*(exp(-(y-ly/2.)**2))*cos(t*acos(0.0)/2)
   end function
 
   function g(x,y,t)
     implicit none
     real*8::g,x,y,t
     !g=0.
-    g=sin(x)+cos(y)
-    !g=0.
+    !g=sin(x)+cos(y)
+    g=0.
   end function
 
   function h(x,y,t)
     implicit none
     real*8::h,x,y,t
     !h=0.
-    h=sin(x)+cos(y)
-    !h=1.
+    !h=sin(x)+cos(y)
+    h=1.
    end function
    
   function num(i,j,nx)
