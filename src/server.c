@@ -328,7 +328,7 @@ int main (int argc, char **argv)
 
     port_no = 32123 + comm_data.rank;
     sprintf (port_name, "tcp://*:%d", port_no);
-    zmq_setsockopt (data_puller, ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
+    zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     ret = zmq_bind (data_puller, port_name);
     if (ret != 0)
     {
