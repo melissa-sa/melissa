@@ -275,7 +275,7 @@ void connect_to_stats (const int *nb_parameters,
             if (file == NULL)
             {
               strcpy (server_node_name, "localhost");
-              fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
+              fprintf(stdout,"WARNING: Server name set to \"localhost\"");
             }
         }
 
@@ -288,7 +288,7 @@ void connect_to_stats (const int *nb_parameters,
         zmq_data.sinit_tab[0] = *comm_size;
         zmq_data.sinit_tab[1] = 1;
 
-        sprintf (zmq_data.port_name, "tcp://%s:21010\n", server_node_name);
+        sprintf (zmq_data.port_name, "tcp://%s:21010", server_node_name);
         zmq_connect (zmq_data.connexion_requester, zmq_data.port_name);
         zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
         zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 2 * sizeof(int), 0);
@@ -331,7 +331,7 @@ void connect_to_stats (const int *nb_parameters,
 
     if (*rank == 0)
     {
-        sprintf (zmq_data.port_name, "tcp://%s:21011\n", server_node_name);
+        sprintf (zmq_data.port_name, "tcp://%s:21011", server_node_name);
         zmq_connect (zmq_data.init_requester, zmq_data.port_name);
         zmq_send (zmq_data.init_requester, my_vect_size, *comm_size * sizeof(int), 0);
         zmq_recv (zmq_data.init_requester, node_names, zmq_data.rinit_tab[0] * zmq_data.rinit_tab[1] * sizeof(char), 0);
@@ -394,7 +394,7 @@ void connect_to_stats_no_mpi (const int *nb_parameters,
     char *node_names;
     char  server_node_name[MPI_MAX_PROCESSOR_NAME];
     int   server_name_size;
-    int   port_no, i, j;
+    int   port_no, i;
     FILE* file = NULL;
     int   my_vect_size[1];
     int   nb_bufferized_messages = 50;
@@ -420,7 +420,7 @@ void connect_to_stats_no_mpi (const int *nb_parameters,
     zmq_data.sinit_tab[0] = 1;
     zmq_data.sinit_tab[1] = 1;
 
-    sprintf (zmq_data.port_name, "tcp://%s:21010\n", server_node_name);
+    sprintf (zmq_data.port_name, "tcp://%s:21010", server_node_name);
     zmq_connect (zmq_data.connexion_requester, zmq_data.port_name);
     zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
     zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 2 * sizeof(int), 0);
@@ -444,7 +444,7 @@ void connect_to_stats_no_mpi (const int *nb_parameters,
 
     node_names = malloc (zmq_data.nb_proc_server * server_name_size * sizeof(char));
 
-    sprintf (zmq_data.port_name, "tcp://%s:21011\n", server_node_name);
+    sprintf (zmq_data.port_name, "tcp://%s:21011", server_node_name);
     zmq_connect (zmq_data.init_requester, zmq_data.port_name);
     zmq_send (zmq_data.init_requester, my_vect_size, sizeof(int), 0);
     zmq_recv (zmq_data.init_requester, node_names, zmq_data.rinit_tab[0] * zmq_data.rinit_tab[1] * sizeof(char), 0);
@@ -454,8 +454,8 @@ void connect_to_stats_no_mpi (const int *nb_parameters,
     {
         zmq_data.data_pusher[i] = zmq_socket (zmq_data.context, ZMQ_PUSH);
         port_no = 32123 + i;
-        zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
-        sprintf (zmq_data.port_name, "tcp://%s:%d\n", &node_names[server_name_size * i], port_no);
+        zmq_setsockopt (zmq_data.data_pusher[i], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
+        sprintf (zmq_data.port_name, "tcp://%s:%d", &node_names[server_name_size * i], port_no);
         zmq_connect (zmq_data.data_pusher[i], zmq_data.port_name);
     }
 

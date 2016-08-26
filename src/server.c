@@ -233,9 +233,10 @@ static inline void finalize_field_data (field_ptr        field,
     else
     {
         finalize_field_data (field->next, comm_data, pull_data, options, in_vect, local_vect_sizes);
-        for (i=0; i<pull_data->total_nb_messages; i++)
+        for (i=0; i<comm_data->client_comm_size; i++)
         {
-            if (comm_data->rank == pull_data->push_rank[i])
+//            if (comm_data->rank == pull_data->pull_rank[i])
+            if (field->stats_data[i].is_valid != 1)
             {
                 finalize_stats (&field->stats_data[i]);
             }
