@@ -275,7 +275,7 @@ void connect_to_stats (const int *nb_parameters,
             if (file == NULL)
             {
               strcpy (server_node_name, "localhost");
-              fprintf(stdout,"WARNING: Server name set to \"localhost\"");
+              fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
             }
         }
 

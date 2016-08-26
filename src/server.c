@@ -189,10 +189,15 @@ static inline void comm_n_to_m_init (int           *rcounts,
 
 static inline void add_field (field_ptr *field, char* field_name, int data_size)
 {
+    int i;
     if (*field == NULL)
     {
         *field = malloc(sizeof(field_t));
         (*field)->stats_data = malloc (data_size * sizeof(stats_data_t));
+        for (i=0; i<data_size; i++)
+        {
+            (*field)->stats_data[i].is_valid=0;
+        }
         strncpy((*field)->name, field_name, MAX_FIELD_NAME);
         (*field)->next = NULL;
     }
@@ -235,8 +240,7 @@ static inline void finalize_field_data (field_ptr        field,
         finalize_field_data (field->next, comm_data, pull_data, options, in_vect, local_vect_sizes);
         for (i=0; i<comm_data->client_comm_size; i++)
         {
-//            if (comm_data->rank == pull_data->pull_rank[i])
-            if (field->stats_data[i].is_valid != 1)
+            if (comm_data->rank == pull_data->push_rank[i])
             {
                 finalize_stats (&field->stats_data[i]);
             }
