@@ -342,6 +342,7 @@ void finalize_stats (stats_data_t *data)
 
     if (data->is_valid != 1)
     {
+        fprintf (stderr, "WARNING: data structure not valid (finalize_stats)\n");
         return;
     }
 
