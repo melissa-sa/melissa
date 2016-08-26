@@ -256,7 +256,7 @@ static inline void finalize_field_data (field_ptr        field,
         total_write_time += end_write_time - start_write_time;
 #endif // BUILD_WITH_PROBES
 
-        for (i=0; i<pull_data->total_nb_messages; i++)
+        for (i=0; i<comm_data->client_comm_size; i++)
         {
             if (comm_data->rank == pull_data->push_rank[i])
             {
