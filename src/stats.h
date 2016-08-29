@@ -413,7 +413,6 @@ void compute_stats (stats_data_t *data,
 
 void write_stats (stats_data_t    **data,
                   stats_options_t  *options,
-                  double           *in_vect,
                   comm_data_t      *comm_data,
                   int              *local_vect_sizes,
                   char             *field);

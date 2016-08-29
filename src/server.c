@@ -227,7 +227,6 @@ static inline void finalize_field_data (field_ptr        field,
                                         comm_data_t     *comm_data,
                                         pull_data_t     *pull_data,
                                         stats_options_t *options,
-                                        double          *in_vect,
                                         int             *local_vect_sizes)
 {
     int i;
@@ -237,7 +236,7 @@ static inline void finalize_field_data (field_ptr        field,
     }
     else
     {
-        finalize_field_data (field->next, comm_data, pull_data, options, in_vect, local_vect_sizes);
+        finalize_field_data (field->next, comm_data, pull_data, options, local_vect_sizes);
         for (i=0; i<comm_data->client_comm_size; i++)
         {
             if (comm_data->rcounts[i] > 0)
@@ -251,7 +250,6 @@ static inline void finalize_field_data (field_ptr        field,
 #endif // BUILD_WITH_PROBES
         write_stats (&(field->stats_data),
                      options,
-                     in_vect,
                      comm_data,
                      local_vect_sizes,
                      field->name);
@@ -282,7 +280,6 @@ int main (int argc, char **argv)
     char                field_name[MAX_FIELD_NAME];
     comm_data_t         comm_data;
     int                 time_step;
-    double             *in_vect;
     int                *parameters;
     int                 buff_size, i, ret, client_rank;
     char               *buffer, *buf_ptr;
@@ -469,7 +466,6 @@ int main (int argc, char **argv)
                               comm_data.rank,
                               &pull_data);
             nb_iterations *= pull_data.local_nb_messages;
-            in_vect = calloc (local_vect_sizes[comm_data.rank], sizeof(double));
             buff_size = pull_data.buff_size * sizeof(double) + MAX_FIELD_NAME * sizeof(char) + (stats_options.nb_parameters+2) * sizeof(int);
             buffer = malloc (buff_size);
             first_connect = 0;
@@ -553,10 +549,9 @@ int main (int argc, char **argv)
     {
         free(node_names);
     }
-    finalize_field_data (field, &comm_data, &pull_data, &stats_options, in_vect, local_vect_sizes);
+    finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes);
     free_options (&stats_options);
     free (buffer);
-    free (in_vect);
     free (parameters);
     free (comm_data.rcounts);
     free (comm_data.rdispls);

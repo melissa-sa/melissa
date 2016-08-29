@@ -249,8 +249,8 @@ void check_data (stats_data_t *data)
     {
         // default values
         fprintf (stdout, "WARNING: no operation given, set to mean and variance\n");
-        data->options->mean_op == 1;
-        data->options->variance_op == 1;
+        data->options->mean_op = 1;
+        data->options->variance_op = 1;
     }
 
     if (data->options->sobol_op != 0 && data->options->variance_op == 0)

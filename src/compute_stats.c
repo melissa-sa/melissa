@@ -90,9 +90,6 @@ void compute_stats (stats_data_t *data,
  * @param[in] *options
  * option structure
  *
- * @param[in] *in_vect
- * buffer of size local_vect_sizes[comm_data->rank]
- *
  * @param[in] comm_data
  * structure containing communications parameters
  *
@@ -106,7 +103,6 @@ void compute_stats (stats_data_t *data,
 
 void write_stats (stats_data_t    **data,
                   stats_options_t  *options,
-                  double           *in_vect,
                   comm_data_t      *comm_data,
                   int              *local_vect_sizes,
                   char             *field
@@ -133,24 +129,29 @@ void write_stats (stats_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
+            sprintf(file_name, "%s_mean_%.*d", field, max_size_time, t+1);
+#ifdef BUILD_WITH_MPI
+            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+            f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
                 {
-                    memcpy(&in_vect[comm_data->rdispls[i]], (*data)[i].means[t].mean, comm_data->rcounts[i] * sizeof(double));
+#ifdef BUILD_WITH_MPI
+                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].means[t].mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
+#else // BUILD_WITH_MPI
+                    for (j=0; j<comm_data->rcounts[i]; j++)
+                    {
+                        fprintf(f, "%g\n", (*data)[i].means[t].mean[j]);
+                    }
+#endif // BUILD_WITH_MPI
                 }
             }
-            sprintf(file_name, "%s_mean_%.*d", field, max_size_time, t+1);
 #ifdef BUILD_WITH_MPI
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            MPI_File_write_at (f, offset, in_vect, local_vect_sizes[comm_data->rank], MPI_DOUBLE, &status);
             MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
-            for (i=0; i<local_vect_sizes[0]; i++)
-            {
-                fprintf(f, "%g\n", in_vect[i]);
-            }
             fclose(f);
 #endif // BUILD_WITH_MPI
         }
@@ -160,24 +161,29 @@ void write_stats (stats_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
+            sprintf(file_name, "%s_variance_%.*d", field, max_size_time, t+1);
+#ifdef BUILD_WITH_MPI
+            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+            f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
                 {
-                    memcpy(&in_vect[comm_data->rdispls[i]], (*data)[i].variances[t].variance, comm_data->rcounts[i] * sizeof(double));
+#ifdef BUILD_WITH_MPI
+                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].variance, comm_data->rcounts[i], MPI_DOUBLE, &status);
+#else // BUILD_WITH_MPI
+                    for (j=0; j<comm_data->rcounts[i]; j++)
+                    {
+                        fprintf(f, "%g\n", (*data)[i].variances[t].variance[j]);
+                    }
+#endif // BUILD_WITH_MPI
                 }
             }
-            sprintf(file_name, "%s_variance_%.*d", field, max_size_time, t+1);
 #ifdef BUILD_WITH_MPI
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            MPI_File_write_at (f, offset, in_vect, local_vect_sizes[comm_data->rank], MPI_DOUBLE, &status);
             MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
-            for (i=0; i<local_vect_sizes[0]; i++)
-            {
-                fprintf(f, "%g\n", in_vect[i]);
-            }
             fclose(f);
 #endif // BUILD_WITH_MPI
         }
@@ -186,24 +192,29 @@ void write_stats (stats_data_t    **data,
         {
             for (t=0; t<options->nb_time_steps; t++)
             {
+                sprintf(file_name, "%s_mean_%.*d", field, max_size_time, t+1);
+#ifdef BUILD_WITH_MPI
+                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+                f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if (comm_data->rcounts[i] > 0)
                     {
-                        memcpy(&in_vect[comm_data->rdispls[i]], (*data)[i].variances[t].mean_structure.mean, comm_data->rcounts[i] * sizeof(double));
+#ifdef BUILD_WITH_MPI
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].mean_structure.mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
+#else // BUILD_WITH_MPI
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            fprintf(f, "%g\n", (*data)[i].variances[t].mean_structure.mean[j]);
+                        }
+#endif // BUILD_WITH_MPI
                     }
                 }
-                sprintf(file_name, "%s_mean_%.*d", field, max_size_time, t+1);
 #ifdef BUILD_WITH_MPI
-                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-                MPI_File_write_at (f, offset, in_vect, local_vect_sizes[comm_data->rank], MPI_DOUBLE, &status);
                 MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-                f = fopen(file_name, "w");
-                for (i=0; i<local_vect_sizes[0]; i++)
-                {
-                    fprintf(f, "%g\n", in_vect[i]);
-                }
                 fclose(f);
 #endif // BUILD_WITH_MPI
             }
@@ -214,48 +225,58 @@ void write_stats (stats_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
+            sprintf(file_name, "%s_min_%.*d", field, max_size_time, t+1);
+#ifdef BUILD_WITH_MPI
+            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+            f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
                 {
-                    memcpy(&in_vect[comm_data->rdispls[i]], (*data)[i].min_max[t].min, comm_data->rcounts[i] * sizeof(double));
+#ifdef BUILD_WITH_MPI
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].min, comm_data->rcounts[i], MPI_DOUBLE, &status);
+#else // BUILD_WITH_MPI
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            fprintf(f, "%g\n", (*data)[i].min_max[t].min[j]);
+                        }
+#endif // BUILD_WITH_MPI
                 }
             }
-            sprintf(file_name, "%s_min_%.*d", field, max_size_time, t+1);
 #ifdef BUILD_WITH_MPI
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            MPI_File_write_at (f, offset, in_vect, local_vect_sizes[comm_data->rank], MPI_DOUBLE, &status);
             MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
-            for (i=0; i<local_vect_sizes[0]; i++)
-            {
-                fprintf(f, "%g\n", in_vect[i]);
-            }
             fclose(f);
 #endif // BUILD_WITH_MPI
         }
 
         for (t=0; t<options->nb_time_steps; t++)
         {
+            sprintf(file_name, "%s_max_%.*d", field, max_size_time, t+1);
+#ifdef BUILD_WITH_MPI
+            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+            f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
                 {
-                    memcpy(&in_vect[comm_data->rdispls[i]], (*data)[i].min_max[t].max, comm_data->rcounts[i] * sizeof(double));
+#ifdef BUILD_WITH_MPI
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].max, comm_data->rcounts[i], MPI_DOUBLE, &status);
+#else // BUILD_WITH_MPI
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            fprintf(f, "%g\n", (*data)[i].min_max[t].max[j]);
+                        }
+#endif // BUILD_WITH_MPI
                 }
             }
-            sprintf(file_name, "%s_max_%.*d", field, max_size_time, t+1);
 #ifdef BUILD_WITH_MPI
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            MPI_File_write_at (f, offset, in_vect, local_vect_sizes[comm_data->rank], MPI_DOUBLE, &status);
             MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
-            for (i=0; i<local_vect_sizes[0]; i++)
-            {
-                fprintf(f, "%g\n", in_vect[i]);
-            }
             fclose(f);
 #endif // BUILD_WITH_MPI
         }
@@ -266,24 +287,29 @@ void write_stats (stats_data_t    **data,
         int *int_vect = malloc (local_vect_sizes[comm_data->rank] * sizeof(int));
         for (t=0; t<options->nb_time_steps; t++)
         {
+            sprintf(file_name, "%s_threshold_exceedance_%.*d", field, max_size_time, t+1);
+#ifdef BUILD_WITH_MPI
+            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+            f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
                 {
-                    memcpy(&int_vect[comm_data->rdispls[i]], (*data)[i].thresholds[t], comm_data->rcounts[i] * sizeof(int));
+#ifdef BUILD_WITH_MPI
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].thresholds[t], comm_data->rcounts[i], MPI_INT, &status);
+#else // BUILD_WITH_MPI
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            fprintf(f, "%g\n", (*data)[i].thresholds[t][j]);
+                        }
+#endif // BUILD_WITH_MPI
                 }
             }
-            sprintf(file_name, "%s_threshold_exceedance_%.*d", field, max_size_time, t+1);
 #ifdef BUILD_WITH_MPI
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            MPI_File_write_at (f, offset, int_vect, local_vect_sizes[comm_data->rank], MPI_INT, &status);
             MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
-            for (i=0; i<local_vect_sizes[0]; i++)
-            {
-                fprintf(f, "%d\n", int_vect[i]);
-            }
             fclose(f);
 #endif // BUILD_WITH_MPI
         }
@@ -297,24 +323,24 @@ void write_stats (stats_data_t    **data,
         {
             for (p=0; p<options->nb_parameters; p++)
             {
+                sprintf(file_name, "%s_sobol_indices_%.*d.%d",field,  max_size_time, t+1, p);
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if (comm_data->rcounts[i] > 0)
                     {
-                        memcpy(&in_vect[comm_data->rdispls[i]], (*data)[i].sobol_indices[t].sobol_indices[p].values, comm_data->rcounts[i] * sizeof(double));
+#ifdef BUILD_WITH_MPI
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_indices[p].values, comm_data->rcounts[i], MPI_INT, &status);
+#else // BUILD_WITH_MPI
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_indices[p].values[j]);
+                        }
+#endif // BUILD_WITH_MPI
                     }
                 }
-                sprintf(file_name, "%s_sobol_indices_%.*d.%d",field,  max_size_time, t+1, p);
 #ifdef BUILD_WITH_MPI
-                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-                MPI_File_write_at (f, offset, in_vect, local_vect_sizes[comm_data->rank], MPI_DOUBLE, &status);
                 MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-                f = fopen(file_name, "w");
-                for (i=0; i<local_vect_sizes[0]; i++)
-                {
-                    fprintf(f, "%g\n", in_vect[i]);
-                }
                 fclose(f);
 #endif // BUILD_WITH_MPI
             }
