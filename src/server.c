@@ -303,6 +303,7 @@ int main (int argc, char **argv)
     int                 global_vect_size;
     pull_data_t         pull_data;
     int                 nb_bufferized_messages = 50;
+    char               *field_name_ptr;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -379,7 +380,6 @@ int main (int argc, char **argv)
         zmq_pollitem_t items [] = {
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
             { init_responder, 0, ZMQ_POLLIN, 0 },
-//            { data_responder, 0, ZMQ_POLLIN, 0 }
             { data_puller, 0, ZMQ_POLLIN, 0 }
         };
         zmq_poll (items, 3, -1);
@@ -487,26 +487,26 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
 
             buf_ptr = buffer;
-            memcpy(&time_step, buf_ptr, sizeof(int));
+            time_step = *buf_ptr;
             buf_ptr += sizeof(int);
-            memcpy(&client_rank, buf_ptr, sizeof(int));
+            client_rank = *buf_ptr;
             buf_ptr += sizeof(int);
             memcpy(parameters, buf_ptr, stats_options.nb_parameters * sizeof(int));
             buf_ptr += stats_options.nb_parameters * sizeof(int);
-            memcpy(field_name, buf_ptr, MAX_FIELD_NAME * sizeof(char));
+            field_name_ptr = buf_ptr;
             if (field == NULL)
             {
-                add_field(&field, field_name, comm_data.client_comm_size);
-                data_ptr = get_data_ptr (field, field_name);
+                add_field(&field, field_name_ptr, comm_data.client_comm_size);
+                data_ptr = get_data_ptr (field, field_name_ptr);
                 nb_fields += 1;
             }
             else
             {
-                data_ptr = get_data_ptr (field, field_name);
+                data_ptr = get_data_ptr (field, field_name_ptr);
                 if (data_ptr == NULL)
                 {
                     add_field(&field, field_name, comm_data.client_comm_size);
-                    data_ptr = get_data_ptr (field, field_name);
+                    data_ptr = get_data_ptr (field, field_name_ptr);
                     nb_fields += 1;
                 }
             }
@@ -515,7 +515,6 @@ int main (int argc, char **argv)
                 init_data (&data_ptr[client_rank], &stats_options, comm_data.rcounts[client_rank]);
             }
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
-            memcpy(&in_vect[comm_data.rdispls[client_rank]], buf_ptr, comm_data.rcounts[client_rank] * sizeof(double));
 #ifdef BUILD_WITH_PROBES
             total_bytes_recv += buff_size;
             start_computation_time = stats_get_time();
@@ -527,7 +526,7 @@ int main (int argc, char **argv)
             printf(", rank = %d, field: %s\n", comm_data.rank, field_name);
 #endif // BUILD_WITH_PROBES
 
-            compute_stats (&data_ptr[client_rank], parameters, &in_vect[comm_data.rdispls[client_rank]], time_step-1);
+            compute_stats (&data_ptr[client_rank], parameters, (double*)buf_ptr, time_step-1);
             iteration++;
 #ifdef BUILD_WITH_PROBES
             end_computation_time = stats_get_time();
