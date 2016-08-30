@@ -283,6 +283,7 @@ int main (int argc, char **argv)
     int                *parameters;
     int                 buff_size, i, ret, client_rank;
     char               *buffer, *buf_ptr;
+    double            **buf_tab_ptr;
     int                 iteration, nb_iterations = 1;
     int                 port_no;
     char                port_name[128] = {0};
@@ -522,7 +523,8 @@ int main (int argc, char **argv)
             printf(", rank = %d, field: %s\n", comm_data.rank, field_name);
 #endif // BUILD_WITH_PROBES
 
-            compute_stats (&data_ptr[client_rank], parameters, (double*)buf_ptr, time_step-1);
+            *buf_tab_ptr = (double*)buf_ptr;
+            compute_stats (&data_ptr[client_rank], time_step-1, 1, buf_tab_ptr);
             iteration++;
 #ifdef BUILD_WITH_PROBES
             end_computation_time = stats_get_time();

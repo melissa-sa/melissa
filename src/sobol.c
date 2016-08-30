@@ -17,66 +17,83 @@
  *
  * @ingroup sobol
  *
- * This function initialise a sobol index structure
- * @see conditional_variance_s
+ * This function initialise a Martinez sobol indices structure
  *
  *******************************************************************************
  *
- * @param[in,out] *sobol_index
- * input: reference or pointer to an uninitialised sobol index structure,
- * output: initialised structure, with values and conditional variances set to 0
+ * @param[in,out] *sobol_indices
+ * input: reference or pointer to an uninitialised sobol indices structure,
+ * output: initialised structure, with values and variances set to 0
  *
- * @param[in] indices_to_fix[]
- * array of indices to be copied in sobol_index->conditional_variance.fixed_indices
- *
- * @param[in] *data
- * pointer to the structure containing global parameters
+ * @param[in] vect_size
+ * size of the input vectors
  *
  *******************************************************************************/
 
-void init_sobol_index (sobol_index_t *sobol_index,
-                       const int      indices_to_fix[],
-                       stats_data_t  *data)
+void init_sobol_martinez (sobol_martinez_t *sobol_indices,
+                          int               vect_size)
 {
     int i;
 
-    init_conditional_variance (&(sobol_index->conditional_variance), indices_to_fix, data);
+    init_covariance (&(sobol_indices->covariance), vect_size);
+    init_variance (&(sobol_indices->variance1), vect_size);
+    init_variance (&(sobol_indices->variance2), vect_size);
 
-    sobol_index->values = calloc (data->vect_size, sizeof(double));
-
+    sobol_indices->values = calloc (vect_size, sizeof(double));
 }
+
+//void compute_sobol_index (sobol_index_t *sobol_index,
+//                          stats_data_t  *data,
+//                          int            time_step)
+//{
+//    int i;
+
+//    compute_conditional_variance (&(sobol_index->conditional_variance), &(data->cond_means[time_step]), data);
+
+//#pragma omp parallel for
+//    for (i=0; i<data->vect_size; i++)
+//        sobol_index->values[i] = sobol_index->conditional_variance.variance.variance[i] / data->variances[time_step].variance[i];
+//}
 
 /**
  *******************************************************************************
  *
  * @ingroup sobol
  *
- * This function compute sobol indices (unfinished) (first order only)
+ * This function compute sobol indices using Martinez formula
  *
  *******************************************************************************
  *
- * @param[out] *sobol_index
- * computed sobol index
+ * @param[out] *sobol_indices
+ * computed sobol indices, using Martinez formula
  *
- * @param[in] *data
- * pointer to the structure containing global parameters
+ * @param[in] Yb[]
+ * first input vector
  *
- * @param[in] time_step
- * time step
+ * @param[in] Yck[]
+ * second input vector
+ *
+ * @param[in] *vect_size
+ * size of input vectors
  *
  *******************************************************************************/
 
-void compute_sobol_index (sobol_index_t *sobol_index,
-                          stats_data_t  *data,
-                          int            time_step)
+void increment_sobol_martinez (sobol_martinez_t *sobol_indices,
+                               double            Yb[],
+                               double            Yck[],
+                               int               vect_size)
 {
     int i;
 
-    compute_conditional_variance (&(sobol_index->conditional_variance), &(data->cond_means[time_step]), data);
+    increment_covariance (Yb, Yck, &(sobol_indices->covariance), vect_size);
+    increment_variance (Yb, &(sobol_indices->variance1), vect_size);
+    increment_variance (Yck, &(sobol_indices->variance2), vect_size);
 
 #pragma omp parallel for
-    for (i=0; i<data->vect_size; i++)
-        sobol_index->values[i] = sobol_index->conditional_variance.variance.variance[i] / data->variances[time_step].variance[i];
+    for (i=0; i<vect_size; i++)
+        sobol_indices->values[i] = sobol_indices->covariance.covariance[i]
+                         / ( sqrt(sobol_indices->variance1.variance[i])
+                           * sqrt(sobol_indices->variance2.variance[i]) );
 }
 
 /**
@@ -84,17 +101,19 @@ void compute_sobol_index (sobol_index_t *sobol_index,
  *
  * @ingroup sobol
  *
- * This function frees a sobol index structure
+ * This function frees a Martinez sobol indices structure
  *
  *******************************************************************************
  *
- * @param[in] *sobol_index
+ * @param[in] *sobol_indices
  * reference or pointer to a sobol index structure to free
  *
  *******************************************************************************/
 
-void free_sobol_index (sobol_index_t *sobol_index)
+void free_sobol_martinez (sobol_martinez_t *sobol_indices)
 {
-    free_conditional_variance (&(sobol_index->conditional_variance));
-    free (sobol_index->values);
+    free_covariance (&(sobol_indices->covariance));
+    free_variance (&(sobol_indices->variance1));
+    free_variance (&(sobol_indices->variance2));
+    free (sobol_indices->values);
 }

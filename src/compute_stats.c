@@ -27,22 +27,25 @@
  * @param[in] *data
  * pointer to the structure containing global parameters
  *
- * @param[in] *parameters
- * parameter array for the current simulation
- *
- * @param[in] *in_vect
- * input vector
- *
  * @param[in] time_step
  * time step of the current simulation
  *
+ * @param[in] nb_vect
+ * number of input vectors
+ *
+ * @param[in] **in_vect_tab
+ * array of input vectors
+ *
  *******************************************************************************/
 
-void compute_stats (stats_data_t *data,
-                    const int    *parameters,
-                    double       *in_vect,
-                    const int     time_step)
+void compute_stats (stats_data_t  *data,
+                    const int      time_step,
+                    const int      nb_vect,
+                    double       **in_vect_tab)
 {
+    int     i, j;
+    double *in_vect = in_vect_tab[0];
+
     if (data->is_valid != 1)
     {
         fprintf (stderr, "ERROR: data structure not valid (compute_stats)\n");
@@ -71,7 +74,16 @@ void compute_stats (stats_data_t *data,
 
     if (data->options->sobol_op == 1)
     {
-        increment_conditional_mean (&(data->cond_means[time_step]), in_vect, parameters, data);
+        if (nb_vect != data->options->nb_parameters + 2)
+        {
+            fprintf (stderr, "ERROR: invalid vector nunber (compute_stats)\n");
+            exit (1);
+        }
+        for (i=0; i<nb_vect; i++)
+        {
+            increment_sobol_martinez (&data->sobol_indices[time_step].sobol_martinez[i], in_vect_tab[nb_vect], in_vect_tab[i], data->vect_size);
+//            increment_total_sobol_martinez (&data->sobol_total_indices[time_step].sobol_martinez[i], in_vect_tab[nb_vect+1], in_vect_tab[i], data->vect_size);
+        }
     }
 }
 
@@ -236,12 +248,12 @@ void write_stats (stats_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].min, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].min, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                        for (j=0; j<comm_data->rcounts[i]; j++)
-                        {
-                            fprintf(f, "%g\n", (*data)[i].min_max[t].min[j]);
-                        }
+                    for (j=0; j<comm_data->rcounts[i]; j++)
+                    {
+                        fprintf(f, "%g\n", (*data)[i].min_max[t].min[j]);
+                    }
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -265,12 +277,12 @@ void write_stats (stats_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].max, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].max, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                        for (j=0; j<comm_data->rcounts[i]; j++)
-                        {
-                            fprintf(f, "%g\n", (*data)[i].min_max[t].max[j]);
-                        }
+                    for (j=0; j<comm_data->rcounts[i]; j++)
+                    {
+                        fprintf(f, "%g\n", (*data)[i].min_max[t].max[j]);
+                    }
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -284,7 +296,6 @@ void write_stats (stats_data_t    **data,
 
     if (options->threshold_op == 1)
     {
-        int *int_vect = malloc (local_vect_sizes[comm_data->rank] * sizeof(int));
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "%s_threshold_exceedance_%.*d", field, max_size_time, t+1);
@@ -298,12 +309,12 @@ void write_stats (stats_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].thresholds[t], comm_data->rcounts[i], MPI_INT, &status);
+                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].thresholds[t], comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
-                        for (j=0; j<comm_data->rcounts[i]; j++)
-                        {
-                            fprintf(f, "%g\n", (*data)[i].thresholds[t][j]);
-                        }
+                    for (j=0; j<comm_data->rcounts[i]; j++)
+                    {
+                        fprintf(f, "%g\n", (*data)[i].thresholds[t][j]);
+                    }
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -313,7 +324,6 @@ void write_stats (stats_data_t    **data,
             fclose(f);
 #endif // BUILD_WITH_MPI
         }
-        free (int_vect);
     }
 
     if (options->sobol_op == 1)
@@ -324,16 +334,21 @@ void write_stats (stats_data_t    **data,
             for (p=0; p<options->nb_parameters; p++)
             {
                 sprintf(file_name, "%s_sobol_indices_%.*d.%d",field,  max_size_time, t+1, p);
+#ifdef BUILD_WITH_MPI
+                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+                f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if (comm_data->rcounts[i] > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_indices[p].values, comm_data->rcounts[i], MPI_INT, &status);
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].values, comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
                         for (j=0; j<comm_data->rcounts[i]; j++)
                         {
-                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_indices[p].values[j]);
+                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_martinez[p].values[j]);
                         }
 #endif // BUILD_WITH_MPI
                     }
@@ -364,49 +379,5 @@ void write_stats (stats_data_t    **data,
 
 void finalize_stats (stats_data_t *data)
 {
-    int i, j;
 
-    if (data->is_valid != 1)
-    {
-        fprintf (stderr, "WARNING: data structure not valid (finalize_stats)\n");
-        return;
-    }
-
-    if (data->options->sobol_op == 1)
-    {
-        int *indices_to_fix;
-
-        if (data->options->sobol_order > 1)
-            fprintf (stdout, "WARNING: sobol indices of order greater than one are not implemented (yet)\n");
-
-        data->sobol_indices = malloc (data->options->nb_time_steps * sizeof(sobol_array_t));
-        indices_to_fix = malloc (data->options->nb_parameters * sizeof(int));
-
-#pragma omp parallel for
-        for (i=0; i<data->options->nb_time_steps; i++)
-        {
-            data->sobol_indices[i].sobol_indices = malloc (data->options->nb_parameters * sizeof(sobol_index_t));
-        }
-        // initialization
-        for (j=0; j<data->options->nb_parameters; j++)
-        {
-            for (i=0; i<data->options->nb_parameters; i++)
-                indices_to_fix[i] = 0;
-            indices_to_fix[j] = 1;
-#pragma omp parallel for
-            for (i=0; i<data->options->nb_time_steps; i++)
-                init_sobol_index (&(data->sobol_indices[i].sobol_indices[j]), indices_to_fix, data);
-        }
-
-        // computation
-        for (i=0; i<data->options->nb_time_steps; i++)
-        {
-            for (j=0; j<data->options->nb_parameters; j++)
-            {
-                compute_sobol_index (&(data->sobol_indices[i].sobol_indices[j]), data, i);
-            }
-        }
-
-        free (indices_to_fix);
-    }
 }

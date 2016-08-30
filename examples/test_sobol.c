@@ -153,29 +153,29 @@ int main (int argc, char **argv)
     }
     printf ("}\n");
 
-    printf ("\n");
-    printf ("Conditional variances (first order) : \n");
-    for (j=0; j<data.options->nb_parameters; j++)
-    {
-        printf ("Var(E(Y|X%d)) = {", j);
-        for (i=0; i<data.vect_size; i++)
-        {
-            printf (" %g ",  data.sobol_indices[0].sobol_indices[j].conditional_variance.variance.variance[i]);
-        }
-        printf ("}\n");
-    }
+//    printf ("\n");
+//    printf ("Conditional variances (first order) : \n");
+//    for (j=0; j<data.options->nb_parameters; j++)
+//    {
+//        printf ("Var(E(Y|X%d)) = {", j);
+//        for (i=0; i<data.vect_size; i++)
+//        {
+//            printf (" %g ",  data.sobol_indices[0].sobol_indices[j].conditional_variance.variance.variance[i]);
+//        }
+//        printf ("}\n");
+//    }
 
-    printf ("\n");
-    printf ("Sobol indices (first order) : \n");
-    for (j=0; j<data.options->nb_parameters; j++)
-    {
-        printf ("S%d = {", j);
-        for (i=0; i<data.vect_size; i++)
-        {
-            printf (" %g ",  data.sobol_indices[0].sobol_indices[j].values[i]);
-        }
-        printf ("}\n");
-    }
+//    printf ("\n");
+//    printf ("Sobol indices (first order) : \n");
+//    for (j=0; j<data.options->nb_parameters; j++)
+//    {
+//        printf ("S%d = {", j);
+//        for (i=0; i<data.vect_size; i++)
+//        {
+//            printf (" %g ",  data.sobol_indices[0].sobol_indices[j].values[i]);
+//        }
+//        printf ("}\n");
+//    }
 
     {
         int p, t, offset = 0;
@@ -201,13 +201,13 @@ int main (int argc, char **argv)
                 sprintf(file_name, "sobol_indices_%.*d.%d", 1, t+1, p+1);
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (MPI_COMM_WORLD, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-                MPI_File_write_at (f, offset, data.sobol_indices[t].sobol_indices[p].values, data.vect_size, MPI_DOUBLE, &status);
+                MPI_File_write_at (f, offset, data.sobol_indices[t].sobol_martinez[p].values, data.vect_size, MPI_DOUBLE, &status);
                 MPI_File_close (&f);
 #else // BUILD_WITH_MPI
                 fopen(file_name, "w+");
                 for (i=0; i<data.vect_size; i++)
                 {
-                    fprintf(f, "%f\n", data.sobol_indices[t].sobol_indices[p].values[i]);
+                    fprintf(f, "%f\n", data.sobol_indices[t].sobol_martinez[p].values[i]);
                 }
                 fclose(f);
 #endif // BUILD_WITH_MPI

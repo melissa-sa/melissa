@@ -125,7 +125,7 @@ int main(int argc, char** argv)
         printf("\n");
 
         // Compute stats
-        compute_stats (&stats_data, parameters, in_vect, time_step-1);
+        compute_stats (&stats_data, time_step-1, 1, in_vect);
         iteration++;
 //        if (iteration >= nb_iterations)
 //        {

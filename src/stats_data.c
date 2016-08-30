@@ -105,7 +105,7 @@ void mem_conso (stats_data_t *data)
 
 static void malloc_data (stats_data_t *data)
 {
-    int i;
+    int i, j;
 
     if (data->is_valid != 1)
     {
@@ -143,9 +143,15 @@ static void malloc_data (stats_data_t *data)
 
     if (data->options->sobol_op == 1)
     {
-        data->cond_means = malloc (data->options->nb_time_steps * sizeof(conditional_mean_t));
+        data->sobol_indices = malloc (data->options->nb_time_steps * sizeof(sobol_martinez_t));
         for (i=0; i<data->options->nb_time_steps; i++)
-            init_conditional_means (&(data->cond_means[i]), data);
+        {
+            data->sobol_indices[i].sobol_martinez = malloc (data->options->nb_parameters * sizeof(sobol_martinez_t));
+            for (j=0; j<data->options->nb_parameters; j++)
+            {
+                init_sobol_martinez (data->sobol_indices[i].sobol_martinez, data->vect_size);
+            }
+        }
     }
 }
 
@@ -292,7 +298,7 @@ void check_data (stats_data_t *data)
 
 void free_data (stats_data_t *data)
 {
-    int i;
+    int i, j;
 
     if (data->is_valid != 1)
     {
@@ -331,10 +337,13 @@ void free_data (stats_data_t *data)
     if (data->options->sobol_op == 1)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
-            free_conditional_mean (&(data->cond_means[i]));
-        free (data->cond_means);
-        for (i=0; i<data->options->nb_time_steps; i++)
-            free_sobol_index (data->sobol_indices[i].sobol_indices);
+        {
+            for (i=0; i<data->options->nb_parameters; i++)
+            {
+                free_sobol_martinez (&(data->sobol_indices[i].sobol_martinez[j]));
+            }
+            free (data->sobol_indices[i].sobol_martinez);
+        }
         free (data->sobol_indices);
     }
 
