@@ -187,10 +187,11 @@ typedef struct conditional_variance_s conditional_variance_t; /**< type correspo
 
 struct sobol_martinez_s
 {
-    covariance_t  covariance; /**< covariance needed by Martinez formula      */
-    variance_t    variance1;  /**< first variance needed by Martinez formula  */
-    variance_t    variance2;  /**< second variance needed by Martinez formula */
-    double       *values;     /**< values of the sobol indices                */
+    covariance_t  first_order_covariance; /**< covariance needed by Martinez formula */
+    covariance_t  total_order_covariance; /**< covariance needed by Martinez formula */
+    variance_t    variance_k;               /**< variance needed by Martinez formula   */
+    double       *first_order_values;     /**< values of the sobol indices           */
+    double       *total_order_values;     /**< values of the sobol indices           */
 };
 
 typedef struct sobol_martinez_s sobol_martinez_t; /**< type corresponding to sobol_martinez_s */
@@ -208,7 +209,9 @@ typedef struct sobol_martinez_s sobol_martinez_t; /**< type corresponding to sob
 
 struct sobol_array_s
 {
-    sobol_martinez_t *sobol_martinez; /**< array of sobol indices, size nb_parameters */
+    sobol_martinez_t *sobol_martinez; /**< array of sobol indices, size nb_parameters     */
+    variance_t        variance_a;     /**< first set variance needed by Martinez formula  */
+    variance_t        variance_b;     /**< second set variance needed by Martinez formula */
 };
 
 typedef struct sobol_array_s sobol_array_t; /**< type corresponding to sobol_array_s */
@@ -250,16 +253,15 @@ typedef struct stats_options_s stats_options_t; /**< type corresponding to stats
 
 struct stats_data_s
 {
-    int                  vect_size;           /**< local size of input vectors                                       */
-    stats_options_t     *options;             /**< pointer to an option structure                                    */
-    int                  is_valid;            /**< 1 if the structure has been checked                               */
-    mean_t              *means;               /**< array of mean structures, size nb_time_steps                      */
-    variance_t          *variances;           /**< array of variance structures, size nb_time_steps                  */
-    min_max_t           *min_max;             /**< array of min and max structures, size nb_time_steps               */
-    int                **thresholds;          /**< array of threshold exceedance vectors, size nb_time_steps         */
-    conditional_mean_t  *cond_means;          /**< array of conditional mean structures, size nb_time_steps          */
-    sobol_array_t       *sobol_indices;       /**< array of sobol array structures, size nb_time_steps (first order) */
-    sobol_array_t       *sobol_total_indices; /**< array of sobol array structures, size nb_time_steps (total order) */
+    int                  vect_size;     /**< local size of input vectors                               */
+    stats_options_t     *options;       /**< pointer to an option structure                            */
+    int                  is_valid;      /**< 1 if the structure has been checked                       */
+    mean_t              *means;         /**< array of mean structures, size nb_time_steps              */
+    variance_t          *variances;     /**< array of variance structures, size nb_time_steps          */
+    min_max_t           *min_max;       /**< array of min and max structures, size nb_time_steps       */
+    int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
+    conditional_mean_t  *cond_means;    /**< array of conditional mean structures, size nb_time_steps  */
+    sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
 };
 
 typedef struct stats_data_s stats_data_t; /**< type corresponding to stats_data_s */
@@ -403,10 +405,10 @@ void free_conditional_variance (conditional_variance_t *conditional_variance);
 void init_sobol_martinez (sobol_martinez_t *sobol_indices,
                           int               vect_size);
 
-void increment_sobol_martinez (sobol_martinez_t *sobol_indices,
-                               double            Yb[],
-                               double            Yck[],
-                               int               vect_size);
+void increment_sobol_martinez (sobol_array_t *sobol_array,
+                               int            nb_parameters,
+                               double       **in_vect_tab,
+                               int            vect_size);
 
 void free_sobol_martinez (sobol_martinez_t *sobol_indices);
 

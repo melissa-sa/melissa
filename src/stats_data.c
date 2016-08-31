@@ -147,6 +147,8 @@ static void malloc_data (stats_data_t *data)
         for (i=0; i<data->options->nb_time_steps; i++)
         {
             data->sobol_indices[i].sobol_martinez = malloc (data->options->nb_parameters * sizeof(sobol_martinez_t));
+            init_variance (&data->sobol_indices[i].variance_b, data->vect_size);
+            init_variance (&data->sobol_indices[i].variance_a, data->vect_size);
             for (j=0; j<data->options->nb_parameters; j++)
             {
                 init_sobol_martinez (data->sobol_indices[i].sobol_martinez, data->vect_size);
@@ -338,7 +340,9 @@ void free_data (stats_data_t *data)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
         {
-            for (i=0; i<data->options->nb_parameters; i++)
+            free_variance (&data->sobol_indices[i].variance_a);
+            free_variance (&data->sobol_indices[i].variance_b);
+            for (j=0; j<data->options->nb_parameters; j++)
             {
                 free_sobol_martinez (&(data->sobol_indices[i].sobol_martinez[j]));
             }

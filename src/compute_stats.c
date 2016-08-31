@@ -79,11 +79,10 @@ void compute_stats (stats_data_t  *data,
             fprintf (stderr, "ERROR: invalid vector nunber (compute_stats)\n");
             exit (1);
         }
-        for (i=0; i<nb_vect; i++)
-        {
-            increment_sobol_martinez (&data->sobol_indices[time_step].sobol_martinez[i], in_vect_tab[nb_vect], in_vect_tab[i], data->vect_size);
-//            increment_total_sobol_martinez (&data->sobol_total_indices[time_step].sobol_martinez[i], in_vect_tab[nb_vect+1], in_vect_tab[i], data->vect_size);
-        }
+            increment_sobol_martinez (&data->sobol_indices[time_step],
+                                      data->options->nb_parameters,
+                                      in_vect_tab,
+                                      data->vect_size);
     }
 }
 
@@ -344,7 +343,7 @@ void write_stats (stats_data_t    **data,
                     if (comm_data->rcounts[i] > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].values, comm_data->rcounts[i], MPI_INT, &status);
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
                         for (j=0; j<comm_data->rcounts[i]; j++)
                         {

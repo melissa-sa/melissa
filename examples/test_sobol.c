@@ -201,13 +201,13 @@ int main (int argc, char **argv)
                 sprintf(file_name, "sobol_indices_%.*d.%d", 1, t+1, p+1);
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (MPI_COMM_WORLD, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-                MPI_File_write_at (f, offset, data.sobol_indices[t].sobol_martinez[p].values, data.vect_size, MPI_DOUBLE, &status);
+                MPI_File_write_at (f, offset, data.sobol_indices[t].sobol_martinez[p].first_order_values, data.vect_size, MPI_DOUBLE, &status);
                 MPI_File_close (&f);
 #else // BUILD_WITH_MPI
                 fopen(file_name, "w+");
                 for (i=0; i<data.vect_size; i++)
                 {
-                    fprintf(f, "%f\n", data.sobol_indices[t].sobol_martinez[p].values[i]);
+                    fprintf(f, "%f\n", data.sobol_indices[t].sobol_martinez[p].first_order_values[i]);
                 }
                 fclose(f);
 #endif // BUILD_WITH_MPI
