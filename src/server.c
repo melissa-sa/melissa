@@ -50,7 +50,8 @@ static double end_wait_time;
 static double total_write_time = 0;
 static double start_write_time;
 static double end_write_time;
-static int total_bytes_recv = 0;
+static long int total_bytes_recv = 0;
+static long int total_bytes_written = 0;
 #endif // BUILD_WITH_PROBES
 
 static double stats_get_time ()
@@ -272,6 +273,28 @@ static inline void finalize_field_data (field_ptr        field,
     return;
 }
 
+long int count_bytes_written (stats_options_t  *options)
+{
+    long int bytes_written = 0;
+    if (options->mean_op == 1)
+    {
+        bytes_written += options->global_vect_size*sizeof(double)*options->nb_time_steps;
+    }
+    if (options->variance_op == 1)
+    {
+        bytes_written += options->global_vect_size*sizeof(double)*options->nb_time_steps;
+    }
+    if (options->min_and_max_op == 1)
+    {
+        bytes_written += 2*options->global_vect_size*sizeof(double)*options->nb_time_steps;
+    }
+    if (options->threshold_op == 1)
+    {
+        bytes_written += options->global_vect_size*sizeof(int)*options->nb_time_steps;
+    }
+    return bytes_written;
+}
+
 int main (int argc, char **argv)
 {
     stats_options_t     stats_options;
@@ -283,8 +306,8 @@ int main (int argc, char **argv)
     int                *parameters;
     int                 buff_size, i, ret, client_rank;
     char               *buffer, *buf_ptr;
-    double            **buf_tab_ptr;
-    int                 iteration, nb_iterations = 1;
+    double             *buf_tab_ptr[1];
+    int                 iteration, nb_iterations = 0;
     int                 port_no;
     char                port_name[128] = {0};
     char               *node_names;
@@ -299,6 +322,7 @@ int main (int argc, char **argv)
     int                 first_connect = 1;
     int                *client_vect_sizes, *local_vect_sizes;
     int                 global_vect_size;
+    int                 nb_simu = 1;
     pull_data_t         pull_data;
     int                 nb_bufferized_messages = 50;
     char               *field_name_ptr;
@@ -326,9 +350,9 @@ int main (int argc, char **argv)
 
     for (i=0; i< stats_options.nb_parameters; i++)
     {
-        nb_iterations *= (stats_options.size_parameters[i]);
+        nb_simu *= (stats_options.size_parameters[i]);
     }
-    nb_iterations *= stats_options.nb_time_steps ;
+    nb_iterations = nb_simu * stats_options.nb_time_steps ;
 
     port_no = 32123 + comm_data.rank;
     sprintf (port_name, "tcp://*:%d", port_no);
@@ -442,16 +466,16 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
             MPI_Bcast(client_vect_sizes, comm_data.client_comm_size, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
-            global_vect_size = 0;
+            stats_options.global_vect_size = 0;
             for (i=0; i< comm_data.client_comm_size; i++)
             {
-                global_vect_size += client_vect_sizes[i];
+                stats_options.global_vect_size += client_vect_sizes[i];
             }
             local_vect_sizes = malloc (comm_data.comm_size * sizeof(int));
             for (i=0; i<comm_data.comm_size; i++)
             {
-                local_vect_sizes[i] = global_vect_size / comm_data.comm_size;
-                if (i < global_vect_size % comm_data.comm_size)
+                local_vect_sizes[i] = stats_options.global_vect_size / comm_data.comm_size;
+                if (i < stats_options.global_vect_size % comm_data.comm_size)
                     local_vect_sizes[i] += 1;
             }
 
@@ -460,7 +484,7 @@ int main (int argc, char **argv)
 
             comm_n_to_m_init (comm_data.rcounts,
                               comm_data.rdispls,
-                              global_vect_size,
+                              stats_options.global_vect_size,
                               local_vect_sizes,
                               client_vect_sizes,
                               comm_data.client_comm_size,
@@ -523,7 +547,7 @@ int main (int argc, char **argv)
             printf(", rank = %d, field: %s\n", comm_data.rank, field_name);
 #endif // BUILD_WITH_PROBES
 
-            *buf_tab_ptr = (double*)buf_ptr;
+            buf_tab_ptr[0] = (double*)buf_ptr;
             compute_stats (&data_ptr[client_rank], time_step-1, 1, buf_tab_ptr);
             iteration++;
 #ifdef BUILD_WITH_PROBES
@@ -552,20 +576,33 @@ int main (int argc, char **argv)
         free(node_names);
     }
     finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes);
-    free_options (&stats_options);
     free (buffer);
     free (parameters);
     free (comm_data.rcounts);
     free (comm_data.rdispls);
 
 #ifdef BUILD_WITH_PROBES
-    fprintf (stdout, " --- Communication time: %g s\n",total_comm_time);
-    fprintf (stdout, " --- Bytes recieved:     %d bytes\n",total_bytes_recv);
-    fprintf (stdout, " --- Calcul time:        %g s\n",total_computation_time);
-    fprintf (stdout, " --- Waiting time:       %g s\n", total_wait_time);
-    fprintf (stdout, " --- Writing time:       %g s\n", total_write_time);
-    fprintf (stdout, " --- Total time:         %g s\n", stats_get_time() - start_time);
+#ifdef BUILD_WITH_MPI
+    double temp;
+    MPI_Reduce (&total_comm_time, &temp, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_comm_time = temp / comm_data.comm_size;
+#endif // BUILD_WITH_MPI
+    if (comm_data.rank==0)
+    {
+        fprintf (stdout, " --- Number of simulations:      %d\n", nb_simu);
+        fprintf (stdout, " --- Number of simulation cores: %d\n", comm_data.client_comm_size);
+        fprintf (stdout, " --- Number of analysis cores:   %d\n", comm_data.comm_size);
+        fprintf (stdout, " --- Average communication time: %g s\n", total_comm_time);
+        fprintf (stdout, " --- Calcul time:                %g s\n", total_computation_time);
+        fprintf (stdout, " --- Waiting time:               %g s\n", total_wait_time);
+        fprintf (stdout, " --- Writing time:               %g s\n", total_write_time);
+        fprintf (stdout, " --- Total time:                 %g s\n", stats_get_time() - start_time);
+        fprintf (stdout, " --- Bytes recieved:             %ld bytes\n",total_bytes_recv);
+        fprintf (stdout, " --- Stats structures memory:    %ld bytes\n", mem_conso(&stats_options));
+        fprintf (stdout, " --- Bytes written:              %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
+    }
 #endif // BUILD_WITH_PROBES
+    free_options (&stats_options);
 
 #ifdef BUILD_WITH_MPI
     MPI_Finalize ();

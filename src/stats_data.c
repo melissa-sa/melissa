@@ -17,7 +17,7 @@
 
 
 static inline void count_mem_cond_mean (conditional_mean_t *mean,
-                                        int                *mem,
+                                        long int           *mem,
                                         int                *count,
                                         stats_data_t       *data)
 {
@@ -47,60 +47,62 @@ static inline void count_mem_cond_mean (conditional_mean_t *mean,
  *
  * @ingroup stats_data
  *
- * This function computes and displays the memory consumption of the data structure
+ * This function computes and displays the memory consumption of the library
  *
  *******************************************************************************
  *
- * @param[in] *data
- * pointer to the structure containing global parameters
+ * @param[in] *options
+ * pointer to the structure containing global options
  *
  *******************************************************************************/
 
-void mem_conso (stats_data_t *data)
+long int mem_conso (stats_options_t *options)
 {
     int i = 0;
-    int memory = 0;
-    int temp_mem = 0;
+    long int memory = 0;
+    long int temp_mem = 0;
 
-    if (data->options->mean_op != 0)
+    if (options->mean_op != 0)
     {
-        temp_mem = data->vect_size * data->options->nb_time_steps * sizeof(double) + sizeof(int);
-        fprintf(stdout, "Mean memory usage: %d bytes\n", temp_mem);
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Mean memory usage:          %ld bytes\n", temp_mem);
         memory += temp_mem;
     }
-    if (data->options->variance_op != 0 && data->options->mean_op == 0)
+    if (options->variance_op != 0 && options->mean_op == 0)
     {
-        temp_mem = 2 * data->vect_size * data->options->nb_time_steps * sizeof(double) + sizeof(int);
-        fprintf(stdout, "variance memory usage: %d bytes\n", temp_mem);
+        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Variance memory usage:      %ld bytes\n", temp_mem);
         memory += temp_mem;
     }
-    if (data->options->variance_op != 0 && data->options->mean_op != 0)
+    if (options->variance_op != 0 && options->mean_op != 0)
     {
-        temp_mem = data->vect_size * data->options->nb_time_steps * sizeof(double) + sizeof(int);
-        fprintf(stdout, "Variance memory usage: %d bytes\n", temp_mem);
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Variance memory usage:      %ld bytes\n", temp_mem);
         memory += temp_mem;
     }
-    if (data->options->min_and_max_op != 0)
+    if (options->min_and_max_op != 0)
     {
-        temp_mem = 2 * data->vect_size * data->options->nb_time_steps * sizeof(double) + sizeof(int);
-        fprintf(stdout, "Min and max memory usage: %d bytes\n", temp_mem);
+        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Min and max memory usage:   %ld bytes\n", temp_mem);
         memory += temp_mem;
     }
-    if (data->options->threshold_op != 0)
+    if (options->threshold_op != 0)
     {
-        temp_mem = data->vect_size * data->options->nb_time_steps * sizeof(int);
-        fprintf(stdout, "Threshold exceedance memory usage: %d bytes\n", temp_mem);
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(int);
+        fprintf(stdout, "Threshold memory usage:          %ld bytes\n", temp_mem);
         memory += temp_mem;
     }
-    if (data->options->sobol_op != 0)
+    if (options->sobol_op != 0)
     {
-        temp_mem = 0;
-        count_mem_cond_mean(&(data->cond_means[0]), &temp_mem, &i, data);
-        fprintf(stdout, "Partial means memory usage: %d bytes\n", temp_mem);
-        fprintf(stdout, "Number of partial means: %d\n", i);
-        memory += temp_mem;
+        // TODO
+//        temp_mem = 0;
+//        count_mem_cond_mean(&(data->cond_means[0]), &temp_mem, &i, data);
+//        fprintf(stdout, "Partial means memory usage: %d bytes\n", temp_mem);
+//        fprintf(stdout, "Number of partial means: %d\n", i);
+//        memory += temp_mem;
     }
-    fprintf(stdout, "Total memory usage: %d bytes\n", memory);
+//    fprintf(stdout, "Total memory usage: %d bytes\n", memory);
+    return memory;
 }
 
 static void malloc_data (stats_data_t *data)

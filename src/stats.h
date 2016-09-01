@@ -420,7 +420,7 @@ void print_options (stats_options_t *options);
 
 void free_options (stats_options_t *options);
 
-void mem_conso (stats_data_t *data);
+long int mem_conso (stats_options_t *options);
 
 void init_data (stats_data_t    *data,
                 stats_options_t *options,
@@ -435,11 +435,11 @@ void compute_stats (stats_data_t  *data,
                     const int      nb_vect,
                     double       **in_vect_tab);
 
-void write_stats (stats_data_t    **data,
-                  stats_options_t  *options,
-                  comm_data_t      *comm_data,
-                  int              *local_vect_sizes,
-                  char             *field);
+void write_stats(stats_data_t    **data,
+                 stats_options_t  *options,
+                 comm_data_t      *comm_data,
+                 int              *local_vect_sizes,
+                 char             *field);
 
 void finalize_stats (stats_data_t *data);
 
