@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
@@ -15,6 +16,13 @@
 #ifndef MAX_FIELD_NAME
 #define MAX_FIELD_NAME 128
 #endif
+
+static volatile int end_signal = 0;
+
+void sig_handler(int signo) {
+    if (signo == SIGUSR1 || signo == SIGINT || signo == SIGUSR2)
+        end_signal = 1;
+}
 
 struct field_s /**< Structure for a linked list of output fields */
 {
@@ -321,7 +329,6 @@ int main (int argc, char **argv)
     int                 first_init = 1;
     int                 first_connect = 1;
     int                *client_vect_sizes, *local_vect_sizes;
-    int                 global_vect_size;
     int                 nb_simu = 1;
     pull_data_t         pull_data;
     int                 nb_bufferized_messages = 50;
@@ -343,6 +350,13 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
     start_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
+
+    if (signal(SIGINT, sig_handler) == SIG_ERR)
+            printf("\ncan't catch SIGINT\n");
+    if (signal(SIGUSR1, sig_handler) == SIG_ERR)
+            printf("\ncan't catch SIGINT\n");
+    if (signal(SIGUSR2, sig_handler) == SIG_ERR)
+            printf("\ncan't catch SIGINT\n");
 
     stats_get_options (argc, argv, &stats_options);
     print_options (&stats_options);
@@ -396,6 +410,7 @@ int main (int argc, char **argv)
     sinit_tab[1] = MPI_MAX_PROCESSOR_NAME;
     while (1)
     {
+
 #ifdef BUILD_WITH_PROBES
         start_wait_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
@@ -404,7 +419,7 @@ int main (int argc, char **argv)
             { init_responder, 0, ZMQ_POLLIN, 0 },
             { data_puller, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 3, -1);
+        zmq_poll (items, 3, 100);
 #ifdef BUILD_WITH_PROBES
         end_wait_time = stats_get_time();
         total_wait_time += end_wait_time - start_wait_time;
@@ -555,6 +570,12 @@ int main (int argc, char **argv)
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
             printf("iteration %d / %d\n", iteration, nb_iterations*nb_fields);
+        }
+
+        if (end_signal != 0)
+        {
+            fprintf (stderr, "INTERUPTED\n");
+            break;
         }
 
         if (nb_fields > 0)
