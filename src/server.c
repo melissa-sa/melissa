@@ -315,7 +315,7 @@ int main (int argc, char **argv)
     int                 buff_size, i, ret, client_rank;
     char               *buffer, *buf_ptr;
     double             *buf_tab_ptr[1];
-    int                 iteration, nb_iterations = 0;
+    int                 iteration = 0, nb_iterations = 0;
     int                 port_no;
     char                port_name[128] = {0};
     char               *node_names;
@@ -354,9 +354,9 @@ int main (int argc, char **argv)
     if (signal(SIGINT, sig_handler) == SIG_ERR)
             printf("\ncan't catch SIGINT\n");
     if (signal(SIGUSR1, sig_handler) == SIG_ERR)
-            printf("\ncan't catch SIGINT\n");
+            printf("\ncan't catch SIGUSR1\n");
     if (signal(SIGUSR2, sig_handler) == SIG_ERR)
-            printf("\ncan't catch SIGINT\n");
+            printf("\ncan't catch SIGUSR2\n");
 
     stats_get_options (argc, argv, &stats_options);
     print_options (&stats_options);
@@ -405,7 +405,6 @@ int main (int argc, char **argv)
     memcpy (node_names, node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
 
-    iteration = 0;
     sinit_tab[0] = comm_data.comm_size;
     sinit_tab[1] = MPI_MAX_PROCESSOR_NAME;
     while (1)
@@ -454,6 +453,9 @@ int main (int argc, char **argv)
             comm_data.client_comm_size = rinit_tab[0];
             client_vect_sizes = malloc (comm_data.client_comm_size * sizeof(int));
             first_init = 0;
+#ifdef BUILD_WITH_PROBES
+                fprintf (stdout, "Client MPI communicator size = %d\n", comm_data.client_comm_size);
+#endif // BUILD_WITH_PROBES
         }
 
         if (items[1].revents & ZMQ_POLLIN)
