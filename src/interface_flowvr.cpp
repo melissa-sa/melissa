@@ -113,10 +113,10 @@ int main(int argc, char** argv)
         memcpy(in_vect, vect.data.readAccess(), stats_data.vect_size * sizeof(double));
 
         // TODO find an other way to end the loop
-        if(time_step > stats_options.nb_time_steps)
-        {
-            break;
-        }
+//        if(time_step > stats_options.nb_time_steps)
+//        {
+//            break;
+//        }
 
         printf("t = %d, client rank = %d\n", time_step, client_rank);
         printf(" parameters");
@@ -125,12 +125,12 @@ int main(int argc, char** argv)
         printf("\n");
 
         // Compute stats
-        compute_stats (&stats_data, time_step-1, 1, in_vect);
+        compute_stats (&stats_data, time_step-1, 1, &in_vect);
         iteration++;
-//        if (iteration >= nb_iterations)
-//        {
-//            break;
-//        }
+        if (iteration >= nb_iterations)
+        {
+            break;
+        }
     }
 
     finalize_stats (&stats_data);

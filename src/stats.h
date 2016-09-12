@@ -189,7 +189,7 @@ struct sobol_martinez_s
 {
     covariance_t  first_order_covariance; /**< covariance needed by Martinez formula */
     covariance_t  total_order_covariance; /**< covariance needed by Martinez formula */
-    variance_t    variance_k;               /**< variance needed by Martinez formula   */
+    variance_t    variance_k;             /**< variance needed by Martinez formula   */
     double       *first_order_values;     /**< values of the sobol indices           */
     double       *total_order_values;     /**< values of the sobol indices           */
 };
