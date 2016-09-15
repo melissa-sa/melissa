@@ -308,7 +308,6 @@ int main (int argc, char **argv)
     stats_options_t     stats_options;
     stats_data_t       *data_ptr;
     field_ptr           field = NULL;
-    char                field_name[MAX_FIELD_NAME];
     comm_data_t         comm_data;
     int                 time_step;
     int                *parameters;
@@ -543,7 +542,7 @@ int main (int argc, char **argv)
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 if (data_ptr == NULL)
                 {
-                    add_field(&field, field_name, comm_data.client_comm_size);
+                    add_field(&field, field_name_ptr, comm_data.client_comm_size);
                     data_ptr = get_data_ptr (field, field_name_ptr);
                     nb_fields += 1;
                 }
@@ -609,6 +608,8 @@ int main (int argc, char **argv)
     double temp;
     MPI_Reduce (&total_comm_time, &temp, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     total_comm_time = temp / comm_data.comm_size;
+    MPI_Reduce (&total_bytes_recv, &temp, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_bytes_recv = temp;
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
