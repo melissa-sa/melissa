@@ -257,11 +257,16 @@ static inline void finalize_field_data (field_ptr        field,
 #ifdef BUILD_WITH_PROBES
         start_write_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
-        write_stats (&(field->stats_data),
-                     options,
-                     comm_data,
-                     local_vect_sizes,
-                     field->name);
+//        write_stats (&(field->stats_data),
+//                     options,
+//                     comm_data,
+//                     local_vect_sizes,
+//                     field->name);
+        write_stats_ensight (&(field->stats_data),
+                             options,
+                             comm_data,
+                             local_vect_sizes,
+                             field->name);
 #ifdef BUILD_WITH_PROBES
         end_write_time = stats_get_time();
         total_write_time += end_write_time - start_write_time;

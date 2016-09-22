@@ -441,6 +441,12 @@ void write_stats(stats_data_t    **data,
                  int              *local_vect_sizes,
                  char             *field);
 
+void write_stats_ensight(stats_data_t    **data,
+                         stats_options_t  *options,
+                         comm_data_t      *comm_data,
+                         int              *local_vect_sizes,
+                         char             *field);
+
 void finalize_stats (stats_data_t *data);
 
 #endif // STATS_H
