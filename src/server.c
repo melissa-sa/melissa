@@ -560,12 +560,6 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             total_bytes_recv += buff_size;
             start_computation_time = stats_get_time();
-#else // BUILD_WITH_PROBES
-            printf("t = %d, server rank = %d, client rank = %d \n", time_step, comm_data.rank, client_rank);
-            printf(" parameters");
-            for (i=0; i<stats_options.nb_parameters; i++)
-                printf(" %d", parameters[i]);
-            printf(", rank = %d, field: %s\n", comm_data.rank, field_name);
 #endif // BUILD_WITH_PROBES
 
             buf_tab_ptr[0] = (double*)buf_ptr;
@@ -575,7 +569,7 @@ int main (int argc, char **argv)
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
-            printf("iteration %d / %d\n", iteration, nb_iterations*nb_fields);
+            printf("iteration %d / %d - field %s - process %d\n", iteration, nb_iterations, field_name_ptr, comm_data.rank);
         }
 
         if (end_signal != 0)

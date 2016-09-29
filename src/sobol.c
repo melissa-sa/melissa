@@ -71,7 +71,7 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
                                double       **in_vect_tab,
                                int            vect_size)
 {
-    int i;
+    int i, j;
 
     increment_variance (in_vect_tab[0], &(sobol_array->variance_a), vect_size);
     increment_variance (in_vect_tab[1], &(sobol_array->variance_b), vect_size);
@@ -80,19 +80,19 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
         increment_variance (in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].variance_k), vect_size);
         increment_covariance (in_vect_tab[1], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].first_order_covariance), vect_size);
         increment_covariance (in_vect_tab[0], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].total_order_covariance), vect_size);
+
+#pragma omp parallel for
+        for (j=0; j<vect_size; j++)
+            sobol_array->sobol_martinez[i].first_order_values[j] = sobol_array->sobol_martinez[i].first_order_covariance.covariance[j]
+                    / ( sqrt(sobol_array->variance_b.variance[j])
+                        * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
+
+#pragma omp parallel for
+        for (j=0; j<vect_size; j++)
+            sobol_array->sobol_martinez[i].total_order_values[j] = 1 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[j]
+                    / ( sqrt(sobol_array->variance_a.variance[j])
+                        * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
     }
-
-#pragma omp parallel for
-    for (i=0; i<vect_size; i++)
-        sobol_array->sobol_martinez[i].first_order_values[i] = sobol_array->sobol_martinez[i].first_order_covariance.covariance[i]
-                                                             / ( sqrt(sobol_array->variance_b.variance[i])
-                                                               * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[i]) );
-
-#pragma omp parallel for
-    for (i=0; i<vect_size; i++)
-        sobol_array->sobol_martinez[i].total_order_values[i] = 1 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[i]
-                                                             / ( sqrt(sobol_array->variance_a.variance[i])
-                                                               * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[i]) );
 }
 
 /**
