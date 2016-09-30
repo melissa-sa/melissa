@@ -332,6 +332,7 @@ int main (int argc, char **argv)
     int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
+    int                 get_next_message = 0;
     int                *client_vect_sizes, *local_vect_sizes;
     int                 nb_simu = 1;
     pull_data_t         pull_data;
@@ -419,10 +420,10 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
         zmq_pollitem_t items [] = {
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
-            { init_responder, 0, ZMQ_POLLIN, 0 },
+//            { init_responder, 0, ZMQ_POLLIN, 0 },
             { data_puller, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 3, 100);
+        zmq_poll (items, 2, -1);
 #ifdef BUILD_WITH_PROBES
         end_wait_time = stats_get_time();
         total_wait_time += end_wait_time - start_wait_time;
@@ -438,6 +439,7 @@ int main (int argc, char **argv)
                 // new simulation wants to connect
                 zmq_recv (connexion_responder, rinit_tab, 2 * sizeof(int), 0);
                 zmq_send (connexion_responder, sinit_tab, 2 * sizeof(int), 0);
+                get_next_message = 1;
                 if (first_init == 2)
                 {
                     first_init = 1;
@@ -462,25 +464,23 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
         }
 
-        if (items[1].revents & ZMQ_POLLIN)
+        if (get_next_message == 1)
         {
-            if (comm_data.rank == 0)
+#ifdef BUILD_WITH_PROBES
+            start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
+            // new simulation wants to connect, step two
+            zmq_recv (init_responder, client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
+            zmq_send (init_responder, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+            get_next_message = 0;
+            if (first_connect == 2)
             {
-#ifdef BUILD_WITH_PROBES
-                start_comm_time = stats_get_time();
-#endif // BUILD_WITH_PROBES
-                // new simulation wants to connect, step two
-                zmq_recv (init_responder, client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
-                zmq_send (init_responder, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-                if (first_connect == 2)
-                {
-                    first_connect = 1;
-                }
-#ifdef BUILD_WITH_PROBES
-                end_comm_time = stats_get_time();
-                total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
+                first_connect = 1;
             }
+#ifdef BUILD_WITH_PROBES
+            end_comm_time = stats_get_time();
+            total_comm_time += end_comm_time - start_comm_time;
+#endif // BUILD_WITH_PROBES
         }
         if (first_connect == 1 && first_init == 0)
         {
@@ -517,7 +517,7 @@ int main (int argc, char **argv)
             first_connect = 0;
         }
 
-        if (items[2].revents & ZMQ_POLLIN)
+        if (items[1].revents & ZMQ_POLLIN)
         {
 #ifdef BUILD_WITH_PROBES
             start_comm_time = stats_get_time();
