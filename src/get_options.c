@@ -19,24 +19,20 @@ static inline void stats_usage ()
 {
     fprintf(stderr,
             " Usage:\n"
-            " -p <int[]> : size array of the study parameter sets (mandatory)\n"
-            "              example: -p 2:5:4\n"
-            "              study with 3 variables parameters:\n"
-            "               - the first can take two values,\n"
-            "               - the second can take five values,\n"
-            "               - the third can take four values.\n"
-            " -t <int>   : number of time steps of the study\n"
-            " -o <op>    : operations separated by semicolons\n"
-            "              possibles values :\n"
-            "              mean\n"
-            "              variance\n"
-            "              min\n"
-            "              max\n"
-            "              threshold_exceedance\n"
-            "              sobol_indices\n"
-            "              (default: mean:variance)\n"
-            " -e <double>: threshold for threshold exceedance computaion\n"
-//            " -s <int>   : maximum order for sobol indices\n"
+            " -p <int>:<int> : number of parameters for the parametric study\n"
+            "                  and number of simulation, or simulation groups for Sobol indices\n"
+            " -t <int>       : number of time steps of the study\n"
+            " -o <op>        : operations separated by semicolons\n"
+            "                  possibles values :\n"
+            "                  mean\n"
+            "                  variance\n"
+            "                  min\n"
+            "                  max\n"
+            "                  threshold_exceedance\n"
+            "                  sobol_indices\n"
+            "                  (default: mean:variance)\n"
+            " -e <double>    : threshold for threshold exceedance computaion\n"
+//            " -s <int>     : maximum order for sobol indices\n"
             "\n"
             );
 }
@@ -57,7 +53,7 @@ static inline void init_options (stats_options_t *options)
     // everything is set to 0
     options->nb_time_steps   = 0;
     options->nb_parameters   = 0;
-    options->size_parameters = NULL;
+    options->nb_groups       = 0;
     options->threshold       = 0.0;
     options->mean_op         = 0;
     options->variance_op     = 0;
@@ -67,29 +63,9 @@ static inline void init_options (stats_options_t *options)
     options->sobol_order     = 0;
 }
 
-/**
- *******************************************************************************
- *
- * @ingroup stats_options
- *
- * This function frees the memory in the options structure
- *
- *******************************************************************************
- *
- * @param[in] *options
- * pointer to the structure containing options parsed from command line
- *
- *******************************************************************************/
-
-void free_options (stats_options_t *options)
+static inline void get_parameters (char            *name,
+                                   stats_options_t *options)
 {
-    free (options->size_parameters);
-}
-
-static inline void get_size_parameters (char            *name,
-                                        stats_options_t *options)
-{
-    char       *name_ptr;
     const char  s[2] = ":";
     char       *temp_char;
     int         i;
@@ -100,31 +76,11 @@ static inline void get_size_parameters (char            *name,
         exit (1);
     }
 
-    options->nb_parameters = 1;
-
-    name_ptr = name;
-    for (i=0; i<strlen(name)-1; i++, name_ptr++)
-    {
-        if (*name_ptr == ':')
-        {
-            options->nb_parameters += 1;
-        }
-    }
-
-    options->size_parameters = malloc (options->nb_parameters * sizeof(int));
-
     /* get the first token */
     temp_char = strtok (name, s);
-    i = 0;
-
-    /* walk through other tokens */
-    while( temp_char != NULL )
-    {
-       options->size_parameters[i] = atoi (temp_char);
-       i += 1;
-
-       temp_char = strtok (NULL, s);
-    }
+    options->nb_parameters = atoi (temp_char);
+    temp_char = strtok (NULL, s);
+    options->nb_groups = atoi (temp_char);
 }
 
 static inline void get_operations (char            *name,
@@ -205,10 +161,8 @@ void print_options (stats_options_t *options)
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "nb_time_step = %d\n", options->nb_time_steps);
     fprintf(stdout, "nb_parameters = %d\n", options->nb_parameters);
-    for (i=0; i<options->nb_parameters; i++)
-    {
-        fprintf(stdout, "size_parameters[%d] = %d\n", i, options->size_parameters[i]);
-    }
+    if (options->sobol_op != 0)
+        fprintf(stdout, "nb_groups = %d\n", options->nb_groups);
     fprintf(stdout, "operations:\n");
     if (options->mean_op != 0)
         fprintf(stdout, "    mean\n");
@@ -264,7 +218,7 @@ void stats_get_options (int argc, char  **argv,
 
         switch (opt) {
         case 'p':
-            get_size_parameters (optarg, options);
+            get_parameters (optarg, options);
             break;
         case 't':
             options->nb_time_steps = atoi (optarg);
@@ -289,6 +243,17 @@ void stats_get_options (int argc, char  **argv,
         }
 
     } while (opt != -1);
+
+
+    if (options->sobol_op != 0)
+    {
+        options->nb_simu = options->nb_groups * (options->nb_parameters + 2);
+    }
+    else
+    {
+        options->nb_simu = options->nb_groups;
+    }
+
 
     return;
 }

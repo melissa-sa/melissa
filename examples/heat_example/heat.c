@@ -83,10 +83,12 @@ int main( int argc, char **argv )
 
   int    nx,ny,n,nmax,me,np,i1,in,nb_op,next,previous;
   double lx,ly,dt,dx,dy,d,t,epsilon,t1,t2,temp;
-  double *u;
-  double *f;
+  double *u = NULL;
+  double *f = NULL;
   double a[3];
-  int *parameters;
+  int sobol_rank = 0;
+  int sobol_group = 0;
+  int sobol = 0;
   MPI_Comm comm;
   char *field_name = "heat";
 
@@ -96,8 +98,14 @@ int main( int argc, char **argv )
   comm = MPI_COMM_WORLD;
 
   temp = strtod(argv[1],NULL);
-  parameters = malloc(sizeof(int));
-  parameters[0] = temp;
+  sobol_group = temp;
+  if (argc > 2)
+  {
+    temp = strtod(argv[2],NULL);
+    sobol_rank = temp;
+    sobol = 1;
+  }
+
 
   t1=MPI_Wtime();
 
@@ -124,8 +132,14 @@ int main( int argc, char **argv )
   init(&u[0],&i1,&in,&dx,&dy,&nx,&lx,&ly,&temp);
   filling_A (&d,&dx,&dy,&dt,&nx,&ny,&a[0]); /* fill A */
 
-  int nb_parameters = 1;
-  connect_to_stats (&nb_parameters, &nb_op, &np, &me, &comm);
+  if (sobol == 1)
+  {
+      connect_to_stats_sobol (&nb_op, &np, &me, &sobol_rank, &sobol_group, &comm);
+  }
+  else
+  {
+      connect_to_stats (&nb_op, &np, &me, &comm);
+  }
 
   for(n=1;n<=nmax;n++)
   {
@@ -133,12 +147,26 @@ int main( int argc, char **argv )
     filling_F (&nx,&ny,&u[0],&d,&dx,&dy,&dt,&t,&f[0],&i1,&in,&lx,&ly);
     conjgrad (&a[0],&f[0],&u[0],&nx,&ny,&epsilon,&i1,&in,&np,&me,&next,&previous);
 
-    send_to_stats (&n, parameters, &nb_parameters, field_name, u, &me);
+    if (sobol == 1)
+    {
+        send_to_stats_sobol (&n, field_name, u, &me, &sobol_rank, &sobol_group);
+    }
+    else
+    {
+        send_to_stats (&n, field_name, u, &me);
+    }
   }
 
   finalize (&dx,&dy,&nx,&ny,&i1,&in,&u[0],&f[0],&me);
 
-  disconnect_from_stats ();
+  if (sobol == 1)
+  {
+      disconnect_from_stats_sobol (&sobol_rank);
+  }
+  else
+  {
+      disconnect_from_stats ();
+  }
 
   t2=MPI_Wtime();
   fprintf(stdout, "Calcul time: %g sec\n", t2-t1);

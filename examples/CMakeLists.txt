@@ -6,15 +6,15 @@ set(EXAMPLES_LIBS ${EXTRA_LIBS}
 add_executable(test_base test_base.c)
 target_link_libraries(test_base ${EXAMPLES_LIBS})
 
-add_executable(test_sobol test_sobol.c)
-target_link_libraries(test_sobol ${EXAMPLES_LIBS})
+#add_executable(test_sobol test_sobol.c)
+#target_link_libraries(test_sobol ${EXAMPLES_LIBS})
 
 add_executable(test_getoptions test_getoptions.c)
 target_link_libraries(test_getoptions ${EXAMPLES_LIBS})
 
-if(BUILD_WITH_FLOWVR)
-  add_subdirectory(test_flowvr)
-endif(BUILD_WITH_FLOWVR)
+#if(BUILD_WITH_FLOWVR)
+#  add_subdirectory(test_flowvr)
+#endif(BUILD_WITH_FLOWVR)
 
 add_subdirectory(test_client)
 

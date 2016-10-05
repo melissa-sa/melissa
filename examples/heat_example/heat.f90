@@ -13,7 +13,6 @@ program heat
   real*8,dimension(:),pointer::U => null(), F => null()
   real*8,dimension(3)::A
   character(len=32)::arg
-  integer,dimension(:),allocatable :: parameters;
   integer :: comm
   character(len=6) name
 
@@ -26,8 +25,8 @@ program heat
 
   call getarg(1, arg)
   read( arg, * ) temp ! initial temperature
-  allocate(parameters(1))
-  parameters(1) = temp
+!  allocate(parameters(1))
+!  parameters(1) = temp
   
   t1=mpi_wtime()
   
@@ -55,14 +54,14 @@ program heat
 
   i = 1
   n = nx*ny
-  call connect_to_stats (i, nb_op, np, me, MPI_COMM_WORLD)
+  call connect_to_stats (nb_op, np, me, comm)
 
   do n=1,nmax
     t = t + dt
     call filling_F(nx,ny,U,d,dx,dy,dt,t,F,i1,in,lx,ly)
     call conjgrad(A,F,U,nx,ny,epsilon,i1,in,np,me,next,previous)
 
-    call send_to_stats (n, parameters, i, name, u, me)
+    call send_to_stats (n, name, u, me)
   end do
 
   call finalize(dx,dy,nx,ny,i1,in,u,f,me)
@@ -73,7 +72,7 @@ program heat
   print*,'Calcul time:', t2-t1, 'sec'
   print*,'Final time step:', t
   
-  deallocate(U, F, parameters)
+  deallocate(U, F)
 
   call mpi_finalize(statinfo)
 

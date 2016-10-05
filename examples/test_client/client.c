@@ -32,49 +32,26 @@ static inline void gen_data (double       *out_vect,
     }
 }
 
-static inline int get_nb_param (char *name)
-{
-    char *name_ptr;
-    int   nb_parameters = 1;
-
-    name_ptr = name;
-    while (*name_ptr != '\0')
-    {
-        if (*name_ptr == ':')
-        {
-            nb_parameters += 1;
-        }
-        name_ptr++;
-    }
-    return nb_parameters;
-}
-
 static inline void get_size_param (char *name,
-                                   int  *parameters)
+                                   int  *nb_parameters,
+                                   int  *nb_simu)
 {
     const char  s[2] = ":";
     char       *temp_char;
-    int         i;
 
-    /* get the first token */
     temp_char = strtok (name, s);
-    i = 0;
-
-    /* walk through other tokens */
-    while( temp_char != NULL )
-    {
-       parameters[i] = atoi (temp_char);
-       i += 1;
-       temp_char = strtok (NULL, s);
-    }
+    *nb_parameters = atoi (temp_char);
+    temp_char = strtok (NULL, s);
+    *nb_simu = atoi (temp_char);
 }
 
 int main(int argc, char **argv)
 {
     int     time_step = 0, nb_time_steps;
-    int    *parameters = NULL;
+//    int    *parameters = NULL;
     double *out_vect;
     int     nb_parameters;
+    int     nb_simu;
     int     vect_size, my_vect_size;
     int     comm_size, rank;
 
@@ -94,12 +71,10 @@ int main(int argc, char **argv)
        error(0);
     }
 
-    nb_parameters  = get_nb_param (argv[1]);
     vect_size      = atoi (argv[2]);
     nb_time_steps  = atoi (argv[3]);
 
-    parameters = malloc (nb_parameters * sizeof(int));
-    get_size_param (argv[1], parameters);
+    get_size_param (argv[1], &nb_parameters, &nb_simu);
 
     my_vect_size = vect_size / comm_size;
     if (rank < vect_size % comm_size)
@@ -108,16 +83,12 @@ int main(int argc, char **argv)
     out_vect = calloc (my_vect_size, sizeof(double));
 
 #ifdef BUILD_WITH_MPI
-    connect_to_stats (&nb_parameters,
-                      &my_vect_size,
+    connect_to_stats (&my_vect_size,
                       &comm_size,
                       &rank,
                       &comm);
 #else // BUILD_WITH_MPI
-    connect_to_stats_no_mpi (&nb_parameters,
-                             &my_vect_size,
-                             &comm_size,
-                             &rank);
+    connect_to_stats_no_mpi (&my_vect_size);
 #endif // BUILD_WITH_MPI
 
     while (time_step < nb_time_steps)
@@ -126,8 +97,6 @@ int main(int argc, char **argv)
         sleep (1);
 
         send_to_stats (&time_step,
-                       parameters,
-                       &nb_parameters,
                        "heat",
                        out_vect,
                        &rank);
@@ -135,7 +104,6 @@ int main(int argc, char **argv)
 
     disconnect_from_stats ();
 
-    free(parameters);
     free(out_vect);
 
 #ifdef BUILD_WITH_MPI

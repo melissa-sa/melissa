@@ -25,7 +25,6 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
     stats_get_options(argc, argv, &options);
     print_options (&options);
-    free_options (&options);
 
 #ifdef BUILD_WITH_MPI
     MPI_Finalize ();

@@ -229,7 +229,8 @@ struct stats_options_s
 {
     int                  nb_time_steps;    /**< numberb of time steps of the study                               */
     int                  nb_parameters;    /**< nb of variables parameters of the study                          */
-    int                 *size_parameters;  /**< nb of values that each variable parameter can take               */
+    int                  nb_groups;        /**< nb of simulation sets of the study (Sobol only)                  */
+    int                  nb_simu;          /**< nb of simulation of the study                                    */
     int                  mean_op;          /**< 1 if the user needs to calculate the mean, 0 otherwise.          */
     int                  variance_op;      /**< 1 if the user needs to calculate the variance, 0 otherwise.      */
     int                  min_and_max_op;   /**< 1 if the user needs to calculate min and max, 0 otherwise.       */
@@ -370,37 +371,37 @@ void free_min_max (min_max_t *min_max);
 
 void free_covariance (covariance_t *covariance);
 
-void init_conditional_means (conditional_mean_t *conditional_means,
-                             stats_data_t       *data);
+//void init_conditional_means (conditional_mean_t *conditional_means,
+//                             stats_data_t       *data);
 
-void init_next_conditional_mean (conditional_mean_t *conditional_means,
-                                 const int           depth,
-                                 const int           new_fixed_parameter[],
-                                 const int           previous_indices[],
-                                 stats_data_t       *data);
+//void init_next_conditional_mean (conditional_mean_t *conditional_means,
+//                                 const int           depth,
+//                                 const int           new_fixed_parameter[],
+//                                 const int           previous_indices[],
+//                                 stats_data_t       *data);
 
-void increment_conditional_mean (conditional_mean_t *conditional_means,
-                                 double              in_vect[],
-                                 const int           parameters[],
-                                 stats_data_t       *data);
+//void increment_conditional_mean (conditional_mean_t *conditional_means,
+//                                 double              in_vect[],
+//                                 const int           parameters[],
+//                                 stats_data_t       *data);
 
-int get_conditional_mean (conditional_mean_t *conditional_means,
-                          double             *out_mean,
-                          int                *out_increment,
-                          const int           parameters[],
-                          stats_data_t       *data);
+//int get_conditional_mean (conditional_mean_t *conditional_means,
+//                          double             *out_mean,
+//                          int                *out_increment,
+//                          const int           parameters[],
+//                          stats_data_t       *data);
 
-void free_conditional_mean (conditional_mean_t *conditional_means);
+//void free_conditional_mean (conditional_mean_t *conditional_means);
 
-void init_conditional_variance (conditional_variance_t *conditional_variance,
-                                const int               indices_to_fix[],
-                                stats_data_t           *data);
+//void init_conditional_variance (conditional_variance_t *conditional_variance,
+//                                const int               indices_to_fix[],
+//                                stats_data_t           *data);
 
-int compute_conditional_variance (conditional_variance_t *conditional_variance,
-                                  conditional_mean_t     *conditional_means,
-                                  stats_data_t           *data);
+//int compute_conditional_variance (conditional_variance_t *conditional_variance,
+//                                  conditional_mean_t     *conditional_means,
+//                                  stats_data_t           *data);
 
-void free_conditional_variance (conditional_variance_t *conditional_variance);
+//void free_conditional_variance (conditional_variance_t *conditional_variance);
 
 void init_sobol_martinez (sobol_martinez_t *sobol_indices,
                           int               vect_size);
@@ -418,7 +419,7 @@ void stats_get_options (int               argc,
 
 void print_options (stats_options_t *options);
 
-void free_options (stats_options_t *options);
+//void free_options (stats_options_t *options);
 
 long int mem_conso (stats_options_t *options);
 

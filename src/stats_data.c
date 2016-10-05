@@ -145,7 +145,7 @@ static void malloc_data (stats_data_t *data)
 
     if (data->options->sobol_op == 1)
     {
-        data->sobol_indices = malloc (data->options->nb_time_steps * sizeof(sobol_martinez_t));
+        data->sobol_indices = malloc (data->options->nb_time_steps * sizeof(sobol_array_t));
         for (i=0; i<data->options->nb_time_steps; i++)
         {
             data->sobol_indices[i].sobol_martinez = malloc (data->options->nb_parameters * sizeof(sobol_martinez_t));
@@ -153,7 +153,7 @@ static void malloc_data (stats_data_t *data)
             init_variance (&data->sobol_indices[i].variance_a, data->vect_size);
             for (j=0; j<data->options->nb_parameters; j++)
             {
-                init_sobol_martinez (data->sobol_indices[i].sobol_martinez, data->vect_size);
+                init_sobol_martinez (&data->sobol_indices[i].sobol_martinez[j], data->vect_size);
             }
         }
     }
@@ -233,17 +233,6 @@ void check_data (stats_data_t *data)
     {
         fprintf (stderr, "BAD PARAMETER: study must have at least 1 variable parameter\n");
         ret = 1;
-    }
-    else
-    {
-        for (i=0; i<data->options->nb_parameters; i++)
-        {
-            if (data->options->size_parameters[i] < 1)
-            {
-                fprintf (stderr, "BAD PARAMETER: parameter size must be at least 1\n");
-                ret = ERROR_BAD_PARAMETER;
-            }
-        }
     }
 
     if (ret == ERROR_BAD_PARAMETER)

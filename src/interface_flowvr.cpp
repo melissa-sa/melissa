@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 {
     stats_data_t     stats_data;
     stats_options_t  stats_options;
-    int              iteration, nb_iterations = 1;
+    int              iteration, nb_iterations;
     int              time_step;
     double          *in_vect;
     int             *parameters;
@@ -65,11 +65,7 @@ int main(int argc, char** argv)
     in_vect    = (double*)malloc (stats_data.vect_size * sizeof(double));
     parameters = (int*)   malloc (stats_options.nb_parameters * sizeof(int));
 
-    for (i=0; i< stats_options.nb_parameters; i++)
-    {
-        nb_iterations *= (stats_options.size_parameters[i]);
-    }
-    nb_iterations *= stats_options.nb_time_steps ;
+    nb_iterations = stats_options.nb_time_steps * stats_options.nb_simu ;
 
 //    StatsInputPort port_vector("in_vect",stats_data.nb_parameters);
 //    flowvr::InputPort port_vector("in_vect");

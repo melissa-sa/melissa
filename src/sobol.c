@@ -33,8 +33,6 @@
 void init_sobol_martinez (sobol_martinez_t *sobol_indices,
                           int               vect_size)
 {
-    int i;
-
     init_covariance (&(sobol_indices->first_order_covariance), vect_size);
     init_covariance (&(sobol_indices->total_order_covariance), vect_size);
     init_variance (&(sobol_indices->variance_k), vect_size);

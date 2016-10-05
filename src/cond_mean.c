@@ -58,7 +58,7 @@ void init_conditional_means (conditional_mean_t *conditional_means,
     conditional_means->indice_ptr[0] = 0;
     for (i=0; i<data->options->nb_parameters; i++)
     {
-        conditional_means->indice_ptr[i+1] = conditional_means->indice_ptr[i] + data->options->size_parameters[i];
+//        conditional_means->indice_ptr[i+1] = conditional_means->indice_ptr[i] + data->options->size_parameters[i];
     }
 
     conditional_means->next_conditional_means = malloc ((conditional_means->indice_ptr[data->options->nb_parameters]) * sizeof(conditional_mean_t));
@@ -148,7 +148,7 @@ void init_next_conditional_mean (conditional_mean_t *conditional_means,
     {
         if (conditional_means->indices[i] == -1)
         {
-            conditional_means->indice_ptr[j+1] = conditional_means->indice_ptr[j] + data->options->size_parameters[i];
+//            conditional_means->indice_ptr[j+1] = conditional_means->indice_ptr[j] + data->options->size_parameters[i];
             j += 1;
         }
     }
