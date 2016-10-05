@@ -742,7 +742,6 @@ int main (int argc, char **argv)
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
             fprintf(stderr, "                           goupe %d\n", group_id);
             memcpy(buff_tab_ptr[simu_id], buf_ptr, pull_data.buff_size * sizeof(double));
-            iteration++;
 
             for (i=1; i<stats_options.nb_parameters+2; i++)
             {
@@ -756,13 +755,13 @@ int main (int argc, char **argv)
                 fprintf(stderr, "                           data from simulation %d group %d (%d/%d)\n", simu_id, group_id, i, stats_options.nb_parameters+2);
                 buf_ptr += 3 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
                 memcpy(buff_tab_ptr[simu_id], buf_ptr, pull_data.buff_size * sizeof(double));
-                iteration++;
             }
             for (i=0; i<stats_options.nb_parameters+2; i++)
             {
                 zmq_recv (sobol_data_responder2[group_id*comm_data.client_comm_size + client_rank], buffer, sizeof(int), 0);
                 zmq_send (sobol_data_responder2[group_id*comm_data.client_comm_size + client_rank], &comm_data.rank, sizeof(int), 0);
                 fprintf(stderr, "                           release simulation %d group %d\n", buffer[0], group_id);
+                iteration++;
             }
             compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
             fprintf(stderr, "iteration %d / %d - field %s - process %d\n", iteration, nb_iterations, field_name_ptr, comm_data.rank);
@@ -788,15 +787,21 @@ int main (int argc, char **argv)
     {
         for (i=0; i<stats_options.nb_groups; i++)
         {
-            zmq_close (init_responder[i]);
-            zmq_close (init_responder2[i]);
+            if (comm_data.rank == 0)
+            {
+                zmq_close (init_responder[i]);
+                zmq_close (init_responder2[i]);
+            }
             zmq_close (sobol_data_responder[i]);
             zmq_close (sobol_data_responder2[i]);
         }
     }
     else
     {
-        zmq_close (init_responder[0]);
+        if (comm_data.rank == 0)
+        {
+            zmq_close (init_responder[0]);
+        }
     }
 
     zmq_close (data_puller);
@@ -804,9 +809,11 @@ int main (int argc, char **argv)
     zmq_ctx_term (context);
     if (stats_options.sobol_op == 1)
     {
-        printf ("Prout Prout \n");
-        free (init_responder);
-        free (init_responder2);
+        if (comm_data.rank == 0)
+        {
+            free (init_responder);
+            free (init_responder2);
+        }
         free (sobol_data_responder);
         free (sobol_data_responder2);
         for (i=0; i<stats_options.nb_parameters+2; i++)

@@ -19,6 +19,6 @@ if [ ! -d "./resu" ];then
 mkdir resu
 fi
 cd resu
-mpirun -n 1 ../../../src/server $command_line
+mpirun -n 2 ../../../src/server $command_line
 #valgrind --leak-check=full mpirun -n 2 ../../../src/server $command_line
 cd ..

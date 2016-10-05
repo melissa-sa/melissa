@@ -833,15 +833,6 @@ void send_to_stats_sobol (const int  *time_step,
     memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
     buff_ptr += MAX_FIELD_NAME * sizeof(char);
 
-    memcpy (buff_ptr, &send_vect[0], 2 * sizeof(double));
-    printf ("send vect   = %g (sobol rank %d)\n", send_vect[0], *sobol_rank);
-//    memcpy (&temp, buff_ptr, sizeof (double));
-//    printf ("send vect   = %g (sobol rank %d)\n", temp, *sobol_rank);
-//    printf ("total_nb_messages = %d (sobol rank %d)\n", zmq_data.total_nb_messages, *sobol_rank);
-
-//    printf ("send vect size %d (sobol rank %d)\n", zmq_data.send_counts[zmq_data.pull_rank[0]], *sobol_rank);
-//    printf ("send vect 2 = %g (sobol rank %d)\n", send_vect[zmq_data.send_counts[zmq_data.pull_rank[0]]-1], *sobol_rank);
-
 #ifdef BUILD_WITH_PROBES
     start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
@@ -852,7 +843,7 @@ void send_to_stats_sobol (const int  *time_step,
         if (*rank == zmq_data.push_rank[i])
         {
             memcpy (buff_ptr, &send_vect[zmq_data.sdispls[zmq_data.pull_rank[i]]], zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
-            if (*sobol_rank == 0 && *rank == zmq_data.push_rank[i])
+            if (*sobol_rank == 0)
             {
                 fprintf(stderr, "send from %d %d\n", *sobol_rank, *sobol_group);
                 zmq_send (zmq_data.sobol_init_requester[j], zmq_data.buffer, zmq_data.buff_size, 0);
@@ -860,7 +851,7 @@ void send_to_stats_sobol (const int  *time_step,
                 zmq_recv (zmq_data.sobol_init_requester[j], &k, sizeof(int), 0);
                 fprintf(stderr, "recv (%d) from %d %d\n", k, *sobol_rank, *sobol_group);
             }
-            if (*sobol_rank != 0 && *rank == zmq_data.push_rank[i])
+            if (*sobol_rank != 0)
             {
                 fprintf(stderr, "send data from %d %d\n", *sobol_rank, *sobol_group);
                 zmq_send (zmq_data.sobol_requester[j], zmq_data.buffer, zmq_data.buff_size, 0);
@@ -967,6 +958,7 @@ void disconnect_from_stats_sobol (int *sobol_rank)
     int i;
     zmq_close (zmq_data.connexion_requester);
     zmq_close (zmq_data.init_requester);
+    zmq_close (zmq_data.init_requester2);
     if (*sobol_rank == 0)
     {
         for (i=0; i<zmq_data.local_nb_messages; i++)
