@@ -192,8 +192,12 @@ void init_data (stats_data_t    *data,
     data->thresholds      = NULL;
     data->cond_means      = NULL;
     data->sobol_indices   = NULL;
+//    fprintf(stderr, "                            -- check data... -- \n");
     check_data (data);
+//    fprintf(stderr, "                            -- OK -- \n");
+//    fprintf(stderr, "                            -- alloc data... -- \n");
     malloc_data (data);
+//    fprintf(stderr, "                            -- OK -- \n");
 }
 
 /**
@@ -213,7 +217,7 @@ void init_data (stats_data_t    *data,
 
 void check_data (stats_data_t *data)
 {
-    int i, ret;
+    int ret = 0;
 
     // check errors
 
@@ -232,7 +236,7 @@ void check_data (stats_data_t *data)
     if (data->options->nb_parameters < 1)
     {
         fprintf (stderr, "BAD PARAMETER: study must have at least 1 variable parameter\n");
-        ret = 1;
+        ret = ERROR_BAD_PARAMETER;
     }
 
     if (ret == ERROR_BAD_PARAMETER)
@@ -252,23 +256,10 @@ void check_data (stats_data_t *data)
         data->options->variance_op = 1;
     }
 
-    if (data->options->sobol_op != 0 && data->options->variance_op == 0)
-    {
-        // variance needed in sobol index computation
-        data->options->variance_op = 1;
-    }
-
-    if (data->options->sobol_op != 0 && data->options->sobol_order > data->options->nb_parameters - 1)
-    {
-        data->options->sobol_order = data->options->nb_parameters - 1;
-        fprintf (stdout, "WARNING: max sobol order set to %d\n", data->options->sobol_order);
-    }
-
-    if (data->options->sobol_op != 0 && data->options->sobol_order < 1)
+    if (data->options->sobol_op != 0)
     {
         // default value
         data->options->sobol_order = 1;
-        fprintf (stdout, "WARNING: max sobol order set to 1\n");
     }
 
     // every parameter is now validated

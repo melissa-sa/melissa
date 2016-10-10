@@ -161,7 +161,7 @@ int main( int argc, char **argv )
 
   if (sobol == 1)
   {
-      disconnect_from_stats_sobol (&sobol_rank);
+      disconnect_from_stats_sobol ();
   }
   else
   {

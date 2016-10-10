@@ -44,6 +44,6 @@ void send_to_stats_sobol(const int  *time_step,
 
 void disconnect_from_stats();
 
-void disconnect_from_stats_sobol(int *sobol_rank);
+void disconnect_from_stats_sobol();
 
 #endif // STATS_API_H

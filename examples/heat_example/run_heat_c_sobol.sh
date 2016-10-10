@@ -9,7 +9,7 @@ while [ $t -le $tmax ]
 do
   while [ $g -lt $gmax ]
   do
-    mpirun -n 1 ./heatc ${t} ${g}&
+    mpirun -n 3 ./heatc ${t} ${g}&
     let "g+=1"
   done
   let "g=0"
@@ -22,3 +22,4 @@ cd resu
 mpirun -n 2 ../../../src/server $command_line
 #valgrind --leak-check=full mpirun -n 2 ../../../src/server $command_line
 cd ..
+exit 0
