@@ -11,6 +11,8 @@ set(ALL_SRCS stats_base.c
              stats_data.c
              compute_stats.c
              server.c
+             server_helper.c
+             server.h
              stats.h)
 
 set(ALL_API stats_api.c

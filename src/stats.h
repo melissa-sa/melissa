@@ -263,6 +263,7 @@ struct stats_data_s
     int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
     conditional_mean_t  *cond_means;    /**< array of conditional mean structures, size nb_time_steps  */
     sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
+    char                *computed;      /**< 1 if stats already computed, size nb_time_steps           */
 };
 
 typedef struct stats_data_s stats_data_t; /**< type corresponding to stats_data_s */

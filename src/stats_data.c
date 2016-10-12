@@ -157,6 +157,8 @@ static void malloc_data (stats_data_t *data)
             }
         }
     }
+
+    data->computed = calloc (data->options->nb_time_steps, sizeof(char));
 }
 
 /**
@@ -192,12 +194,8 @@ void init_data (stats_data_t    *data,
     data->thresholds      = NULL;
     data->cond_means      = NULL;
     data->sobol_indices   = NULL;
-//    fprintf(stderr, "                            -- check data... -- \n");
     check_data (data);
-//    fprintf(stderr, "                            -- OK -- \n");
-//    fprintf(stderr, "                            -- alloc data... -- \n");
     malloc_data (data);
-//    fprintf(stderr, "                            -- OK -- \n");
 }
 
 /**
@@ -332,6 +330,8 @@ void free_data (stats_data_t *data)
         }
         free (data->sobol_indices);
     }
+
+    free (data->computed);
 
     data->options = NULL;
 

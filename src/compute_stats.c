@@ -45,12 +45,16 @@ void compute_stats (stats_data_t  *data,
 {
     int     i, j;
     double *in_vect = in_vect_tab[0];
-
     if (data->is_valid != 1)
     {
         fprintf (stderr, "ERROR: data structure not valid (compute_stats)\n");
         exit (1);
     }
+
+//    if (data->computed[time_step] != 0);
+//    {
+//        return;
+//    }
 
     if (data->options->mean_op == 1 && data->options->variance_op == 0)
     {
@@ -84,6 +88,8 @@ void compute_stats (stats_data_t  *data,
                                       in_vect_tab,
                                       data->vect_size);
     }
+
+//    data->computed[time_step] = 1;
 }
 
 /**

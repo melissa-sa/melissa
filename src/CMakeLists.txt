@@ -3,6 +3,7 @@ add_library(stats ${ALL_SRCS})
 target_link_libraries(stats m)
 install(TARGETS stats DESTINATION bin)
 install(FILES stats.h DESTINATION include)
+install(FILES server.h DESTINATION include)
 
 if(BUILD_WITH_FLOWVR)
   add_executable(interface_flowvr interface_flowvr.cpp)
