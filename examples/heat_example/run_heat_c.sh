@@ -5,7 +5,7 @@ let "t=0"
 let "tmax=2"
 while [ $t -le $tmax ]
 do
-    mpirun -n 3 ./heatc ${t} &
+    mpirun -n 3 ./heatc ${t} 0 ${t}&
     let "t+=1"
 done
 if [ ! -d "./resu" ];then

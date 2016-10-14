@@ -54,6 +54,7 @@ int main(int argc, char **argv)
     int     nb_simu;
     int     vect_size, my_vect_size;
     int     comm_size, rank;
+    const int sobol_tab[2] = {0,0};
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -86,6 +87,8 @@ int main(int argc, char **argv)
     connect_to_stats (&my_vect_size,
                       &comm_size,
                       &rank,
+                      &sobol_tab[0],
+                      &sobol_tab[1],
                       &comm);
 #else // BUILD_WITH_MPI
     connect_to_stats_no_mpi (&my_vect_size);
@@ -99,7 +102,9 @@ int main(int argc, char **argv)
         send_to_stats (&time_step,
                        "heat",
                        out_vect,
-                       &rank);
+                       &rank,
+                       &sobol_tab[0],
+                       &sobol_tab[1] );
     }
 
     disconnect_from_stats ();

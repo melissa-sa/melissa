@@ -177,10 +177,9 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
 
     sinit_tab[0] = comm_data.comm_size;
-    sinit_tab[1] = MPI_MAX_PROCESSOR_NAME;
+    sinit_tab[1] = stats_options.sobol_op;
     while (1)
     {
-
 #ifdef BUILD_WITH_PROBES
         start_wait_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
@@ -189,7 +188,7 @@ int main (int argc, char **argv)
             { data_puller, 0, ZMQ_POLLIN, 0 },
             { sobol_ready_responder, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 3, 100);
+        zmq_poll (items, 3, -1);
 #ifdef BUILD_WITH_PROBES
         end_wait_time = stats_get_time();
         total_wait_time += end_wait_time - start_wait_time;
@@ -294,11 +293,7 @@ int main (int argc, char **argv)
                               comm_data.rank,
                               &pull_data);
             nb_iterations *= pull_data.local_nb_messages;
-            buff_size = pull_data.buff_size * sizeof(double) + MAX_FIELD_NAME * sizeof(char) + 2 * sizeof(int);
-            if (stats_options.sobol_op == 1)
-            {
-                buff_size += (2 * sizeof(int));
-            }
+            buff_size = pull_data.buff_size * sizeof(double) + MAX_FIELD_NAME * sizeof(char) + 4 * sizeof(int);
             buffer = malloc (buff_size);
 
             if (stats_options.sobol_op == 1)
@@ -362,7 +357,7 @@ int main (int argc, char **argv)
 
             buf_ptr = buffer;
             time_step = *buf_ptr;
-            buf_ptr += sizeof(int);
+            buf_ptr += 3 * sizeof(int);
             client_rank = *buf_ptr;
             buf_ptr += sizeof(int);
 //            memcpy(parameters, buf_ptr, stats_options.nb_parameters * sizeof(int));
@@ -445,6 +440,7 @@ int main (int argc, char **argv)
 
             for (i=1; i<stats_options.nb_parameters+2; i++)
             {
+                fprintf(stderr,"                  -- wait %d -- \n", i);
                 zmq_recv (sobol_data_responder[group_id*comm_data.client_comm_size + client_rank], buffer, buff_size, 0);
                 zmq_send (sobol_data_responder[group_id*comm_data.client_comm_size + client_rank], &comm_data.rank, sizeof(int), 0);
                 buf_ptr = buffer;

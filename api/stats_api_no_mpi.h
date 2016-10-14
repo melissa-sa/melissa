@@ -19,7 +19,9 @@ void connect_from_fortran_no_mpi(int       *local_vect_size,
 
 void send_to_stats_no_mpi(const int  *time_step,
                           const char *field_name,
-                          double     *send_vect);
+                          double     *send_vect,
+                          const int  *sobol_rank,
+                          const int  *sobol_group);
 
 void disconnect_from_stats();
 

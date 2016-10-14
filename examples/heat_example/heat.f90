@@ -7,14 +7,15 @@ program heat
   
   implicit none
 
-  integer::i,j,k,nx,ny,n,nmax,me,np,i1,iN,statinfo,nb_op,next,previous
+  integer::i,j,k,nx,ny,n,nmax,me,np,i1,iN,statinfo,nb_op,next,previous,narg
   integer,dimension(mpi_status_size)::status
   real*8::lx,ly,dt,dx,dy,d,t,epsilon,t1,t2,temp
   real*8,dimension(:),pointer::U => null(), F => null()
   real*8,dimension(3)::A
   character(len=32)::arg
-  integer :: comm
-  character(len=6) name
+  integer::comm
+  character(len=6)::name
+  integer::sobol_rank, sobol_group
 
   name = C_CHAR_"heat"//C_NULL_CHAR
 
@@ -23,10 +24,15 @@ program heat
   call mpi_comm_size(mpi_comm_world,np,statinfo)
   comm = MPI_COMM_WORLD;
 
-  call getarg(1, arg)
+  narg = iargc()
+  if(narg.ge.1) call getarg(1, arg)
   read( arg, * ) temp ! initial temperature
 !  allocate(parameters(1))
 !  parameters(1) = temp
+  if(narg.ge.2) call getarg(2, arg)
+  read( arg, * ) sobol_rank ! sobol rank
+  if(narg.ge.3) call getarg(3, arg)
+  read( arg, * ) sobol_group ! sobol group
   
   t1=mpi_wtime()
   
@@ -54,14 +60,14 @@ program heat
 
   i = 1
   n = nx*ny
-  call connect_to_stats (nb_op, np, me, comm)
+  call connect_to_stats (nb_op, np, me, sobol_rank, sobol_group, comm)
 
   do n=1,nmax
     t = t + dt
     call filling_F(nx,ny,U,d,dx,dy,dt,t,F,i1,in,lx,ly)
     call conjgrad(A,F,U,nx,ny,epsilon,i1,in,np,me,next,previous)
 
-    call send_to_stats (n, name, u, me)
+    call send_to_stats (n, name, u, me, sobol_rank, sobol_group)
   end do
 
   call finalize(dx,dy,nx,ny,i1,in,u,f,me)

@@ -16,6 +16,8 @@
 void connect_to_stats(const int *local_vect_size,
                       const int *comm_size,
                       const int *rank,
+                      const int *sobol_rank,
+                      const int *sobol_group,
                       MPI_Comm  *comm);
 
 void connect_to_stats_sobol(const int *local_vect_size,
@@ -28,12 +30,16 @@ void connect_to_stats_sobol(const int *local_vect_size,
 void connect_from_fortran(int       *local_vect_size,
                           int       *comm_size,
                           int       *rank,
+                          const int *sobol_rank,
+                          const int *sobol_group,
                           MPI_Fint  *comm);
 
 void send_to_stats(const int  *time_step,
                    const char *field_name,
                    double     *send_vect,
-                   const int  *rank);
+                   const int  *rank,
+                   const int  *sobol_rank,
+                   const int  *sobol_group);
 
 void send_to_stats_sobol(const int  *time_step,
                          const char *field_name,
@@ -43,7 +49,5 @@ void send_to_stats_sobol(const int  *time_step,
                          const int  *sobol_group);
 
 void disconnect_from_stats();
-
-void disconnect_from_stats_sobol();
 
 #endif // STATS_API_H
