@@ -56,37 +56,66 @@ void compute_stats (stats_data_t  *data,
 //        return;
 //    }
 
-    if (data->options->mean_op == 1 && data->options->variance_op == 0)
-    {
-        increment_mean (in_vect, &(data->means[time_step]), data->vect_size);
-    }
-
-    if (data->options->variance_op == 1)
-    {
-        increment_mean_and_variance (in_vect, &(data->variances[time_step]), data->vect_size);
-    }
-
     if (data->options->min_and_max_op == 1)
     {
-        min_and_max (in_vect, &(data->min_max[time_step]), data->vect_size);
+        min_and_max (in_vect_tab[1], &(data->min_max[time_step]), data->vect_size);
     }
 
     if (data->options->threshold_op == 1)
     {
-        update_threshold_exceedance (in_vect, data->thresholds[time_step], data->options->threshold, data->vect_size);
+        update_threshold_exceedance (in_vect_tab[1], data->thresholds[time_step], data->options->threshold, data->vect_size);
     }
 
-    if (data->options->sobol_op == 1)
+    if (data->options->sobol_op != 1)
+    {
+        if (data->options->mean_op == 1 && data->options->variance_op == 0)
+        {
+            increment_mean (in_vect_tab[1], &(data->means[time_step]), data->vect_size);
+        }
+
+        if (data->options->variance_op == 1)
+        {
+            increment_mean_and_variance (in_vect_tab[1], &(data->variances[time_step]), data->vect_size);
+        }
+    }
+    else
     {
         if (nb_vect != data->options->nb_parameters + 2)
         {
             fprintf (stderr, "ERROR: invalid vector nunber (compute_stats)\n");
             exit (1);
         }
-            increment_sobol_martinez (&data->sobol_indices[time_step],
-                                      data->options->nb_parameters,
-                                      in_vect_tab,
-                                      data->vect_size);
+        increment_sobol_martinez (&data->sobol_indices[time_step],
+                                  data->options->nb_parameters,
+                                  in_vect_tab,
+                                  data->vect_size);
+
+        in_vect = in_vect_tab[1];
+        if (data->options->mean_op == 1 && data->options->variance_op == 0)
+        {
+            update_mean(&(data->sobol_indices[time_step].variance_a.mean_structure),
+                        &(data->sobol_indices[time_step].variance_b.mean_structure),
+                        &(data->means[time_step]),
+                        data->vect_size);
+        }
+
+        if (data->options->variance_op == 1)
+        {
+            update_variance(&(data->sobol_indices[time_step].variance_a),
+                            &(data->sobol_indices[time_step].variance_b),
+                            &(data->variances[time_step]),
+                            data->vect_size);
+        }
+
+        if (data->options->min_and_max_op == 1)
+        {
+            min_and_max (in_vect_tab[2], &(data->min_max[time_step]), data->vect_size);
+        }
+
+        if (data->options->threshold_op == 1)
+        {
+            update_threshold_exceedance (in_vect_tab[2], data->thresholds[time_step], data->options->threshold, data->vect_size);
+        }
     }
 
 //    data->computed[time_step] = 1;

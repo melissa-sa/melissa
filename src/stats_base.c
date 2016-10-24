@@ -312,7 +312,10 @@ void update_variance (variance_t *variance1,
     double  delta;
     int     i;
 
-    updated_variance->mean_structure.increment = variance2->mean_structure.increment + variance1->mean_structure.increment;
+    update_mean(&variance1->mean_structure,
+                &variance2->mean_structure,
+                &updated_variance->mean_structure,
+                vect_size);
 
 #pragma omp parallel for
     for (i=0; i<vect_size; i++)
