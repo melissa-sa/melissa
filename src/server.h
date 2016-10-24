@@ -71,7 +71,11 @@ void finalize_field_data (field_ptr        field,
                           comm_data_t     *comm_data,
                           pull_data_t     *pull_data,
                           stats_options_t *options,
-                          int             *local_vect_sizes);
+                          int             *local_vect_sizes
+#ifdef BUILD_WITH_PROBES
+                          , double *write_time
+#endif // BUILD_WITH_PROBES
+                          );
 
 long int count_bytes_written (stats_options_t  *options);
 

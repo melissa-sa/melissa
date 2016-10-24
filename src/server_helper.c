@@ -182,7 +182,11 @@ void finalize_field_data (field_ptr        field,
                           comm_data_t     *comm_data,
                           pull_data_t     *pull_data,
                           stats_options_t *options,
-                          int             *local_vect_sizes)
+                          int             *local_vect_sizes
+#ifdef BUILD_WITH_PROBES
+                          , double *write_time
+#endif // BUILD_WITH_PROBES
+                          )
 {
     int i;
     if (field == NULL)
@@ -191,7 +195,11 @@ void finalize_field_data (field_ptr        field,
     }
     else
     {
-        finalize_field_data (field->next, comm_data, pull_data, options, local_vect_sizes);
+        finalize_field_data (field->next, comm_data, pull_data, options, local_vect_sizes
+#ifdef BUILD_WITH_PROBES
+                             , &total_write_time
+#endif // BUILD_WITH_PROBES
+                             );
         for (i=0; i<comm_data->client_comm_size; i++)
         {
             if (comm_data->rcounts[i] > 0)
@@ -215,7 +223,7 @@ void finalize_field_data (field_ptr        field,
                              field->name);
 #ifdef BUILD_WITH_PROBES
         end_write_time = stats_get_time();
-        total_write_time += end_write_time - start_write_time;
+        *write_time += end_write_time - start_write_time;
 #endif // BUILD_WITH_PROBES
 
         for (i=0; i<comm_data->client_comm_size; i++)

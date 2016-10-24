@@ -46,7 +46,6 @@ int main (int argc, char **argv)
     int                 first_connect = 1;
     int                 get_next_message = 0;
     int                *client_vect_sizes, *local_vect_sizes;
-    int                 nb_simu = 1;
     pull_data_t         pull_data;
     int                 nb_bufferized_messages = 50;
     char               *field_name_ptr;
@@ -96,7 +95,6 @@ int main (int argc, char **argv)
     port_no = 123 + comm_data.rank;
     sprintf (port_name, "tcp://*:10%d", port_no);
     ret = zmq_bind (sobol_ready_responder, port_name);
-    fprintf(stderr,"open 10%d\n", port_no);
     if (ret != 0)
     {
         fprintf(stderr,"ERROR on binding\n");
@@ -401,9 +399,16 @@ int main (int argc, char **argv)
 
         if (items[2].revents & ZMQ_POLLIN)
         {
+#ifdef BUILD_WITH_PROBES
+            start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
             int simu_id, group_id;
             zmq_recv (sobol_ready_responder, buffer, buff_size, 0);
             zmq_send (sobol_ready_responder, &comm_data.rank, sizeof(int), 0);
+#ifdef BUILD_WITH_PROBES
+            end_comm_time = stats_get_time();
+            total_comm_time += end_comm_time - start_comm_time;
+#endif // BUILD_WITH_PROBES
 
             buf_ptr = buffer;
             time_step = *buf_ptr;
@@ -437,27 +442,51 @@ int main (int argc, char **argv)
             }
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
             memcpy(buff_tab_ptr[simu_id], buf_ptr, pull_data.buff_size * sizeof(double));
+#ifdef BUILD_WITH_PROBES
+            total_bytes_recv += buff_size;
+#endif // BUILD_WITH_PROBES
 
             for (i=1; i<stats_options.nb_parameters+2; i++)
             {
-                fprintf(stderr,"                  -- wait %d -- \n", i);
+#ifdef BUILD_WITH_PROBES
+                start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
                 zmq_recv (sobol_data_responder[group_id*comm_data.client_comm_size + client_rank], buffer, buff_size, 0);
                 zmq_send (sobol_data_responder[group_id*comm_data.client_comm_size + client_rank], &comm_data.rank, sizeof(int), 0);
+#ifdef BUILD_WITH_PROBES
+                end_comm_time = stats_get_time();
+                total_comm_time += end_comm_time - start_comm_time;
+#endif // BUILD_WITH_PROBES
                 buf_ptr = buffer;
-//                if (buffer[0] != time_step)
-//                    fprintf (stdout, "\n error \n\n");
                 buf_ptr += sizeof(int);
                 simu_id = *buf_ptr;
                 buf_ptr += 3 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
                 memcpy(buff_tab_ptr[simu_id], buf_ptr, pull_data.buff_size * sizeof(double));
+#ifdef BUILD_WITH_PROBES
+                total_bytes_recv += buff_size;
+#endif // BUILD_WITH_PROBES
             }
             for (i=0; i<stats_options.nb_parameters+2; i++)
             {
+#ifdef BUILD_WITH_PROBES
+                start_comm_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
                 zmq_recv (sobol_data_responder2[group_id*comm_data.client_comm_size + client_rank], buffer, sizeof(int), 0);
                 zmq_send (sobol_data_responder2[group_id*comm_data.client_comm_size + client_rank], &comm_data.rank, sizeof(int), 0);
+#ifdef BUILD_WITH_PROBES
+                end_comm_time = stats_get_time();
+                total_comm_time += end_comm_time - start_comm_time;
+#endif // BUILD_WITH_PROBES
                 iteration++;
             }
+#ifdef BUILD_WITH_PROBES
+            start_computation_time = stats_get_time();
+#endif // BUILD_WITH_PROBES
             compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
+#ifdef BUILD_WITH_PROBES
+            end_computation_time = stats_get_time();
+            total_computation_time += end_computation_time - start_computation_time;
+#endif // BUILD_WITH_PROBES
             fprintf(stderr, "iteration %d / %d - field %s - process %d\n", iteration, nb_iterations, field_name_ptr, comm_data.rank);
         }
 
@@ -524,7 +553,11 @@ int main (int argc, char **argv)
     {
         free(node_names);
     }
-    finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes);
+    finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes
+#ifdef BUILD_WITH_PROBES
+                         , &total_write_time
+#endif // BUILD_WITH_PROBES
+                         );
     free (buffer);
 //    free (parameters);
     free (comm_data.rcounts);
@@ -532,15 +565,16 @@ int main (int argc, char **argv)
 
 #ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI
-    double temp;
-    MPI_Reduce (&total_comm_time, &temp, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    total_comm_time = temp / comm_data.comm_size;
-    MPI_Reduce (&total_bytes_recv, &temp, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    total_bytes_recv = temp;
+    double temp1;
+    long int temp2;
+    MPI_Reduce (&total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_comm_time = temp1 / comm_data.comm_size;
+    MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_bytes_recv = temp2;
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
-        fprintf (stdout, " --- Number of simulations:      %d\n", nb_simu);
+        fprintf (stdout, " --- Number of simulations:      %d\n", stats_options.nb_simu);
         fprintf (stdout, " --- Number of simulation cores: %d\n", comm_data.client_comm_size);
         fprintf (stdout, " --- Number of analysis cores:   %d\n", comm_data.comm_size);
         fprintf (stdout, " --- Average communication time: %g s\n", total_comm_time);
