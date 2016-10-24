@@ -97,13 +97,10 @@ int main( int argc, char **argv )
   comm = MPI_COMM_WORLD;
 
   temp = strtod(argv[1],NULL);
-  if (argc > 2)
-  {
-    sobol_rank = (int)strtod(argv[2],NULL);
-  }
   if (argc > 3)
   {
-    sobol_group = (int)strtod(argv[3],NULL);
+    sobol_rank  = (int)strtod(argv[argc-2],NULL);
+    sobol_group = (int)strtod(argv[argc-1],NULL);
   }
 
 

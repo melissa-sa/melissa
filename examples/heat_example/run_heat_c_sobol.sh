@@ -9,7 +9,7 @@ while [ $t -le $tmax ]
 do
   while [ $g -lt $gmax ]
   do
-    mpirun -n 1 ./heatc ${t} ${g} ${t}&
+    mpirun -n 3 ./heatc ${t} ${g} ${t}&
     let "g+=1"
   done
   let "g=0"
@@ -19,7 +19,7 @@ if [ ! -d "./resu" ];then
 mkdir resu
 fi
 cd resu
-mpirun -n 1 ../../../src/server $command_line
+mpirun -n 2 ../../../src/server $command_line
 #valgrind --leak-check=full mpirun -n 2 ../../../src/server $command_line
 cd ..
 exit 0
