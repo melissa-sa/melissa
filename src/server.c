@@ -394,7 +394,10 @@ int main (int argc, char **argv)
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
-            printf("iteration %d / %d - field %s - process %d\n", iteration, nb_iterations, field_name_ptr, comm_data.rank);
+            if (comm_data.rank==0)
+            {
+                printf("iteration %d / %d - field \"%s\"\n", iteration, nb_iterations, field_name_ptr);
+            }
         }
 
         if (items[2].revents & ZMQ_POLLIN)
@@ -487,7 +490,10 @@ int main (int argc, char **argv)
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
-            fprintf(stderr, "iteration %d / %d - field %s - process %d\n", iteration, nb_iterations, field_name_ptr, comm_data.rank);
+            if (comm_data.rank==0 && (iteration % 10) == 0 )
+            {
+                fprintf(stderr, "iteration %d / %d - field \"%s\"\n", iteration, nb_iterations, field_name_ptr);
+            }
         }
 
         if (end_signal != 0)

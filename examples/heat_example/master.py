@@ -32,17 +32,15 @@ def launch_melissa (command_line):
   if (not os.path.isdir("resu")):
       os.system("mkdir resu")
   os.system("cd resu")
-  os.system(command_line)
+  return os.system(command_line)
 
-  # ------------- options ------------- #
+# ------------- options ------------- #
 
 nb_parameters = 2
 nb_simu = 4
 nb_groups = 3
 nb_time_steps = 100
 operations = ["mean","variance","min","max","threshold","sobol"]
-if (not (("sobol" in operations) or ("sobol_indices" in operations))):
-    nb_groups = nb_simu
 #operations_list = operations.split()
 threshold = 0.7
 op_str=""
@@ -50,11 +48,13 @@ mpi_options = ""
 nb_proc_simu = 3
 nb_proc_server = 2
 server_path = "/home/tterraz/avido/source/Melissa/build/src"
-range_min = np.zeros(nb_groups)
-range_max = np.ones(nb_groups)
+range_min = np.zeros(nb_groups,float)
+range_max = np.ones(nb_groups,float)
 
 # ------------- main ------------- #
 
+if (not (("sobol" in operations) or ("sobol_indices" in operations))):
+    nb_groups = nb_simu
 A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
 if ("sobol" in operations) or ("sobol_indices" in operations):
   B = create_matrix(nb_parameters, nb_groups, range_min, range_max)
@@ -92,4 +92,5 @@ options = " -p " + parameters\
         + " -e " + str(threshold)
 
 #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"")
+if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"") != 0):
+    print "error launching Melissa"
