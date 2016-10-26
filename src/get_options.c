@@ -19,8 +19,9 @@ static inline void stats_usage ()
 {
     fprintf(stderr,
             " Usage:\n"
-            " -p <int>:<int> : number of parameters for the parametric study\n"
-            "                  and number of simulation, or simulation groups for Sobol indices\n"
+            " -p <int>       : number of parameters for the parametric study\n"
+            "                : number of simulation\n"
+            " -s <int>       : number of simulation groups for Sobol indices\n"
             " -t <int>       : number of time steps of the study\n"
             " -o <op>        : operations separated by semicolons\n"
             "                  possibles values :\n"
@@ -31,8 +32,7 @@ static inline void stats_usage ()
             "                  threshold_exceedance\n"
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
-            " -e <double>    : threshold for threshold exceedance computaion\n"
-//            " -s <int>     : maximum order for sobol indices\n"
+            " -e <double>    : threshold value for threshold exceedance computaion\n"
             "\n"
             );
 }
@@ -54,6 +54,7 @@ static inline void init_options (stats_options_t *options)
     options->nb_time_steps   = 0;
     options->nb_parameters   = 0;
     options->nb_groups       = 0;
+    options->nb_simu         = 0;
     options->threshold       = 0.0;
     options->mean_op         = 0;
     options->variance_op     = 0;
@@ -61,26 +62,6 @@ static inline void init_options (stats_options_t *options)
     options->threshold_op    = 0;
     options->sobol_op        = 0;
     options->sobol_order     = 0;
-}
-
-static inline void get_parameters (char            *name,
-                                   stats_options_t *options)
-{
-    const char  s[2] = ":";
-    char       *temp_char;
-    int         i;
-
-    if (name == NULL || name[0] == '-' || name[0] == ':')
-    {
-        stats_usage ();
-        exit (1);
-    }
-
-    /* get the first token */
-    temp_char = strtok (name, s);
-    options->nb_parameters = atoi (temp_char);
-    temp_char = strtok (NULL, s);
-    options->nb_groups = atoi (temp_char);
 }
 
 static inline void get_operations (char            *name,
@@ -96,6 +77,7 @@ static inline void get_operations (char            *name,
         exit (1);
     }
 
+    /* gjuste to be sure */
     options->mean_op         = 0;
     options->variance_op     = 0;
     options->min_and_max_op  = 0;
@@ -115,7 +97,7 @@ static inline void get_operations (char            *name,
         {
             options->mean_op = 1;
         }
-        else if (0 == strcmp(temp_char, "variance"))
+        else if (0 == strcmp(temp_char, "variance") || 0 == strcmp(temp_char, "var"))
         {
             options->variance_op = 1;
         }
@@ -163,6 +145,7 @@ void print_options (stats_options_t *options)
     fprintf(stdout, "nb_parameters = %d\n", options->nb_parameters);
     if (options->sobol_op != 0)
         fprintf(stdout, "nb_groups = %d\n", options->nb_groups);
+    fprintf(stdout, "nb_simu = %d\n", options->nb_simu);
     fprintf(stdout, "operations:\n");
     if (options->mean_op != 0)
         fprintf(stdout, "    mean\n");
@@ -214,11 +197,11 @@ void stats_get_options (int argc, char  **argv,
 
     do
     {
-        opt = getopt (argc, argv, "p:t:o:e:s:h:n");
+        opt = getopt (argc, argv, "p:t:o:e:s:g:h");
 
         switch (opt) {
         case 'p':
-            get_parameters (optarg, options);
+            options->nb_parameters = atoi (optarg);
             break;
         case 't':
             options->nb_time_steps = atoi (optarg);
@@ -230,7 +213,10 @@ void stats_get_options (int argc, char  **argv,
             options->threshold = atof (optarg);
             break;
         case 's':
-            options->sobol_order = atoi (optarg);
+            options->nb_simu = atoi (optarg);
+            break;
+        case 'g':
+            options->nb_groups = atoi (optarg);
             break;
         case 'h':
             stats_usage ();
@@ -244,16 +230,87 @@ void stats_get_options (int argc, char  **argv,
 
     } while (opt != -1);
 
+    stats_check_options (options);
+
+    return;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup get_options
+ *
+ * This function validates the option structure
+ *
+ *******************************************************************************
+ *
+ * @param[out] *options
+ * pointer to the structure containing options parameters
+ *
+ *******************************************************************************/
+
+void stats_check_options (stats_options_t  *options)
+{
+    // check consistency
+    if (options->mean_op == 0 &&
+        options->variance_op == 0 &&
+        options->min_and_max_op == 0 &&
+        options->threshold_op == 0 &&
+        options->sobol_op == 0)
+    {
+        // default values
+        fprintf (stdout, "WARNING: no operation given, set to mean and variance\n");
+        options->mean_op = 1;
+        options->variance_op = 1;
+    }
 
     if (options->sobol_op != 0)
     {
-        options->nb_simu = options->nb_groups * (options->nb_parameters + 2);
+        if (options->nb_groups < 1)
+        {
+            fprintf (stderr, "ERROR: number of simulation groups must be > 0 for Sobol indices computation\n");
+            stats_usage ();
+            exit (1);
+        }
+        if (options->nb_parameters < 2)
+        {
+            fprintf (stderr, "ERROR: study must have at least 2 variable parameter\n");
+            stats_usage ();
+            exit (1);
+        }
+        if (options->nb_simu != options->nb_groups * (options->nb_parameters + 2))
+        {
+            fprintf (stderr, "WARNING:  wrong number of simulations, set to %d\n", options->nb_groups * (options->nb_parameters + 2));
+            options->nb_simu = options->nb_groups * (options->nb_parameters + 2);
+        }
     }
     else
     {
-        options->nb_simu = options->nb_groups;
+        if (options->nb_groups == 0)
+        {
+            options->nb_groups = options->nb_simu;
+        }
+        else if (options->nb_simu == 0)
+        {
+            options->nb_simu = options->nb_groups;
+        }
+        if (options->nb_simu < 1 && options->nb_groups < 1)
+        {
+            fprintf (stderr, "ERROR: wrong number of simulations\n");
+            stats_usage ();
+            exit (1);
+        }
+        if (options->nb_parameters < 1)
+        {
+            fprintf (stderr, "ERROR: study must have at least 1 variable parameter\n");
+            stats_usage ();
+            exit (1);
+        }
+        if (options->nb_time_steps < 1)
+        {
+            fprintf (stderr, "ERROR: study must have at least 1 time step\n");
+            stats_usage ();
+            exit (1);
+        }
     }
-
-
-    return;
 }

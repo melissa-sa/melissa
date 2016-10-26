@@ -81,12 +81,9 @@ for i in range(len(operations)):
   else:
     op_str += operations[i]
 
-if ("sobol" in operations) or ("sobol_indices" in operations):
-  parameters = str(nb_parameters) + ":" + str(nb_groups)
-else:
-  parameters = str(nb_parameters) + ":" + str(nb_simu)
-
-options = " -p " + parameters\
+options = " -p " + str(nb_parameters)\
+        + " -s " + str(nb_simu)\
+        + " -g " + str(nb_groups)\
         + " -t " + str(nb_time_steps)\
         + " -o " + op_str\
         + " -e " + str(threshold)

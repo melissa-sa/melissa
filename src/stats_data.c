@@ -215,50 +215,8 @@ void init_data (stats_data_t    *data,
 
 void check_data (stats_data_t *data)
 {
-    int ret = 0;
-
-    // check errors
-
-    if (data->vect_size < 1)
-    {
-        fprintf (stderr, "BAD PARAMETER: vector_size must have at least 1\n");
-        ret = ERROR_BAD_PARAMETER;
-    }
-
-    if (data->options->nb_time_steps < 1)
-    {
-        fprintf (stderr, "BAD PARAMETER: study must have at least 1 time step\n");
-        ret = ERROR_BAD_PARAMETER;
-    }
-
-    if (data->options->nb_parameters < 1)
-    {
-        fprintf (stderr, "BAD PARAMETER: study must have at least 1 variable parameter\n");
-        ret = ERROR_BAD_PARAMETER;
-    }
-
-    if (ret == ERROR_BAD_PARAMETER)
-        exit (ERROR_BAD_PARAMETER);
-
-    // check consistency
-
-    if (data->options->mean_op == 0 &&
-        data->options->variance_op == 0 &&
-        data->options->min_and_max_op == 0 &&
-        data->options->threshold_op == 0 &&
-        data->options->sobol_op == 0)
-    {
-        // default values
-        fprintf (stdout, "WARNING: no operation given, set to mean and variance\n");
-        data->options->mean_op = 1;
-        data->options->variance_op = 1;
-    }
-
-    if (data->options->sobol_op != 0)
-    {
-        // default value
-        data->options->sobol_order = 1;
-    }
+    // check options
+    stats_check_options(data->options);
 
     // every parameter is now validated
     data->is_valid = 1;

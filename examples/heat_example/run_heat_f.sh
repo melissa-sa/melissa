@@ -1,11 +1,11 @@
 #!/bin/bash
 
-command_line="-p 1:3 -t 100 -o mean:variance:min:max"
+command_line="-p 1 -s 3 -t 100 -o mean:variance:min:max"
 let "t=0"
 let "tmax=2"
 while [ $t -le $tmax ]
 do
-    mpirun -n 3 ./heatf ${t} &
+    mpirun -n 3 ./heatf ${t} 0 ${t}&
     let "t+=1"
 done
 if [ ! -d "./resu" ];then

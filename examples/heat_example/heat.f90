@@ -29,10 +29,12 @@ program heat
   read( arg, * ) temp ! initial temperature
 !  allocate(parameters(1))
 !  parameters(1) = temp
-  if(narg.ge.2) call getarg(2, arg)
-  read( arg, * ) sobol_rank ! sobol rank
-  if(narg.ge.3) call getarg(3, arg)
-  read( arg, * ) sobol_group ! sobol group
+  if(narg.ge.3) then
+    call getarg(narg - 1, arg)
+    read( arg, * ) sobol_rank ! sobol rank
+    call getarg(narg, arg)
+    read( arg, * ) sobol_group ! sobol group
+  endif
   
   t1=mpi_wtime()
   

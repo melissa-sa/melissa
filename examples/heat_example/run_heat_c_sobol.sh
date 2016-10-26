@@ -1,6 +1,6 @@
 #!/bin/bash
 
-command_line="-p 2:2 -t 100 -o sobol"
+command_line="-p 2 -g 2 -t 100 -o sobol"
 let "t=0"
 let "tmax=1"
 let "g=0"

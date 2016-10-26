@@ -291,6 +291,8 @@ struct comm_data_s
 
 typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s */
 
+void stats_check_options (stats_options_t  *options);
+
 void init_mean(mean_t    *mean,
                const int  vect_size);
 
