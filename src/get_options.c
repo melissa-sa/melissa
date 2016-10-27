@@ -62,6 +62,7 @@ static inline void init_options (stats_options_t *options)
     options->threshold_op    = 0;
     options->sobol_op        = 0;
     options->sobol_order     = 0;
+    options->restart         = 0;
 }
 
 static inline void get_operations (char            *name,
@@ -197,7 +198,7 @@ void stats_get_options (int argc, char  **argv,
 
     do
     {
-        opt = getopt (argc, argv, "p:t:o:e:s:g:h");
+        opt = getopt (argc, argv, "p:t:o:e:s:g:h:r");
 
         switch (opt) {
         case 'p':
@@ -217,6 +218,9 @@ void stats_get_options (int argc, char  **argv,
             break;
         case 'g':
             options->nb_groups = atoi (optarg);
+            break;
+        case 'r':
+            options->restart = 1;
             break;
         case 'h':
             stats_usage ();

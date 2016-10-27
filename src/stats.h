@@ -239,6 +239,7 @@ struct stats_options_s
     int                  sobol_op;         /**< 1 if the user needs to compute sobol indices, 0 otherwise        */
     int                  sobol_order;      /**< max order of the computes sobol indices                          */
     int                  global_vect_size; /**< global size of input vector                                      */
+    int                  restart;          /**< 1 if restart, 0 otherwise                                        */
 };
 
 typedef struct stats_options_s stats_options_t; /**< type corresponding to stats_options_s */
