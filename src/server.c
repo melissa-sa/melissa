@@ -36,6 +36,7 @@ int main (int argc, char **argv)
     char                node_name[MPI_MAX_PROCESSOR_NAME];
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void              **init_responder;
+    void              **init_responder2;
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
     void               *sobol_ready_responder = zmq_socket (context, ZMQ_REP);
     void              **sobol_data_responder;
@@ -117,6 +118,25 @@ int main (int argc, char **argv)
                     sprintf (port_name, "tcp://*:21%d", i);
                 }
                 ret = zmq_bind (init_responder[i], port_name);
+                if (ret != 0)
+                {
+                    fprintf(stderr,"ERROR on binding\n");
+                    exit(0);
+                }
+            }
+            init_responder2 = malloc ((stats_options.nb_groups) * sizeof (void*));
+            for (i=0; i<stats_options.nb_groups; i++)
+            {
+                init_responder2[i] = zmq_socket (context, ZMQ_REP);
+                if (i<10)
+                {
+                  sprintf (port_name, "tcp://*:220%d", i);
+                }
+                else
+                {
+                    sprintf (port_name, "tcp://*:22%d", i);
+                }
+                ret = zmq_bind (init_responder2[i], port_name);
                 if (ret != 0)
                 {
                     fprintf(stderr,"ERROR on binding\n");
@@ -218,18 +238,12 @@ int main (int argc, char **argv)
                 for (i=0; i<stats_options.nb_parameters+2; i++)
                 {
                     zmq_recv (init_responder[rinit_tab[1]], rinit_tab, 2 * sizeof(int), 0);
-                }
-                for (i=0; i<stats_options.nb_parameters+2; i++)
-                {
                     zmq_send (init_responder[rinit_tab[1]], sinit_tab, 2 * sizeof(int), 0);
                 }
                 for (i=0; i<stats_options.nb_parameters+2; i++)
                 {
-                    zmq_recv (init_responder[rinit_tab[1]], client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
-                }
-                for (i=0; i<stats_options.nb_parameters+2; i++)
-                {
-                    zmq_send (init_responder[rinit_tab[1]], node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+                    zmq_recv (init_responder2[rinit_tab[1]], client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
+                    zmq_send (init_responder2[rinit_tab[1]], node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
                 }
             }
             else
@@ -505,6 +519,7 @@ int main (int argc, char **argv)
             if (comm_data.rank == 0)
             {
                 zmq_close (init_responder[i]);
+                zmq_close (init_responder2[i]);
             }
             for (j=0; j<comm_data.client_comm_size; j++)
             {
@@ -529,6 +544,7 @@ int main (int argc, char **argv)
         if (comm_data.rank == 0)
         {
             free (init_responder);
+            free (init_responder2);
         }
         free (sobol_data_responder);
         free (sobol_data_responder2);

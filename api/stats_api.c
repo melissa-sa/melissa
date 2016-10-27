@@ -45,6 +45,7 @@ struct zmq_data_s
     void  *context;                           /**< ZeroMQ context                                             */
     void  *connexion_requester;               /**< connexion ZeroMQ port                                      */
     void  *init_requester;                    /**< initialization ZeroMQ port                                 */
+    void  *init_requester2;                   /**< initialization ZeroMQ port (Sobol only)                    */
     void **data_pusher;                       /**< push data ZeroMQ ports                                     */
     void **sobol_init_requester;              /**< initialization ZeroMQ port                                 */
     void **sobol_requester;                   /**< data ZeroMQ Sobol port                                     */
@@ -273,6 +274,7 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.context = zmq_ctx_new ();
     zmq_data.connexion_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
     zmq_data.init_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
+    zmq_data.init_requester2 = zmq_socket (zmq_data.context, ZMQ_REQ);
 
     if (*rank == 0)
     {
@@ -320,11 +322,20 @@ void connect_to_stats (const int *local_vect_size,
             zmq_connect (zmq_data.init_requester, zmq_data.port_name);
             zmq_send (zmq_data.init_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
             zmq_recv (zmq_data.init_requester, zmq_data.rinit_tab, 2 * sizeof(int), 0);
+            if (*sobol_group<10)
+            {
+                sprintf (zmq_data.port_name, "tcp://%s:220%d", server_node_name, *sobol_group);
+            }
+            else
+            {
+                sprintf (zmq_data.port_name, "tcp://%s:22%d", server_node_name, *sobol_group);
+            }
+            zmq_connect (zmq_data.init_requester2, zmq_data.port_name);
         }
         else
         {
             sprintf (zmq_data.port_name, "tcp://%s:21000", server_node_name);
-            zmq_connect (zmq_data.init_requester, zmq_data.port_name);
+            zmq_connect (zmq_data.init_requester2, zmq_data.port_name);
         }
     }
 
@@ -367,8 +378,8 @@ void connect_to_stats (const int *local_vect_size,
 
     if (*rank == 0)
     {
-        zmq_send (zmq_data.init_requester, my_vect_size, *comm_size * sizeof(int), 0);
-        zmq_recv (zmq_data.init_requester, node_names, zmq_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+        zmq_send (zmq_data.init_requester2, my_vect_size, *comm_size * sizeof(int), 0);
+        zmq_recv (zmq_data.init_requester2, node_names, zmq_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
     }
 
     if (*comm_size > 1)
@@ -452,6 +463,7 @@ void connect_to_stats (const int *local_vect_size,
     }
 
     zmq_close (zmq_data.init_requester);
+    zmq_close (zmq_data.init_requester2);
     zmq_close (zmq_data.connexion_requester);
     zmq_data.buff_size *= sizeof(double);
     zmq_data.buff_size += 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);

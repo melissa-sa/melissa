@@ -20,13 +20,6 @@ void connect_to_stats(const int *local_vect_size,
                       const int *sobol_group,
                       MPI_Comm  *comm);
 
-void connect_to_stats_sobol(const int *local_vect_size,
-                            const int *comm_size,
-                            const int *rank,
-                            const int *sobol_rank,
-                            const int *sobol_group,
-                            MPI_Comm  *comm);
-
 void connect_from_fortran(int       *local_vect_size,
                           int       *comm_size,
                           int       *rank,
@@ -40,13 +33,6 @@ void send_to_stats(const int  *time_step,
                    const int  *rank,
                    const int  *sobol_rank,
                    const int  *sobol_group);
-
-void send_to_stats_sobol(const int  *time_step,
-                         const char *field_name,
-                         double     *send_vect,
-                         const int  *rank,
-                         const int  *sobol_rank,
-                         const int  *sobol_group);
 
 void disconnect_from_stats();
 
