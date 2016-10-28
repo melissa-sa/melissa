@@ -44,7 +44,6 @@ void compute_stats (stats_data_t  *data,
                     double       **in_vect_tab)
 {
     int     i, j;
-    double *in_vect = in_vect_tab[0];
     if (data->is_valid != 1)
     {
         fprintf (stderr, "ERROR: data structure not valid (compute_stats)\n");
@@ -117,7 +116,7 @@ void compute_stats (stats_data_t  *data,
         }
     }
 
-//    data->computed[time_step] = 1;
+    data->computed[time_step] += 1;
 }
 
 /**

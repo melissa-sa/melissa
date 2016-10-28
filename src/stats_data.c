@@ -192,7 +192,7 @@ void init_data (stats_data_t    *data,
     data->variances       = NULL;
     data->min_max         = NULL;
     data->thresholds      = NULL;
-    data->cond_means      = NULL;
+//    data->cond_means      = NULL;
     data->sobol_indices   = NULL;
     check_data (data);
     malloc_data (data);

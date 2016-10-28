@@ -186,7 +186,7 @@ int main (int argc, char **argv)
             { data_puller, 0, ZMQ_POLLIN, 0 },
             { sobol_ready_responder, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 3, -1);
+        zmq_poll (items, 3, 100);
 #ifdef BUILD_WITH_PROBES
         end_wait_time = stats_get_time();
         total_wait_time += end_wait_time - start_wait_time;
@@ -199,6 +199,7 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
                 start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
+                fprintf(stderr, "new simulation wants to connect !!!\n");
                 // new simulation wants to connect
                 zmq_recv (connexion_responder, rinit_tab, 2 * sizeof(int), 0);
                 zmq_send (connexion_responder, sinit_tab, 2 * sizeof(int), 0);
@@ -220,6 +221,7 @@ int main (int argc, char **argv)
             MPI_Bcast(rinit_tab, 2, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
             comm_data.client_comm_size = rinit_tab[0];
+            fprintf(stderr, "prout prout\n");
             client_vect_sizes = malloc (comm_data.client_comm_size * sizeof(int));
             first_init = 0;
 #ifdef BUILD_WITH_PROBES
@@ -394,10 +396,25 @@ int main (int argc, char **argv)
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
-            if (comm_data.rank==0 && (iteration % 100) == 0 )
+            if (comm_data.rank==0 && (iteration % 1) == 0 )
             {
-                printf("iteration %d / %d - field \"%s\"\n", iteration, nb_iterations, field_name_ptr);
+                fprintf(stderr, "iteration %d / %d - field \"%s\"\n", iteration, nb_iterations, field_name_ptr);
             }
+//            j = 0;
+//            for (i=0; i<comm_data.client_comm_size; i++)
+//            {
+//                if (comm_data.rcounts[i] > 0)
+//                {
+//                    if (data_ptr[i].computed[time_step] == stats_options.nb_simu)
+//                    {
+//                        j += 1;
+//                    }
+//                }
+//            }
+//            if (j == pull_data.local_nb_messages)
+//            {
+//                // WRITE STATS
+//            }
         }
 
         if (items[2].revents & ZMQ_POLLIN)
@@ -498,7 +515,13 @@ int main (int argc, char **argv)
 
         if (end_signal != 0)
         {
-            fprintf (stderr, "INTERUPTED\n");
+//            field_ptr fptr = field;
+//            fprintf (stderr, "INTERUPTED\n");
+//            while (fptr != NULL)
+//            {
+//                save_stats (fptr->stats_data, &comm_data, fptr->name);
+//                fptr = field->next;
+//            }
             break;
         }
 
@@ -559,11 +582,15 @@ int main (int argc, char **argv)
     {
         free(node_names);
     }
-    finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes
+
+//    if (end_signal == 0)
+//    {
+        finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes
 #ifdef BUILD_WITH_PROBES
-                         , &total_write_time
+                            , &total_write_time
 #endif // BUILD_WITH_PROBES
-                         );
+                            );
+//    }
     free (buffer);
 //    free (parameters);
     free (comm_data.rcounts);

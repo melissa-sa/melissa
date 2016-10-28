@@ -15,6 +15,7 @@
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
+#include <stdio.h>
 
 /**
  *******************************************************************************
@@ -262,9 +263,9 @@ struct stats_data_s
     variance_t          *variances;     /**< array of variance structures, size nb_time_steps          */
     min_max_t           *min_max;       /**< array of min and max structures, size nb_time_steps       */
     int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
-    conditional_mean_t  *cond_means;    /**< array of conditional mean structures, size nb_time_steps  */
+//    conditional_mean_t  *cond_means;    /**< array of conditional mean structures, size nb_time_steps  */
     sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
-    char                *computed;      /**< 1 if stats already computed, size nb_time_steps           */
+    int                 *computed;      /**< iterations counter, size nb_time_steps                    */
 };
 
 typedef struct stats_data_s stats_data_t; /**< type corresponding to stats_data_s */
@@ -453,5 +454,57 @@ void write_stats_ensight(stats_data_t    **data,
                          char             *field);
 
 void finalize_stats (stats_data_t *data);
+
+void write_options (const stats_options_t *options);
+
+void read_options (stats_options_t  *options);
+
+void write_mean(mean_t *means,
+                int     vect_size,
+                int     nb_time_steps,
+                FILE*   f);
+
+void read_mean(mean_t *means,
+               int     vect_size,
+               int     nb_time_steps,
+               FILE*   f);
+
+void write_variance(variance_t *vars,
+                    int         vect_size,
+                    int         nb_time_steps,
+                    FILE*       f);
+
+void read_variance(variance_t *vars,
+                   int         vect_size,
+                   int         nb_time_steps,
+                   FILE*       f);
+
+void write_min_max(min_max_t *minmax,
+                   int        vect_size,
+                   int        nb_time_steps,
+                   FILE*      f);
+
+void read_min_max(min_max_t *minmax,
+                  int        vect_size,
+                  int        nb_time_steps,
+                  FILE*      f);
+
+void write_threshold(int  **threshold,
+                     int    vect_size,
+                     int    nb_time_steps,
+                     FILE*  f);
+
+void read_threshold(int  **threshold,
+                    int    vect_size,
+                    int    nb_time_steps,
+                    FILE*  f);
+
+void save_stats (stats_data_t *data,
+                 comm_data_t  *comm_data,
+                 char         *field_name);
+
+void read_saved_stats (stats_data_t *data,
+                       comm_data_t  *comm_data,
+                       char         *field_name);
 
 #endif // STATS_H
