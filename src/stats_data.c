@@ -158,7 +158,7 @@ static void malloc_data (stats_data_t *data)
         }
     }
 
-    data->computed = calloc (data->options->nb_time_steps, sizeof(char));
+    data->computed = calloc (data->options->nb_time_steps, sizeof(int));
 }
 
 /**
@@ -194,6 +194,7 @@ void init_data (stats_data_t    *data,
     data->thresholds      = NULL;
 //    data->cond_means      = NULL;
     data->sobol_indices   = NULL;
+    data->computed        = NULL;
     check_data (data);
     malloc_data (data);
 }

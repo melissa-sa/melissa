@@ -1,16 +1,18 @@
 #!/bin/bash
 
-command_line="-p 1 -s 3 -t 100 -o mean:variance:min:max"
+command_line="-p 1 -g 3 -t 100 -e 2 -o mean:variance:min:max:threshold"
 let "t=0"
 let "tmax=2"
+while [ $t -le $tmax ]
+do
+    mpirun -n 3 ./heatc ${t} 0 ${t} &
+    let "t+=1"
+done
 if [ ! -d "./resu" ];then
 mkdir resu
 fi
 cd resu
-mpirun -n 1 ../../../src/server $command_line&
+mpirun -n 2 ../../../src/server $command_line &
 cd ..
-while [ $t -le $tmax ]
-do
-    mpirun -n 1 ./heatc ${t} 0 ${t}
-    let "t+=1"
-done
+sleep 2
+killall -USR1 mpirun

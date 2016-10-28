@@ -15,7 +15,7 @@ program heat
   character(len=32)::arg
   integer::comm
   character(len=6)::name
-  integer::sobol_rank, sobol_group
+  integer::sobol_rank=0, sobol_group=0
 
   name = C_CHAR_"heat"//C_NULL_CHAR
 

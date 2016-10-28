@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <stdio.h>
 #include "stats.h"
 
 /**
@@ -29,28 +28,15 @@
  *
  *******************************************************************************/
 
-void write_options (const stats_options_t *options)
+void write_options (stats_options_t *options)
 {
-    FILE*      f;
+    FILE* f;
 
-    fopen("options.save", "w");
+    f = fopen("options.save", "wb+");
 
-    fprintf(f, "%d%d%d%d%d%d%d%d%g%d%d%d%d\n",
-            options->nb_time_steps,
-            options->nb_parameters,
-            options->nb_groups,
-            options->nb_simu,
-            options->mean_op,
-            options->variance_op,
-            options->min_and_max_op,
-            options->threshold_op,
-            options->threshold,
-            options->sobol_op,
-            options->sobol_order,
-            options->global_vect_size,
-            options->restart);
+    fwrite(options, sizeof(*options), 1, f);
 
-    close(f);
+    fclose(f);
 }
 
 /**
@@ -69,25 +55,13 @@ void write_options (const stats_options_t *options)
 
 void read_options (stats_options_t  *options)
 {
-    FILE*      f;
+    FILE* f = NULL;
 
-    fopen("options.save", "r");
+    f = fopen("options.save", "rb");
 
-    fread(&options->nb_time_steps,    sizeof(int),    1, f);
-    fread(&options->nb_parameters,    sizeof(int),    1, f);
-    fread(&options->nb_groups,        sizeof(int),    1, f);
-    fread(&options->nb_simu,          sizeof(int),    1, f);
-    fread(&options->mean_op,          sizeof(int),    1, f);
-    fread(&options->variance_op,      sizeof(int),    1, f);
-    fread(&options->min_and_max_op,   sizeof(int),    1, f);
-    fread(&options->threshold_op,     sizeof(int),    1, f);
-    fread(&options->threshold,        sizeof(double), 1, f);
-    fread(&options->sobol_op,         sizeof(int),    1, f);
-    fread(&options->sobol_order,      sizeof(int),    1, f);
-    fread(&options->global_vect_size, sizeof(int),    1, f);
-    fread(&options->restart,          sizeof(int),    1, f);
+   fread(options, sizeof(*options), 1, f);
 
-    close(f);
+    fclose(f);
 }
 
 /**
@@ -118,14 +92,11 @@ void write_mean(mean_t *means,
                 int     nb_time_steps,
                 FILE*   f)
 {
-    int i, j;
+    int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        for (j=0; j<vect_size; j++)
-        {
-            fprintf(f, "%g\n", means[i].mean[j]);
-        }
-        fprintf(f, "%d\n", means[i].increment);
+        fwrite(means[i].mean, sizeof(double), vect_size, f);
+        fwrite(&means[i].increment, sizeof(int), 1, f);
     }
 }
 
@@ -193,14 +164,11 @@ void write_variance(variance_t *vars,
                     int         nb_time_steps,
                     FILE*       f)
 {
-    int i, j;
+    int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        for (j=0; j<vect_size; j++)
-        {
-            fprintf(f, "%g\n", vars[i].variance[j]);
-            write_mean (&vars[i].mean_structure, vect_size, 1, f);
-        }
+        fwrite(vars[i].variance, sizeof(double), vect_size, f);
+        write_mean (&vars[i].mean_structure, vect_size, 1, f);
     }
 }
 
@@ -268,15 +236,12 @@ void write_min_max(min_max_t *minmax,
                    int        nb_time_steps,
                    FILE*      f)
 {
-    int i, j;
+    int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        for (j=0; j<vect_size; j++)
-        {
-            fprintf(f, "%g\n", minmax[i].min[j]);
-            fprintf(f, "%g\n", minmax[i].max[j]);
-        }
-        fprintf(f, "%d\n", minmax[i].is_init);
+        fwrite(minmax[i].min, sizeof(double), vect_size, f);
+        fwrite(minmax[i].max, sizeof(double), vect_size, f);
+        fwrite(&minmax[i].is_init, sizeof(int), vect_size, f);
     }
 }
 
@@ -345,13 +310,10 @@ void write_threshold(int  **threshold,
                      int    nb_time_steps,
                      FILE*  f)
 {
-    int i, j;
+    int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        for (j=0; j<vect_size; j++)
-        {
-            fprintf(f, "%d\n", threshold[i][j]);
-        }
+        fwrite(threshold[i], sizeof(int), vect_size, f);
     }
 }
 
@@ -423,7 +385,7 @@ void save_stats (stats_data_t *data,
         if (comm_data->rcounts[i] > 0)
         {
             sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, i);
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "wb+");
             fprintf(f, "%d\n", data[i].vect_size);
             if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0)
             {
@@ -446,7 +408,7 @@ void save_stats (stats_data_t *data,
 //                TODO
 //                write_sobol(data->thresholds, data->vect_size, data->options->nb_time_steps, f);
             }
-            fprintf(f, "%d\n", data[i].computed);
+            fwrite(data[i].computed, sizeof(int), 1, f);
         }
     }
 }
@@ -484,7 +446,7 @@ void read_saved_stats (stats_data_t *data,
         if (comm_data->rcounts[i] > 0)
         {
             sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, i);
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "rb");
             fread(&data[i].vect_size, sizeof(int), 1, f);
             if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0)
             {
@@ -507,7 +469,7 @@ void read_saved_stats (stats_data_t *data,
 //                TODO
 //                read_sobol(data->thresholds, data->vect_size, data->options->nb_time_steps, f);
             }
-            fread(&data->computed, sizeof(int), 1, f);
+            fread(&data[i].computed, sizeof(int), 1, f);
         }
     }
 }

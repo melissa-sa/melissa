@@ -455,7 +455,7 @@ void write_stats_ensight(stats_data_t    **data,
 
 void finalize_stats (stats_data_t *data);
 
-void write_options (const stats_options_t *options);
+void write_options (stats_options_t *options);
 
 void read_options (stats_options_t  *options);
 

@@ -75,7 +75,11 @@ int main (int argc, char **argv)
             printf("\ncan't catch SIGUSR2\n");
 
     stats_get_options (argc, argv, &stats_options);
-    print_options (&stats_options);
+    if (comm_data.rank == 0)
+    {
+        print_options (&stats_options);
+        write_options (&stats_options);
+    }
 //    parameters = calloc (stats_options.nb_parameters, sizeof(int));
 
     nb_iterations = stats_options.nb_simu * stats_options.nb_time_steps ;
@@ -199,7 +203,6 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
                 start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
-                fprintf(stderr, "new simulation wants to connect !!!\n");
                 // new simulation wants to connect
                 zmq_recv (connexion_responder, rinit_tab, 2 * sizeof(int), 0);
                 zmq_send (connexion_responder, sinit_tab, 2 * sizeof(int), 0);
@@ -221,7 +224,6 @@ int main (int argc, char **argv)
             MPI_Bcast(rinit_tab, 2, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
             comm_data.client_comm_size = rinit_tab[0];
-            fprintf(stderr, "prout prout\n");
             client_vect_sizes = malloc (comm_data.client_comm_size * sizeof(int));
             first_init = 0;
 #ifdef BUILD_WITH_PROBES
@@ -396,7 +398,7 @@ int main (int argc, char **argv)
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
-            if (comm_data.rank==0 && (iteration % 1) == 0 )
+            if (comm_data.rank==0 && (iteration % 100) == 0 )
             {
                 fprintf(stderr, "iteration %d / %d - field \"%s\"\n", iteration, nb_iterations, field_name_ptr);
             }
@@ -515,13 +517,22 @@ int main (int argc, char **argv)
 
         if (end_signal != 0)
         {
-//            field_ptr fptr = field;
-//            fprintf (stderr, "INTERUPTED\n");
-//            while (fptr != NULL)
-//            {
-//                save_stats (fptr->stats_data, &comm_data, fptr->name);
-//                fptr = field->next;
-//            }
+            field_ptr fptr = field;
+            if (comm_data.rank == 0)
+                fprintf (stderr, "\nINTERUPTED\n");
+            while (fptr != NULL)
+            {
+                save_stats (fptr->stats_data, &comm_data, fptr->name);
+                fptr = field->next;
+                if (comm_data.rank == 0)
+                {
+                    char dir[256];
+                    getcwd(dir, 256*sizeof(char));
+                    fprintf(stderr, "\nstatistic fields saved in %s\n", dir);
+                }
+            }
+            MPI_Finalize ();
+            return 0;
             break;
         }
 
@@ -583,14 +594,14 @@ int main (int argc, char **argv)
         free(node_names);
     }
 
-//    if (end_signal == 0)
-//    {
+    if (end_signal == 0)
+    {
         finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes
 #ifdef BUILD_WITH_PROBES
                             , &total_write_time
 #endif // BUILD_WITH_PROBES
                             );
-//    }
+    }
     free (buffer);
 //    free (parameters);
     free (comm_data.rcounts);
