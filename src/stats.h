@@ -457,7 +457,7 @@ void finalize_stats (stats_data_t *data);
 
 void write_options (stats_options_t *options);
 
-void read_options (stats_options_t  *options);
+int read_options(stats_options_t  *options);
 
 void write_mean(mean_t *means,
                 int     vect_size,

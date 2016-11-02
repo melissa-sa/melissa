@@ -53,15 +53,23 @@ void write_options (stats_options_t *options)
  *
  *******************************************************************************/
 
-void read_options (stats_options_t  *options)
+int read_options (stats_options_t *options)
 {
     FILE* f = NULL;
+    int ret = 1;
 
     f = fopen("options.save", "rb");
 
-   fread(options, sizeof(*options), 1, f);
+    if (f != NULL)
+    {
+        if (1 == fread(options, sizeof(*options), 1, f));
+        {
+            ret = 0;
+        }
+    }
 
     fclose(f);
+    return ret;
 }
 
 /**

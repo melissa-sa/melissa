@@ -378,7 +378,6 @@ void connect_to_stats (const int *local_vect_size,
 
     if (*rank == 0)
     {
-        fprintf(stderr, "client: my_comm_size = %d\n", *comm_size);
         zmq_send (zmq_data.init_requester2, my_vect_size, *comm_size * sizeof(int), 0);
         zmq_recv (zmq_data.init_requester2, node_names, zmq_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
     }
@@ -803,10 +802,8 @@ void disconnect_from_stats ()
         {
             zmq_close (zmq_data.data_pusher[i]);
         }
-        fprintf (stderr, " Wait close ...\n");
         zmq_ctx_destroy (zmq_data.context);
         free(zmq_data.data_pusher);
-        fprintf (stderr, " ... closed\n");
     }
     free(zmq_data.send_counts);
     free(zmq_data.sdispls);

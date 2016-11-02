@@ -140,7 +140,6 @@ static inline void get_operations (char            *name,
 
 void print_options (stats_options_t *options)
 {
-    int i;
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "nb_time_step = %d\n", options->nb_time_steps);
     fprintf(stdout, "nb_parameters = %d\n", options->nb_parameters);
@@ -161,7 +160,8 @@ void print_options (stats_options_t *options)
         fprintf(stdout, "    threshold exceedance, with threshold = %g\n", options->threshold);
     if (options->sobol_op != 0)
         fprintf(stdout, "    sobol indices, max order: %d\n", options->sobol_order);
-
+    if (options->restart != 0)
+        fprintf(stdout, "using options.save restart file\n");
 }
 
 /**
@@ -201,6 +201,16 @@ void stats_get_options (int argc, char  **argv,
         opt = getopt (argc, argv, "p:t:o:e:s:g:h:r");
 
         switch (opt) {
+        case 'r':
+            if (0 == read_options (options))
+            {
+                options->restart = 1;
+                stats_check_options (options);
+                return;
+            }
+            fprintf (stdout, "WARNING: can not read option.save file\n");
+            options->restart = 0;
+            break;
         case 'p':
             options->nb_parameters = atoi (optarg);
             break;
@@ -218,9 +228,6 @@ void stats_get_options (int argc, char  **argv,
             break;
         case 'g':
             options->nb_groups = atoi (optarg);
-            break;
-        case 'r':
-            options->restart = 1;
             break;
         case 'h':
             stats_usage ();
