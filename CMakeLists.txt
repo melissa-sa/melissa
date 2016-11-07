@@ -44,7 +44,7 @@ if(BUILD_WITH_ZMQ)
   endif(ZMQ_LIBRARIES)
   if(ZMQ_LIBRARIES AND ZMQ_INCLUDE_DIRS)
     set(ZMQ_FOUND TRUE)
-    message(STATUS "ZeroMQ Found, libdir: ${ZMQ_LIBDIR}, includedir: ${ZMQ_INCLUDE_DIRS}, version=${ZMQ_VERSION} ")
+    message(STATUS "ZeroMQ Found, libdir: ${ZMQ_LIBRARY_DIRS}, includedir: ${ZMQ_INCLUDE_DIRS}, version=${ZMQ_VERSION} ")
     add_definitions( -DBUILD_WITH_ZMQ )
   else(ZMQ_LIBRARIES AND ZMQ_INCLUDE_DIRS)
     # Disable  Option if missing dependencies
