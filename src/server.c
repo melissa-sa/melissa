@@ -83,8 +83,6 @@ int main (int argc, char **argv)
 //    parameters = calloc (stats_options.nb_parameters, sizeof(int));
 
     nb_iterations = stats_options.nb_simu * stats_options.nb_time_steps ;
-    fprintf(stderr,"nb simu : %d, nb time steps : %d, nb groups : %d, nb param : %d \n",
-            stats_options.nb_simu, stats_options.nb_time_steps, stats_options.nb_groups, stats_options.nb_parameters);
 
     port_no = 32123 + comm_data.rank;
     sprintf (port_name, "tcp://*:%d", port_no);
@@ -92,7 +90,7 @@ int main (int argc, char **argv)
     ret = zmq_bind (data_puller, port_name);
     if (ret != 0)
     {
-        fprintf(stderr,"ERROR on binding\n");
+        fprintf(stderr,"ERROR on binding (%s)\n");
         exit(0);
     }
 
@@ -101,7 +99,7 @@ int main (int argc, char **argv)
     ret = zmq_bind (sobol_ready_responder, port_name);
     if (ret != 0)
     {
-        fprintf(stderr,"ERROR on binding\n");
+        fprintf(stderr,"ERROR on binding (%s)\n", port_name);
         exit(0);
     }
 
@@ -124,7 +122,7 @@ int main (int argc, char **argv)
                 ret = zmq_bind (init_responder[i], port_name);
                 if (ret != 0)
                 {
-                    fprintf(stderr,"ERROR on binding\n");
+                    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
                     exit(0);
                 }
             }
@@ -134,7 +132,7 @@ int main (int argc, char **argv)
                 init_responder2[i] = zmq_socket (context, ZMQ_REP);
                 if (i<10)
                 {
-                  sprintf (port_name, "tcp://*:220%d", i);
+                    sprintf (port_name, "tcp://*:220%d", i);
                 }
                 else
                 {
@@ -143,7 +141,7 @@ int main (int argc, char **argv)
                 ret = zmq_bind (init_responder2[i], port_name);
                 if (ret != 0)
                 {
-                    fprintf(stderr,"ERROR on binding\n");
+                    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
                     exit(0);
                 }
             }
@@ -155,14 +153,14 @@ int main (int argc, char **argv)
             ret = zmq_bind (init_responder[0], "tcp://*:21000");
             if (ret != 0)
             {
-                fprintf(stderr,"ERROR on binding\n");
+                fprintf(stderr,"ERROR on binding (%s)\n", port_name);
                 exit(0);
             }
         }
         ret = zmq_bind (connexion_responder, "tcp://*:20000");
         if (ret != 0)
         {
-            fprintf(stderr,"ERROR on binding\n");
+            fprintf(stderr,"ERROR on binding (%s)\n", port_name);
             exit(0);
         }
 
@@ -317,7 +315,7 @@ int main (int argc, char **argv)
                         ret = zmq_bind (sobol_data_responder[i*comm_data.client_comm_size + j], port_name);
                         if (ret != 0)
                         {
-                            fprintf(stderr,"ERROR on binding\n");
+                            fprintf(stderr,"ERROR on binding (%s)\n", port_name);
                             exit(0);
                         }
                     }
@@ -333,7 +331,7 @@ int main (int argc, char **argv)
                         ret = zmq_bind (sobol_data_responder2[i*comm_data.client_comm_size + j], port_name);
                         if (ret != 0)
                         {
-                            fprintf(stderr,"ERROR on binding\n");
+                            fprintf(stderr,"ERROR on binding (%s)\n", port_name);
                             exit(0);
                         }
                     }
