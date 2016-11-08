@@ -40,7 +40,7 @@ if(BUILD_WITH_ZMQ)
   if(ZMQ_LIBRARIES)
     set(EXTRA_LIBS ${EXTRA_LIBS}
                    ${ZMQ_LIBRARIES} )
-    link_directories(${ZMQ_LIBDIR})
+    link_directories(${ZMQ_LIBRARY_DIRS})
   endif(ZMQ_LIBRARIES)
   if(ZMQ_LIBRARIES AND ZMQ_INCLUDE_DIRS)
     set(ZMQ_FOUND TRUE)

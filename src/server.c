@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
@@ -84,23 +85,23 @@ int main (int argc, char **argv)
 
     nb_iterations = stats_options.nb_simu * stats_options.nb_time_steps ;
 
-    port_no = 32123 + comm_data.rank;
-    sprintf (port_name, "tcp://*:%d", port_no);
+    port_no = 123 + comm_data.rank;
+    sprintf (port_name, "tcp://*:11%d", port_no);
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     ret = zmq_bind (data_puller, port_name);
     if (ret != 0)
     {
-        fprintf(stderr,"ERROR on binding (%s)\n");
-        exit(0);
+        ret = errno;
+        print_zmq_error(ret, port_name);
     }
 
-    port_no = 123 + comm_data.rank;
+    port_no = 120 + comm_data.rank;
     sprintf (port_name, "tcp://*:10%d", port_no);
     ret = zmq_bind (sobol_ready_responder, port_name);
     if (ret != 0)
     {
-        fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-        exit(0);
+        ret = errno;
+        print_zmq_error(ret, port_name);
     }
 
     if (comm_data.rank == 0)
@@ -113,17 +114,21 @@ int main (int argc, char **argv)
                 init_responder[i] = zmq_socket (context, ZMQ_REP);
                 if (i<10)
                 {
-                  sprintf (port_name, "tcp://*:210%d", i);
+                  sprintf (port_name, "tcp://*:200%d", i);
+                }
+                else if (i<100)
+                {
+                  sprintf (port_name, "tcp://*:20%d", i);
                 }
                 else
                 {
-                    sprintf (port_name, "tcp://*:21%d", i);
+                    sprintf (port_name, "tcp://*:2%d", i);
                 }
                 ret = zmq_bind (init_responder[i], port_name);
                 if (ret != 0)
                 {
-                    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-                    exit(0);
+                    ret = errno;
+                    print_zmq_error(ret, port_name);
                 }
             }
             init_responder2 = malloc ((stats_options.nb_groups) * sizeof (void*));
@@ -132,17 +137,21 @@ int main (int argc, char **argv)
                 init_responder2[i] = zmq_socket (context, ZMQ_REP);
                 if (i<10)
                 {
-                    sprintf (port_name, "tcp://*:220%d", i);
+                    sprintf (port_name, "tcp://*:300%d", i);
+                }
+                else if (i<100)
+                {
+                    sprintf (port_name, "tcp://*:30%d", i);
                 }
                 else
                 {
-                    sprintf (port_name, "tcp://*:22%d", i);
+                    sprintf (port_name, "tcp://*:3%d", i);
                 }
                 ret = zmq_bind (init_responder2[i], port_name);
                 if (ret != 0)
                 {
-                    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-                    exit(0);
+                    ret = errno;
+                    print_zmq_error(ret, port_name);
                 }
             }
         }
@@ -150,18 +159,18 @@ int main (int argc, char **argv)
         {
             init_responder = malloc (sizeof (void*));
             init_responder[0] = zmq_socket (context, ZMQ_REP);
-            ret = zmq_bind (init_responder[0], "tcp://*:21000");
+            ret = zmq_bind (init_responder[0], "tcp://*:20000");
             if (ret != 0)
             {
-                fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-                exit(0);
+                ret = errno;
+                print_zmq_error(ret, port_name);
             }
         }
-        ret = zmq_bind (connexion_responder, "tcp://*:20000");
+        ret = zmq_bind (connexion_responder, "tcp://*:30000");
         if (ret != 0)
         {
-            fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-            exit(0);
+            ret = errno;
+            print_zmq_error(ret, port_name);
         }
 
         node_names = malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size * sizeof(char));
@@ -309,14 +318,28 @@ int main (int argc, char **argv)
                 {
                     for (j=0; j<comm_data.client_comm_size; j++)
                     {
-                        port_no = 12 + comm_data.rank;
+                        port_no = i*comm_data.client_comm_size*comm_data.comm_size + j*comm_data.comm_size + comm_data.rank;
                         sobol_data_responder[i*comm_data.client_comm_size + j] = zmq_socket (context, ZMQ_REP);
-                        sprintf (port_name, "tcp://*:20%d%d", port_no, comm_data.client_comm_size*i + j);
-                        ret = zmq_bind (sobol_data_responder[i*comm_data.client_comm_size + j], port_name);
+                        if (comm_data.rcounts[j] > 0)
+                        {
+                            if (port_no<10)
+                            {
+                                sprintf (port_name, "tcp://*:400%d", port_no);
+                            }
+                            else if (port_no<100)
+                            {
+                                sprintf (port_name, "tcp://*:40%d", port_no);
+                            }
+                            else
+                            {
+                                sprintf (port_name, "tcp://*:4%d", port_no);
+                            }
+                            ret = zmq_bind (sobol_data_responder[i*comm_data.client_comm_size + j], port_name);
+                        }
                         if (ret != 0)
                         {
-                            fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-                            exit(0);
+                            ret = errno;
+                            print_zmq_error(ret, port_name);
                         }
                     }
                 }
@@ -325,14 +348,28 @@ int main (int argc, char **argv)
                 {
                     for (j=0; j<comm_data.client_comm_size; j++)
                     {
-                        port_no = 12 + comm_data.rank;
+                        port_no = i*comm_data.client_comm_size*comm_data.comm_size + j*comm_data.comm_size + comm_data.rank;
                         sobol_data_responder2[i*comm_data.client_comm_size + j] = zmq_socket (context, ZMQ_REP);
-                        sprintf (port_name, "tcp://*:30%d%d", port_no, comm_data.client_comm_size*i + j);
-                        ret = zmq_bind (sobol_data_responder2[i*comm_data.client_comm_size + j], port_name);
+                        if (comm_data.rcounts[j] > 0)
+                        {
+                            if (port_no<10)
+                            {
+                                sprintf (port_name, "tcp://*:500%d", port_no);
+                            }
+                            else if (port_no<100)
+                            {
+                                sprintf (port_name, "tcp://*:50%d", port_no);
+                            }
+                            else
+                            {
+                                sprintf (port_name, "tcp://*:5%d", port_no);
+                            }
+                            ret = zmq_bind (sobol_data_responder2[i*comm_data.client_comm_size + j], port_name);
+                        }
                         if (ret != 0)
                         {
-                            fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-                            exit(0);
+                            ret = errno;
+                            print_zmq_error(ret, port_name);
                         }
                     }
                 }
