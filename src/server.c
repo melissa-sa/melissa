@@ -335,11 +335,11 @@ int main (int argc, char **argv)
                                 sprintf (port_name, "tcp://*:4%d", port_no);
                             }
                             ret = zmq_bind (sobol_data_responder[i*comm_data.client_comm_size + j], port_name);
-                        }
-                        if (ret != 0)
-                        {
-                            ret = errno;
-                            print_zmq_error(ret, port_name);
+                            if (ret != 0)
+                            {
+                                ret = errno;
+                                print_zmq_error(ret, port_name);
+                            }
                         }
                     }
                 }
@@ -365,11 +365,11 @@ int main (int argc, char **argv)
                                 sprintf (port_name, "tcp://*:5%d", port_no);
                             }
                             ret = zmq_bind (sobol_data_responder2[i*comm_data.client_comm_size + j], port_name);
-                        }
-                        if (ret != 0)
-                        {
-                            ret = errno;
-                            print_zmq_error(ret, port_name);
+                            if (ret != 0)
+                            {
+                                ret = errno;
+                                print_zmq_error(ret, port_name);
+                            }
                         }
                     }
                 }
