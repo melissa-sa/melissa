@@ -25,23 +25,19 @@ int main (int argc, char **argv)
     field_ptr           field = NULL;
     comm_data_t         comm_data;
     int                 time_step;
-    int                 buff_size, i, j, ret, client_rank;
+    int                 recv_buff_size, i, j, ret, client_rank;
     char               *buffer, *buf_ptr;
     double            **buff_tab_ptr;
     int                 iteration = 0, nb_iterations = 0;
     int                 port_no;
-    char                port_name[128] = {0};
+    char                port_name[MPI_MAX_PROCESSOR_NAME] = {0};
     char               *node_names;
-    int                 sinit_tab[2], rinit_tab[2];
+    int                 sinit_tab[3], rinit_tab[2];
     void               *context = zmq_ctx_new ();
     char                node_name[MPI_MAX_PROCESSOR_NAME];
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
-    void              **init_responder;
-    void              **init_responder2;
+    void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
-    void               *sobol_ready_responder = zmq_socket (context, ZMQ_REP);
-    void              **sobol_data_responder;
-    void              **sobol_data_responder2;
     int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
@@ -50,6 +46,7 @@ int main (int argc, char **argv)
     pull_data_t         pull_data;
     int                 nb_bufferized_messages = 50;
     char               *field_name_ptr;
+    int                 simu_id, group_id;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -81,9 +78,8 @@ int main (int argc, char **argv)
         print_options (&stats_options);
         write_options (&stats_options);
     }
-//    parameters = calloc (stats_options.nb_parameters, sizeof(int));
 
-    nb_iterations = stats_options.nb_simu * stats_options.nb_time_steps ;
+    nb_iterations = stats_options.nb_groups * stats_options.nb_time_steps ;
 
     port_no = 123 + comm_data.rank;
     sprintf (port_name, "tcp://*:11%d", port_no);
@@ -95,82 +91,19 @@ int main (int argc, char **argv)
         print_zmq_error(ret, port_name);
     }
 
-    port_no = 120 + comm_data.rank;
-    sprintf (port_name, "tcp://*:10%d", port_no);
-    ret = zmq_bind (sobol_ready_responder, port_name);
-    if (ret != 0)
-    {
-        ret = errno;
-        print_zmq_error(ret, port_name);
-    }
-
     if (comm_data.rank == 0)
     {
-        if (stats_options.sobol_op == 1)
-        {
-            init_responder = malloc ((stats_options.nb_groups) * sizeof (void*));
-            for (i=0; i<stats_options.nb_groups; i++)
-            {
-                init_responder[i] = zmq_socket (context, ZMQ_REP);
-                if (i<10)
-                {
-                  sprintf (port_name, "tcp://*:200%d", i);
-                }
-                else if (i<100)
-                {
-                  sprintf (port_name, "tcp://*:20%d", i);
-                }
-                else
-                {
-                    sprintf (port_name, "tcp://*:2%d", i);
-                }
-                ret = zmq_bind (init_responder[i], port_name);
-                if (ret != 0)
-                {
-                    ret = errno;
-                    print_zmq_error(ret, port_name);
-                }
-            }
-            init_responder2 = malloc ((stats_options.nb_groups) * sizeof (void*));
-            for (i=0; i<stats_options.nb_groups; i++)
-            {
-                init_responder2[i] = zmq_socket (context, ZMQ_REP);
-                if (i<10)
-                {
-                    sprintf (port_name, "tcp://*:300%d", i);
-                }
-                else if (i<100)
-                {
-                    sprintf (port_name, "tcp://*:30%d", i);
-                }
-                else
-                {
-                    sprintf (port_name, "tcp://*:3%d", i);
-                }
-                ret = zmq_bind (init_responder2[i], port_name);
-                if (ret != 0)
-                {
-                    ret = errno;
-                    print_zmq_error(ret, port_name);
-                }
-            }
-        }
-        else
-        {
-            init_responder = malloc (sizeof (void*));
-            init_responder[0] = zmq_socket (context, ZMQ_REP);
-            ret = zmq_bind (init_responder[0], "tcp://*:20000");
-            if (ret != 0)
-            {
-                ret = errno;
-                print_zmq_error(ret, port_name);
-            }
-        }
-        ret = zmq_bind (connexion_responder, "tcp://*:30000");
+        ret = zmq_bind (init_responder, "tcp://*:20002");
         if (ret != 0)
         {
             ret = errno;
-            print_zmq_error(ret, port_name);
+            print_zmq_error(ret, "tcp://*:20002");
+        }
+        ret = zmq_bind (connexion_responder, "tcp://*:30003");
+        if (ret != 0)
+        {
+            ret = errno;
+            print_zmq_error(ret, "tcp://*:30003");
         }
 
         node_names = malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size * sizeof(char));
@@ -187,6 +120,7 @@ int main (int argc, char **argv)
 
     sinit_tab[0] = comm_data.comm_size;
     sinit_tab[1] = stats_options.sobol_op;
+    sinit_tab[2] = stats_options.nb_parameters;
     while (1)
     {
 #ifdef BUILD_WITH_PROBES
@@ -194,10 +128,9 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
         zmq_pollitem_t items [] = {
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
-            { data_puller, 0, ZMQ_POLLIN, 0 },
-            { sobol_ready_responder, 0, ZMQ_POLLIN, 0 }
+            { data_puller, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 3, 100);
+        zmq_poll (items, 2, 100);
 #ifdef BUILD_WITH_PROBES
         end_wait_time = stats_get_time();
         total_wait_time += end_wait_time - start_wait_time;
@@ -212,7 +145,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
                 // new simulation wants to connect
                 zmq_recv (connexion_responder, rinit_tab, 2 * sizeof(int), 0);
-                zmq_send (connexion_responder, sinit_tab, 2 * sizeof(int), 0);
+                zmq_send (connexion_responder, sinit_tab, 3 * sizeof(int), 0);
                 get_next_message = 1;
                 if (first_init == 2)
                 {
@@ -233,9 +166,6 @@ int main (int argc, char **argv)
             comm_data.client_comm_size = rinit_tab[0];
             client_vect_sizes = malloc (comm_data.client_comm_size * sizeof(int));
             first_init = 0;
-#ifdef BUILD_WITH_PROBES
-            fprintf (stdout, "Client MPI communicator size = %d\n", comm_data.client_comm_size);
-#endif // BUILD_WITH_PROBES
         }
 
         if (get_next_message == 1)
@@ -244,24 +174,10 @@ int main (int argc, char **argv)
             start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
             // new simulation wants to connect, step two
-            if (stats_options.sobol_op == 1)
-            {
-                for (i=0; i<stats_options.nb_parameters+2; i++)
-                {
-                    zmq_recv (init_responder[rinit_tab[1]], rinit_tab, 2 * sizeof(int), 0);
-                    zmq_send (init_responder[rinit_tab[1]], sinit_tab, 2 * sizeof(int), 0);
-                }
-                for (i=0; i<stats_options.nb_parameters+2; i++)
-                {
-                    zmq_recv (init_responder2[rinit_tab[1]], client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
-                    zmq_send (init_responder2[rinit_tab[1]], node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-                }
-            }
-            else
-            {
-                zmq_recv (init_responder[0], client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
-                zmq_send (init_responder[0], node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-            }
+
+            zmq_recv (init_responder, client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
+            zmq_send (init_responder, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+
             get_next_message = 0;
             if (first_connect == 2)
             {
@@ -302,8 +218,13 @@ int main (int argc, char **argv)
                               comm_data.rank,
                               &pull_data);
             nb_iterations *= pull_data.local_nb_messages;
-            buff_size = pull_data.buff_size * sizeof(double) + MAX_FIELD_NAME * sizeof(char) + 4 * sizeof(int);
-            buffer = malloc (buff_size);
+            recv_buff_size = pull_data.buff_size * sizeof(double);
+            if (stats_options.sobol_op)
+            {
+                recv_buff_size *= stats_options.nb_parameters+2;
+            }
+            recv_buff_size += MAX_FIELD_NAME * sizeof(char) + 4 * sizeof(int);
+            buffer = malloc (recv_buff_size);
 
             if (stats_options.sobol_op == 1)
             {
@@ -311,67 +232,6 @@ int main (int argc, char **argv)
                 for (i=0; i<stats_options.nb_parameters+2; i++)
                 {
                     buff_tab_ptr[i] = malloc (pull_data.buff_size * sizeof(double));
-                }
-                sobol_data_responder = malloc (stats_options.nb_groups * comm_data.client_comm_size * sizeof(void*));
-
-                for (i=0; i<stats_options.nb_groups; i++)
-                {
-                    for (j=0; j<comm_data.client_comm_size; j++)
-                    {
-                        port_no = i*comm_data.client_comm_size*comm_data.comm_size + j*comm_data.comm_size + comm_data.rank;
-                        sobol_data_responder[i*comm_data.client_comm_size + j] = zmq_socket (context, ZMQ_REP);
-                        if (comm_data.rcounts[j] > 0)
-                        {
-                            if (port_no<10)
-                            {
-                                sprintf (port_name, "tcp://*:400%d", port_no);
-                            }
-                            else if (port_no<100)
-                            {
-                                sprintf (port_name, "tcp://*:40%d", port_no);
-                            }
-                            else
-                            {
-                                sprintf (port_name, "tcp://*:4%d", port_no);
-                            }
-                            ret = zmq_bind (sobol_data_responder[i*comm_data.client_comm_size + j], port_name);
-                            if (ret != 0)
-                            {
-                                ret = errno;
-                                print_zmq_error(ret, port_name);
-                            }
-                        }
-                    }
-                }
-                sobol_data_responder2 = malloc (stats_options.nb_groups * comm_data.client_comm_size * sizeof(void*));
-                for (i=0; i<stats_options.nb_groups; i++)
-                {
-                    for (j=0; j<comm_data.client_comm_size; j++)
-                    {
-                        port_no = i*comm_data.client_comm_size*comm_data.comm_size + j*comm_data.comm_size + comm_data.rank;
-                        sobol_data_responder2[i*comm_data.client_comm_size + j] = zmq_socket (context, ZMQ_REP);
-                        if (comm_data.rcounts[j] > 0)
-                        {
-                            if (port_no<10)
-                            {
-                                sprintf (port_name, "tcp://*:500%d", port_no);
-                            }
-                            else if (port_no<100)
-                            {
-                                sprintf (port_name, "tcp://*:50%d", port_no);
-                            }
-                            else
-                            {
-                                sprintf (port_name, "tcp://*:5%d", port_no);
-                            }
-                            ret = zmq_bind (sobol_data_responder2[i*comm_data.client_comm_size + j], port_name);
-                            if (ret != 0)
-                            {
-                                ret = errno;
-                                print_zmq_error(ret, port_name);
-                            }
-                        }
-                    }
                 }
             }
             else
@@ -386,82 +246,7 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
-            zmq_recv (data_puller, buffer, buff_size, 0);
-#ifdef BUILD_WITH_PROBES
-            end_comm_time = stats_get_time();
-            total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
-
-            buf_ptr = buffer;
-            time_step = *buf_ptr;
-            buf_ptr += 3 * sizeof(int);
-            client_rank = *buf_ptr;
-            buf_ptr += sizeof(int);
-//            memcpy(parameters, buf_ptr, stats_options.nb_parameters * sizeof(int));
-//            buf_ptr += stats_options.nb_parameters * sizeof(int);
-            field_name_ptr = buf_ptr;
-            if (field == NULL)
-            {
-                add_field(&field, field_name_ptr, comm_data.client_comm_size);
-                data_ptr = get_data_ptr (field, field_name_ptr);
-                nb_fields += 1;
-            }
-            else
-            {
-                data_ptr = get_data_ptr (field, field_name_ptr);
-                if (data_ptr == NULL)
-                {
-                    add_field(&field, field_name_ptr, comm_data.client_comm_size);
-                    data_ptr = get_data_ptr (field, field_name_ptr);
-                    nb_fields += 1;
-                }
-            }
-            if (data_ptr[client_rank].is_valid != 1)
-            {
-                init_data (&data_ptr[client_rank], &stats_options, comm_data.rcounts[client_rank]);
-            }
-            buf_ptr += MAX_FIELD_NAME * sizeof(char);
-#ifdef BUILD_WITH_PROBES
-            total_bytes_recv += buff_size;
-            start_computation_time = stats_get_time();
-#endif // BUILD_WITH_PROBES
-
-            buff_tab_ptr[0] = (double*)buf_ptr;
-            compute_stats (&data_ptr[client_rank], time_step-1, 1, buff_tab_ptr);
-            iteration++;
-#ifdef BUILD_WITH_PROBES
-            end_computation_time = stats_get_time();
-            total_computation_time += end_computation_time - start_computation_time;
-#endif // BUILD_WITH_PROBES
-            if (comm_data.rank==0 && (iteration % 100) == 0 )
-            {
-                fprintf(stderr, "iteration %d / %d - field \"%s\"\n", iteration, nb_iterations, field_name_ptr);
-            }
-//            j = 0;
-//            for (i=0; i<comm_data.client_comm_size; i++)
-//            {
-//                if (comm_data.rcounts[i] > 0)
-//                {
-//                    if (data_ptr[i].computed[time_step] == stats_options.nb_simu)
-//                    {
-//                        j += 1;
-//                    }
-//                }
-//            }
-//            if (j == pull_data.local_nb_messages)
-//            {
-//                // WRITE STATS
-//            }
-        }
-
-        if (items[2].revents & ZMQ_POLLIN)
-        {
-#ifdef BUILD_WITH_PROBES
-            start_comm_time = stats_get_time();
-#endif // BUILD_WITH_PROBES
-            int simu_id, group_id;
-            zmq_recv (sobol_ready_responder, buffer, buff_size, 0);
-            zmq_send (sobol_ready_responder, &comm_data.rank, sizeof(int), 0);
+            zmq_recv (data_puller, buffer, recv_buff_size, 0);
 #ifdef BUILD_WITH_PROBES
             end_comm_time = stats_get_time();
             total_comm_time += end_comm_time - start_comm_time;
@@ -498,48 +283,27 @@ int main (int argc, char **argv)
                 init_data (&data_ptr[client_rank], &stats_options, comm_data.rcounts[client_rank]);
             }
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
-            memcpy(buff_tab_ptr[simu_id], buf_ptr, pull_data.buff_size * sizeof(double));
 #ifdef BUILD_WITH_PROBES
-            total_bytes_recv += buff_size;
-#endif // BUILD_WITH_PROBES
-
-            for (i=1; i<stats_options.nb_parameters+2; i++)
-            {
-#ifdef BUILD_WITH_PROBES
-                start_comm_time = stats_get_time();
-#endif // BUILD_WITH_PROBES
-                zmq_recv (sobol_data_responder[group_id*comm_data.client_comm_size + client_rank], buffer, buff_size, 0);
-                zmq_send (sobol_data_responder[group_id*comm_data.client_comm_size + client_rank], &comm_data.rank, sizeof(int), 0);
-#ifdef BUILD_WITH_PROBES
-                end_comm_time = stats_get_time();
-                total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
-                buf_ptr = buffer;
-                buf_ptr += sizeof(int);
-                simu_id = *buf_ptr;
-                buf_ptr += 3 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
-                memcpy(buff_tab_ptr[simu_id], buf_ptr, pull_data.buff_size * sizeof(double));
-#ifdef BUILD_WITH_PROBES
-                total_bytes_recv += buff_size;
-#endif // BUILD_WITH_PROBES
-            }
-            for (i=0; i<stats_options.nb_parameters+2; i++)
-            {
-#ifdef BUILD_WITH_PROBES
-                start_comm_time = stats_get_time();
-#endif // BUILD_WITH_PROBES
-                zmq_recv (sobol_data_responder2[group_id*comm_data.client_comm_size + client_rank], buffer, sizeof(int), 0);
-                zmq_send (sobol_data_responder2[group_id*comm_data.client_comm_size + client_rank], &comm_data.rank, sizeof(int), 0);
-#ifdef BUILD_WITH_PROBES
-                end_comm_time = stats_get_time();
-                total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
-                iteration++;
-            }
-#ifdef BUILD_WITH_PROBES
+            total_bytes_recv += recv_buff_size;
             start_computation_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
-            compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
+
+            if (stats_options.sobol_op != 1)
+            {
+                buff_tab_ptr[0] = (double*)buf_ptr;
+                compute_stats (&data_ptr[client_rank], time_step-1, 1, buff_tab_ptr);
+                iteration++;
+            }
+            else
+            {
+                for (i=0; i<stats_options.nb_parameters+2; i++)
+                {
+                    memcpy(buff_tab_ptr[i], buf_ptr, pull_data.buff_size * sizeof(double));
+                    buf_ptr += pull_data.buff_size * sizeof(double);
+                }
+                compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
+                iteration++;
+            }
 #ifdef BUILD_WITH_PROBES
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
@@ -581,42 +345,11 @@ int main (int argc, char **argv)
     }
 
     zmq_close (connexion_responder);
-    if (stats_options.sobol_op == 1)
-    {
-        for (i=0; i<stats_options.nb_groups; i++)
-        {
-            if (comm_data.rank == 0)
-            {
-                zmq_close (init_responder[i]);
-                zmq_close (init_responder2[i]);
-            }
-            for (j=0; j<comm_data.client_comm_size; j++)
-            {
-                zmq_close (sobol_data_responder[i*comm_data.client_comm_size + j]);
-                zmq_close (sobol_data_responder2[i*comm_data.client_comm_size + j]);
-            }
-        }
-    }
-    else
-    {
-        if (comm_data.rank == 0)
-        {
-            zmq_close (init_responder[0]);
-        }
-    }
-
+    zmq_close (init_responder);
     zmq_close (data_puller);
-    zmq_close (sobol_ready_responder);
     zmq_ctx_term (context);
     if (stats_options.sobol_op == 1)
     {
-        if (comm_data.rank == 0)
-        {
-            free (init_responder);
-            free (init_responder2);
-        }
-        free (sobol_data_responder);
-        free (sobol_data_responder2);
         for (i=0; i<stats_options.nb_parameters+2; i++)
         {
             free (buff_tab_ptr[i]);
@@ -638,7 +371,6 @@ int main (int argc, char **argv)
                             );
     }
     free (buffer);
-//    free (parameters);
     free (comm_data.rcounts);
     free (comm_data.rdispls);
 

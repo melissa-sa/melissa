@@ -21,10 +21,6 @@
 #define MPI_MAX_PROCESSOR_NAME 256 /**< maximum size of processor names */
 #endif
 
-#ifndef MPI_MAX_PROCESSOR_NAME
-#define MPI_MAX_PROCESSOR_NAME 256 /**< maximum size of processor names */
-#endif
-
 #ifndef MAX_FIELD_NAME
 #define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
@@ -45,27 +41,26 @@ struct zmq_data_s
     void  *context;                           /**< ZeroMQ context                                             */
     void  *connexion_requester;               /**< connexion ZeroMQ port                                      */
     void  *init_requester;                    /**< initialization ZeroMQ port                                 */
-    void  *init_requester2;                   /**< initialization ZeroMQ port (Sobol only)                    */
     void **data_pusher;                       /**< push data ZeroMQ ports                                     */
-    void **sobol_init_requester;              /**< initialization ZeroMQ port                                 */
-    void **sobol_requester;                   /**< data ZeroMQ Sobol port                                     */
-    void **sobol_release_requester;           /**< release ZeroMQ Sobol port                                  */
-    char   port_name[MPI_MAX_PROCESSOR_NAME]; /**< name of the third ZeroMQ port                              */
-    int    rinit_tab[2];                      /**< array used to receive data                                 */
+    void **sobol_requester;                   /**< data ZeroMQ Sobol ports                                    */
+    void  *sobol_release_requester;           /**< release ZeroMQ Sobol port                                  */
+    int    rinit_tab[3];                      /**< array used to receive data                                 */
     int    sobol;                             /**< 1 if sobol computation, 0 otherwhise                       */
     int    sinit_tab[2];                      /**< array used to send data                                    */
     int    nb_proc_server;                    /**< number of MPI processes of the library                     */
+    int    nb_parameters;                     /**< number of parameters of the study                          */
     int   *server_vect_size;                  /**< local vect size for the library                            */
     char  *buffer;                            /**< buffer used to send data to the library                    */
     int    buff_size;                         /**< size of this buffer                                        */
+    char  *buffer_sobol;                      /**< buffer used to send data to sobol rank 0                   */
     int   *send_counts;                       /**< number of elements to send to server rank i                */
+    int   *local_vect_sizes;                  /**< local vector size                                          */
     int   *sdispls;                           /**< displacement to which data should be sent to server rank i */
     int   *pull_rank;                         /**< rank of the pulling process for the message i              */
     int   *push_rank;                         /**< rank of the pushing process for the message i              */
     int   *message_sizes;                     /**< size of the message i                                      */
     int    total_nb_messages;                 /**< total number of messages                                   */
     int    local_nb_messages;                 /**< local number of messages                                   */
-    zmq_pollitem_t *items;                    /**< ZMQ poll structure (sobol only)                            */
 };
 
 typedef struct zmq_data_s zmq_data_t; /**< type corresponding to zmq_data_s */
@@ -106,7 +101,7 @@ static inline void comm_1_to_m_init (zmq_data_t *data)
 
 static inline void comm_n_to_m_init (zmq_data_t *data,
                                      const int   vect_size,
-                                     int        *my_vect_size,
+                                     int        *local_vect_sizes,
                                      const int   rank)
 {
     int  i;
@@ -131,7 +126,7 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
 
     for (i=0; i<vect_size; i++)
     {
-        if (client_count < my_vect_size[client_rank])
+        if (client_count < local_vect_sizes[client_rank])
         {
             client_count += 1;
         }
@@ -188,7 +183,7 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
     server_count = 0;
     for (i=0; i<vect_size; i++)
     {
-        if (client_count < my_vect_size[client_rank])
+        if (client_count < local_vect_sizes[client_rank])
         {
             client_count += 1;
         }
@@ -262,20 +257,24 @@ void connect_to_stats (const int *local_vect_size,
                        const int *sobol_group,
                        MPI_Comm  *comm)
 {
-    char  *node_names;
+    char  *node_names = NULL;
     char   server_node_name[MPI_MAX_PROCESSOR_NAME];
+    char   master_node_name[MPI_MAX_PROCESSOR_NAME];
+    char  *master_node_names = NULL;
+    char   port_name[MPI_MAX_PROCESSOR_NAME] = {0};
     int    port_no, i, j;
     FILE*  file = NULL;
-    int   *my_vect_size;
     int    global_vect_size = 0;
     int    nb_bufferized_messages = 50;
     int    linger = -1;
+    int    ret;
+    void  *master_requester = NULL;
 
     zmq_data.context = zmq_ctx_new ();
     zmq_data.connexion_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
     zmq_data.init_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
-    zmq_data.init_requester2 = zmq_socket (zmq_data.context, ZMQ_REQ);
 
+    // get main server node name
     if (*rank == 0)
     {
         file = fopen("../../DATA/server_name.txt", "r");
@@ -302,71 +301,93 @@ void connect_to_stats (const int *local_vect_size,
         zmq_data.rinit_tab[0] = 0;
         zmq_data.rinit_tab[1] = 1;
 
-        if (*sobol_rank == 0)
-        {
-            sprintf (zmq_data.port_name, "tcp://%s:30000", server_node_name);
-            zmq_connect (zmq_data.connexion_requester, zmq_data.port_name);
-            zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
-            zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 2 * sizeof(int), 0);
-        }
-        if (zmq_data.rinit_tab[1] > 0) // Sobol indices
-        {
-            if (*sobol_group<10)
-            {
-                sprintf (zmq_data.port_name, "tcp://%s:200%d", server_node_name, *sobol_group);
-            }
-            else if (*sobol_group<100)
-            {
-                sprintf (zmq_data.port_name, "tcp://%s:20%d", server_node_name, *sobol_group);
-            }
-            else
-            {
-                sprintf (zmq_data.port_name, "tcp://%s:2%d", server_node_name, *sobol_group);
-            }
-            zmq_connect (zmq_data.init_requester, zmq_data.port_name);
-            zmq_send (zmq_data.init_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
-            zmq_recv (zmq_data.init_requester, zmq_data.rinit_tab, 2 * sizeof(int), 0);
-            if (*sobol_group<10)
-            {
-                sprintf (zmq_data.port_name, "tcp://%s:300%d", server_node_name, *sobol_group);
-            }
-            else if (*sobol_group<100)
-            {
-                sprintf (zmq_data.port_name, "tcp://%s:30%d", server_node_name, *sobol_group);
-            }
-            else
-            {
-                sprintf (zmq_data.port_name, "tcp://%s:3%d", server_node_name, *sobol_group);
-            }
-            zmq_connect (zmq_data.init_requester2, zmq_data.port_name);
-        }
-        else
-        {
-            sprintf (zmq_data.port_name, "tcp://%s:20000", server_node_name);
-            zmq_connect (zmq_data.init_requester2, zmq_data.port_name);
-        }
+        sprintf (port_name, "tcp://%s:30003", server_node_name);
+        zmq_connect (zmq_data.connexion_requester, port_name);
+        zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
+        zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 3 * sizeof(int), 0);
+
+        sprintf (port_name, "tcp://%s:20002", server_node_name);
+        zmq_connect (zmq_data.init_requester, port_name);
     }
 
-    my_vect_size = malloc(*comm_size * sizeof(int));
+    strcpy (master_node_name, "localhost");
+
+    // get Sobol master node name
+    if (*sobol_rank == 0)
+    {
+#ifdef BUILD_WITH_MPI
+        MPI_Get_processor_name(master_node_name, &i);
+#else
+        gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
+#endif // BUILD_WITH_MPI
+        if (*rank == 0)
+        {
+            master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
+        }
+#ifdef BUILD_WITH_MPI
+        MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
+#else // BUILD_WITH_MPI
+        memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
+#endif // BUILD_WITH_MPI
+        if (*rank == 0)
+        {
+            master_requester = zmq_socket (zmq_data.context, ZMQ_REP);
+            sprintf (port_name, "tcp://*:7%d", 100+*sobol_group);
+            ret = zmq_bind (master_requester, port_name);
+            if (ret != 0)
+            {
+                fprintf(stderr,"ERROR on binding (%s)\n",port_name);
+            }
+        }
+    }
+    else // if *sobol_rank != 0
+    {
+        sprintf (port_name, "../../DATA/master%d_name.txt", sobol_group);
+        file = fopen(port_name, "r");
+
+        if (file == NULL)
+        {
+            sprintf (port_name, "master%d_name.txt", sobol_group);
+            file = fopen(port_name, "r");
+
+            if (file == NULL)
+            {
+              strcpy (master_node_name, "localhost");
+              fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
+            }
+        }
+        if (file != NULL)
+        {
+            fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
+            fclose(file);
+        }
+        master_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
+        sprintf (port_name, "tcp://%s:7%d", master_node_name, 100+*sobol_group);
+        ret = zmq_connect (master_requester, port_name);
+    }
+
+    // bcast infos from server
+    zmq_data.local_vect_sizes = malloc(*comm_size * sizeof(int));
 
     if (*comm_size > 1)
     {
-        MPI_Bcast(zmq_data.rinit_tab, 2, MPI_INT, 0, *comm);
+        MPI_Bcast(zmq_data.rinit_tab, 3, MPI_INT, 0, *comm);
         i = *local_vect_size;
-        MPI_Allgather(&i, 1, MPI_INT, my_vect_size, 1, MPI_INT, *comm);
+        MPI_Allgather(&i, 1, MPI_INT, zmq_data.local_vect_sizes, 1, MPI_INT, *comm);
         for (i=0; i<*comm_size; i++)
         {
-            global_vect_size += my_vect_size[i];
+            global_vect_size += zmq_data.local_vect_sizes[i];
         }
     }
     else
     {
-        my_vect_size[0]  = *local_vect_size;
+        zmq_data.local_vect_sizes[0]  = *local_vect_size;
         global_vect_size = *local_vect_size;
     }
 
     zmq_data.nb_proc_server = zmq_data.rinit_tab[0];
     zmq_data.sobol = zmq_data.rinit_tab[1];
+    zmq_data.nb_parameters = zmq_data.rinit_tab[2];
 
     zmq_data.server_vect_size = calloc (zmq_data.nb_proc_server, sizeof(int));
 
@@ -380,14 +401,14 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.send_counts = calloc (zmq_data.nb_proc_server, sizeof(int));
     zmq_data.sdispls     = calloc (zmq_data.nb_proc_server, sizeof(int));
 
-    comm_n_to_m_init (&zmq_data, global_vect_size, my_vect_size, *rank);
+    comm_n_to_m_init (&zmq_data, global_vect_size, zmq_data.local_vect_sizes, *rank); // probleme here
 
     node_names = malloc (zmq_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
 
     if (*rank == 0)
     {
-        zmq_send (zmq_data.init_requester2, my_vect_size, *comm_size * sizeof(int), 0);
-        zmq_recv (zmq_data.init_requester2, node_names, zmq_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+        zmq_send (zmq_data.init_requester, zmq_data.local_vect_sizes, *comm_size * sizeof(int), 0);
+        zmq_recv (zmq_data.init_requester, node_names, zmq_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
     }
 
     if (*comm_size > 1)
@@ -395,76 +416,7 @@ void connect_to_stats (const int *local_vect_size,
         MPI_Bcast (node_names, zmq_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
     }
 
-    if (zmq_data.sobol > 0) // Sobol indices
-    {
-        zmq_data.sobol_requester = malloc (zmq_data.local_nb_messages * sizeof(void*));
-        zmq_data.sobol_release_requester = malloc (zmq_data.local_nb_messages * sizeof(void*));
-
-        j = 0;
-        for (i=0; i<zmq_data.total_nb_messages; i++)
-        {
-            if (*rank == zmq_data.push_rank[i])
-            {
-                if (*sobol_rank == 0)
-                {
-                    zmq_data.sobol_requester[j] = zmq_socket (zmq_data.context, ZMQ_REQ);
-                    zmq_setsockopt (zmq_data.sobol_requester[j], ZMQ_LINGER, &linger, sizeof(int));
-                    port_no = 120 + zmq_data.pull_rank[i];
-                    sprintf (zmq_data.port_name, "tcp://%s:10%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                    zmq_connect (zmq_data.sobol_requester[j], zmq_data.port_name);
-
-                }
-                else
-                {
-                    zmq_data.sobol_requester[j] = zmq_socket (zmq_data.context, ZMQ_REQ);
-                    zmq_setsockopt (zmq_data.sobol_requester[j], ZMQ_LINGER, &linger, sizeof(int));
-                    port_no = *comm_size * zmq_data.nb_proc_server * *sobol_group + *rank * zmq_data.nb_proc_server + zmq_data.pull_rank[i];
-                    if (port_no<10)
-                    {
-                        sprintf (zmq_data.port_name, "tcp://%s:400%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                    }
-                    else if (port_no<100)
-                    {
-                        sprintf (zmq_data.port_name, "tcp://%s:40%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                    }
-                    else
-                    {
-                        sprintf (zmq_data.port_name, "tcp://%s:4%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                    }
-                    zmq_connect (zmq_data.sobol_requester[j], zmq_data.port_name);
-                }
-                j += 1;
-            }
-        }
-
-        j = 0;
-        for (i=0; i<zmq_data.total_nb_messages; i++)
-        {
-            if (*rank == zmq_data.push_rank[i])
-            {
-                zmq_data.sobol_release_requester[j] = zmq_socket (zmq_data.context, ZMQ_REQ);
-                zmq_setsockopt (zmq_data.sobol_release_requester[j], ZMQ_LINGER, &linger, sizeof(int));
-                port_no = *comm_size * zmq_data.nb_proc_server * *sobol_group + *rank * zmq_data.nb_proc_server + zmq_data.pull_rank[i];
-                if (port_no<10)
-                {
-                    sprintf (zmq_data.port_name, "tcp://%s:500%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                }
-                else if (port_no<100)
-                {
-                    sprintf (zmq_data.port_name, "tcp://%s:50%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                }
-                else
-                {
-                    sprintf (zmq_data.port_name, "tcp://%s:5%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                }
-                zmq_connect (zmq_data.sobol_release_requester[j], zmq_data.port_name);
-                j += 1;
-            }
-        }
-
-        zmq_data.items = malloc (2 * j * sizeof(zmq_pollitem_t));
-    }
-    else
+    if (*sobol_rank == 0)
     {
         zmq_data.data_pusher = malloc (zmq_data.local_nb_messages * sizeof(void*));
 
@@ -477,20 +429,73 @@ void connect_to_stats (const int *local_vect_size,
                 zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
                 zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_LINGER, &linger, sizeof(int));
                 port_no = 123 + zmq_data.pull_rank[i];
-                sprintf (zmq_data.port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
-                zmq_connect (zmq_data.data_pusher[j], zmq_data.port_name);
+                sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
+                zmq_connect (zmq_data.data_pusher[j], port_name);
                 j += 1;
             }
         }
+        if (zmq_data.sobol)
+        {
+            for (i=0; i<(zmq_data.nb_parameters+1)*(*comm_size); i++)
+            {
+                if (*rank == 0)
+                {
+                    //
+                    // send node name here
+                    //
+                    zmq_recv (master_requester, &j, sizeof(int), 0);
+                    zmq_send (master_requester, &master_node_names[j*MPI_MAX_PROCESSOR_NAME], MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+                    //
+                    //
+                }
+            }
+            zmq_data.sobol_requester = malloc ((zmq_data.nb_parameters + 1) * sizeof(void*));
+            for (i=0; i<zmq_data.nb_parameters+1; i++)
+            {
+                zmq_data.sobol_requester[i] = zmq_socket (zmq_data.context, ZMQ_REP);
+                sprintf (port_name, "tcp://*:5%d", 100+(*sobol_group * (*comm_size*(zmq_data.nb_parameters+1)) + *rank*(zmq_data.nb_parameters+1)) + i);
+                ret = zmq_bind (zmq_data.sobol_requester[i], port_name);
+                if (ret != 0)
+                {
+                    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
+                }
+            }
+            if (ret != 0)
+            {
+                fprintf(stderr,"ERROR on binding (%s)\n", port_name);
+            }
+        }
+    }
+    else // if *sobol_rank != 0
+    {
+        //
+        // ask master node name here
+        //
+        zmq_send (master_requester, rank, sizeof(int), 0);
+        zmq_recv (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+        //
+        //
+        zmq_data.data_pusher = NULL;
+        zmq_data.sobol_requester = malloc (sizeof(void*));
+        zmq_data.sobol_requester[0] = zmq_socket (zmq_data.context, ZMQ_REQ);
+        sprintf (port_name, "tcp://%s:5%d", master_node_name, 100+(*sobol_group * (*comm_size*(zmq_data.nb_parameters+1)) + *rank*(zmq_data.nb_parameters+1)) + (*sobol_rank-1));
+        zmq_connect (zmq_data.sobol_requester[0], port_name);
     }
 
     zmq_close (zmq_data.init_requester);
-    zmq_close (zmq_data.init_requester2);
     zmq_close (zmq_data.connexion_requester);
+    zmq_close (master_requester);
     zmq_data.buff_size *= sizeof(double);
+    if (zmq_data.sobol)
+    {
+        zmq_data.buff_size *= (zmq_data.nb_parameters+2);
+    }
     zmq_data.buff_size += 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
-    zmq_data.buffer   = malloc (zmq_data.buff_size);
-    free (my_vect_size);
+    zmq_data.buffer = malloc (zmq_data.buff_size);
+    if (zmq_data.sobol)
+    {
+        zmq_data.buffer_sobol = malloc ((zmq_data.nb_parameters + 1) * (*local_vect_size * sizeof(double) + sizeof(int)));
+    }
     free (node_names);
 }
 #endif // BUILD_WITH_MPI
@@ -513,10 +518,11 @@ void connect_to_stats_no_mpi (int *vect_size)
 {
     char *node_names;
     char  server_node_name[MPI_MAX_PROCESSOR_NAME];
+    char  port_name[MPI_MAX_PROCESSOR_NAME] = {0};
     int   server_name_size;
     int   port_no, i;
     FILE* file = NULL;
-    int   my_vect_size[1];
+    int   local_vect_sizes[1];
     int   nb_bufferized_messages = 50;
 
     zmq_data.context = zmq_ctx_new ();
@@ -540,12 +546,12 @@ void connect_to_stats_no_mpi (int *vect_size)
     zmq_data.sinit_tab[0] = 1;
     zmq_data.sinit_tab[1] = 1;
 
-    sprintf (zmq_data.port_name, "tcp://%s:30000", server_node_name);
-    zmq_connect (zmq_data.connexion_requester, zmq_data.port_name);
+    sprintf (port_name, "tcp://%s:30000", server_node_name);
+    zmq_connect (zmq_data.connexion_requester, port_name);
     zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
     zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 2 * sizeof(int), 0);
 
-    my_vect_size[0]  = *vect_size;
+    local_vect_sizes[0]  = *vect_size;
     zmq_data.nb_proc_server = zmq_data.rinit_tab[0];
     server_name_size = zmq_data.rinit_tab[1];
 
@@ -564,9 +570,9 @@ void connect_to_stats_no_mpi (int *vect_size)
 
     node_names = malloc (zmq_data.nb_proc_server * server_name_size * sizeof(char));
 
-    sprintf (zmq_data.port_name, "tcp://%s:20000", server_node_name);
-    zmq_connect (zmq_data.init_requester, zmq_data.port_name);
-    zmq_send (zmq_data.init_requester, my_vect_size, sizeof(int), 0);
+    sprintf (port_name, "tcp://%s:20000", server_node_name);
+    zmq_connect (zmq_data.init_requester, port_name);
+    zmq_send (zmq_data.init_requester, local_vect_sizes, sizeof(int), 0);
     zmq_recv (zmq_data.init_requester, node_names, zmq_data.rinit_tab[0] * zmq_data.rinit_tab[1] * sizeof(char), 0);
 
     zmq_data.data_pusher = malloc (zmq_data.local_nb_messages * sizeof(void*));
@@ -575,8 +581,8 @@ void connect_to_stats_no_mpi (int *vect_size)
         zmq_data.data_pusher[i] = zmq_socket (zmq_data.context, ZMQ_PUSH);
         port_no = 32123 + i;
         zmq_setsockopt (zmq_data.data_pusher[i], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
-        sprintf (zmq_data.port_name, "tcp://%s:%d", &node_names[server_name_size * i], port_no);
-        zmq_connect (zmq_data.data_pusher[i], zmq_data.port_name);
+        sprintf (port_name, "tcp://%s:%d", &node_names[server_name_size * i], port_no);
+        zmq_connect (zmq_data.data_pusher[i], port_name);
     }
 
     zmq_data.buff_size = 2 * sizeof(int) + zmq_data.server_vect_size[0] * sizeof(double);
@@ -661,93 +667,74 @@ void send_to_stats       (const int  *time_step,
     int   i=0, j, k, l;
     char *buff_ptr;
 
-    buff_ptr = zmq_data.buffer;
-    memcpy(buff_ptr, time_step, sizeof(int));
-    buff_ptr += sizeof(int);
-    memcpy(buff_ptr, sobol_rank, sizeof(int));
-    buff_ptr += sizeof(int);
-    memcpy(buff_ptr, sobol_group, sizeof(int));
-    buff_ptr += sizeof(int);
-    memcpy(buff_ptr, rank, sizeof(int));
-    buff_ptr += sizeof(int);
-    memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
-    buff_ptr += MAX_FIELD_NAME * sizeof(char);
-
 #ifdef BUILD_WITH_PROBES
     start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
 
-
-    if (zmq_data.sobol > 0)
+    if (zmq_data.sobol == 1)
     {
-        j = 0;
-        for (i=0; i<zmq_data.total_nb_messages; i++)
+        // gather data from other ranks of the sobol group
+        if (*sobol_rank == 0)
         {
-            if (*rank == zmq_data.push_rank[i])
+            buff_ptr = zmq_data.buffer_sobol;
+            j=0;
+            //recv data from other ranks of the sobol group
+            for (i=0; i<zmq_data.nb_parameters + 1; i++)
             {
-                memcpy (buff_ptr, &send_vect[zmq_data.sdispls[zmq_data.pull_rank[i]]],
-                        zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
-                zmq_send (zmq_data.sobol_requester[j], zmq_data.buffer, zmq_data.buff_size, 0);
-                j += 1;
-    #ifdef BUILD_WITH_PROBES
-                total_bytes_sent += zmq_data.buff_size;
-    #endif // BUILD_WITH_PROBES
+                zmq_recv (zmq_data.sobol_requester[i], buff_ptr, zmq_data.local_vect_sizes[*rank] * sizeof(double), 0);
+                buff_ptr += zmq_data.local_vect_sizes[*rank] * sizeof(double);
+            }
+            for (i=0; i<zmq_data.nb_parameters + 1; i++)
+            {
+                zmq_send (zmq_data.sobol_requester[i], &j, sizeof(int), 0);
             }
         }
-        for (i=0; i<j; i++)
+        else // *sobol_rank != 0
         {
-            zmq_data.items[i].socket = zmq_data.sobol_requester[i];
-            zmq_data.items[i].fd = 0;
-            zmq_data.items[i].events = ZMQ_POLLIN;
-            zmq_data.items[i].revents = 0;
-        }
-        for (i=j; i<2*j; i++)
-        {
-            zmq_data.items[i].socket = zmq_data.sobol_release_requester[i-j];
-            zmq_data.items[i].fd = 0;
-            zmq_data.items[i].events = ZMQ_POLLIN;
-            zmq_data.items[i].revents = 0;
-        }
+            //send data to rank 0 of the sobol group
+            zmq_send (zmq_data.sobol_requester[0], send_vect, zmq_data.local_vect_sizes[*rank] * sizeof(double), 0);
+            zmq_recv (zmq_data.sobol_requester[0], &j, sizeof(int), 0);
 
-        i = 0;
-        while (i<2*j)
-        {
-            l = 2*j;
-            zmq_poll (zmq_data.items, l, -1);
-            for (k=0; k<2*j; k++)
-            {
-                if (zmq_data.items[k].revents & ZMQ_POLLIN)
-                {
-                    if (k<j)
-                    {
-                        zmq_recv (zmq_data.sobol_requester[k], &l, sizeof(int), 0);
-                        zmq_send (zmq_data.sobol_release_requester[k], sobol_rank, sizeof(int), 0);
-                    }
-                    else
-                    {
-                        zmq_recv (zmq_data.sobol_release_requester[k-j], &l, sizeof(int), 0);
-                    }
-                    i += 1;
-                }
-            }
         }
     }
-    else
+
+    if (*sobol_rank == 0)
     {
+        buff_ptr = zmq_data.buffer;
+        memcpy(buff_ptr, time_step, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy(buff_ptr, sobol_rank, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy(buff_ptr, sobol_group, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy(buff_ptr, rank, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
+        buff_ptr += MAX_FIELD_NAME * sizeof(char);
         j = 0;
         for (i=0; i<zmq_data.total_nb_messages; i++)
         {
             if (*rank == zmq_data.push_rank[i])
             {
                 memcpy (buff_ptr, &send_vect[zmq_data.sdispls[zmq_data.pull_rank[i]]], zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
+                if (zmq_data.sobol == 1)
+                {
+                    for (k=0; k<zmq_data.nb_parameters + 1; k++)
+                    {
+                        buff_ptr += zmq_data.send_counts[zmq_data.pull_rank[k]] * sizeof(double);
+                        memcpy (buff_ptr, &zmq_data.buffer_sobol[k*zmq_data.local_vect_sizes[*rank] + zmq_data.sdispls[zmq_data.pull_rank[i]]],
+                                zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
+                    }
+                }
                 zmq_send (zmq_data.data_pusher[j], zmq_data.buffer, zmq_data.buff_size, 0);
                 j += 1;
-    #ifdef BUILD_WITH_PROBES
+#ifdef BUILD_WITH_PROBES
                 total_bytes_sent += zmq_data.buff_size;
-    #endif // BUILD_WITH_PROBES
+#endif // BUILD_WITH_PROBES
             }
         }
     }
+
 
 //    fprintf(stderr,"fin send from simu %d of grop %d, process %d\n", *sobol_rank, *sobol_group, *rank);
 #ifdef BUILD_WITH_PROBES
@@ -809,29 +796,28 @@ void send_to_stats_no_mpi (const int  *time_step,
 void disconnect_from_stats ()
 {
     int i;
-    if (zmq_data.sobol > 0)
-    {
-        for (i=0; i<zmq_data.local_nb_messages; i++)
-        {
-            zmq_close (zmq_data.sobol_requester[i]);
-            zmq_close (zmq_data.sobol_release_requester[i]);
-        }
-        zmq_ctx_destroy (zmq_data.context);
-        free(zmq_data.items);
-    }
-    else
+
+    if (zmq_data.data_pusher != NULL)
     {
         for (i=0; i<zmq_data.local_nb_messages; i++)
         {
             zmq_close (zmq_data.data_pusher[i]);
         }
-        zmq_ctx_destroy (zmq_data.context);
+        free(zmq_data.data_pusher);
+    }
+    fprintf (stderr, "wait...\n");
+    zmq_ctx_destroy (zmq_data.context);
+    fprintf (stderr, "fin wait\n");
+    if (zmq_data.data_pusher != NULL)
+    {
         free(zmq_data.data_pusher);
     }
     free(zmq_data.send_counts);
     free(zmq_data.sdispls);
     free(zmq_data.server_vect_size);
     free(zmq_data.buffer);
+    free(zmq_data.buffer_sobol);
+    free(zmq_data.local_vect_sizes);
 
 #ifdef BUILD_WITH_PROBES
     fprintf (stdout, " --- Simulation comm time: %g s\n",total_comm_time);
