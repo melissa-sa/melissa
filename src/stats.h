@@ -193,6 +193,7 @@ struct sobol_martinez_s
     variance_t    variance_k;             /**< variance needed by Martinez formula   */
     double       *first_order_values;     /**< values of the sobol indices           */
     double       *total_order_values;     /**< values of the sobol indices           */
+    double        confidence_interval[2]; /**< interval for 95% confidence level     */
 };
 
 typedef struct sobol_martinez_s sobol_martinez_t; /**< type corresponding to sobol_martinez_s */
@@ -415,6 +416,11 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
                                int            nb_parameters,
                                double       **in_vect_tab,
                                int            vect_size);
+
+void confidence_sobol_martinez(sobol_array_t *sobol_array,
+                               int            nb_parameters,
+                               int            vect_size,
+                               int            nb_groups);
 
 void free_sobol_martinez (sobol_martinez_t *sobol_indices);
 

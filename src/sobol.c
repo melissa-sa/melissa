@@ -17,7 +17,7 @@
  *
  * @ingroup sobol
  *
- * This function initialise a Martinez sobol indices structure
+ * This function initialise a Martinez Sobol indices structure
  *
  *******************************************************************************
  *
@@ -39,6 +39,8 @@ void init_sobol_martinez (sobol_martinez_t *sobol_indices,
 
     sobol_indices->first_order_values = calloc (vect_size, sizeof(double));
     sobol_indices->total_order_values = calloc (vect_size, sizeof(double));
+    sobol_indices->confidence_interval[0] = 0;
+    sobol_indices->confidence_interval[1] = 0;
 }
 
 /**
@@ -46,7 +48,7 @@ void init_sobol_martinez (sobol_martinez_t *sobol_indices,
  *
  * @ingroup sobol
  *
- * This function computes sobol indices using Martinez formula
+ * This function computes Sobol indices using Martinez formula
  *
  *******************************************************************************
  *
@@ -59,7 +61,7 @@ void init_sobol_martinez (sobol_martinez_t *sobol_indices,
  * @param[in] **in_vect_tab
  * array of input vectors
  *
- * @param[in] *vect_size
+ * @param[in] vect_size
  * size of input vectors
  *
  *******************************************************************************/
@@ -74,7 +76,8 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
     increment_variance (in_vect_tab[0], &(sobol_array->variance_a), vect_size);
     increment_variance (in_vect_tab[1], &(sobol_array->variance_b), vect_size);
 
-    for (i=0; i< nb_parameters; i++){
+    for (i=0; i< nb_parameters; i++)
+    {
         increment_variance (in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].variance_k), vect_size);
         increment_covariance (in_vect_tab[1], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].first_order_covariance), vect_size);
         increment_covariance (in_vect_tab[0], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].total_order_covariance), vect_size);
@@ -98,7 +101,72 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
  *
  * @ingroup sobol
  *
- * This function frees a Martinez sobol indices structure
+ * This function computes the confidence interval for Martinez Sobol indices
+ *
+ *******************************************************************************
+ *
+ * @param[out] *sobol_array
+ * Sobol indices
+ *
+ * @param[in] nb_parameters
+ * size of sobol_array->sobol_martinez
+ *
+ * @param[in] vect_size
+ * size of input vectors
+ *
+ * @param[in] nb_groups
+ * number of groups of simulations of the parametric study
+ *
+ *******************************************************************************/
+
+void confidence_sobol_martinez(sobol_array_t *sobol_array,
+                               int            nb_parameters,
+                               int            vect_size,
+                               int            nb_groups)
+{
+    int i, j;
+    double temp1, temp2, interval;
+
+    if (nb_groups < 4)
+    {
+        fprintf (stderr, "ERROR: bad number of groups");
+        exit(0);
+    }
+
+    temp2 = 1.96/(sqrt(nb_groups-3));
+    for (j=0; j< nb_parameters; j++)
+    {
+        interval = 0;
+        sobol_array->sobol_martinez[j].confidence_interval[0]=0;
+        sobol_array->sobol_martinez[j].confidence_interval[1]=0;
+        for (i=0; i<vect_size; i++)
+        {
+            temp1 = 0.5 * log((1+sobol_array->sobol_martinez[i].first_order_values[i])/(1-sobol_array->sobol_martinez[i].first_order_values[i]));
+            interval = tanh(temp1 + temp2) - tanh(temp1 - temp2);
+            if (sobol_array->sobol_martinez[j].confidence_interval[0] > interval)
+            {
+                sobol_array->sobol_martinez[j].confidence_interval[0] = interval;
+            }
+        }
+        interval = 0;
+        for (i=0; i<vect_size; i++)
+        {
+            temp1 = 0.5 * log((1+sobol_array->sobol_martinez[i].total_order_values[i])/(1-sobol_array->sobol_martinez[i].total_order_values[i]));
+            interval = (1-tanh(temp1 - temp2)) - (1-tanh(temp1 + temp2));
+            if (sobol_array->sobol_martinez[j].confidence_interval[1] > interval)
+            {
+                sobol_array->sobol_martinez[j].confidence_interval[1] = tanh(temp1 - temp2);
+            }
+        }
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup sobol
+ *
+ * This function frees a Martinez Sobol indices structure
  *
  *******************************************************************************
  *
