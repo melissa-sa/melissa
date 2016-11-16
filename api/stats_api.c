@@ -738,6 +738,8 @@ void send_to_stats       (const int  *time_step,
         }
         else // *sobol_rank != 0
         {
+            if (*sobol_rank == 1)
+                fprintf(stdout, "field name = %s", field_name);
             buff_ptr = zmq_data.buffer_msg_sobol;
             memcpy(buff_ptr, sobol_rank, sizeof(int));
             buff_ptr += sizeof(int);
@@ -870,6 +872,7 @@ void disconnect_from_stats ()
         free(zmq_data.buffers_sobol[i]);
     }
     free(zmq_data.buffers_sobol);
+    free(zmq_data.buffer_msg_sobol);
     free(zmq_data.local_vect_sizes);
 
 #ifdef BUILD_WITH_PROBES
