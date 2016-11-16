@@ -155,6 +155,7 @@ static void malloc_data (stats_data_t *data)
             {
                 init_sobol_martinez (&data->sobol_indices[i].sobol_martinez[j], data->vect_size);
             }
+            data->sobol_indices[i].iteration = 0;
         }
     }
 

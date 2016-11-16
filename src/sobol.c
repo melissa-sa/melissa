@@ -39,8 +39,8 @@ void init_sobol_martinez (sobol_martinez_t *sobol_indices,
 
     sobol_indices->first_order_values = calloc (vect_size, sizeof(double));
     sobol_indices->total_order_values = calloc (vect_size, sizeof(double));
-    sobol_indices->confidence_interval[0] = 0;
-    sobol_indices->confidence_interval[1] = 0;
+    sobol_indices->confidence_interval[0] = 1;
+    sobol_indices->confidence_interval[1] = 1;
 }
 
 /**
@@ -114,26 +114,21 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
  * @param[in] vect_size
  * size of input vectors
  *
- * @param[in] nb_groups
- * number of groups of simulations of the parametric study
- *
  *******************************************************************************/
 
 void confidence_sobol_martinez(sobol_array_t *sobol_array,
                                int            nb_parameters,
-                               int            vect_size,
-                               int            nb_groups)
+                               int            vect_size)
 {
     int i, j;
     double temp1, temp2, interval;
 
-    if (nb_groups < 4)
+    if (sobol_array->iteration < 4)
     {
-        fprintf (stderr, "ERROR: bad number of groups");
-        exit(0);
+        return;
     }
 
-    temp2 = 1.96/(sqrt(nb_groups-3));
+    temp2 = 1.96/(sqrt(sobol_array->iteration-3));
     for (j=0; j< nb_parameters; j++)
     {
         interval = 0;
@@ -159,6 +154,56 @@ void confidence_sobol_martinez(sobol_array_t *sobol_array,
             }
         }
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup sobol
+ *
+ * This function check if the Sobol indice convergence has been reached
+ *
+ *******************************************************************************
+ *
+ * @param[out] **sobol_array
+ * Sobol indices
+ *
+ * @param[in] confidence_value
+ * value to reach for the worst confidence interval
+ *
+ * @param[in] nb_time_steps
+ * number of time steps of the study
+ *
+ * @param[in] nb_parameters
+ * size of sobol_array->sobol_martinez
+ *
+ * @return[out] int
+ * 0 if convergence is not reached
+ * 1 if convergence is reached
+ *
+ *******************************************************************************/
+
+int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
+                                     double          confidence_value,
+                                     int             nb_time_steps,
+                                     int             nb_parameters)
+{
+    int i, j;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        for (j=0; j<nb_parameters; j++)
+        {
+            if ((*sobol_array)[i].sobol_martinez[j].confidence_interval[0] > confidence_value)
+            {
+                return 0;
+            }
+            if ((*sobol_array)[i].sobol_martinez[j].confidence_interval[1] > confidence_value)
+            {
+                return 0;
+            }
+        }
+    }
+    return 1;
 }
 
 /**

@@ -303,6 +303,7 @@ int main (int argc, char **argv)
                 }
                 compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
                 iteration++;
+                check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices), 0.01, stats_options.nb_time_steps, stats_options.nb_parameters);
             }
 #ifdef BUILD_WITH_PROBES
             end_computation_time = stats_get_time();

@@ -214,6 +214,7 @@ struct sobol_array_s
     sobol_martinez_t *sobol_martinez; /**< array of sobol indices, size nb_parameters     */
     variance_t        variance_a;     /**< first set variance needed by Martinez formula  */
     variance_t        variance_b;     /**< second set variance needed by Martinez formula */
+    double            iteration;      /**< number of computed groups                      */
 };
 
 typedef struct sobol_array_s sobol_array_t; /**< type corresponding to sobol_array_s */
@@ -419,8 +420,12 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
 
 void confidence_sobol_martinez(sobol_array_t *sobol_array,
                                int            nb_parameters,
-                               int            vect_size,
-                               int            nb_groups);
+                               int            vect_size);
+
+int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
+                                     double          confidence_value,
+                                     int             nb_time_steps,
+                                     int             nb_parameters);
 
 void free_sobol_martinez (sobol_martinez_t *sobol_indices);
 
