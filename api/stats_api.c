@@ -303,10 +303,12 @@ void connect_to_stats (const int *local_vect_size,
         zmq_data.rinit_tab[0] = 0;
         zmq_data.rinit_tab[1] = 1;
 
+        fprintf(stdout,"connection to %s...\n", server_node_name);
         sprintf (port_name, "tcp://%s:30003", server_node_name);
         zmq_connect (zmq_data.connexion_requester, port_name);
         zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
         zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 3 * sizeof(int), 0);
+        fprintf(stdout,"connected to %s\n", server_node_name);
 
         sprintf (port_name, "tcp://%s:20002", server_node_name);
         zmq_connect (zmq_data.init_requester, port_name);
@@ -347,7 +349,7 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.send_counts = calloc (zmq_data.nb_proc_server, sizeof(int));
     zmq_data.sdispls     = calloc (zmq_data.nb_proc_server, sizeof(int));
 
-    comm_n_to_m_init (&zmq_data, global_vect_size, zmq_data.local_vect_sizes, *rank); // probleme here
+    comm_n_to_m_init (&zmq_data, global_vect_size, zmq_data.local_vect_sizes, *rank);
 
     node_names = malloc (zmq_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
 
@@ -384,12 +386,12 @@ void connect_to_stats (const int *local_vect_size,
 #endif // BUILD_WITH_MPI
         }
 
-        sprintf (port_name, "../../DATA/master%d_name.txt", *sobol_group);
+        sprintf (port_name, "../../DATA/master_name.txt");
         file = fopen(port_name, "r");
 
         if (file == NULL)
         {
-            sprintf (port_name, "master%d_name.txt", *sobol_group);
+            sprintf (port_name, "master_name.txt");
             file = fopen(port_name, "r");
         }
         if (file != NULL)
@@ -503,8 +505,10 @@ void connect_to_stats (const int *local_vect_size,
         //
         // ask master node name here
         //
+        fprintf(stderr,"Connect to master on node %s...\n", master_node_name);
         zmq_send (master_requester, rank, sizeof(int), 0);
         zmq_recv (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+        fprintf(stderr,"Connected to master\n");
         //
         //
         zmq_data.data_pusher = NULL;
