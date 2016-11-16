@@ -248,19 +248,23 @@ long int count_bytes_written (stats_options_t  *options)
     long int bytes_written = 0;
     if (options->mean_op == 1)
     {
-        bytes_written += options->global_vect_size*sizeof(double)*options->nb_time_steps;
+        bytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps;
     }
     if (options->variance_op == 1)
     {
-        bytes_written += options->global_vect_size*sizeof(double)*options->nb_time_steps;
+        bytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps;
     }
     if (options->min_and_max_op == 1)
     {
-        bytes_written += 2*options->global_vect_size*sizeof(double)*options->nb_time_steps;
+        bytes_written += 2*options->global_vect_size*sizeof(float)*options->nb_time_steps;
     }
     if (options->threshold_op == 1)
     {
-        bytes_written += options->global_vect_size*sizeof(int)*options->nb_time_steps;
+        bytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps;
+    }
+    if (options->sobol_op == 1)
+    {
+        bytes_written += options->nb_parameters * 2 *options->global_vect_size*sizeof(float)*options->nb_time_steps;
     }
     return bytes_written;
 }

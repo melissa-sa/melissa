@@ -94,14 +94,17 @@ long int mem_conso (stats_options_t *options)
     }
     if (options->sobol_op != 0)
     {
-        // TODO
-//        temp_mem = 0;
-//        count_mem_cond_mean(&(data->cond_means[0]), &temp_mem, &i, data);
-//        fprintf(stdout, "Partial means memory usage: %d bytes\n", temp_mem);
-//        fprintf(stdout, "Number of partial means: %d\n", i);
-//        memory += temp_mem;
+        // sobol indices
+        temp_mem  = options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // variances
+        temp_mem += options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // covariances
+        temp_mem += options->nb_parameters * 6 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // glob variances
+        temp_mem += 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        memory += temp_mem;
     }
-//    fprintf(stdout, "Total memory usage: %d bytes\n", memory);
+    fprintf(stdout, "Total memory usage: %d bytes\n", memory);
     return memory;
 }
 
