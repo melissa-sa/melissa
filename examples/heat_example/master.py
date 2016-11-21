@@ -3,6 +3,7 @@ import time
 import sys
 import numpy as np
 import numpy.random as rd
+import zmq
 
 # ------------- functions ------------- #
 
@@ -37,8 +38,8 @@ def launch_melissa (command_line):
 # ------------- options ------------- #
 
 nb_parameters = 2
-nb_simu = 4
-nb_groups = 3
+nb_simu = 8
+nb_groups = 2
 nb_time_steps = 100
 operations = ["mean","variance","min","max","threshold","sobol"]
 #operations_list = operations.split()
@@ -52,6 +53,10 @@ range_min = np.zeros(nb_groups,float)
 range_max = np.ones(nb_groups,float)
 
 # ------------- main ------------- #
+
+context = zmq.Context()
+socket = context.socket(zmq.PULL)
+socket.bind("tcp://*:5555")
 
 if (not (("sobol" in operations) or ("sobol_indices" in operations))):
     nb_groups = nb_simu
@@ -74,7 +79,7 @@ for i in range(nb_groups):
     if (ret[0] != 0):
       print "error launching simulation "+str(i)
 
-  
+
 for i in range(len(operations)):
   if i < len(operations) - 1:
     op_str += operations[i] + ":"
@@ -89,5 +94,12 @@ options = " -p " + str(nb_parameters)\
         + " -e " + str(threshold)
 
 #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"") != 0):
+if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
     print "error launching Melissa"
+
+if (("sobol" in operations) or ("sobol_indices" in operations)):
+    converged_sobol = np.zeros(nb_proc_server,int)
+    while 0 in converged_sobol:
+        message = socket.recv_string()
+        converged_sobol[int(message)] = 1
+#       kill all simulations here

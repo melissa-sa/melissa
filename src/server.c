@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <math.h>
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
@@ -38,6 +39,7 @@ int main (int argc, char **argv)
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
+    void               *python_sender = zmq_socket (context, ZMQ_PUSH);
     int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
@@ -47,6 +49,7 @@ int main (int argc, char **argv)
     int                 nb_bufferized_messages = 50;
     char               *field_name_ptr;
     int                 simu_id, group_id;
+    int                 nb_converged_fields = 0;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -89,6 +92,17 @@ int main (int argc, char **argv)
     {
         ret = errno;
         print_zmq_error(ret, port_name);
+    }
+    if(stats_options.sobol_op == 1)
+    {
+        sprintf (port_name, "tcp://localhost:5555");
+        zmq_setsockopt (python_sender, ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
+        ret = zmq_connect (python_sender, port_name);
+        if (ret != 0)
+        {
+            ret = errno;
+            print_zmq_error(ret, port_name);
+        }
     }
 
     if (comm_data.rank == 0)
@@ -303,7 +317,22 @@ int main (int argc, char **argv)
                 }
                 compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
                 iteration++;
-                check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices), 0.01, stats_options.nb_time_steps, stats_options.nb_parameters);
+                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
+                                                                        0.01,
+                                                                        stats_options.nb_time_steps,
+                                                                        stats_options.nb_parameters);
+                if (nb_converged_fields == nb_fields)
+                {
+                    sprintf (port_name, "%d", comm_data.rank);
+                    if (comm_data.rank == 0)
+                    {
+                        zmq_send(python_sender, port_name, sizeof(char), 0);
+                    }
+                    else
+                    {
+                        zmq_send(python_sender, port_name, (floor(log10(comm_data.rank))+1) * sizeof(char), 0);
+                    }
+                }
             }
 #ifdef BUILD_WITH_PROBES
             end_computation_time = stats_get_time();
@@ -348,6 +377,10 @@ int main (int argc, char **argv)
     zmq_close (connexion_responder);
     zmq_close (init_responder);
     zmq_close (data_puller);
+    if (stats_options.sobol_op == 1)
+    {
+        zmq_close (python_sender);
+    }
     zmq_ctx_term (context);
     if (stats_options.sobol_op == 1)
     {
