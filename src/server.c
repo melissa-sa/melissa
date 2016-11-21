@@ -81,7 +81,7 @@ int main (int argc, char **argv)
 
     nb_iterations = stats_options.nb_groups * stats_options.nb_time_steps ;
 
-    port_no = 123 + comm_data.rank;
+    port_no = 100 + comm_data.rank;
     sprintf (port_name, "tcp://*:11%d", port_no);
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     ret = zmq_bind (data_puller, port_name);
@@ -93,17 +93,17 @@ int main (int argc, char **argv)
 
     if (comm_data.rank == 0)
     {
-        ret = zmq_bind (init_responder, "tcp://*:20002");
+        ret = zmq_bind (init_responder, "tcp://*:2002");
         if (ret != 0)
         {
             ret = errno;
-            print_zmq_error(ret, "tcp://*:20002");
+            print_zmq_error(ret, "tcp://*:2002");
         }
-        ret = zmq_bind (connexion_responder, "tcp://*:30003");
+        ret = zmq_bind (connexion_responder, "tcp://*:2003");
         if (ret != 0)
         {
             ret = errno;
-            print_zmq_error(ret, "tcp://*:30003");
+            print_zmq_error(ret, "tcp://*:2003");
         }
 
         node_names = malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size * sizeof(char));
