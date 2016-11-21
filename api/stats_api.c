@@ -69,10 +69,10 @@ typedef struct zmq_data_s zmq_data_t; /**< type corresponding to zmq_data_s */
 static zmq_data_t zmq_data;
 
 #ifdef BUILD_WITH_PROBES
-static double total_comm_time = 0;
+static double total_comm_time;
 static double start_comm_time;
 static double end_comm_time;
-static int total_bytes_sent = 0;
+static int total_bytes_sent;
 #endif // BUILD_WITH_PROBES
 
 static double stats_get_time ()
@@ -276,6 +276,8 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.init_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
     zmq_data.sobol_requester = NULL;
     zmq_data.sobol_releaser = NULL;
+    total_comm_time = 0;
+    total_bytes_sent = 0;
 
     // get main server node name
     if (*rank == 0)
@@ -774,7 +776,9 @@ void send_to_stats       (const int  *time_step,
             // wait release...
             zmq_send (zmq_data.sobol_releaser, rank, sizeof(int), 0);
             zmq_recv (zmq_data.sobol_releaser, &j, sizeof(int), 0);
-
+#ifdef BUILD_WITH_PROBES
+                total_bytes_sent += zmq_data.local_vect_sizes[*rank] * sizeof(double) + sizeof(int);
+#endif // BUILD_WITH_PROBES
         }
     }
 
