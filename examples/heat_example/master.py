@@ -42,7 +42,6 @@ nb_simu = 8
 nb_groups = 2
 nb_time_steps = 100
 operations = ["mean","variance","min","max","threshold","sobol"]
-#operations_list = operations.split()
 threshold = 0.7
 op_str=""
 mpi_options = ""
@@ -55,8 +54,8 @@ range_max = np.ones(nb_groups,float)
 # ------------- main ------------- #
 
 context = zmq.Context()
-socket = context.socket(zmq.PULL)
-socket.bind("tcp://*:5555")
+rep_socket = context.socket(zmq.REP)
+rep_socket.bind("tcp://*:5555")
 
 if (not (("sobol" in operations) or ("sobol_indices" in operations))):
     nb_groups = nb_simu
@@ -81,7 +80,7 @@ for i in range(nb_groups):
 
 
 for i in range(len(operations)):
-  if i < len(operations) - 1:
+  if (i < len(operations) - 1):
     op_str += operations[i] + ":"
   else:
     op_str += operations[i]
@@ -99,7 +98,20 @@ if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_p
 
 if (("sobol" in operations) or ("sobol_indices" in operations)):
     converged_sobol = np.zeros(nb_proc_server,int)
-    while 0 in converged_sobol:
-        message = socket.recv_string()
-        converged_sobol[int(message)] = 1
+    finished_server = np.zeros(nb_proc_server,int)
+    snd_message = "continue"
+    while True:
+        rcv_message = rep_socket.recv_string()
+        message = int(rcv_message)
+        print "rcv_message "+rcv_message+", message "+str(message)
+        if (message >= 0 and message < nb_proc_server):
+            rep_socket.send_string("ok")
+            converged_sobol[message] = 1
+            if (not 0 in converged_sobol):
+                snd_message = "stop"
+        else:
+            finished_server[message - nb_proc_server] = 1
+            rep_socket.send_string(snd_message)
+            if (not 0 in finished_server):
+                break
 #       kill all simulations here

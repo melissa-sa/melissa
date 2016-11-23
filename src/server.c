@@ -39,7 +39,7 @@ int main (int argc, char **argv)
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
-    void               *python_sender = zmq_socket (context, ZMQ_PUSH);
+    void               *python_requester = zmq_socket (context, ZMQ_REQ);
     int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
@@ -93,17 +93,19 @@ int main (int argc, char **argv)
         ret = errno;
         print_zmq_error(ret, port_name);
     }
+#ifdef BUILD_WITH_PY_ZMQ
     if(stats_options.sobol_op == 1)
     {
+
         sprintf (port_name, "tcp://localhost:5555");
-        zmq_setsockopt (python_sender, ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
-        ret = zmq_connect (python_sender, port_name);
+        ret = zmq_connect (python_requester, port_name);
         if (ret != 0)
         {
             ret = errno;
             print_zmq_error(ret, port_name);
         }
     }
+#endif // BUILD_WITH_PY_ZMQ
 
     if (comm_data.rank == 0)
     {
@@ -321,18 +323,21 @@ int main (int argc, char **argv)
                                                                         0.01,
                                                                         stats_options.nb_time_steps,
                                                                         stats_options.nb_parameters);
-                if (nb_converged_fields == nb_fields)
+#ifdef BUILD_WITH_PY_ZMQ
+                if (nb_converged_fields == nb_fields * pull_data.local_nb_messages)
                 {
                     sprintf (port_name, "%d", comm_data.rank);
                     if (comm_data.rank == 0)
                     {
-                        zmq_send(python_sender, port_name, sizeof(char), 0);
+                        zmq_send(python_requester, port_name, sizeof(char), 0);
                     }
                     else
                     {
-                        zmq_send(python_sender, port_name, (floor(log10(comm_data.rank))+1) * sizeof(char), 0);
+                        zmq_send(python_requester, port_name, (floor(log10(comm_data.rank))+1) * sizeof(char), 0);
                     }
+                    string_recv(python_requester, port_name);
                 }
+#endif // BUILD_WITH_PY_ZMQ
             }
 #ifdef BUILD_WITH_PROBES
             end_computation_time = stats_get_time();
@@ -340,7 +345,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank==0 && (iteration % 100) == 0 )
             {
-                fprintf(stderr, "iteration %d / %d - field \"%s\"\n", iteration, nb_iterations, field_name_ptr);
+                fprintf(stderr, "iteration %d  - field \"%s\"\n", iteration, field_name_ptr);
             }
         }
 
@@ -373,14 +378,24 @@ int main (int argc, char **argv)
             }
         }
     }
+#ifdef BUILD_WITH_PY_ZMQ
+            sprintf (port_name, "%d", comm_data.comm_size + comm_data.rank);
+            {
+                zmq_send(python_requester, port_name, (floor(log10(comm_data.comm_size + comm_data.rank))+1) * sizeof(char), 0);
+            }
+            string_recv(python_requester, port_name);
+//            if (!strcmp(port_name, "continue"))
+#endif // BUILD_WITH_PY_ZMQ
 
     zmq_close (connexion_responder);
     zmq_close (init_responder);
     zmq_close (data_puller);
+#ifdef BUILD_WITH_PY_ZMQ
     if (stats_options.sobol_op == 1)
     {
-        zmq_close (python_sender);
+        zmq_close (python_requester);
     }
+#endif // BUILD_WITH_PY_ZMQ
     zmq_ctx_term (context);
     if (stats_options.sobol_op == 1)
     {

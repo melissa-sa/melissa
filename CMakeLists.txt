@@ -2,6 +2,27 @@ project(stats C CXX Fortran)
 
 cmake_minimum_required(VERSION 2.8)
 
+#function(find_python_module module)
+#        string(TOUPPER ${module} module_upper)
+#        if(NOT PY_${module_upper})
+#                if(ARGC GREATER 1 AND ARGV1 STREQUAL "REQUIRED")
+#                        set(${module}_FIND_REQUIRED TRUE)
+#                endif()
+#                # A module's location is usually a directory, but for binary modules
+#                # it's a .so file.
+#                execute_process(COMMAND "${PYTHON_EXEC}" "-c"
+#                        "import re, ${module}; print re.compile('/__init__.py.*').sub('',${module}.__file__)"
+#                        RESULT_VARIABLE _${module}_status
+#                        OUTPUT_VARIABLE _${module}_location
+#                        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+#                if(NOT _${module}_status)
+#                        set(PY_${module_upper} ${_${module}_location} CACHE STRING
+#                                "Location of Python module ${module}")
+#                endif(NOT _${module}_status)
+#        endif(NOT PY_${module_upper})
+#        find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
+#endfunction(find_python_module)
+
 set(ALL_SRCS stats_base.c
 #             cond_mean.c
 #             cond_var.c
@@ -30,7 +51,10 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-find_package(PkgConfig)
+find_package(PkgConfig REQUIRED)
+
+find_package(PythonLibs)
+
 
 option(BUILD_WITH_ZMQ "Build with ZeroMQ" ON)
 
@@ -46,6 +70,11 @@ if(BUILD_WITH_ZMQ)
     set(ZMQ_FOUND TRUE)
     message(STATUS "ZeroMQ Found, libdir: ${ZMQ_LIBRARY_DIRS}, includedir: ${ZMQ_INCLUDE_DIRS}, version=${ZMQ_VERSION} ")
     add_definitions( -DBUILD_WITH_ZMQ )
+#    find_python_module(zmq)
+    option(BUILD_WITH_PY_ZMQ "Build with PY_ZMQ" ON)
+    if(BUILD_WITH_ZMQ)
+      add_definitions( -DBUILD_WITH_PY_ZMQ )
+    endif(BUILD_WITH_ZMQ)
   else(ZMQ_LIBRARIES AND ZMQ_INCLUDE_DIRS)
     # Disable  Option if missing dependencies
     set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)
