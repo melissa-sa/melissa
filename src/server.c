@@ -39,7 +39,9 @@ int main (int argc, char **argv)
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
+#ifdef BUILD_WITH_PY_ZMQ
     void               *python_requester = zmq_socket (context, ZMQ_REQ);
+#endif // BUILD_WITH_PY_ZMQ
     int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
@@ -345,7 +347,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank==0 && (iteration % 10) == 0 )
             {
-                fprintf(stderr, "iteration %d  - field \"%s\"\n", iteration, field_name_ptr);
+                fprintf(stderr, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
             }
         }
 

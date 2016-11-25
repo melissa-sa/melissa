@@ -61,6 +61,7 @@ struct zmq_data_s
     int     *message_sizes;                     /**< size of the message i                                      */
     int      total_nb_messages;                 /**< total number of messages                                   */
     int      local_nb_messages;                 /**< local number of messages                                   */
+    MPI_Comm comm_sobol;                        /**< inter-groupes communicator                                 */
 };
 
 typedef struct zmq_data_s zmq_data_t; /**< type corresponding to zmq_data_s */
@@ -71,7 +72,7 @@ static zmq_data_t zmq_data;
 static double total_comm_time;
 static double start_comm_time;
 static double end_comm_time;
-static int total_bytes_sent;
+static long int total_bytes_sent;
 #endif // BUILD_WITH_PROBES
 
 static double stats_get_time ()
@@ -544,6 +545,8 @@ void connect_to_stats (const int *local_vect_size,
             zmq_data.buffers_sobol[i] = malloc (*local_vect_size * sizeof(double));
         }
         zmq_data.buffer_msg_sobol = malloc (*local_vect_size * sizeof(double) + sizeof(int));
+        // split MPI_COMM_WORLD for coupled Code_Saturne simulations
+        MPI_Comm_split(MPI_COMM_WORLD, *rank, *sobol_rank, &zmq_data.comm_sobol);
     }
     free (node_names);
 }
@@ -890,6 +893,6 @@ void disconnect_from_stats ()
 
 #ifdef BUILD_WITH_PROBES
     fprintf (stdout, " --- Simulation comm time: %g s\n",total_comm_time);
-    fprintf (stdout, " --- Bytes sent: %d bytes\n",total_bytes_sent);
+    fprintf (stdout, " --- Bytes sent: %ld bytes\n",total_bytes_sent);
 #endif // BUILD_WITH_PROBES
 }
