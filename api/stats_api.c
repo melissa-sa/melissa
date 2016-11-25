@@ -738,7 +738,7 @@ void send_to_stats       (const int  *time_step,
         }
         else // *sobol_rank != 0
         {
-            if (time_step >0)
+            if (*time_step > 1)
             {
                 // wait release...
                 zmq_recv (zmq_data.sobol_requester[0], &j, sizeof(int), 0);
@@ -746,7 +746,7 @@ void send_to_stats       (const int  *time_step,
             //send data to rank 0 of the sobol group
             zmq_send (zmq_data.sobol_requester[0], send_vect, zmq_data.local_vect_sizes[*rank] * sizeof(double), 0);
 #ifdef BUILD_WITH_PROBES
-                total_bytes_sent += zmq_data.local_vect_sizes[*rank] * sizeof(double) + sizeof(int);
+            total_bytes_sent += zmq_data.local_vect_sizes[*rank] * sizeof(double);
 #endif // BUILD_WITH_PROBES
         }
     }

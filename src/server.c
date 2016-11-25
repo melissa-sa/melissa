@@ -343,7 +343,7 @@ int main (int argc, char **argv)
             end_computation_time = stats_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
-            if (comm_data.rank==0 && (iteration % 100) == 0 )
+            if (comm_data.rank==0 && (iteration % 10) == 0 )
             {
                 fprintf(stderr, "iteration %d  - field \"%s\"\n", iteration, field_name_ptr);
             }
