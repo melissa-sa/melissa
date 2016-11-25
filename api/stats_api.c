@@ -45,6 +45,7 @@ struct zmq_data_s
     void   **sobol_requester;                   /**< data ZeroMQ Sobol port                                     */
     int      rinit_tab[3];                      /**< array used to receive data                                 */
     int      sobol;                             /**< 1 if sobol computation, 0 otherwhise                       */
+    int      sobol_rank;                        /**< sobol rank                                                 */
     int      sinit_tab[2];                      /**< array used to send data                                    */
     int      nb_proc_server;                    /**< number of MPI processes of the library                     */
     int      nb_parameters;                     /**< number of parameters of the study                          */
@@ -275,6 +276,7 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.connexion_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
     zmq_data.init_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
     zmq_data.sobol_requester = NULL;
+    zmq_data.sobol_rank = *sobol_rank;
     total_comm_time = 0;
     total_bytes_sent = 0;
 
@@ -850,13 +852,13 @@ void disconnect_from_stats ()
 {
     int i;
 
-    if (zmq_data.data_pusher != NULL)
+    if (zmq_data.sobol_rank == 0)
     {
         for (i=0; i<zmq_data.local_nb_messages; i++)
         {
             zmq_close (zmq_data.data_pusher[i]);
         }
-        if (zmq_data.sobol_requester != NULL)
+        if (zmq_data.sobol == 1)
         {
             for (i=1; i<zmq_data.nb_parameters+1; i++)
             {
@@ -864,7 +866,7 @@ void disconnect_from_stats ()
             }
         }
     }
-    else if (zmq_data.sobol_requester != NULL)
+    if (zmq_data.sobol_rank > 0)
     {
         zmq_recv (zmq_data.sobol_requester[0], &i, sizeof(int), 0);
     }
