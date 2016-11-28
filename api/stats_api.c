@@ -25,6 +25,8 @@
 #define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
 
+#define COUPLING
+
 /**
  *******************************************************************************
  *
@@ -368,6 +370,9 @@ void connect_to_stats (const int *local_vect_size,
     // sobol only part //
     if (zmq_data.sobol == 1)
     {
+        // split MPI_COMM_WORLD for coupled Code_Saturne simulations
+        MPI_Comm_split(MPI_COMM_WORLD, *rank, *sobol_rank, &zmq_data.comm_sobol);
+#ifndef COUPLING
         // get Sobol master node name
         if (*sobol_rank == 0)
         {
@@ -441,6 +446,7 @@ void connect_to_stats (const int *local_vect_size,
             }
             ret = zmq_connect (master_requester, port_name);
         }
+#endif // ndef COUPLING
     }
 
     // end sobol only //
@@ -463,6 +469,7 @@ void connect_to_stats (const int *local_vect_size,
                 j += 1;
             }
         }
+#ifndef COUPLING
         if (zmq_data.sobol == 1)
         {
             for (i=0; i<(zmq_data.nb_parameters+1)*(*comm_size); i++)
@@ -526,11 +533,14 @@ void connect_to_stats (const int *local_vect_size,
             sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + *rank * (zmq_data.nb_parameters+1) + *sobol_rank - 1);
         }
         zmq_connect (zmq_data.sobol_requester[0], port_name);
+#endif // ndef COUPLING
     }
 
     zmq_close (zmq_data.init_requester);
     zmq_close (zmq_data.connexion_requester);
+#ifndef COUPLING
     zmq_close (master_requester);
+#endif // ndef COUPLING
     zmq_data.buff_size *= sizeof(double);
     if (zmq_data.sobol)
     {
@@ -544,8 +554,6 @@ void connect_to_stats (const int *local_vect_size,
         {
             zmq_data.buffer_sobol = malloc ((zmq_data.nb_parameters+2) * *local_vect_size * sizeof (double*));
         }
-        // split MPI_COMM_WORLD for coupled Code_Saturne simulations
-        MPI_Comm_split(MPI_COMM_WORLD, *rank, *sobol_rank, &zmq_data.comm_sobol);
     }
     free (node_names);
 }
@@ -727,6 +735,7 @@ void send_to_stats       (const int  *time_step,
 
     if (zmq_data.sobol == 1)
     {
+#ifndef COUPLING
         // gather data from other ranks of the sobol group
         if (*sobol_rank == 0)
         {
@@ -766,9 +775,12 @@ void send_to_stats       (const int  *time_step,
             total_bytes_sent += local_vect_size * sizeof(double);
 #endif // BUILD_WITH_PROBES
         }
-//        MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol);
+#else // ndef COUPLING
+        MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol);
 //        MPI_Igather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol, request);
 //        MPI_Wait(request, status);
+        total_bytes_sent += local_vect_size * sizeof(double);
+#endif // ndef COUPLING
     }
 
 
@@ -874,6 +886,7 @@ void disconnect_from_stats ()
         {
             zmq_close (zmq_data.data_pusher[i]);
         }
+#ifndef COUPLING
         if (zmq_data.sobol == 1)
         {
             for (i=1; i<zmq_data.nb_parameters+1; i++)
@@ -886,6 +899,7 @@ void disconnect_from_stats ()
     {
         zmq_close (zmq_data.sobol_requester[0]);
     }
+#endif
     zmq_ctx_destroy (zmq_data.context);
     if (zmq_data.data_pusher != NULL)
     {
