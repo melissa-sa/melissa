@@ -894,7 +894,9 @@ void disconnect_from_stats ()
                 zmq_close (zmq_data.sobol_requester[i]);
             }
         }
+#endif
     }
+#ifndef COUPLING
     if (zmq_data.sobol == 1)
     {
         zmq_close (zmq_data.sobol_requester[0]);
