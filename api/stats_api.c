@@ -52,8 +52,7 @@ struct zmq_data_s
     int     *server_vect_size;                  /**< local vect size for the library                            */
     char    *buffer;                            /**< buffer used to send data to the library                    */
     int      buff_size;                         /**< size of this buffer                                        */
-    double **buffers_sobol;                     /**< buffers used to store data on sobol rank 0                 */
-    char    *buffer_msg_sobol;                  /**< buffer used to send data to sobol rank 0                   */
+    double  *buffer_sobol;                      /**< buffer used to store data on sobol rank 0                  */
     int     *send_counts;                       /**< number of elements to send to server rank i                */
     int     *local_vect_sizes;                  /**< local vector size                                          */
     int     *sdispls;                           /**< displacement to which data should be sent to server rank i */
@@ -464,7 +463,7 @@ void connect_to_stats (const int *local_vect_size,
                 j += 1;
             }
         }
-        if (zmq_data.sobol)
+        if (zmq_data.sobol == 1)
         {
             for (i=0; i<(zmq_data.nb_parameters+1)*(*comm_size); i++)
             {
@@ -541,12 +540,10 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.buffer = malloc (zmq_data.buff_size);
     if (zmq_data.sobol)
     {
-        zmq_data.buffers_sobol = malloc ((zmq_data.nb_parameters+1) * sizeof (double*));
-        for (i=0; i<zmq_data.nb_parameters+1; i++)
+        if (*sobol_rank == 0)
         {
-            zmq_data.buffers_sobol[i] = malloc (*local_vect_size * sizeof(double));
+            zmq_data.buffer_sobol = malloc ((zmq_data.nb_parameters+2) * *local_vect_size * sizeof (double*));
         }
-        zmq_data.buffer_msg_sobol = malloc (*local_vect_size * sizeof(double) + sizeof(int));
         // split MPI_COMM_WORLD for coupled Code_Saturne simulations
         MPI_Comm_split(MPI_COMM_WORLD, *rank, *sobol_rank, &zmq_data.comm_sobol);
     }
@@ -718,8 +715,11 @@ void send_to_stats       (const int  *time_step,
                           const int  *sobol_rank,
                           const int  *sobol_group)
 {
-    int   i=0, j, k, l, simu_rank = 0;
+    int   i=0, j, k;
     char *buff_ptr;
+    int local_vect_size = zmq_data.local_vect_sizes[*rank];
+//    MPI_Request *request;
+//    MPI_Status *status;
 
 #ifdef BUILD_WITH_PROBES
     start_comm_time = stats_get_time();
@@ -734,7 +734,7 @@ void send_to_stats       (const int  *time_step,
             //recv data from other ranks of the sobol group
             for (i=0; i<zmq_data.nb_parameters + 1; i++)
             {
-                zmq_recv (zmq_data.sobol_requester[i], zmq_data.buffers_sobol[i], zmq_data.local_vect_sizes[*rank] * sizeof(double), 0);
+                zmq_recv (zmq_data.sobol_requester[i], &zmq_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
             }
             for (i=0; i<zmq_data.nb_parameters + 1; i++)
             {
@@ -749,12 +749,16 @@ void send_to_stats       (const int  *time_step,
                 zmq_recv (zmq_data.sobol_requester[0], &j, sizeof(int), 0);
             }
             //send data to rank 0 of the sobol group
-            zmq_send (zmq_data.sobol_requester[0], send_vect, zmq_data.local_vect_sizes[*rank] * sizeof(double), 0);
+            zmq_send (zmq_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
 #ifdef BUILD_WITH_PROBES
-            total_bytes_sent += zmq_data.local_vect_sizes[*rank] * sizeof(double);
+            total_bytes_sent += local_vect_size * sizeof(double);
 #endif // BUILD_WITH_PROBES
         }
+//        MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol);
+//        MPI_Igather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol, request);
+//        MPI_Wait(request, status);
     }
+
 
     if (*sobol_rank == 0)
     {
@@ -780,7 +784,7 @@ void send_to_stats       (const int  *time_step,
                     for (k=0; k<zmq_data.nb_parameters + 1; k++)
                     {
                         buff_ptr += zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double);
-                        memcpy (buff_ptr, &zmq_data.buffers_sobol[k][zmq_data.sdispls[zmq_data.pull_rank[i]]],
+                        memcpy (buff_ptr, &zmq_data.buffer_sobol[k*local_vect_size + zmq_data.sdispls[zmq_data.pull_rank[i]]],
                                 zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
                     }
                 }
@@ -883,14 +887,10 @@ void disconnect_from_stats ()
     free(zmq_data.sdispls);
     free(zmq_data.server_vect_size);
     free(zmq_data.buffer);
-    if (zmq_data.sobol == 1)
+    if (zmq_data.sobol == 1 && zmq_data.sobol_rank == 0)
     {
-        for (i=0; i<zmq_data.nb_parameters+1; i++)
-        {
-            free(zmq_data.buffers_sobol[i]);
-        }
+        free(zmq_data.buffer_sobol);
     }
-    free(zmq_data.buffers_sobol);
     free(zmq_data.local_vect_sizes);
 
 #ifdef BUILD_WITH_PROBES
