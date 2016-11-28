@@ -730,25 +730,35 @@ void send_to_stats       (const int  *time_step,
         // gather data from other ranks of the sobol group
         if (*sobol_rank == 0)
         {
-            j=0;
-            //recv data from other ranks of the sobol group
+            zmq_pollitem_t items [zmq_data.nb_parameters + 1];
             for (i=0; i<zmq_data.nb_parameters + 1; i++)
             {
-                zmq_recv (zmq_data.sobol_requester[i], &zmq_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
-                zmq_send (zmq_data.sobol_requester[i], &j, sizeof(int), 0);
+                items[i].socket = zmq_data.sobol_requester[i];
+                items[i].fd = 0;
+                items[i].events = ZMQ_POLLIN;
+                items[i].revents = 0;
             }
-//            for (i=0; i<zmq_data.nb_parameters + 1; i++)
-//            {
-//                zmq_send (zmq_data.sobol_requester[i], &j, sizeof(int), 0);
-//            }
+            j=0;
+            //recv data from other ranks of the sobol group
+            while (j<zmq_data.nb_parameters + 1)
+            {
+                zmq_poll (items, zmq_data.nb_parameters + 1, -1);
+                for (i=0; i<zmq_data.nb_parameters + 1; i++)
+                {
+                    if (items[i].revents & ZMQ_POLLIN)
+                    {
+                        zmq_recv (zmq_data.sobol_requester[i], &zmq_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
+                        j += 1;
+                    }
+                }
+            }
+            for (i=0; i<zmq_data.nb_parameters + 1; i++)
+            {
+                    zmq_send (zmq_data.sobol_requester[i], &i, sizeof(int), 0);
+            }
         }
         else // *sobol_rank != 0
         {
-//            if (*time_step > 1)
-//            {
-//                // wait release...
-//                zmq_recv (zmq_data.sobol_requester[0], &j, sizeof(int), 0);
-//            }
             //send data to rank 0 of the sobol group
             zmq_send (zmq_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
             zmq_recv (zmq_data.sobol_requester[0], &j, sizeof(int), 0);
@@ -872,10 +882,6 @@ void disconnect_from_stats ()
             }
         }
     }
-//    if (zmq_data.sobol_rank > 0)
-//    {
-//        zmq_recv (zmq_data.sobol_requester[0], &i, sizeof(int), 0);
-//    }
     if (zmq_data.sobol == 1)
     {
         zmq_close (zmq_data.sobol_requester[0]);
