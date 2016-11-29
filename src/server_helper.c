@@ -332,3 +332,73 @@ int string_recv (void  *socket,
     memcpy (recv_buff, buffer, size * sizeof(char));
     return size;
 }
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup sobol
+ *
+ * This function computes the confidence interval for Martinez Sobol indices
+ *
+ *******************************************************************************
+ *
+ * @param[in] field
+ * pointer to a field structure
+ *
+ * @param[out] *comm_data
+ * comm data structure
+ *
+ * @param[out] *interval1
+ * worst confidence interval (first order)
+ *
+ * @param[out] *interval_tot
+ * worst confidence interval (total order)
+ *
+ *******************************************************************************/
+
+void global_confidence_sobol_martinez(field_ptr     field,
+                                      comm_data_t  *comm_data,
+                                      double       *interval1,
+                                      double       *interval_tot)
+{
+    int i, j, t, p;
+    stats_data_t *data;
+    if (field == NULL)
+    {
+        return;
+    }
+    global_confidence_sobol_martinez(field->next, comm_data, interval1, interval_tot);
+
+    for (i=0; i<comm_data->client_comm_size; i++)
+    {
+        if (comm_data->rcounts[i] > 0)
+        {
+            data = &field->stats_data[i];
+            fprintf (stdout, "client %d, rank \n", i, comm_data->rank);
+
+            for (t=0; t<data->options->nb_time_steps; t++)
+            {
+                fprintf (stdout, "    time step %d, rank \n", t, comm_data->rank);
+                for (p=0; p<data->options->nb_parameters; p++)
+                {
+                    fprintf (stdout, "        parameter %d, rank \n", p, comm_data->rank);
+                    if (data->sobol_indices[t].iteration < 4)
+                    {
+                        return;
+                    }
+                    for (j=0; j< data->options->nb_parameters; j++)
+                    {
+                        if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[0] > *interval1)
+                        {
+                            *interval1 = data->sobol_indices[t].sobol_martinez[p].confidence_interval[0];
+                        }
+                        if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[1] > *interval_tot)
+                        {
+                            *interval_tot = data->sobol_indices[t].sobol_martinez[p].confidence_interval[1];
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

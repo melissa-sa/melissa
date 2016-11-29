@@ -52,6 +52,7 @@ int main (int argc, char **argv)
     char               *field_name_ptr;
     int                 simu_id, group_id;
     int                 nb_converged_fields = 0;
+    double              interval1, interval_tot;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -321,6 +322,7 @@ int main (int argc, char **argv)
                 }
                 compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
                 iteration++;
+                confidence_sobol_martinez (&data_ptr[client_rank].sobol_indices[time_step-1], stats_options.nb_parameters, data_ptr[client_rank].vect_size);
                 nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
                                                                         0.01,
                                                                         stats_options.nb_time_steps,
@@ -413,6 +415,8 @@ int main (int argc, char **argv)
         free(node_names);
     }
 
+    global_confidence_sobol_martinez (field, &comm_data, &interval1, &interval_tot);
+
     if (end_signal == 0)
     {
         finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes
@@ -429,6 +433,12 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
     double temp1;
     long int temp2;
+    interval1 = 0;
+    interval_tot = 0;
+    MPI_Reduce (&interval1, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    interval1 = temp1;
+    MPI_Reduce (&interval_tot, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    interval_tot = temp1;
     MPI_Reduce (&total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     total_comm_time = temp1 / comm_data.comm_size;
     MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -436,17 +446,19 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
-        fprintf (stdout, " --- Number of simulations:      %d\n", stats_options.nb_simu);
-        fprintf (stdout, " --- Number of simulation cores: %d\n", comm_data.client_comm_size);
-        fprintf (stdout, " --- Number of analysis cores:   %d\n", comm_data.comm_size);
-        fprintf (stdout, " --- Average communication time: %g s\n", total_comm_time);
-        fprintf (stdout, " --- Calcul time:                %g s\n", total_computation_time);
-        fprintf (stdout, " --- Waiting time:               %g s\n", total_wait_time);
-        fprintf (stdout, " --- Writing time:               %g s\n", total_write_time);
-        fprintf (stdout, " --- Total time:                 %g s\n", stats_get_time() - start_time);
-        fprintf (stdout, " --- Bytes recieved:             %ld bytes\n",total_bytes_recv);
-        fprintf (stdout, " --- Stats structures memory:    %ld bytes\n", mem_conso(&stats_options));
-        fprintf (stdout, " --- Bytes written:              %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
+        fprintf (stdout, " --- Number of simulations:           %d\n", stats_options.nb_simu);
+        fprintf (stdout, " --- Number of simulation cores:      %d\n", comm_data.client_comm_size);
+        fprintf (stdout, " --- Number of analysis cores:        %d\n", comm_data.comm_size);
+        fprintf (stdout, " --- Average communication time:      %g s\n", total_comm_time);
+        fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
+        fprintf (stdout, " --- Waiting time:                    %g s\n", total_wait_time);
+        fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
+        fprintf (stdout, " --- Total time:                      %g s\n", stats_get_time() - start_time);
+        fprintf (stdout, " --- Bytes recieved:                  %ld bytes\n",total_bytes_recv);
+        fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&stats_options));
+        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
+        fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
+        fprintf (stdout, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
     }
 #endif // BUILD_WITH_PROBES
 

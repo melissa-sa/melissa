@@ -85,4 +85,9 @@ void print_zmq_error(int         ret,
 int string_recv (void *socket,
                  char *recv_buff);
 
+void global_confidence_sobol_martinez(field_ptr     field,
+                                      comm_data_t  *comm_data,
+                                      double       *interval1,
+                                      double       *interval_tot);
+
 #endif // SERVER_HELPER_H
