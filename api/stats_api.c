@@ -25,7 +25,7 @@
 #define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
 
-//#define COUPLING
+#define COUPLING
 
 /**
  *******************************************************************************

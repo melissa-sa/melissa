@@ -410,7 +410,7 @@ void write_stats (stats_data_t    **data,
  * @param[in] *options
  * option structure
  *
- * @param[in] comm_data
+ * @param[in] *comm_data
  * structure containing communications parameters
  *
  * @param[in] *local_vect_sizes
@@ -943,92 +943,88 @@ void write_stats_ensight (stats_data_t    **data,
     free (s_buffer);
 }
 
-void read_ensight (stats_data_t    **data,
-                   stats_options_t  *options,
+/**
+ *******************************************************************************
+ *
+ * @ingroup intern_API
+ *
+ * This function reads data from Ensight files
+ *
+ *******************************************************************************
+ *
+ * @param[in] *options
+ * option structure
+ *
+ * @param[in] *comm_data
+ * structure containing communications parameters
+ *
+ * @param[in] *in_vect
+ * input vector
+ *
+ * @param[in] *local_vect_sizes
+ * all local vector sises
+ *
+ * @param[in] *file_name
+ * name of the file
+ *
+ *******************************************************************************/
+
+void read_ensight (stats_options_t  *options,
                    comm_data_t      *comm_data,
+                   double           *in_vect,
                    int              *local_vect_sizes,
-                   char             *field)
+                   char             *file_name)
 {
-    long int    i, j, t, param, offset=0, temp_offset=0;
+    long int    i, j, offset=0;
     FILE*       f;
-    char        file_name[256];
     int         max_size_time;
-    double      time_value = 0;
-    float      *s_buffer;
-    char        c_buffer[81], c_buffer2[81];
+    float      *r_buffer;
+    char        c_buffer[81];
     MPI_Status  status;
     int32_t     n;
 
     max_size_time=floor(log10(options->nb_time_steps))+1;
 
-    for (i=0; i<comm_data->rank; i++)
+    if (comm_data->rank == 0)
     {
-        offset += local_vect_sizes[i];
+        r_buffer = malloc (options->global_vect_size * sizeof(float));
+    }
+    else
+    {
+        r_buffer = malloc (local_vect_sizes[comm_data->rank] * sizeof(float));
     }
 
-    s_buffer = malloc (options->global_vect_size * sizeof(float));
-
-    if (options->mean_op == 1 && options->variance_op == 0)
+    if (comm_data->rank == 0)
     {
-        time_value = 0;
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            time_value += 0.0012;
-            sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, t+1);
-            for (i=0; i<comm_data->client_comm_size; i++)
-            {
-                if (comm_data->rcounts[i] > 0)
-                {
-                    for (j=0; j<comm_data->rcounts[i]; j++)
-                    {
-                        s_buffer[j + offset + comm_data->rdispls[i]] = (float)(*data)[i].means[t].mean[j];
-                    }
-                }
-            }
+        f = fopen(file_name, "r");
+        fread (c_buffer, sizeof(char), 80, f);
+        fread (c_buffer, sizeof(char), 80, f);
+        fread (&n, sizeof(int32_t), 1, f);
+        fread (c_buffer, sizeof(char), 80, f);
+        fread (r_buffer, sizeof(float), options->global_vect_size, f);
+        fclose(f);
+    }
 #ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                temp_offset = 0;
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j];
-                    MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
-                }
-            }
-            else
-            {
-                MPI_Send(&s_buffer[offset], local_vect_sizes[comm_data->rank], MPI_FLOAT, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                f = fopen(file_name, "w");
-                sprintf(c_buffer, "%s_mean (time values: %d, %g)", field, t, time_value);
-                strncpy(c_buffer2, c_buffer, 80);
-                for (i=strlen(c_buffer); i < 80; i++)
-                  c_buffer2[i] = ' ';
-                c_buffer2[80] = '\0';
-                fwrite (c_buffer2, sizeof(char), 80, f);
-                n = 1;
-                sprintf(c_buffer, "part");
-                strncpy(c_buffer2, c_buffer, 80);
-                for (i=strlen(c_buffer); i < 80; i++)
-                  c_buffer2[i] = ' ';
-                c_buffer2[80] = '\0';
-                fwrite (c_buffer2, sizeof(char), 80, f);
-                fwrite (&n, sizeof(int32_t), 1, f);
-                sprintf(c_buffer, "hexa8");
-                strncpy(c_buffer2, c_buffer, 80);
-                for (i=strlen(c_buffer); i < 80; i++)
-                  c_buffer2[i] = ' ';
-                c_buffer2[80] = '\0';
-                fwrite (c_buffer2, sizeof(char), 80, f);
-                fwrite (s_buffer, sizeof(float), options->global_vect_size, f);
-
-                fclose(f);
-            }
+    if (comm_data->rank == 0)
+    {
+        offset = 0;
+        for (j=1; j<comm_data->comm_size; j++)
+        {
+            offset += local_vect_sizes[j];
+            MPI_Send (&r_buffer[offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm);
         }
     }
+    else
+    {
+        MPI_Recv(r_buffer, local_vect_sizes[comm_data->rank], MPI_FLOAT, 0, comm_data->rank+121, comm_data->comm, &status);
+    }
+
+    for (i=0; i<local_vect_sizes[comm_data->rank]; i++)
+    {
+        in_vect[i] = (double)r_buffer[i];
+    }
+    free (r_buffer);
+#endif // BUILD_WITH_MPI
 }
 
 /**
