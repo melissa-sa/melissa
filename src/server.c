@@ -238,7 +238,7 @@ int main (int argc, char **argv)
                               &pull_data);
             nb_iterations *= pull_data.local_nb_messages;
             recv_buff_size = pull_data.buff_size * sizeof(double);
-            if (stats_options.sobol_op)
+            if (stats_options.sobol_op == 1)
             {
                 recv_buff_size *= stats_options.nb_parameters+2;
             }
@@ -322,11 +322,11 @@ int main (int argc, char **argv)
                 }
                 compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
                 iteration++;
-                confidence_sobol_martinez (&data_ptr[client_rank].sobol_indices[time_step-1], stats_options.nb_parameters, data_ptr[client_rank].vect_size);
-                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
-                                                                        0.01,
-                                                                        stats_options.nb_time_steps,
-                                                                        stats_options.nb_parameters);
+                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), stats_options.nb_parameters, data_ptr[client_rank].vect_size);
+//                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
+//                                                                        0.01,
+//                                                                        stats_options.nb_time_steps,
+//                                                                        stats_options.nb_parameters);
 #ifdef BUILD_WITH_PY_ZMQ
                 if (nb_converged_fields == nb_fields * pull_data.local_nb_messages)
                 {
@@ -415,6 +415,8 @@ int main (int argc, char **argv)
         free(node_names);
     }
 
+    interval1 = 0;
+    interval_tot = 0;
     global_confidence_sobol_martinez (field, &comm_data, &interval1, &interval_tot);
 
     if (end_signal == 0)
@@ -433,8 +435,6 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
     double temp1;
     long int temp2;
-    interval1 = 0;
-    interval_tot = 0;
     MPI_Reduce (&interval1, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     interval1 = temp1;
     MPI_Reduce (&interval_tot, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);

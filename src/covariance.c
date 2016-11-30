@@ -71,15 +71,18 @@ void increment_covariance (double        in_vect1[],
     int     i;
 
     covariance->increment += 1;
-#pragma omp parallel for
-    for (i=0; i<vect_size; i++)
+    if (covariance->increment > 2)
     {
-        temp = (covariance->increment-1)/ covariance->increment;
-        covariance->covariance[i] = temp * covariance->covariance[i]
-                + temp * (in_vect1[i] - covariance->mean1.mean[i]) * (in_vect2[i] - covariance->mean2.mean[i]);
+        temp = (double)(covariance->increment - 1) / (double)(covariance->increment);
+#pragma omp parallel for
+        for (i=0; i<vect_size; i++)
+        {
+            covariance->covariance[i] *= temp;
+            covariance->covariance[i] +=  (in_vect1[i] - covariance->mean1.mean[i]) * (in_vect2[i] - covariance->mean2.mean[i]) / (double)(covariance->increment);
+        }
     }
-    increment_mean(in_vect1, &covariance->mean1, vect_size);
-    increment_mean(in_vect2, &covariance->mean2, vect_size);
+    increment_mean(in_vect1, &(covariance->mean1), vect_size);
+    increment_mean(in_vect2, &(covariance->mean2), vect_size);
 }
 
 /**

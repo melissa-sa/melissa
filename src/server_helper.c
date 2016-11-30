@@ -373,15 +373,12 @@ void global_confidence_sobol_martinez(field_ptr     field,
     {
         if (comm_data->rcounts[i] > 0)
         {
-            data = &field->stats_data[i];
-            fprintf (stdout, "client %d, rank \n", i, comm_data->rank);
+            data = &(field->stats_data[i]);
 
             for (t=0; t<data->options->nb_time_steps; t++)
             {
-                fprintf (stdout, "    time step %d, rank \n", t, comm_data->rank);
                 for (p=0; p<data->options->nb_parameters; p++)
                 {
-                    fprintf (stdout, "        parameter %d, rank \n", p, comm_data->rank);
                     if (data->sobol_indices[t].iteration < 4)
                     {
                         return;

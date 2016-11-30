@@ -97,6 +97,11 @@ int main( int argc, char **argv )
   comm = MPI_COMM_WORLD;
 
   temp = strtod(argv[1],NULL);
+  if (argc > 1)
+  {
+      temp += 2*strtod(argv[1],NULL);
+  }
+  temp *= strtod(argv[2],NULL);
   if (argc > 3)
   {
     sobol_rank  = (int)strtod(argv[argc-2],NULL);
@@ -136,7 +141,6 @@ int main( int argc, char **argv )
     t+=dt;
     filling_F (&nx,&ny,&u[0],&d,&dx,&dy,&dt,&t,&f[0],&i1,&in,&lx,&ly);
     conjgrad (&a[0],&f[0],&u[0],&nx,&ny,&epsilon,&i1,&in,&np,&me,&next,&previous);
-
     send_to_stats (&n, field_name, u, &me, &sobol_rank, &sobol_group);
   }
 

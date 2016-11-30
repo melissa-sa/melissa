@@ -25,7 +25,7 @@
 #define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
 
-#define COUPLING
+//#define COUPLING
 
 /**
  *******************************************************************************
@@ -54,6 +54,7 @@ struct zmq_data_s
     int     *server_vect_size;                  /**< local vect size for the library                            */
     char    *buffer;                            /**< buffer used to send data to the library                    */
     int      buff_size;                         /**< size of this buffer                                        */
+    int      send_buff_size;                    /**< size of send buffer                                        */
     double  *buffer_sobol;                      /**< buffer used to store data on sobol rank 0                  */
     int     *send_counts;                       /**< number of elements to send to server rank i                */
     int     *local_vect_sizes;                  /**< local vector size                                          */
@@ -541,13 +542,13 @@ void connect_to_stats (const int *local_vect_size,
 #ifndef COUPLING
     zmq_close (master_requester);
 #endif // ndef COUPLING
-    zmq_data.buff_size *= sizeof(double);
+    zmq_data.send_buff_size = zmq_data.buff_size * sizeof(double);
     if (zmq_data.sobol)
     {
-        zmq_data.buff_size *= (zmq_data.nb_parameters+2);
+        zmq_data.send_buff_size *= (zmq_data.nb_parameters+2);
     }
-    zmq_data.buff_size += 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
-    zmq_data.buffer = malloc (zmq_data.buff_size);
+    zmq_data.send_buff_size += 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
+    zmq_data.buffer = malloc (zmq_data.send_buff_size);
     if (zmq_data.sobol)
     {
         if (*sobol_rank == 0)
@@ -807,15 +808,15 @@ void send_to_stats       (const int  *time_step,
                 {
                     for (k=0; k<zmq_data.nb_parameters + 1; k++)
                     {
-                        buff_ptr += zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double);
+                        buff_ptr += zmq_data.buff_size * sizeof(double);
                         memcpy (buff_ptr, &zmq_data.buffer_sobol[k*local_vect_size + zmq_data.sdispls[zmq_data.pull_rank[i]]],
                                 zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
                     }
                 }
-                zmq_send (zmq_data.data_pusher[j], zmq_data.buffer, zmq_data.buff_size, 0);
+                zmq_send (zmq_data.data_pusher[j], zmq_data.buffer, zmq_data.send_buff_size, 0);
                 j += 1;
 #ifdef BUILD_WITH_PROBES
-                total_bytes_sent += zmq_data.buff_size;
+                total_bytes_sent += zmq_data.send_buff_size;
 #endif // BUILD_WITH_PROBES
             }
         }

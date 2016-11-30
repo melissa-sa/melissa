@@ -90,10 +90,11 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
 
 #pragma omp parallel for
         for (j=0; j<vect_size; j++)
-            sobol_array->sobol_martinez[i].total_order_values[j] = 1 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[j]
+            sobol_array->sobol_martinez[i].total_order_values[j] = 1.0 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[j]
                     / ( sqrt(sobol_array->variance_a.variance[j])
                         * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
     }
+    sobol_array->iteration += 1;
 }
 
 /**
@@ -136,9 +137,9 @@ void confidence_sobol_martinez(sobol_array_t *sobol_array,
         sobol_array->sobol_martinez[j].confidence_interval[1]=0;
         for (i=0; i<vect_size; i++)
         {
-            temp1 = 0.5 * log((1+sobol_array->sobol_martinez[i].first_order_values[i])/(1-sobol_array->sobol_martinez[i].first_order_values[i]));
+            temp1 = 0.5 * log((1.0+sobol_array->sobol_martinez[j].first_order_values[i])/(1.0-sobol_array->sobol_martinez[j].first_order_values[i]));
             interval = tanh(temp1 + temp2) - tanh(temp1 - temp2);
-            if (sobol_array->sobol_martinez[j].confidence_interval[0] > interval)
+            if (sobol_array->sobol_martinez[j].confidence_interval[0] < interval)
             {
                 sobol_array->sobol_martinez[j].confidence_interval[0] = interval;
             }
@@ -146,11 +147,11 @@ void confidence_sobol_martinez(sobol_array_t *sobol_array,
         interval = 0;
         for (i=0; i<vect_size; i++)
         {
-            temp1 = 0.5 * log((1+sobol_array->sobol_martinez[i].total_order_values[i])/(1-sobol_array->sobol_martinez[i].total_order_values[i]));
+            temp1 = 0.5 * log((1.0+sobol_array->sobol_martinez[j].total_order_values[i])/(1.0-sobol_array->sobol_martinez[j].total_order_values[i]));
             interval = (1-tanh(temp1 - temp2)) - (1-tanh(temp1 + temp2));
-            if (sobol_array->sobol_martinez[j].confidence_interval[1] > interval)
+            if (sobol_array->sobol_martinez[j].confidence_interval[1] < interval)
             {
-                sobol_array->sobol_martinez[j].confidence_interval[1] = tanh(temp1 - temp2);
+                sobol_array->sobol_martinez[j].confidence_interval[1] = interval;
             }
         }
     }

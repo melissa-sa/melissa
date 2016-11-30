@@ -10,12 +10,13 @@ import zmq
 def create_matrix(nb_parameters, nb_groups, range_min, range_max):
   A = np.zeros((nb_groups, nb_parameters))
   for i in range(nb_parameters):
-    A[:,i] = rd.uniform(range_min[i], range_max[i], nb_groups)
+      for j in range(nb_groups):
+          A[j,i] = rd.uniform(range_min[i], range_max[i])
   return A
 
 def create_matrix_k(A, B, k):
-  Ck = A
-  Ck[:,k] = B[:,k]
+  Ck = np.array(A)
+  Ck[:,k] = np.array(B[:,k])
   return Ck
 
 def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_server, nb_parameters):
@@ -25,7 +26,7 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_server, nb_parameters):
       parameters += str(i) + " "
   parameters += str(sobol_rank) + " "
   parameters += str(sobol_group)
-#  print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
+  print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
   return os.system("mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &")
 
 def launch_melissa (command_line):
@@ -39,17 +40,21 @@ def launch_melissa (command_line):
 
 nb_parameters = 2
 nb_simu = 8
-nb_groups = 2
+nb_groups = 5
 nb_time_steps = 100
 operations = ["mean","variance","min","max","threshold","sobol"]
 threshold = 0.7
 op_str=""
 mpi_options = ""
-nb_proc_simu = 3
-nb_proc_server = 2
+nb_proc_simu = 1
+nb_proc_server = 1
 server_path = "/home/tterraz/avido/source/Melissa/build/src"
-range_min = np.zeros(nb_groups,float)
-range_max = np.ones(nb_groups,float)
+range_min = np.zeros(nb_parameters)
+range_max = np.zeros(nb_parameters)
+range_min[0] = 0
+range_max[0] = 1
+range_min[1] = 2
+range_max[1] = 3
 
 # ------------- main ------------- #
 
@@ -60,9 +65,14 @@ rep_socket.bind("tcp://*:5555")
 if (not (("sobol" in operations) or ("sobol_indices" in operations))):
     nb_groups = nb_simu
 A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
+np.save("Amatrix", A)
 if ("sobol" in operations) or ("sobol_indices" in operations):
   B = create_matrix(nb_parameters, nb_groups, range_min, range_max)
   C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
+
+  np.save("Bmatrix", B)
+  for i in range(nb_parameters):
+    np.save("C"+str(i)+"matrix", C[i])
 
 ret = np.zeros(nb_parameters + 2)
 for i in range(nb_groups):

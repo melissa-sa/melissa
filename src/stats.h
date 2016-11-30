@@ -214,7 +214,7 @@ struct sobol_array_s
     sobol_martinez_t *sobol_martinez; /**< array of sobol indices, size nb_parameters     */
     variance_t        variance_a;     /**< first set variance needed by Martinez formula  */
     variance_t        variance_b;     /**< second set variance needed by Martinez formula */
-    double            iteration;      /**< number of computed groups                      */
+    int               iteration;      /**< number of computed groups                      */
 };
 
 typedef struct sobol_array_s sobol_array_t; /**< type corresponding to sobol_array_s */
