@@ -977,13 +977,10 @@ void read_ensight (stats_options_t  *options,
 {
     long int    i, j, offset=0;
     FILE*       f;
-    int         max_size_time;
     float      *r_buffer;
     char        c_buffer[81];
     MPI_Status  status;
     int32_t     n;
-
-    max_size_time=floor(log10(options->nb_time_steps))+1;
 
     if (comm_data->rank == 0)
     {

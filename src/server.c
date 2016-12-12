@@ -417,7 +417,10 @@ int main (int argc, char **argv)
 
     interval1 = 0;
     interval_tot = 0;
-    global_confidence_sobol_martinez (field, &comm_data, &interval1, &interval_tot);
+    if (stats_options.sobol_op == 1)
+    {
+        global_confidence_sobol_martinez (field, &comm_data, &interval1, &interval_tot);
+    }
 
     if (end_signal == 0)
     {
@@ -457,8 +460,11 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Bytes recieved:                  %ld bytes\n",total_bytes_recv);
         fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&stats_options));
         fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
-        fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
-        fprintf (stdout, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
+        if (stats_options.sobol_op == 1)
+        {
+            fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
+            fprintf (stdout, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
+        }
     }
 #endif // BUILD_WITH_PROBES
 

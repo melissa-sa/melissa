@@ -19,3 +19,6 @@ endif(BUILD_WITH_ZMQ)
 #  add_executable(mpi_server mpi_server.c)
 #  target_link_libraries(mpi_server ${EXTRA_LIBS} stats)
 #endif(BUILD_WITH_MPI)
+
+add_executable(ensight_server ensight_server.c)
+target_link_libraries(ensight_server ${EXTRA_LIBS} stats)
