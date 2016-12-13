@@ -179,7 +179,7 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
     elif (batch_scheduler == "OAR"):
         contenu += "#OAR -l nodes="+str(nodes_saturne*(nb_parameters+2))+",walltime="+walltime_container+ "\n"
         contenu += "#OAR -O coupling.%jobid%.log                                                           \n"
-        contenu += "#OAR -E coupling.%jobid%.log                                                           \n"
+        contenu += "#OAR -E coupling.%jobid%.err                                                           \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                                    \n"
         contenu += "ulimit -s unlimited                                                                    \n"
     contenu += "GROUP=$(basename `pwd` | cut -dp -f2)                                           \n"
@@ -210,9 +210,10 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     elif (batch_scheduler == "OAR"):
         contenu += "#OAR -l nodes="+str(nodes_melissa)+",walltime="+walltime_melissa+ "\n"
         contenu += "#OAR -O melissa.%jobid%.log                                        \n"
-        contenu += "#OAR -E melissa.%jobid%.log                                        \n"
+        contenu += "#OAR -E melissa.%jobid%.err                                        \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
         contenu += "ulimit -s unlimited                                                \n"
+        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "FRONTEND="+frontend+"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
@@ -225,13 +226,22 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "cd $WORK_DIR                                                       \n"
     contenu += "# launch simulation jobs                                           \n"
     contenu += "echo  \"### Launch saturne jobs\"                                  \n"
-    if ("sobol" in options) or ("sobol_indices" in options):
-        contenu += "python "+workdir+"/master.py container                             \n"
-    else:
-        contenu += "python "+workdir+"/master.py simu                                  \n"
+    if (batch_scheduler == "Slurm"):
+        if ("sobol" in options) or ("sobol_indices" in options):
+            contenu += "python "+workdir+"/master.py container                             \n"
+        else:
+            contenu += "python "+workdir+"/master.py simu                                  \n"
+        contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
+        contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
+    elif (batch_scheduler == "OAR"):
+        if ("sobol" in options) or ("sobol_indices" in options):
+            contenu += "ssh $FRONTEND \"python "+workdir+"/master.py container\"           \n"
+        else:
+            contenu += "ssh $FRONTEND \"python "+workdir+"/master.py simu\"                \n"
+        contenu += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
+        contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
     contenu += "                                                                   \n"
     contenu += "# run Melissa                                                      \n"
-    contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
     contenu += "echo  \"### Launch Melissa\"                                       \n"
     contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
@@ -309,7 +319,7 @@ def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_thread
     elif (batch_scheduler == "OAR"):
         contenu += "#OAR -l nodes="+str(nodes_saturne)+",walltime="+walltime_saturne+ "\n"
         contenu += "#OAR -O saturne.%jobid%.log                                        \n"
-        contenu += "#OAR -E saturne.%jobid%.log                                        \n"
+        contenu += "#OAR -E saturne.%jobid%.err                                        \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
         contenu += "ulimit -s unlimited                                                \n"
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
@@ -320,7 +330,7 @@ def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_thread
     contenu += "exit $?                                                            \n"
     fichier.write(contenu)
     fichier.close()
-    os.system("chmod 744 run_saturne.sh")
+    os.system("chmod 744 run_saturne_master.sh")
 
 
 #==================================#
@@ -396,8 +406,45 @@ else:
             os.chdir(workdir+"/group"+str(i))
             if ("sobol" in operations) or ("sobol_indices" in operations):
                 create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
-                os.system('sbatch "../STATS/run_cas_couple.sh" --job-name=Saturnes'+str(i))
+                if (batch_scheduler == "Slurm"):
+                    os.system('sbatch "../STATS/run_cas_couple.sh" --job-name=Saturnes'+str(i))
+                elif (batch_scheduler == "OAR"):
+                    os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
             else:
                 os.chdir(./rank0/SCRIPTS)
-                os.system('sbatch "./runcase" --job-name=Saturne'+str(i))
+                if (batch_scheduler == "Slurm"):
+                    os.system('sbatch "./runcase" --job-name=Saturne'+str(i))
+                elif (batch_scheduler == "OAR"):
+                    os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
+
+    if ((job_step == "container") or (job_step == "simu")):
+        converged_sobol = np.zeros(nb_proc_server,int)
+        finished_server = np.zeros(nb_proc_server,int)
+        context = zmq.Context()
+        rep_melissa_socket = context.socket(zmq.REP)
+        rep_melissa_socket.bind("tcp://*:5555")
+        rep_simu_socket = context.socket(zmq.REP)
+        rep_simu_socket.bind("tcp://*:5556")
+        poller = zmq.Poller()
+        poller.register(rep_melissa_socket, zmq.POLLIN)
+        poller.register(rep_simu_socket, zmq.POLLIN)
+        snd_message = "continue"
+        while True:
+            socks = dict(poller.poll(100))
+            if (rep_melissa_socket in socks and socks[rep_melissa_socket] == zmq.POLLIN):
+                rcv_message = rep_melissa_socket.recv_string()
+                message = int(rcv_message)
+                if (message >= 0 and message < nb_proc_server):
+                    rep_socket.send_string("ok")
+                    converged_sobol[message] = 1
+                else:
+                    finished_server[message - nb_proc_server] = 1
+                    rep_socket.send_string(snd_message)
+                    if (not 0 in finished_server):
+                        break
+            if (rep_simu_socket in socks and socks[rep_simu_socket] == zmq.POLLIN):
+                print "do something to stop pending simulations"
+            if (not 0 in converged_sobol):
+                snd_message = "stop"
+
 

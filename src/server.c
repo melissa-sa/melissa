@@ -331,14 +331,7 @@ int main (int argc, char **argv)
                 if (nb_converged_fields == nb_fields * pull_data.local_nb_messages)
                 {
                     sprintf (port_name, "%d", comm_data.rank);
-                    if (comm_data.rank == 0)
-                    {
-                        zmq_send(python_requester, port_name, sizeof(char), 0);
-                    }
-                    else
-                    {
-                        zmq_send(python_requester, port_name, (floor(log10(comm_data.rank))+1) * sizeof(char), 0);
-                    }
+                    zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
                     string_recv(python_requester, port_name);
                 }
 #endif // BUILD_WITH_PY_ZMQ
@@ -384,9 +377,7 @@ int main (int argc, char **argv)
     }
 #ifdef BUILD_WITH_PY_ZMQ
             sprintf (port_name, "%d", comm_data.comm_size + comm_data.rank);
-            {
-                zmq_send(python_requester, port_name, (floor(log10(comm_data.comm_size + comm_data.rank))+1) * sizeof(char), 0);
-            }
+            zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
             string_recv(python_requester, port_name);
 //            if (!strcmp(port_name, "continue"))
 #endif // BUILD_WITH_PY_ZMQ
