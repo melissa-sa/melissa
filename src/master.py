@@ -1,9 +1,10 @@
 import os
 import time
 import sys
+import subprocess
 import numpy as np
 import numpy.random as rd
-
+import re
 
 #=====================================#
 #               options               #
@@ -44,6 +45,11 @@ xml_file_name         = "bundle_3x2_f16_param.xml"
 #=======================================#
 #               functions               #
 #=======================================#
+
+def call_bash(s):
+    proc = subprocess.Popen(s, stdout=subprocess.PIPE, shell=True)
+    (out, err) = proc.communicate()
+    return out[:-1]
 
 def create_matrix(nb_parameters, nb_groups, range_min, range_max):
     A = np.zeros((nb_groups, nb_parameters))
@@ -423,28 +429,36 @@ else:
         context = zmq.Context()
         rep_melissa_socket = context.socket(zmq.REP)
         rep_melissa_socket.bind("tcp://*:5555")
-        rep_simu_socket = context.socket(zmq.REP)
-        rep_simu_socket.bind("tcp://*:5556")
+#        pull_simu_socket = context.socket(zmq.PULL)
+#        pull_simu_socket.bind("tcp://*:5556")
         poller = zmq.Poller()
         poller.register(rep_melissa_socket, zmq.POLLIN)
-        poller.register(rep_simu_socket, zmq.POLLIN)
+#        poller.register(pull_simu_socket, zmq.POLLIN)
         snd_message = "continue"
         while True:
             socks = dict(poller.poll(100))
-            if (rep_melissa_socket in socks and socks[rep_melissa_socket] == zmq.POLLIN):
-                rcv_message = rep_melissa_socket.recv_string()
-                message = int(rcv_message)
-                if (message >= 0 and message < nb_proc_server):
-                    rep_socket.send_string("ok")
-                    converged_sobol[message] = 1
-                else:
-                    finished_server[message - nb_proc_server] = 1
-                    rep_socket.send_string(snd_message)
+            if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
+#                rcv_message = rep_melissa_socket.recv_string()
+                message = dict([rep_melissa_socket.recv_string().split()])
+                if (converged in message):
+                    rep_melissa_socket.send_string(snd_message)
+                    converged_sobol[int(message[converged])] = 1
+                elif (finished in message):
+                    finished_server[int(message[finished])] = 1
+                    rep_melissa_socket.send_string(snd_message)
                     if (not 0 in finished_server):
                         break
-            if (rep_simu_socket in socks and socks[rep_simu_socket] == zmq.POLLIN):
-                print "do something to stop pending simulations"
+#            if (pull_simu_socket in socks.keys() and socks[pull_simu_socket] == zmq.POLLIN):
+#                rcv_message = pull_simu_socket.recv_string()
+#                message = int(rcv_message)
+#                if (message >= 0 and message < nb_groups):
             if (not 0 in converged_sobol):
-                snd_message = "stop"
+                print "Cancel pending simulation jobs..."
+                os.system("oardel "+re.sub('\n',' ',call_bash("oarstat -u --sql \"state = 'Waiting'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'")))
+                running_jobs = call_bash("oarstat -u --sql \"state = 'Running'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
+                if (range(running_jobs) == 0):
+                    snd_message = "continue"
+                else:
+                    snd_message = "stop"
 
 
