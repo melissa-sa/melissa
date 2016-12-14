@@ -65,6 +65,7 @@ void conjgrad(double*,
               int*   ,
               int*   ,
               int*   ,
+              int*   ,
               int*    );
 
 void finalize(double*,
@@ -89,12 +90,10 @@ int main( int argc, char **argv )
   int sobol_rank = 0;
   int sobol_group = 0;
   MPI_Comm comm;
+  int fcomm;
   char *field_name = "heat";
 
   MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD,&me);
-  MPI_Comm_size(MPI_COMM_WORLD,&np);
-  comm = MPI_COMM_WORLD;
 
   temp = strtod(argv[1],NULL);
   if (argc > 1)
@@ -107,7 +106,11 @@ int main( int argc, char **argv )
     sobol_rank  = (int)strtod(argv[argc-2],NULL);
     sobol_group = (int)strtod(argv[argc-1],NULL);
   }
-
+  MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, &comm);
+  MPI_Comm_rank(comm,&me);
+  MPI_Comm_size(comm,&np);
+  fcomm = MPI_Comm_c2f(comm);
+  fprintf(stdout, "Comm_size: %d, comm_rank : %d\n", np, me);
 
   t1=MPI_Wtime();
 
@@ -140,7 +143,7 @@ int main( int argc, char **argv )
   {
     t+=dt;
     filling_F (&nx,&ny,&u[0],&d,&dx,&dy,&dt,&t,&f[0],&i1,&in,&lx,&ly);
-    conjgrad (&a[0],&f[0],&u[0],&nx,&ny,&epsilon,&i1,&in,&np,&me,&next,&previous);
+    conjgrad (&a[0],&f[0],&u[0],&nx,&ny,&epsilon,&i1,&in,&np,&me,&next,&previous,&fcomm);
     send_to_stats (&n, field_name, u, &me, &sobol_rank, &sobol_group);
   }
 

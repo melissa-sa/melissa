@@ -179,7 +179,7 @@ module heat_utils
   
 !------------------------- CG subroutines
 
-  subroutine ConjGrad(Ah, F, U,nx,ny,epsilon,i1,in,np,me,next,previous) bind (c, name='conjgrad')
+  subroutine ConjGrad(Ah, F, U,nx,ny,epsilon,i1,in,np,me,next,previous,mpi_comm) bind (c, name='conjgrad')
 
     implicit none
 
@@ -190,6 +190,7 @@ module heat_utils
     integer :: i, k,nx,ny,i1,in,charge,np,statinfo,me,next,previous
     real*8, intent(in) :: epsilon
     real*8 :: rho, rho_, beta, delta, a, residu,residu1,residu2
+    integer, intent(in) :: mpi_comm
     integer,dimension(mpi_status_size)::status
 
     charge=in-i1+1
@@ -206,11 +207,11 @@ module heat_utils
     end do
     
     i = 1
-    call mpi_allreduce(scal(r,r,charge),rho,1,mpi_real8,mpi_sum,mpi_comm_world,statinfo)
+    call mpi_allreduce(scal(r,r,charge),rho,1,mpi_real8,mpi_sum,mpi_comm,statinfo)
     
     do while(residu > epsilon)
        rho_ = rho
-       call mpi_allreduce(scal(r,r,charge),rho,1,mpi_real8,mpi_sum,mpi_comm_world,statinfo)
+       call mpi_allreduce(scal(r,r,charge),rho,1,mpi_real8,mpi_sum,mpi_comm,statinfo)
        if(i == 1) then
           do k = 1, charge
              P(k) = R(k)
@@ -222,22 +223,22 @@ module heat_utils
           end do
        end if
        
-	  call mpi_send(p(1:nx),nx,mpi_real8,previous,999,mpi_comm_world,statinfo)
-	  call mpi_send(p(charge-nx+1:charge),nx,mpi_real8,next,888,mpi_comm_world,statinfo)
-	  call mpi_recv(x1,nx,mpi_real8,previous,888,mpi_comm_world,status,statinfo)
-	  call mpi_recv(x2,nx,mpi_real8,next,999,mpi_comm_world,status,statinfo)
+          call mpi_send(p(1:nx),nx,mpi_real8,previous,999,mpi_comm,statinfo)
+          call mpi_send(p(charge-nx+1:charge),nx,mpi_real8,next,888,mpi_comm,statinfo)
+          call mpi_recv(x1,nx,mpi_real8,previous,888,mpi_comm,status,statinfo)
+          call mpi_recv(x2,nx,mpi_real8,next,999,mpi_comm,status,statinfo)
 
        call multiply(ah,p,q,nx,ny,i1,in,x1,x2)
        q=-q
-       call mpi_allreduce(scal(p,q,charge),delta,1,mpi_real8,mpi_sum,mpi_comm_world,statinfo)
+       call mpi_allreduce(scal(p,q,charge),delta,1,mpi_real8,mpi_sum,mpi_comm,statinfo)
        a = rho/delta
        do k = 1, charge
           U(k) = U(k)+a*P(k)
           R(k) = R(k)-a*Q(k)
        end do
        i = i+1
-       call mpi_allreduce(scal(r,r,charge),residu1,1,mpi_real8,mpi_sum,mpi_comm_world,statinfo)
-       call mpi_allreduce(scal(f,f,charge),residu2,1,mpi_real8,mpi_sum,mpi_comm_world,statinfo)
+       call mpi_allreduce(scal(r,r,charge),residu1,1,mpi_real8,mpi_sum,mpi_comm,statinfo)
+       call mpi_allreduce(scal(f,f,charge),residu2,1,mpi_real8,mpi_sum,mpi_comm,statinfo)
        residu=sqrt(residu1)/sqrt(residu2)
       
     end do

@@ -20,9 +20,6 @@ program heat
   name = C_CHAR_"heat"//C_NULL_CHAR
 
   call mpi_init(statinfo)
-  call mpi_comm_rank(mpi_comm_world,me,statinfo)
-  call mpi_comm_size(mpi_comm_world,np,statinfo)
-  comm = MPI_COMM_WORLD;
 
   narg = iargc()
   if(narg.ge.1) call getarg(1, arg)
@@ -35,6 +32,9 @@ program heat
     call getarg(narg, arg)
     read( arg, * ) sobol_group ! sobol group
   endif
+  call MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, comm, statinfo);
+  call mpi_comm_rank(comm,me,statinfo)
+  call mpi_comm_size(comm,np,statinfo)
   
   t1=mpi_wtime()
   
@@ -67,7 +67,7 @@ program heat
   do n=1,nmax
     t = t + dt
     call filling_F(nx,ny,U,d,dx,dy,dt,t,F,i1,in,lx,ly)
-    call conjgrad(A,F,U,nx,ny,epsilon,i1,in,np,me,next,previous)
+    call conjgrad(A,F,U,nx,ny,epsilon,i1,in,np,me,next,previous,comm)
 
     call send_to_stats (n, name, u, me, sobol_rank, sobol_group)
   end do
