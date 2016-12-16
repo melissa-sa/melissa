@@ -20,14 +20,29 @@ def create_matrix_k(A, B, k):
   return Ck
 
 def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_server, nb_parameters):
+os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+parameters = ""
+for i in Ai:
+    parameters += str(i) + " "
+parameters += str(sobol_rank) + " "
+parameters += str(sobol_group)
+print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
+return os.system("mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &")
+
+def launch_coupled_simu (Ai, sobol_group, nb_proc_server, nb_parameters):
   os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
-  parameters = ""
-  for i in Ai:
-      parameters += str(i) + " "
-  parameters += str(sobol_rank) + " "
-  parameters += str(sobol_group)
   print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
-  return os.system("mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &")
+  command = "mpirun"
+  for i in range(nb_parameters+2):
+      parameters = ""
+      for j in Ai:
+          parameters += str(j) + " "
+      parameters += str(i) + " "
+      parameters += str(sobol_group)
+      if i > 0:
+          command += " :"
+      command += " -n "+str(nb_proc_server)+" ./heatc "+parameters
+  return os.system(command+" &")
 
 def launch_melissa (command_line):
   os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
@@ -55,6 +70,7 @@ range_min[0] = 0
 range_max[0] = 1
 range_min[1] = 2
 range_max[1] = 3
+coupling = 1
 
 # ------------- main ------------- #
 

@@ -10,6 +10,7 @@ import re
 #               options               #
 #=====================================#
 
+batch_scheduler       = "Slurm"
 nb_parameters         = 6
 nb_groups             = 1000
 nb_simu               = nb_groups*(nb_parameters+2)
@@ -38,7 +39,6 @@ walltime_saturne      = "10:00:0"
 walltime_container    = "10:00:0"
 walltime_melissa      = "120:00:0"
 frontend              = "eofront2"
-batch_scheduler       = "Slurm"
 coupling              = 1
 xml_file_name         = "bundle_3x2_f16_param.xml"
 

@@ -16,7 +16,7 @@ static volatile int end_signal = 0;
 
 void sig_handler(int signo) {
     if (signo == SIGUSR1 || signo == SIGINT || signo == SIGUSR2)
-        end_signal = 1;
+        end_signal = signo;
 }
 
 int main (int argc, char **argv)
@@ -339,18 +339,19 @@ int main (int argc, char **argv)
         }
 
 #ifdef BUILD_WITH_PY_ZMQ
-        if (nb_converged_fields == nb_fields * pull_data.local_nb_messages)
+        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && stats_options.sobol_op == 1)
         {
             sprintf (port_name, "converged %d", comm_data.rank);
             zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
-            if (strcmp ("stop", string_recv(python_requester, port_name)))
+            string_recv(python_requester, port_name);
+            if (strcmp ("stop", port_name))
             {
                 break;
             }
         }
 #endif // BUILD_WITH_PY_ZMQ
 
-        if (end_signal != 0)
+        if (end_signal == SIGINT)
         {
             field_ptr fptr = field;
             if (comm_data.rank == 0)
@@ -371,27 +372,37 @@ int main (int argc, char **argv)
             break;
         }
 
-#ifndef BUILD_WITH_PY_ZMQ
-        if (nb_fields > 0)
+        if (end_signal == SIGUSR1 || end_signal == SIGUSR2)
+        {
+            break;
+        }
+
+        if (nb_fields > 0 && stats_options.sobol_op == 0)
         {
             if (iteration >= nb_iterations*nb_fields)
             {
                 break;
             }
         }
-#endif // BUILD_WITH_PY_ZMQ
     }
 
-    zmq_close (connexion_responder);
-    zmq_close (init_responder);
-    zmq_close (data_puller);
-#ifdef BUILD_WITH_PY_ZMQ
-    if (stats_options.sobol_op == 1)
+
+    if (end_signal == 0)
     {
-        zmq_close (python_requester);
-    }
+        zmq_close (connexion_responder);
+        zmq_close (init_responder);
+        zmq_close (data_puller);
+#ifdef BUILD_WITH_PY_ZMQ
+        if (stats_options.sobol_op == 1)
+        {
+            sprintf (port_name, "finished %d", comm_data.rank);
+            zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
+            string_recv(python_requester, port_name);
+            zmq_close (python_requester);
+        }
 #endif // BUILD_WITH_PY_ZMQ
-    zmq_ctx_term (context);
+        zmq_ctx_term (context);
+    }
     if (stats_options.sobol_op == 1)
     {
         for (i=0; i<stats_options.nb_parameters+2; i++)
