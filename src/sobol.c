@@ -147,7 +147,7 @@ void confidence_sobol_martinez(sobol_array_t *sobol_array,
         interval = 0;
         for (i=0; i<vect_size; i++)
         {
-            temp1 = 0.5 * log((1.0+sobol_array->sobol_martinez[j].total_order_values[i])/(1.0-sobol_array->sobol_martinez[j].total_order_values[i]));
+            temp1 = 0.5 * log((2.0-sobol_array->sobol_martinez[j].total_order_values[i])/sobol_array->sobol_martinez[j].total_order_values[i]);
             interval = (1-tanh(temp1 - temp2)) - (1-tanh(temp1 + temp2));
             if (sobol_array->sobol_martinez[j].confidence_interval[1] < interval)
             {

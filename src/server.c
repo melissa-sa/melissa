@@ -48,7 +48,7 @@ int main (int argc, char **argv)
     int                 get_next_message = 0;
     int                *client_vect_sizes, *local_vect_sizes;
     pull_data_t         pull_data;
-    int                 nb_bufferized_messages = 50;
+    int                 nb_bufferized_messages = 0;
     char               *field_name_ptr;
     int                 simu_id, group_id;
     int                 nb_converged_fields = 0;
@@ -131,6 +131,27 @@ int main (int argc, char **argv)
         first_init = 2;
     }
 
+    // ===   Restart part   === //
+
+    if (stats_options.restart == 1)
+    {
+        first_connect = 1;
+        first_init = 0;
+        fprintf (stdout, "reading data files...");
+        if (comm_data.rank == 0)
+        {
+            read_client_data(&comm_data.client_comm_size, &client_vect_sizes);
+        }
+        MPI_Bcast(&comm_data.client_comm_size, 1, MPI_INT, 0, comm_data.comm);
+        if (comm_data.rank != 0)
+        {
+            client_vect_sizes = malloc (comm_data.client_comm_size * sizeof(int));
+        }
+        fprintf (stdout, " ok \n");
+
+    }
+    // === End restart part === //
+
 #ifdef BUILD_WITH_MPI
     MPI_Gather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, comm_data.comm);
 #else // BUILD_WITH_MPI
@@ -206,6 +227,10 @@ int main (int argc, char **argv)
             end_comm_time = stats_get_time();
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
+            if (comm_data.rank == 0)
+            {
+                write_client_data (&comm_data.client_comm_size, client_vect_sizes);
+            }
         }
         if (first_connect == 1 && first_init == 0)
         {
@@ -260,7 +285,7 @@ int main (int argc, char **argv)
             first_connect = 0;
         }
 
-        if (items[1].revents & ZMQ_POLLIN)
+        if (items[1].revents && ZMQ_POLLIN)
         {
 #ifdef BUILD_WITH_PROBES
             start_comm_time = stats_get_time();
@@ -300,6 +325,12 @@ int main (int argc, char **argv)
             if (data_ptr[client_rank].is_valid != 1)
             {
                 init_data (&data_ptr[client_rank], &stats_options, comm_data.rcounts[client_rank]);
+                if (stats_options.restart == 1)
+                {
+                    fprintf (stdout, "reading checkpoint files...");
+                    read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
+                    fprintf (stdout, " ok\n");
+                }
             }
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
 #ifdef BUILD_WITH_PROBES
@@ -355,7 +386,7 @@ int main (int argc, char **argv)
         {
             field_ptr fptr = field;
             if (comm_data.rank == 0)
-                fprintf (stderr, "\nINTERUPTED\n");
+                fprintf (stderr, "\nINTERUPTED at iteration %d \n", iteration);
             while (fptr != NULL)
             {
                 save_stats (fptr->stats_data, &comm_data, fptr->name);
@@ -364,7 +395,7 @@ int main (int argc, char **argv)
                 {
                     char dir[256];
                     getcwd(dir, 256*sizeof(char));
-                    fprintf(stderr, "\nstatistic fields saved in %s\n", dir);
+                    fprintf(stderr, "statistic fields saved in %s\n\n", dir);
                 }
             }
             MPI_Finalize ();
@@ -467,6 +498,7 @@ int main (int argc, char **argv)
             fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
             fprintf (stdout, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
         }
+        fprintf (stdout, "\n");
     }
 #endif // BUILD_WITH_PROBES
 

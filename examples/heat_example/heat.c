@@ -110,7 +110,6 @@ int main( int argc, char **argv )
   MPI_Comm_rank(comm,&me);
   MPI_Comm_size(comm,&np);
   fcomm = MPI_Comm_c2f(comm);
-  fprintf(stdout, "Comm_size: %d, comm_rank : %d\n", np, me);
 
   t1=MPI_Wtime();
 

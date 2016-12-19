@@ -77,6 +77,79 @@ int read_options (stats_options_t *options)
  *
  * @ingroup save_stats
  *
+ * This function saves some client data on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *client_comm_size
+ * client MPI communicator size
+ *
+ * @param[in] *client_vect_sizes
+ * client vector sizes
+ *
+ *******************************************************************************/
+
+void write_client_data (int *client_comm_size,
+                        int *client_vect_sizes)
+{
+    FILE* f;
+    int i;
+
+    f = fopen("client_data.save", "wb+");
+
+    fwrite(client_comm_size, sizeof(int), 1, f);
+    fwrite(client_vect_sizes, sizeof(int), *client_comm_size, f);
+
+    fclose(f);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads a saved option structure on disc
+ *
+ *******************************************************************************
+ *
+ * @param[out] *client_comm_size
+ * client MPI communicator size
+ *
+ * @param[out] **client_vect_sizes
+ * client vector sizes
+ *
+ *******************************************************************************/
+
+int read_client_data (int  *client_comm_size,
+                      int **client_vect_sizes)
+{
+    FILE* f = NULL;
+    int ret = 1;
+
+    f = fopen("client_data.save", "rb");
+
+    if (f != NULL)
+    {
+        if (1 == fread(client_comm_size, sizeof(int), 1, f));
+        {
+            ret = 0;
+        }
+        *client_vect_sizes = malloc (*client_comm_size * sizeof(int));
+        if (*client_comm_size == fread(*client_vect_sizes, sizeof(int), *client_comm_size, f));
+        {
+            ret = 0;
+        }
+    }
+
+    fclose(f);
+    return ret;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
  * This function writes an array of mean structures on disc
  *
  *******************************************************************************
@@ -212,7 +285,7 @@ void read_variance(variance_t *vars,
     for (i=0; i<nb_time_steps; i++)
     {
         fread(vars[i].variance, sizeof(double), vect_size, f);
-        read_mean (&vars->mean_structure, vect_size, nb_time_steps,f);
+        read_mean (&vars[i].mean_structure, vect_size, 1, f);
     }
 }
 
@@ -394,7 +467,7 @@ void save_stats (stats_data_t *data,
         {
             sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, i);
             f = fopen(file_name, "wb+");
-            fprintf(f, "%d\n", data[i].vect_size);
+            fwrite(&data[i].vect_size, sizeof(int), 1, f);
             if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0)
             {
                 write_mean(data[i].means, data[i].vect_size, data[i].options->nb_time_steps, f);
@@ -439,45 +512,53 @@ void save_stats (stats_data_t *data,
  * @param[in] *field_name
  * name of the field to read
  *
+ * @param[in] client_rank
+ * mpi rank of sending client process
+ *
  *******************************************************************************/
 
 void read_saved_stats (stats_data_t *data,
                        comm_data_t  *comm_data,
-                       char         *field_name)
+                       char         *field_name,
+                       int           client_rank)
 {
     char       file_name[256];
-    int        i;
-    FILE*      f;
+    FILE*      f = NULL;
 
-    for (i=0; i<comm_data->client_comm_size; i++)
-    {
-        if (comm_data->rcounts[i] > 0)
+//    for (i=0; i<comm_data->client_comm_size; i++)
+//    {
+        if (comm_data->rcounts[client_rank] > 0)
         {
-            sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, i);
+            sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, client_rank);
             f = fopen(file_name, "rb");
-            fread(&data[i].vect_size, sizeof(int), 1, f);
-            if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0)
+            if (f == NULL)
             {
-                read_mean(data[i].means, data[i].vect_size, data[i].options->nb_time_steps, f);
+              fprintf(stdout,"WARNING: can not open %s%d_%d.data\n", field_name, comm_data->rank, client_rank);
+              return;
             }
-            if (data[i].options->variance_op != 0)
+            fread(&data[client_rank].vect_size, sizeof(int), 1, f);
+            if (data[client_rank].options->mean_op != 0 && data[client_rank].options->variance_op == 0)
             {
-                read_variance(data[i].variances, data[i].vect_size, data[i].options->nb_time_steps, f);
+                read_mean(data[client_rank].means, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
             }
-            if (data[i].options->min_and_max_op != 0)
+            if (data[client_rank].options->variance_op != 0)
             {
-                read_min_max(data[i].min_max, data[i].vect_size, data[i].options->nb_time_steps, f);
+                read_variance(data[client_rank].variances, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
             }
-            if (data[i].options->threshold_op != 0)
+            if (data[client_rank].options->min_and_max_op != 0)
             {
-                read_threshold(data[i].thresholds, data[i].vect_size, data[i].options->nb_time_steps, f);
+                read_min_max(data[client_rank].min_max, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
             }
-            if (data[i].options->sobol_op != 0)
+            if (data[client_rank].options->threshold_op != 0)
+            {
+                read_threshold(data[client_rank].thresholds, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
+            }
+            if (data[client_rank].options->sobol_op != 0)
             {
 //                TODO
 //                read_sobol(data->thresholds, data->vect_size, data->options->nb_time_steps, f);
             }
-            fread(&data[i].computed, sizeof(int), 1, f);
+//            fread(&data[client_rank].computed, sizeof(int), 1, f);
         }
-    }
+//    }
 }

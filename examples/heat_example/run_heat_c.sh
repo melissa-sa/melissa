@@ -1,6 +1,6 @@
 #!/bin/bash
 
-command_line="-p 1 -g 3 -t 100 -e 2 -o mean:variance:min:max:threshold"
+command_line="-p 1 -g 3 -t 100 -e 2 -o min:max"
 #command_line="-r"
 let "t=0"
 let "tmax=2"
@@ -13,7 +13,12 @@ if [ ! -d "./resu" ];then
 mkdir resu
 fi
 cd resu
-mpirun -n 2 ../../../src/server $command_line
+mpirun -n 1 ../../../src/server $command_line &
+sleep 2
+killall -s SIGINT server
+command_line="-p 1 -g 3 -t 100 -e 2 -o min:max -r"
+sleep 1
+mpirun -n 1 ../../../src/server $command_line &
 cd ..
 #sleep 2
 #killall -USR1 mpirun

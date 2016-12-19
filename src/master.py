@@ -460,5 +460,7 @@ else:
                     snd_message = "continue"
                 else:
                     snd_message = "stop"
+            if (not Melissa in call_bash("oarstat -u --sql \"state = 'Running'\"")
+                print "Melissa a planté"
 
 

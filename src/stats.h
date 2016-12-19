@@ -470,6 +470,12 @@ void write_options (stats_options_t *options);
 
 int read_options(stats_options_t  *options);
 
+void write_client_data (int *client_comm_size,
+                        int *client_vect_sizes);
+
+int read_client_data (int  *client_comm_size,
+                       int **client_vect_sizes);
+
 void write_mean(mean_t *means,
                 int     vect_size,
                 int     nb_time_steps,
@@ -516,6 +522,7 @@ void save_stats (stats_data_t *data,
 
 void read_saved_stats (stats_data_t *data,
                        comm_data_t  *comm_data,
-                       char         *field_name);
+                       char         *field_name,
+                       int           client_rank);
 
 #endif // STATS_H
