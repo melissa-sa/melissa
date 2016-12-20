@@ -48,7 +48,7 @@ int main (int argc, char **argv)
     int                 get_next_message = 0;
     int                *client_vect_sizes, *local_vect_sizes;
     pull_data_t         pull_data;
-    int                 nb_bufferized_messages = 0;
+    int                 nb_bufferized_messages = 100;
     char               *field_name_ptr;
     int                 simu_id, group_id;
     int                 nb_converged_fields = 0;
@@ -367,6 +367,11 @@ int main (int argc, char **argv)
             {
                 fprintf(stderr, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
             }
+#ifdef BUILD_WITH_PY_ZMQ
+            sprintf (port_name, "iteration %d", comm_data.rank);
+            zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
+            string_recv(python_requester, port_name);
+#endif // BUILD_WITH_PY_ZMQ
         }
 
 #ifdef BUILD_WITH_PY_ZMQ

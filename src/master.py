@@ -117,11 +117,11 @@ def launch_simu (Ai, param)
     os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
     os.system("mpirun -n 3 ./heatc "+str(Ai[0])+" "+param)
 
-def launch_melissa (command_line)
-    os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
-    os.system("mkdir resu")
-    os.system("cd resu")
-    os.system(command_line)
+#def launch_melissa (command_line)
+#    os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+#    os.system("mkdir resu")
+#    os.system("cd resu")
+#    os.system(command_line)
 
 def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_procs_max)
     contenu=""
@@ -379,7 +379,10 @@ else:
         else:
             create_runcase (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
         os.chdir(workdir+"/STATS")
-        os.system('sbatch "./run_study.sh"')
+        if (batch_scheduler == "Slurm"):
+            os.system('sbatch "./run_study.sh"')
+        elif (batch_scheduler == "OAR"):
+            os.system('oarsub -S "./run_study.sh" --project=avido')
 
     if ((job_step == "container") or (job_step == "simu")):
         if (not (("sobol" in operations) or ("sobol_indices" in operations))):
@@ -425,6 +428,7 @@ else:
 
     if ((job_step == "container") or (job_step == "simu")):
         converged_sobol = np.zeros(nb_proc_server,int)
+        iterations_server = np.zeros(nb_proc_server,int)
         finished_server = np.zeros(nb_proc_server,int)
         context = zmq.Context()
         rep_melissa_socket = context.socket(zmq.REP)
@@ -444,10 +448,13 @@ else:
                     rep_melissa_socket.send_string(snd_message)
                     converged_sobol[int(message[converged])] = 1
                 elif (finished in message):
-                    finished_server[int(message[finished])] = 1
                     rep_melissa_socket.send_string(snd_message)
+                    finished_server[int(message[finished])] = 1
                     if (not 0 in finished_server):
                         break
+                elif (iteration in message):
+                    rep_melissa_socket.send_string(snd_message)
+                    iteration_server[int(message[iteration])] += 1
 #            if (pull_simu_socket in socks.keys() and socks[pull_simu_socket] == zmq.POLLIN):
 #                rcv_message = pull_simu_socket.recv_string()
 #                message = int(rcv_message)
@@ -461,6 +468,8 @@ else:
                 else:
                     snd_message = "stop"
             if (not Melissa in call_bash("oarstat -u --sql \"state = 'Running'\"")
-                print "Melissa a planté"
+                print "Melissa crashed, restart at iteration "+iterations_server[0]
+
+
 
 

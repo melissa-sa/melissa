@@ -269,8 +269,8 @@ void connect_to_stats (const int *local_vect_size,
     int    port_no, i, j;
     FILE*  file = NULL;
     int    global_vect_size = 0;
-    int    nb_bufferized_messages = 0;
-    int    linger = -1;
+    int    nb_bufferized_messages = 100;
+    int    linger = 1;
     int    ret;
     void  *master_requester = NULL;
 
