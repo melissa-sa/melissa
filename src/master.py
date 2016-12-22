@@ -111,6 +111,7 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
     fichier = open('cs_user_boundary_conditions.f90', 'w')
     fichier.write(contenu)
     fichier.close()
+    os.system("cp "+workdir+"/case1/SRC/cs_user_mesh.c "+casedir+"/SRC/cs_user_mesh.c")
     return 0
 
 #def launch_simu (Ai, param):

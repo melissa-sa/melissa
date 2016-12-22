@@ -365,7 +365,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank==0 && (iteration % 10) == 0 )
             {
-                fprintf(stderr, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
+                fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
             }
 #ifdef BUILD_WITH_PY_ZMQ
             sprintf (port_name, "iteration %d", comm_data.rank);
