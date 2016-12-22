@@ -67,7 +67,7 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
         parameters = str(sobol_rank)+":"+str(sobol_group)
         casedir = workdir+"/group"+str(sobol_group)+"/rank"+str(sobol_rank)
     else:
-        parameters = "0:"+str(group)
+        parameters = "0:"+str(sobol_group)
         casedir = workdir+"/group"+str(sobol_group)+"/rank0"
     os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
     if (sobol_rank > 0):
@@ -113,11 +113,11 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
     fichier.close()
     return 0
 
-def launch_simu (Ai, param)
-    os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
-    os.system("mpirun -n 3 ./heatc "+str(Ai[0])+" "+param)
+#def launch_simu (Ai, param):
+#    os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+#    os.system("mpirun -n 3 ./heatc "+str(Ai[0])+" "+param)
 
-#def launch_melissa (command_line)
+#def launch_melissa (command_line):
 #    os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
 #    os.system("mkdir resu")
 #    os.system("cd resu")
@@ -166,7 +166,7 @@ def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_pr
     fichier.close()
     os.system("chmod 744 coupling_parameters.py")
 
-def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container)
+def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container):
     contenu=""
     fichier=open("run_cas_couple.sh", "w")
     contenu += "#!/bin/bash                                                                     \n"
@@ -200,7 +200,7 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
     fichier.close()
     os.system("chmod 744 run_cas_couple.sh")
 
-def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_melissa, mpi_options, options)
+def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_melissa, mpi_options, options):
     contenu = ""
     fichier=open("run_study.sh", "w")
     contenu += "#!/bin/bash                                                        \n"
@@ -213,6 +213,8 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#SBATCH -o melissa.%j.log                                          \n"
         contenu += "#SBATCH -e melissa.%j.err                                          \n"
         contenu += "#SBATCH --job-name=Melissa                                         \n"
+        contenu += "module load openmpi/2.0.1                                          \n"
+        contenu += "module load ifort/2017                                             \n"
     elif (batch_scheduler == "OAR"):
         contenu += "#OAR -l nodes="+str(nodes_melissa)+",walltime="+walltime_melissa+ "\n"
         contenu += "#OAR -O melissa.%jobid%.log                                        \n"
@@ -224,8 +226,6 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "FRONTEND="+frontend+"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
     contenu += "STOP=0                                                             \n"
-    contenu += "module load openmpi/2.0.1                                          \n"
-    contenu += "module load ifort/2017                                             \n"
     contenu += "# generate server name files                                       \n"
     contenu += "cd "+workdir+"/case1/DATA                                          \n"
     contenu += server_path+"/../examples/create_file_server_name                   \n"
@@ -249,7 +249,6 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "                                                                   \n"
     contenu += "# run Melissa                                                      \n"
     contenu += "echo  \"### Launch Melissa\"                                       \n"
-    contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
     contenu += "                                                                   \n"
@@ -260,7 +259,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     fichier.close()
     os.system("chmod 744 run_study.sh")
 
-def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name)
+def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name):
     # script to launch simulations
     contenu=""
     fichier=open("run_saturne.sh", "w")
@@ -307,7 +306,7 @@ def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_para
     fichier.close()
     os.system("chmod 744 run_saturne_master.sh")
 
-def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
+def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name):
     contenu=""
     fichier=open("run_saturne_master.sh", "w")
     contenu += "#!/bin/bash                                                        \n"
@@ -348,127 +347,128 @@ if len(sys.argv) > 1:
 else:
     job_step = "first_step"
 
-    if (job_step == "first_step"):
-        op_str = ""
-        if (batch_scheduler == Slurm):
-            mpi_options = mpi_Slurm_options
-        elif (batch_scheduler == Slurm):
-            mpi_options = mpi_OAR_options
-        for i in range(len(operations)):
-            if (i < len(operations) - 1):
-                op_str += operations[i] + ":"
-            else:
-                op_str += operations[i]
-        options = " -p " + str(nb_parameters)\
-                + " -s " + str(nb_simu)\
-                + " -g " + str(nb_groups)\
-                + " -t " + str(nb_time_steps)\
-                + " -o " + op_str\
-                + " -e " + str(threshold)
-        if (not os.path.isdir(workdir+"/STATS")):
-            os.mkdir(workdir+"/STATS")
-        os.chdir(workdir+"/STATS")
-        create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_melissa, mpi_options, options)
-        if ("sobol" in operations) or ("sobol_indices" in operations):
-            create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container)
-        if (not os.path.isdir(workdir+"/case1/SCRIPTS")):
-            os.mkdir(workdir+"/case1/SCRIPTS")
-        os.chdir(workdir+"/case1/SCRIPTS")
-        if ("sobol" in operations) or ("sobol_indices" in operations):
-            create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name)
+if (job_step == "first_step"):
+    op_str = ""
+    if (batch_scheduler == "Slurm"):
+        mpi_options = mpi_Slurm_options
+    elif (batch_scheduler == "OAR"):
+        mpi_options = mpi_OAR_options
+    for i in range(len(operations)):
+        if (i < len(operations) - 1):
+            op_str += operations[i] + ":"
         else:
-            create_runcase (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
-        os.chdir(workdir+"/STATS")
-        if (batch_scheduler == "Slurm"):
-            os.system('sbatch "./run_study.sh"')
-        elif (batch_scheduler == "OAR"):
-            os.system('oarsub -S "./run_study.sh" --project=avido')
+            op_str += operations[i]
+    options = " -p " + str(nb_parameters)\
+            + " -s " + str(nb_simu)\
+            + " -g " + str(nb_groups)\
+            + " -t " + str(nb_time_steps)\
+            + " -o " + op_str\
+            + " -e " + str(threshold)
+    if (not os.path.isdir(workdir+"/STATS")):
+        os.mkdir(workdir+"/STATS")
+    os.chdir(workdir+"/STATS")
+    create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_melissa, mpi_options, options)
+    if ("sobol" in operations) or ("sobol_indices" in operations):
+        create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container)
+    if (not os.path.isdir(workdir+"/case1/SCRIPTS")):
+        os.mkdir(workdir+"/case1/SCRIPTS")
+    os.chdir(workdir+"/case1/SCRIPTS")
+    if ("sobol" in operations) or ("sobol_indices" in operations):
+        create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name)
+    else:
+        create_runcase (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
+    os.chdir(workdir+"/STATS")
+    if (batch_scheduler == "Slurm"):
+        os.system('sbatch "./run_study.sh"')
+    elif (batch_scheduler == "OAR"):
+        os.system('oarsub -S "./run_study.sh" --project=avido')
 
-    if ((job_step == "container") or (job_step == "simu")):
-        if (not (("sobol" in operations) or ("sobol_indices" in operations))):
-            nb_simu = nb_groups
-        else
-            nb_simu = nb_groups*(nb_parameters+2)
-        A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
-        np.save("Amatrix",A)
+if ((job_step == "container") or (job_step == "simu")):
+    if (not (("sobol" in operations) or ("sobol_indices" in operations))):
+        nb_simu = nb_groups
+    else
+        nb_simu = nb_groups*(nb_parameters+2)
+    A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
+    np.save("Amatrix",A)
+    if ("sobol" in operations) or ("sobol_indices" in operations):
+        B = create_matrix(nb_parameters, nb_groups, range_min, range_max)
+        np.save("Bmatrix",B)
+        C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
+    ret = np.zeros(nb_parameters + 2)
+    for i in range(nb_groups):
+        create_case_str = saturne_path+"/code_saturne create -s group"+str(i)+" -c rank0"
         if ("sobol" in operations) or ("sobol_indices" in operations):
-            B = create_matrix(nb_parameters, nb_groups, range_min, range_max)
-            np.save("Bmatrix",B)
-            C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
-        ret = np.zeros(nb_parameters + 2)
-        for i in range(nb_groups):
-            create_case_str = saturne_path+"/code_saturne create -s group"+str(i)+" -c rank0"
-            if ("sobol" in operations) or ("sobol_indices" in operations):
-                for j in range(nb_parameters+1):
-                    create_case_str += " -c rank"+str(j+1)
-            os.chdir(workdir)
-            os.system(create_case_str)
-            ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
-            if ("sobol" in operations) or ("sobol_indices" in operations):
-                ret[1] = create_case(B[i,:], 1, i, workdir, xml_file_name)
-                for j in range(nb_parameters):
-                    ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
-            for k in range(len(ret)):
-                if (ret[k] != 0):
-                    print "error creating simulation "+str(k)+" of group "+str(i)
-            # scripts to launch coupled simulation groups
-            os.chdir(workdir+"/group"+str(i))
-            if ("sobol" in operations) or ("sobol_indices" in operations):
-                create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
-                if (batch_scheduler == "Slurm"):
-                    os.system('sbatch "../STATS/run_cas_couple.sh" --job-name=Saturnes'+str(i))
-                elif (batch_scheduler == "OAR"):
-                    os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
-            else:
-                os.chdir(./rank0/SCRIPTS)
-                if (batch_scheduler == "Slurm"):
-                    os.system('sbatch "./runcase" --job-name=Saturne'+str(i))
-                elif (batch_scheduler == "OAR"):
-                    os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
+            for j in range(nb_parameters+1):
+                create_case_str += " -c rank"+str(j+1)
+        os.chdir(workdir)
+        print create_case_str
+        os.system(create_case_str)
+        ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
+        if ("sobol" in operations) or ("sobol_indices" in operations):
+            ret[1] = create_case(B[i,:], 1, i, workdir, xml_file_name)
+            for j in range(nb_parameters):
+                ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
+        for k in range(len(ret)):
+            if (ret[k] != 0):
+                print "error creating simulation "+str(k)+" of group "+str(i)
+        # scripts to launch coupled simulation groups
+        os.chdir(workdir+"/group"+str(i))
+        if ("sobol" in operations) or ("sobol_indices" in operations):
+            create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
+            if (batch_scheduler == "Slurm"):
+                os.system('sbatch "../STATS/run_cas_couple.sh" --job-name=Saturnes'+str(i))
+            elif (batch_scheduler == "OAR"):
+                os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
+        else:
+            os.chdir("./rank0/SCRIPTS")
+            if (batch_scheduler == "Slurm"):
+                os.system('sbatch "./runcase" --job-name=Saturne'+str(i))
+            elif (batch_scheduler == "OAR"):
+                os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
 
-    if ((job_step == "container") or (job_step == "simu")):
-        converged_sobol = np.zeros(nb_proc_server,int)
-        iterations_server = np.zeros(nb_proc_server,int)
-        finished_server = np.zeros(nb_proc_server,int)
-        context = zmq.Context()
-        rep_melissa_socket = context.socket(zmq.REP)
-        rep_melissa_socket.bind("tcp://*:5555")
+if ((job_step == "container") or (job_step == "simu")):
+    converged_sobol = np.zeros(nb_proc_server,int)
+    iterations_server = np.zeros(nb_proc_server,int)
+    finished_server = np.zeros(nb_proc_server,int)
+    context = zmq.Context()
+    rep_melissa_socket = context.socket(zmq.REP)
+    rep_melissa_socket.bind("tcp://*:5555")
 #        pull_simu_socket = context.socket(zmq.PULL)
 #        pull_simu_socket.bind("tcp://*:5556")
-        poller = zmq.Poller()
-        poller.register(rep_melissa_socket, zmq.POLLIN)
+    poller = zmq.Poller()
+    poller.register(rep_melissa_socket, zmq.POLLIN)
 #        poller.register(pull_simu_socket, zmq.POLLIN)
-        snd_message = "continue"
-        while True:
-            socks = dict(poller.poll(100))
-            if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
+    snd_message = "continue"
+    while True:
+        socks = dict(poller.poll(100))
+        if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
 #                rcv_message = rep_melissa_socket.recv_string()
-                message = dict([rep_melissa_socket.recv_string().split()])
-                if (converged in message):
-                    rep_melissa_socket.send_string(snd_message)
-                    converged_sobol[int(message[converged])] = 1
-                elif (finished in message):
-                    rep_melissa_socket.send_string(snd_message)
-                    finished_server[int(message[finished])] = 1
-                    if (not 0 in finished_server):
-                        break
-                elif (iteration in message):
-                    rep_melissa_socket.send_string(snd_message)
-                    iteration_server[int(message[iteration])] += 1
+            message = dict([rep_melissa_socket.recv_string().split()])
+            if (converged in message):
+                rep_melissa_socket.send_string(snd_message)
+                converged_sobol[int(message[converged])] = 1
+            elif (finished in message):
+                rep_melissa_socket.send_string(snd_message)
+                finished_server[int(message[finished])] = 1
+                if (not 0 in finished_server):
+                    break
+            elif (iteration in message):
+                rep_melissa_socket.send_string(snd_message)
+                iteration_server[int(message[iteration])] += 1
 #            if (pull_simu_socket in socks.keys() and socks[pull_simu_socket] == zmq.POLLIN):
 #                rcv_message = pull_simu_socket.recv_string()
 #                message = int(rcv_message)
 #                if (message >= 0 and message < nb_groups):
-            if (not 0 in converged_sobol):
-                print "Cancel pending simulation jobs..."
-                os.system("oardel "+re.sub('\n',' ',call_bash("oarstat -u --sql \"state = 'Waiting'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'")))
-                running_jobs = call_bash("oarstat -u --sql \"state = 'Running'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
-                if (range(running_jobs) == 0):
-                    snd_message = "continue"
-                else:
-                    snd_message = "stop"
-            if (not Melissa in call_bash("oarstat -u --sql \"state = 'Running'\"")
-                print "Melissa crashed, restart at iteration "+iterations_server[0]
+        if (not 0 in converged_sobol):
+            print "Cancel pending simulation jobs..."
+            os.system("oardel "+re.sub('\n',' ',call_bash("oarstat -u --sql \"state = 'Waiting'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'")))
+            running_jobs = call_bash("oarstat -u --sql \"state = 'Running'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
+            if (range(running_jobs) == 0):
+                snd_message = "continue"
+            else:
+                snd_message = "stop"
+        if (not Melissa in call_bash("oarstat -u --sql \"state = 'Running'\"")):
+            print "Melissa crashed, restart at iteration %d" % iterations_server[0]
 
 
 
