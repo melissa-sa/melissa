@@ -273,10 +273,10 @@ int main (int argc, char **argv)
             if (stats_options.sobol_op == 1)
             {
                 buff_tab_ptr = malloc ((stats_options.nb_parameters + 2) * sizeof(double*));
-                for (i=0; i<stats_options.nb_parameters+2; i++)
-                {
-                    buff_tab_ptr[i] = malloc (pull_data.buff_size * sizeof(double));
-                }
+//                for (i=0; i<stats_options.nb_parameters+2; i++)
+//                {
+//                    buff_tab_ptr[i] = malloc (pull_data.buff_size * sizeof(double));
+//                }
             }
             else
             {
@@ -290,7 +290,10 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
+#ifdef ZEROCOPY
+#else // ZEROCOPY
             zmq_recv (data_puller, buffer, recv_buff_size, 0);
+#endif // ZEROCOPY
 #ifdef BUILD_WITH_PROBES
             end_comm_time = stats_get_time();
             total_comm_time += end_comm_time - start_comm_time;
@@ -348,7 +351,7 @@ int main (int argc, char **argv)
             {
                 for (i=0; i<stats_options.nb_parameters+2; i++)
                 {
-                    memcpy(buff_tab_ptr[i], buf_ptr, pull_data.buff_size * sizeof(double));
+                    buff_tab_ptr[i] = (double*)buf_ptr;
                     buf_ptr += pull_data.buff_size * sizeof(double);
                 }
                 compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
@@ -439,13 +442,13 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PY_ZMQ
         zmq_ctx_term (context);
     }
-    if (stats_options.sobol_op == 1)
-    {
-        for (i=0; i<stats_options.nb_parameters+2; i++)
-        {
-            free (buff_tab_ptr[i]);
-        }
-    }
+//    if (stats_options.sobol_op == 1)
+//    {
+//        for (i=0; i<stats_options.nb_parameters+2; i++)
+//        {
+//            free (buff_tab_ptr[i]);
+//        }
+//    }
     free (buff_tab_ptr);
 
     if (comm_data.rank == 0)
