@@ -12,6 +12,8 @@
 #include "stats.h"
 #include "server.h"
 
+#define ZEROCOPY
+
 static volatile int end_signal = 0;
 
 void sig_handler(int signo) {
@@ -291,15 +293,21 @@ int main (int argc, char **argv)
             start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
 #ifdef ZEROCOPY
+            zmq_msg_t msg;
+            zmq_msg_init (&msg);
+            zmq_msg_recv (&msg, data_puller, 0);
+//            int msg_size = zmq_msg_size (&msg);
+//            pull_data.buff_size = zmq_msg_size - (4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char));
+            buf_ptr = zmq_msg_data (&msg);
 #else // ZEROCOPY
             zmq_recv (data_puller, buffer, recv_buff_size, 0);
+            buf_ptr = buffer;
 #endif // ZEROCOPY
 #ifdef BUILD_WITH_PROBES
             end_comm_time = stats_get_time();
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
 
-            buf_ptr = buffer;
             time_step = *buf_ptr;
             buf_ptr += sizeof(int);
             simu_id = *buf_ptr;
@@ -352,7 +360,7 @@ int main (int argc, char **argv)
                 for (i=0; i<stats_options.nb_parameters+2; i++)
                 {
                     buff_tab_ptr[i] = (double*)buf_ptr;
-                    buf_ptr += pull_data.buff_size * sizeof(double);
+                    buf_ptr += comm_data.rcounts[client_rank] * sizeof(double);
                 }
                 compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
                 iteration++;
@@ -375,6 +383,9 @@ int main (int argc, char **argv)
             zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
             string_recv(python_requester, port_name);
 #endif // BUILD_WITH_PY_ZMQ
+#ifdef ZEROCOPY
+            zmq_msg_close (&msg);
+#endif // ZEROCOPY
         }
 
 #ifdef BUILD_WITH_PY_ZMQ

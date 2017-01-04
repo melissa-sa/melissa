@@ -20,28 +20,40 @@ def create_matrix_k(A, B, k):
   return Ck
 
 def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_server, nb_parameters):
-os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
-parameters = ""
-for i in Ai:
-    parameters += str(i) + " "
-parameters += str(sobol_rank) + " "
-parameters += str(sobol_group)
-print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
-return os.system("mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &")
-
-def launch_coupled_simu (Ai, sobol_group, nb_proc_server, nb_parameters):
   os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
-  print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
-  command = "mpirun"
-  for i in range(nb_parameters+2):
-      parameters = ""
-      for j in Ai:
-          parameters += str(j) + " "
+  parameters = ""
+  for i in Ai:
       parameters += str(i) + " "
+  parameters += str(sobol_rank) + " "
+  parameters += str(sobol_group)
+  print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
+  return os.system("mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &")
+
+def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_server, nb_parameters):
+  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+  command = "mpirun"
+  parameters = ""
+  for j in Ai:
+      parameters += str(j) + " "
+  parameters += str(0) + " "
+  parameters += str(sobol_group)
+  command += " -n "+str(nb_proc_server)+" ./heatc "+parameters
+  parameters = ""
+  for j in Bi:
+      parameters += str(j) + " "
+  parameters += str(1) + " "
+  parameters += str(sobol_group)
+  command += " :"
+  command += " -n "+str(nb_proc_server)+" ./heatc "+parameters
+  for j in range(nb_parameters):
+      parameters = ""
+      for i in C[j][sobol_group,:]:
+          parameters += str(i+2) + " "
+      parameters += str(j) + " "
       parameters += str(sobol_group)
-      if i > 0:
-          command += " :"
+      command += " :"
       command += " -n "+str(nb_proc_server)+" ./heatc "+parameters
+  print command
   return os.system(command+" &")
 
 def launch_melissa (command_line):
@@ -92,15 +104,19 @@ if ("sobol" in operations) or ("sobol_indices" in operations):
 
 ret = np.zeros(nb_parameters + 2)
 for i in range(nb_groups):
-  ret[0] = launch_simu(A[i,:], 0, i, nb_proc_server, nb_parameters)
   if ("sobol" in operations) or ("sobol_indices" in operations):
-    ret[1] = launch_simu(B[i,:], 1, i, nb_proc_server, nb_parameters)
-    for j in range(nb_parameters):
-      ret[j+2] = launch_simu(C[j][i,:], j+2, i, nb_proc_server, nb_parameters)
-    for k in range(len(ret)):
-      if (ret[k] != 0):
-        print "error launching simulation "+str(i)+" of group "+str(k)
+    if (coupling == 0):
+      ret[0] = launch_simu(A[i,:], 0, i, nb_proc_server, nb_parameters)
+      ret[1] = launch_simu(B[i,:], 1, i, nb_proc_server, nb_parameters)
+      for j in range(nb_parameters):
+        ret[j+2] = launch_simu(C[j][i,:], j+2, i, nb_proc_server, nb_parameters)
+      for k in range(len(ret)):
+        if (ret[k] != 0):
+          print "error launching simulation "+str(i)+" of group "+str(k)
+    else:
+      launch_coupled_simu(A[i,:], B[i,:], C, i, nb_proc_server, nb_parameters)
   else:
+    ret[0] = launch_simu(A[i,:], 0, i, nb_proc_server, nb_parameters)
     if (ret[0] != 0):
       print "error launching simulation "+str(i)
 

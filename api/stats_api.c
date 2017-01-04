@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <zmq.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
@@ -26,6 +27,7 @@
 #endif
 
 #define COUPLING
+#define ZEROCOPY
 
 /**
  *******************************************************************************
@@ -86,6 +88,48 @@ static double stats_get_time ()
     return (double)time(NULL);
 #endif // BUILD_WITH_MPI
 }
+
+void my_free (void *data, void *hint)
+{
+    free (data);
+}
+
+//void print_zmq_error(int ret)
+//{
+//    if (ret == EAGAIN)
+//    {
+//        fprintf(stderr, "Non-blocking mode was requested and the message cannot be sent at the moment.\n");
+//    }
+//    else if (ret == ENOTSUP)
+//    {
+//        fprintf(stderr, "The zmq_send() operation is not supported by this socket type\n");
+//    }
+//    else if (ret == EFSM)
+//    {
+//        fprintf(stderr, "The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
+//    }
+//    else if (ret == ETERM)
+//    {
+//        fprintf(stderr, "The ZeroMQ context associated with the specified socket was terminated.\n");
+//    }
+//    else if (ret == ENOTSOCK)
+//    {
+//        fprintf(stderr, "The provided socket was invalid.\n");
+//    }
+//    else if (ret == EINTR)
+//    {
+//        fprintf(stderr, "The operation was interrupted by delivery of a signal before the message was sent.\n");
+//    }
+//    else if (ret == EHOSTUNREACH)
+//    {
+//        fprintf(stderr, "The message cannot be routed.\n");
+//    }
+//    else
+//    {
+//        fprintf(stderr, "Unknown error.\n");
+//    }
+//    exit(0);
+//}
 
 static inline void comm_1_to_m_init (zmq_data_t *data)
 {
@@ -548,7 +592,9 @@ void connect_to_stats (const int *local_vect_size,
         zmq_data.send_buff_size *= (zmq_data.nb_parameters+2);
     }
     zmq_data.send_buff_size += 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
+#ifndef ZEROCOPY
     zmq_data.buffer = malloc (zmq_data.send_buff_size);
+#endif // ZEROCOPY
     if (zmq_data.sobol)
     {
         if (*sobol_rank == 0)
@@ -724,7 +770,8 @@ void send_to_stats       (const int  *time_step,
                           const int  *sobol_rank,
                           const int  *sobol_group)
 {
-    int   i=0, j, k;
+    int   i=0, j, k, ret;
+    int   buff_size;
     char *buff_ptr;
     int local_vect_size = zmq_data.local_vect_sizes[*rank];
 //    MPI_Request *request;
@@ -787,6 +834,52 @@ void send_to_stats       (const int  *time_step,
 
     if (*sobol_rank == 0)
     {
+#ifdef ZEROCOPY
+        zmq_msg_t msg;
+        j = 0;
+        for (i=0; i<zmq_data.total_nb_messages; i++)
+        {
+            if (*rank == zmq_data.push_rank[i] && *sobol_rank == 0)
+            {
+                buff_size = 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double);
+                if (zmq_data.sobol == 1)
+                {
+                    buff_size += zmq_data.send_counts[zmq_data.pull_rank[i]] * (zmq_data.nb_parameters + 1) * sizeof(double);
+                }
+                zmq_data.buffer = malloc (buff_size);
+                buff_ptr = zmq_data.buffer;
+                memcpy(buff_ptr, time_step, sizeof(int));
+                buff_ptr += sizeof(int);
+                memcpy(buff_ptr, sobol_rank, sizeof(int));
+                buff_ptr += sizeof(int);
+                memcpy(buff_ptr, sobol_group, sizeof(int));
+                buff_ptr += sizeof(int);
+                memcpy(buff_ptr, rank, sizeof(int));
+                buff_ptr += sizeof(int);
+                memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
+                buff_ptr += MAX_FIELD_NAME * sizeof(char);
+                memcpy (buff_ptr, &send_vect[zmq_data.sdispls[zmq_data.pull_rank[i]]], zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
+                if (zmq_data.sobol == 1)
+                {
+                    for (k=0; k<zmq_data.nb_parameters + 1; k++)
+                    {
+                        buff_ptr += zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double);
+                        memcpy (buff_ptr, &zmq_data.buffer_sobol[k*local_vect_size + zmq_data.sdispls[zmq_data.pull_rank[i]]],
+                                zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
+                    }
+                }
+                zmq_msg_init_data (&msg, zmq_data.buffer, buff_size, my_free, NULL);
+                ret = zmq_msg_send (&msg, zmq_data.data_pusher[j], 0);
+//                if (ret != 0)
+//                {
+//                    ret = errno;
+//                    print_zmq_error(ret);
+//                }
+                j += 1;
+            }
+        }
+
+#else // ZEROCOPY
         buff_ptr = zmq_data.buffer;
         memcpy(buff_ptr, time_step, sizeof(int));
         buff_ptr += sizeof(int);
@@ -808,18 +901,24 @@ void send_to_stats       (const int  *time_step,
                 {
                     for (k=0; k<zmq_data.nb_parameters + 1; k++)
                     {
-                        buff_ptr += zmq_data.buff_size * sizeof(double);
+                        buff_ptr += zmq_data.send_count[zmq_data.pull_rank[i]] * sizeof(double);
                         memcpy (buff_ptr, &zmq_data.buffer_sobol[k*local_vect_size + zmq_data.sdispls[zmq_data.pull_rank[i]]],
                                 zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
                     }
                 }
-                zmq_send (zmq_data.data_pusher[j], zmq_data.buffer, zmq_data.send_buff_size, 0);
+                ret = zmq_send (zmq_data.data_pusher[j], zmq_data.buffer, zmq_data.send_buff_size, 0);
+//                if (ret != 0)
+//                {
+//                    ret = errno;
+//                    print_zmq_error(ret);
+//                }
                 j += 1;
 #ifdef BUILD_WITH_PROBES
                 total_bytes_sent += zmq_data.send_buff_size;
 #endif // BUILD_WITH_PROBES
             }
         }
+#endif // ZEROCOPY
     }
 #ifdef BUILD_WITH_PROBES
     end_comm_time = stats_get_time();
@@ -911,7 +1010,9 @@ void disconnect_from_stats ()
     free(zmq_data.send_counts);
     free(zmq_data.sdispls);
     free(zmq_data.server_vect_size);
+#ifndef ZEROCOPY
     free(zmq_data.buffer);
+#endif // ZEROCOPY
     if (zmq_data.sobol == 1 && zmq_data.sobol_rank == 0)
     {
         free(zmq_data.buffer_sobol);
