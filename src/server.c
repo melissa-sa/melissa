@@ -55,6 +55,7 @@ int main (int argc, char **argv)
     int                 simu_id, group_id;
     int                 nb_converged_fields = 0;
     double              interval1, interval_tot;
+    zmq_msg_t           msg;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
@@ -293,7 +294,6 @@ int main (int argc, char **argv)
             start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
 #ifdef ZEROCOPY
-            zmq_msg_t msg;
             zmq_msg_init (&msg);
             zmq_msg_recv (&msg, data_puller, 0);
 //            int msg_size = zmq_msg_size (&msg);
@@ -345,7 +345,11 @@ int main (int argc, char **argv)
             }
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
 #ifdef BUILD_WITH_PROBES
+#ifdef ZEROCOPY
+            total_bytes_recv += zmq_msg_size (&msg);
+#else // ZEROCOPY
             total_bytes_recv += recv_buff_size;
+#endif // ZEROCOPY
             start_computation_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
 
@@ -384,6 +388,11 @@ int main (int argc, char **argv)
             string_recv(python_requester, port_name);
 #endif // BUILD_WITH_PY_ZMQ
 #ifdef ZEROCOPY
+            for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
+            {
+                buff_tab_ptr[i] = NULL;
+            }
+            buf_ptr = NULL;
             zmq_msg_close (&msg);
 #endif // ZEROCOPY
         }
@@ -427,7 +436,11 @@ int main (int argc, char **argv)
             break;
         }
 
+#ifdef BUILD_WITH_PY_ZMQ
         if (nb_fields > 0 && stats_options.sobol_op == 0)
+#else  // BUILD_WITH_PY_ZMQ
+        if (nb_fields > 0)
+#endif // BUILD_WITH_PY_ZMQ
         {
             if (iteration >= nb_iterations*nb_fields)
             {

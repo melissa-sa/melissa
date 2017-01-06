@@ -314,7 +314,7 @@ void connect_to_stats (const int *local_vect_size,
     FILE*  file = NULL;
     int    global_vect_size = 0;
     int    nb_bufferized_messages = 100;
-    int    linger = 1;
+    int    linger = -1;
     int    ret;
     void  *master_requester = NULL;
 
@@ -604,100 +604,6 @@ void connect_to_stats (const int *local_vect_size,
     }
     free (node_names);
 }
-#endif // BUILD_WITH_MPI
-
-/**
- *******************************************************************************
- *
- * @ingroup stats_api
- *
- * This function initialise connexion with the stats library
- *
- *******************************************************************************
- *
- * @param[in] *vect_size
- * sise of the local data vector to send to the library
- *
- *******************************************************************************/
-
-void connect_to_stats_no_mpi (int *vect_size)
-{
-    char *node_names;
-    char  server_node_name[MPI_MAX_PROCESSOR_NAME];
-    char  port_name[MPI_MAX_PROCESSOR_NAME] = {0};
-    int   server_name_size;
-    int   port_no, i;
-    FILE* file = NULL;
-    int   local_vect_sizes[1];
-    int   nb_bufferized_messages = 50;
-
-    zmq_data.context = zmq_ctx_new ();
-    zmq_data.connexion_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
-    zmq_data.init_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
-
-    file = fopen("server_name.txt", "r");
-
-    if (file != NULL)
-    {
-        fgets(server_node_name, MPI_MAX_PROCESSOR_NAME, file);
-
-        fclose(file);
-    }
-    else
-    {
-        strcpy (server_node_name, "localhost");
-        fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
-    }
-
-    zmq_data.sinit_tab[0] = 1;
-    zmq_data.sinit_tab[1] = 1;
-
-    sprintf (port_name, "tcp://%s:30000", server_node_name);
-    zmq_connect (zmq_data.connexion_requester, port_name);
-    zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
-    zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 2 * sizeof(int), 0);
-
-    local_vect_sizes[0]  = *vect_size;
-    zmq_data.nb_proc_server = zmq_data.rinit_tab[0];
-    server_name_size = zmq_data.rinit_tab[1];
-
-    zmq_data.server_vect_size = calloc (zmq_data.nb_proc_server, sizeof(int));
-
-    for (i=0; i<zmq_data.nb_proc_server; i++)
-    {
-        zmq_data.server_vect_size[i] = *vect_size / zmq_data.nb_proc_server;
-        if (i < *vect_size % zmq_data.nb_proc_server)
-            zmq_data.server_vect_size[i] += 1;
-    }
-
-    zmq_data.send_counts = calloc (zmq_data.nb_proc_server, sizeof(int));
-    zmq_data.sdispls     = calloc (zmq_data.nb_proc_server, sizeof(int));
-    comm_1_to_m_init (&zmq_data);
-
-    node_names = malloc (zmq_data.nb_proc_server * server_name_size * sizeof(char));
-
-    sprintf (port_name, "tcp://%s:20000", server_node_name);
-    zmq_connect (zmq_data.init_requester, port_name);
-    zmq_send (zmq_data.init_requester, local_vect_sizes, sizeof(int), 0);
-    zmq_recv (zmq_data.init_requester, node_names, zmq_data.rinit_tab[0] * zmq_data.rinit_tab[1] * sizeof(char), 0);
-
-    zmq_data.data_pusher = malloc (zmq_data.local_nb_messages * sizeof(void*));
-    for (i=0; i<zmq_data.nb_proc_server; i++)
-    {
-        zmq_data.data_pusher[i] = zmq_socket (zmq_data.context, ZMQ_PUSH);
-        port_no = 32123 + i;
-        zmq_setsockopt (zmq_data.data_pusher[i], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
-        sprintf (port_name, "tcp://%s:%d", &node_names[server_name_size * i], port_no);
-        zmq_connect (zmq_data.data_pusher[i], port_name);
-    }
-
-    zmq_data.buff_size = 2 * sizeof(int) + zmq_data.server_vect_size[0] * sizeof(double);
-    zmq_data.buffer   = calloc (zmq_data.buff_size, sizeof (char));
-
-    free (node_names);
-}
-
-#ifdef BUILD_WITH_MPI
 /**
  *******************************************************************************
  *
@@ -876,6 +782,9 @@ void send_to_stats       (const int  *time_step,
 //                    print_zmq_error(ret);
 //                }
                 j += 1;
+#ifdef BUILD_WITH_PROBES
+                total_bytes_sent += zmq_data.send_buff_size;
+#endif // BUILD_WITH_PROBES
             }
         }
 
@@ -1002,7 +911,7 @@ void disconnect_from_stats ()
         zmq_close (zmq_data.sobol_requester[0]);
     }
 #endif
-    zmq_ctx_destroy (zmq_data.context);
+    zmq_ctx_term (zmq_data.context);
     if (zmq_data.data_pusher != NULL)
     {
         free(zmq_data.data_pusher);

@@ -83,6 +83,7 @@ range_max[0] = 1
 range_min[1] = 2
 range_max[1] = 3
 coupling = 1
+pyzmq = 0
 
 # ------------- main ------------- #
 
@@ -138,7 +139,7 @@ options = " -p " + str(nb_parameters)\
 if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
     print "error launching Melissa"
 
-if (("sobol" in operations) or ("sobol_indices" in operations)):
+if (("sobol" in operations) or ("sobol_indices" in operations)) and (pyzmq == 1):
     converged_sobol = np.zeros(nb_proc_server,int)
     finished_server = np.zeros(nb_proc_server,int)
     snd_message = "continue"
