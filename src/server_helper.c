@@ -336,6 +336,73 @@ int string_recv (void  *socket,
 /**
  *******************************************************************************
  *
+ * @ingroup stats_data
+ *
+ * This function computes and displays the memory consumption of the library
+ *
+ *******************************************************************************
+ *
+ * @param[in] *options
+ * pointer to the structure containing global options
+ *
+ *******************************************************************************/
+
+long int mem_conso (stats_options_t *options)
+{
+    int i = 0;
+    long int memory = 0;
+    long int temp_mem = 0;
+
+    if (options->mean_op != 0)
+    {
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Mean memory usage:               %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->variance_op != 0 && options->mean_op == 0)
+    {
+        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Variance memory usage:           %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->variance_op != 0 && options->mean_op != 0)
+    {
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Variance memory usage:           %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->min_and_max_op != 0)
+    {
+        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Min and max memory usage:        %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->threshold_op != 0)
+    {
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(int);
+        fprintf(stdout, " --- Threshold memory usage:          %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->sobol_op != 0)
+    {
+        // sobol indices
+        temp_mem  = options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // variances
+        temp_mem += options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // covariances
+        temp_mem += options->nb_parameters * 6 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // glob variances
+        temp_mem += 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        fprintf(stdout, " --- Sobol indices memory usage:      %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+//    fprintf(stdout, " --- Total memory usage:      %d bytes\n", memory);
+    return memory;
+}
+
+/**
+ *******************************************************************************
+ *
  * @ingroup sobol
  *
  * This function computes the confidence interval for Martinez Sobol indices

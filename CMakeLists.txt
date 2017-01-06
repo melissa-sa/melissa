@@ -23,9 +23,13 @@ cmake_minimum_required(VERSION 2.8)
 #        find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 #endfunction(find_python_module)
 
-set(ALL_SRCS stats_base.c
+set(ALL_SRCS
 #             cond_mean.c
 #             cond_var.c
+             mean.c
+             variance.c
+             min_max.c
+             threshold.c
              covariance.c
              sobol.c
              get_options.c
@@ -34,6 +38,7 @@ set(ALL_SRCS stats_base.c
              server.c
              server_helper.c
              server_helper.c
+             write_stats.c
              save_data.c
              server.h
              stats.h)

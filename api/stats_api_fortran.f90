@@ -19,9 +19,13 @@ module stats_api_fortran
     integer(kind=C_INT) :: comm
   end subroutine connect_to_stats
 
-  subroutine connect_to_stats_no_mpi(local_vect_size) bind(c, name = 'connect_to_stats_no_mpi')
+  subroutine connect_to_stats_no_mpi(vect_size,&
+                                     sobol_rank,&
+                                     sobol_group) bind(c, name = 'connect_to_stats_no_mpi')
     import C_INT
-    integer(kind=C_INT) :: local_vect_size
+    integer(kind=C_INT) :: vect_size
+    integer(kind=C_INT) :: sobol_rank
+    integer(kind=C_INT) :: sobol_group
   end subroutine connect_to_stats_no_mpi
 
   subroutine send_to_stats(time_step,&

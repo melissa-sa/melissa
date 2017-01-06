@@ -26,7 +26,12 @@
 #define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
 
+#ifdef BUILD_WITH_MPI
 #define COUPLING
+#else // BUILD_WITH_MPI
+typedef int MPI_Comm;
+#endif // BUILD_WITH_MPI
+
 #define ZEROCOPY
 
 /**
@@ -141,7 +146,7 @@ static inline void comm_1_to_m_init (zmq_data_t *data)
         data->send_counts[i] = data->server_vect_size[i];
         data->sdispls[i+1] = data->sdispls[i] + data->send_counts[i];
     }
-    data->send_counts[data->nb_proc_server] = data->server_vect_size[data->nb_proc_server];
+    data->send_counts[data->nb_proc_server-1] = data->server_vect_size[data->nb_proc_server-1];
 
     data->total_nb_messages = data->nb_proc_server;
     data->local_nb_messages = data->nb_proc_server;
@@ -274,7 +279,6 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
     }
 }
 
-#ifdef BUILD_WITH_MPI
 /**
  *******************************************************************************
  *
@@ -292,6 +296,12 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
  *
  * @param[in] *rank
  * MPI rank
+ *
+ * @param[in] *sobol_rank
+ * Sobol indice rank in Sobol group
+ *
+ * @param[in] *sobol_group
+ * Sobol group
  *
  * @param[in] *comm
  * MPI communicator
@@ -365,6 +375,7 @@ void connect_to_stats (const int *local_vect_size,
     // bcast infos from server
     zmq_data.local_vect_sizes = malloc(*comm_size * sizeof(int));
 
+#ifdef BUILD_WITH_MPI
     if (*comm_size > 1)
     {
         MPI_Bcast(zmq_data.rinit_tab, 3, MPI_INT, 0, *comm);
@@ -376,6 +387,7 @@ void connect_to_stats (const int *local_vect_size,
         }
     }
     else
+#endif // BUILD_WITH_MPI
     {
         zmq_data.local_vect_sizes[0]  = *local_vect_size;
         global_vect_size = *local_vect_size;
@@ -407,10 +419,12 @@ void connect_to_stats (const int *local_vect_size,
         zmq_recv (zmq_data.init_requester, node_names, zmq_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
     }
 
+#ifdef BUILD_WITH_MPI
     if (*comm_size > 1)
     {
         MPI_Bcast (node_names, zmq_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
     }
+#endif // BUILD_WITH_MPI
 
     // sobol only part //
     if (zmq_data.sobol == 1)
@@ -604,12 +618,14 @@ void connect_to_stats (const int *local_vect_size,
     }
     free (node_names);
 }
+
+#ifdef BUILD_WITH_MPI
 /**
  *******************************************************************************
  *
  * @ingroup stats_api
  *
- * Fortran wrapper for connect_to_stats
+ * Fortran wrapper for connect_to_stats (convert MPI communicator)
  *
  *******************************************************************************
  *
@@ -636,9 +652,43 @@ void connect_from_fortran (int       *local_vect_size,
 {
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
     connect_to_stats(local_vect_size, comm_size, rank, sobol_rank, sobol_group, &comm);
-
 }
 #endif // BUILD_WITH_MPI
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup stats_api
+ *
+ * This function initialise connexion with Melissa for sequential simulations
+ *
+ *******************************************************************************
+ *
+ * @param[in] *vect_size
+ * sise of the data vector to send to the library
+ * MPI rank
+ *
+ * @param[in] *sobol_rank
+ * Sobol indice rank in Sobol group
+ *
+ * @param[in] *sobol_group
+ *
+ *******************************************************************************/
+
+void connect_to_stats_no_mpi (const int *vect_size,
+                              const int *sobol_rank,
+                              const int *sobol_group)
+{
+    rank = 0;
+    comm_size = 1;
+    MPI_Comm comm = 0;
+    connect_to_stats (local_vect_size,
+                      &comm_size,
+                      &rank,
+                      sobol_rank,
+                      sobol_group,
+                      &comm);
+}
 
 /**
  *******************************************************************************
