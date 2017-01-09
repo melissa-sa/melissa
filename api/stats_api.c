@@ -679,10 +679,10 @@ void connect_to_stats_no_mpi (const int *vect_size,
                               const int *sobol_rank,
                               const int *sobol_group)
 {
-    rank = 0;
-    comm_size = 1;
+    int rank = 0;
+    int comm_size = 1;
     MPI_Comm comm = 0;
-    connect_to_stats (local_vect_size,
+    connect_to_stats (vect_size,
                       &comm_size,
                       &rank,
                       sobol_rank,
