@@ -2,11 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
 #include "stats.h"
 #include "server.h"
+
+#define INFINIBAND
 
 double stats_get_time ()
 {
@@ -15,6 +20,36 @@ double stats_get_time ()
 #else // BUILD_WITH_MPI
     return (double)time(NULL);
 #endif // BUILD_WITH_MPI
+}
+
+void melissa_get_node_name (char *node_name)
+{
+#ifdef INFINIBAND
+    struct ifaddrs *ifap, *ifa;
+    struct sockaddr_in *sa;
+    char   *addr;
+
+    getifaddrs (&ifap);
+    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr->sa_family==AF_INET) {
+            sa = (struct sockaddr_in *) ifa->ifa_addr;
+            addr = inet_ntoa(sa->sin_addr);
+            if (strcmp (ifa->ifa_name, "ib0") == 0)
+            {
+                printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
+                sprintf(node_name, "%s", addr);
+                break;
+            }
+        }
+    }
+#else // INFINIBAND
+#ifdef BUILD_WITH_MPI
+        int resultlen;
+        MPI_Get_processor_name(node_name, &resultlen);
+#else
+    gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
+#endif // BUILD_WITH_MPI
+#endif // INFINIBAND
 }
 
 void comm_n_to_m_init (int           *rcounts,

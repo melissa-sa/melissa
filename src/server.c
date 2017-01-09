@@ -62,13 +62,11 @@ int main (int argc, char **argv)
     comm_data.comm = MPI_COMM_WORLD;
     MPI_Comm_size(comm_data.comm, &comm_data.comm_size);
     MPI_Comm_rank (comm_data.comm, &comm_data.rank);
-    int resultlen;
-    MPI_Get_processor_name(node_name, &resultlen);
 #else
     comm_data.comm_size       = 1;
     comm_data.rank            = 0;
-    gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
+    melissa_get_node_name (node_name);
 
 #ifdef BUILD_WITH_PROBES
     start_time = stats_get_time();
@@ -276,10 +274,6 @@ int main (int argc, char **argv)
             if (stats_options.sobol_op == 1)
             {
                 buff_tab_ptr = malloc ((stats_options.nb_parameters + 2) * sizeof(double*));
-//                for (i=0; i<stats_options.nb_parameters+2; i++)
-//                {
-//                    buff_tab_ptr[i] = malloc (pull_data.buff_size * sizeof(double));
-//                }
             }
             else
             {
@@ -296,8 +290,6 @@ int main (int argc, char **argv)
 #ifdef ZEROCOPY
             zmq_msg_init (&msg);
             zmq_msg_recv (&msg, data_puller, 0);
-//            int msg_size = zmq_msg_size (&msg);
-//            pull_data.buff_size = zmq_msg_size - (4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char));
             buf_ptr = zmq_msg_data (&msg);
 #else // ZEROCOPY
             zmq_recv (data_puller, buffer, recv_buff_size, 0);
@@ -466,13 +458,6 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PY_ZMQ
         zmq_ctx_term (context);
     }
-//    if (stats_options.sobol_op == 1)
-//    {
-//        for (i=0; i<stats_options.nb_parameters+2; i++)
-//        {
-//            free (buff_tab_ptr[i]);
-//        }
-//    }
     free (buff_tab_ptr);
 
     if (comm_data.rank == 0)
