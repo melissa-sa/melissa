@@ -377,7 +377,7 @@ if (job_step == "first_step"):
     if ("sobol" in operations) or ("sobol_indices" in operations):
         create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name)
     else:
-        create_runcase (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
+        create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
     os.chdir(workdir+"/STATS")
     if (batch_scheduler == "Slurm"):
         os.system('sbatch "./run_study.sh"')
