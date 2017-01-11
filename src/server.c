@@ -71,7 +71,7 @@ int main (int argc, char **argv)
     comm_data.rank            = 0;
 #endif // BUILD_WITH_MPI
     melissa_get_node_name (node_name);
-    fprintf(stdout, "node name = %s, rank = %d", node_name, comm_data.rank);
+    fprintf(stdout, "node name = %s, rank = %d\n", node_name, comm_data.rank);
 #ifdef BUILD_WITH_PROBES
     start_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
