@@ -8,7 +8,8 @@
 int main (int argc, char **argv)
 {
     FILE*  file = NULL;
-    char  *node_name;
+    char   node_name[256];
+    char  *node_addr;
     struct ifaddrs *ifap, *ifa;
     struct sockaddr_in *sa;
 
@@ -23,11 +24,11 @@ int main (int argc, char **argv)
         for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
             if (ifa->ifa_addr->sa_family==AF_INET) {
                 sa = (struct sockaddr_in *) ifa->ifa_addr;
-                node_name = inet_ntoa(sa->sin_addr);
+                node_addr = inet_ntoa(sa->sin_addr);
                 if (strcmp (ifa->ifa_name, "ib0") == 0)
                 {
-                    printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, node_name);
-                    fputs(node_name ,file);
+                    printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, node_addr);
+                    fputs(node_addr ,file);
                     break;
                 }
             }

@@ -124,7 +124,7 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
 #    os.system("cd resu")
 #    os.system(command_line)
 
-def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_procs_max)
+def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_procs_max):
     contenu=""
     fichier=open("coupling_parameters.py", "w")
     contenu += "# -*- coding: utf-8 -*-                                                          \n"
@@ -387,7 +387,7 @@ if (job_step == "first_step"):
 if ((job_step == "container") or (job_step == "simu")):
     if (not (("sobol" in operations) or ("sobol_indices" in operations))):
         nb_simu = nb_groups
-    else
+    else:
         nb_simu = nb_groups*(nb_parameters+2)
     A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
     np.save("Amatrix",A)
