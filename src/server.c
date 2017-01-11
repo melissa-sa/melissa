@@ -286,7 +286,7 @@ int main (int argc, char **argv)
             first_connect = 0;
         }
 
-        if (items[1].revents && ZMQ_POLLIN)
+        if (items[1].revents & ZMQ_POLLIN)
         {
 #ifdef BUILD_WITH_PROBES
             start_comm_time = stats_get_time();
