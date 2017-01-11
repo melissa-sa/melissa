@@ -50,7 +50,7 @@ int main (int argc, char **argv)
     int                 get_next_message = 0;
     int                *client_vect_sizes, *local_vect_sizes;
     pull_data_t         pull_data;
-    int                 nb_bufferized_messages = 100;
+    int                 nb_bufferized_messages = 10;
     char               *field_name_ptr;
     int                 simu_id, group_id;
     int                 nb_converged_fields = 0;
@@ -62,12 +62,16 @@ int main (int argc, char **argv)
     comm_data.comm = MPI_COMM_WORLD;
     MPI_Comm_size(comm_data.comm, &comm_data.comm_size);
     MPI_Comm_rank (comm_data.comm, &comm_data.rank);
+    if (comm_data.rank == 0)
+    {
+        fprintf(stdout, "MPI_Comm_size = %d\n", comm_data.comm_size);
+    }
 #else
     comm_data.comm_size       = 1;
     comm_data.rank            = 0;
 #endif // BUILD_WITH_MPI
     melissa_get_node_name (node_name);
-
+    fprintf(stdout, "node name = %s, rank = %d", node_name, comm_data.rank);
 #ifdef BUILD_WITH_PROBES
     start_time = stats_get_time();
 #endif // BUILD_WITH_PROBES

@@ -323,7 +323,7 @@ void connect_to_stats (const int *local_vect_size,
     int    port_no, i, j;
     FILE*  file = NULL;
     int    global_vect_size = 0;
-    int    nb_bufferized_messages = 100;
+    int    nb_bufferized_messages = 10;
     int    linger = -1;
     int    ret;
     void  *master_requester = NULL;
@@ -525,6 +525,7 @@ void connect_to_stats (const int *local_vect_size,
                 port_no = 100 + zmq_data.pull_rank[i];
                 sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
                 zmq_connect (zmq_data.data_pusher[j], port_name);
+                fprintf (stdout, "simu %d:%d rank %d connected to %s", *sobol_group, *sobol_rank, port_name);
                 j += 1;
             }
         }
