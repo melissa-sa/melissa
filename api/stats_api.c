@@ -99,42 +99,42 @@ void my_free (void *data, void *hint)
     free (data);
 }
 
-//void print_zmq_error(int ret)
-//{
-//    if (ret == EAGAIN)
-//    {
-//        fprintf(stderr, "Non-blocking mode was requested and the message cannot be sent at the moment.\n");
-//    }
-//    else if (ret == ENOTSUP)
-//    {
-//        fprintf(stderr, "The zmq_send() operation is not supported by this socket type\n");
-//    }
-//    else if (ret == EFSM)
-//    {
-//        fprintf(stderr, "The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
-//    }
-//    else if (ret == ETERM)
-//    {
-//        fprintf(stderr, "The ZeroMQ context associated with the specified socket was terminated.\n");
-//    }
-//    else if (ret == ENOTSOCK)
-//    {
-//        fprintf(stderr, "The provided socket was invalid.\n");
-//    }
-//    else if (ret == EINTR)
-//    {
-//        fprintf(stderr, "The operation was interrupted by delivery of a signal before the message was sent.\n");
-//    }
-//    else if (ret == EHOSTUNREACH)
-//    {
-//        fprintf(stderr, "The message cannot be routed.\n");
-//    }
-//    else
-//    {
-//        fprintf(stderr, "Unknown error.\n");
-//    }
-//    exit(0);
-//}
+void print_zmq_error(int ret)
+{
+    if (ret == EAGAIN)
+    {
+        fprintf(stderr, "Non-blocking mode was requested and the message cannot be sent at the moment.\n");
+    }
+    else if (ret == ENOTSUP)
+    {
+        fprintf(stderr, "The zmq_send() operation is not supported by this socket type\n");
+    }
+    else if (ret == EFSM)
+    {
+        fprintf(stderr, "The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
+    }
+    else if (ret == ETERM)
+    {
+        fprintf(stderr, "The ZeroMQ context associated with the specified socket was terminated.\n");
+    }
+    else if (ret == ENOTSOCK)
+    {
+        fprintf(stderr, "The provided socket was invalid.\n");
+    }
+    else if (ret == EINTR)
+    {
+        fprintf(stderr, "The operation was interrupted by delivery of a signal before the message was sent.\n");
+    }
+    else if (ret == EHOSTUNREACH)
+    {
+        fprintf(stderr, "The message cannot be routed.\n");
+    }
+    else
+    {
+        fprintf(stderr, "Unknown error.\n");
+    }
+    exit(0);
+}
 
 static inline void comm_1_to_m_init (zmq_data_t *data)
 {
@@ -525,7 +525,7 @@ void connect_to_stats (const int *local_vect_size,
                 port_no = 100 + zmq_data.pull_rank[i];
                 sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
                 zmq_connect (zmq_data.data_pusher[j], port_name);
-                fprintf (stdout, "simu %d:%d rank %d connected to %s", *sobol_group, *sobol_rank, *rank, port_name);
+                fprintf (stdout, "simu %d:%d rank %d connected to %s\n", *sobol_group, *sobol_rank, *rank, port_name);
                 j += 1;
             }
         }
@@ -827,11 +827,11 @@ void send_to_stats       (const int  *time_step,
                 }
                 zmq_msg_init_data (&msg, zmq_data.buffer, buff_size, my_free, NULL);
                 ret = zmq_msg_send (&msg, zmq_data.data_pusher[j], 0);
-//                if (ret != 0)
-//                {
-//                    ret = errno;
-//                    print_zmq_error(ret);
-//                }
+                if (ret == -1)
+                {
+                    ret = errno;
+                    print_zmq_error(ret);
+                }
                 j += 1;
 #ifdef BUILD_WITH_PROBES
                 total_bytes_sent += zmq_data.send_buff_size;
@@ -867,11 +867,11 @@ void send_to_stats       (const int  *time_step,
                     }
                 }
                 ret = zmq_send (zmq_data.data_pusher[j], zmq_data.buffer, zmq_data.send_buff_size, 0);
-//                if (ret != 0)
-//                {
-//                    ret = errno;
-//                    print_zmq_error(ret);
-//                }
+                if (ret == -1)
+                {
+                    ret = errno;
+                    print_zmq_error(ret);
+                }
                 j += 1;
 #ifdef BUILD_WITH_PROBES
                 total_bytes_sent += zmq_data.send_buff_size;

@@ -11,7 +11,7 @@
 #include "stats.h"
 #include "server.h"
 
-#define INFINIBAND
+//#define INFINIBAND
 
 double stats_get_time ()
 {
@@ -30,13 +30,14 @@ void melissa_get_node_name (char *node_name)
     char   *addr;
 
     getifaddrs (&ifap);
-    for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr->sa_family==AF_INET) {
+    for (ifa = ifap; ifa; ifa = ifa->ifa_next)
+    {
+        if (ifa->ifa_addr->sa_family==AF_INET)
+        {
             sa = (struct sockaddr_in *) ifa->ifa_addr;
             addr = inet_ntoa(sa->sin_addr);
             if (strcmp (ifa->ifa_name, "ib0") == 0)
             {
-                printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, addr);
                 sprintf(node_name, "%s", addr);
                 break;
             }

@@ -16,8 +16,9 @@ int main (int argc, char **argv)
 
     if (file != NULL)
     {
-//        gethostname(node_name, 256);
-
+        gethostname(node_name, 256);
+        fputs(node_name ,file);
+/*
         getifaddrs (&ifap);
         for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
             if (ifa->ifa_addr->sa_family==AF_INET) {
@@ -31,7 +32,7 @@ int main (int argc, char **argv)
                 }
             }
         }
-
+*/
         fclose(file);
     }
     else
