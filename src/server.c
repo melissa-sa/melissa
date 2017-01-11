@@ -292,8 +292,20 @@ int main (int argc, char **argv)
             start_comm_time = stats_get_time();
 #endif // BUILD_WITH_PROBES
 #ifdef ZEROCOPY
+            if (comm_data.rank==0)
+            {
+                fprintf(stdout, "init message \n");
+            }
             zmq_msg_init (&msg);
+            if (comm_data.rank==0)
+            {
+                fprintf(stdout, "recv message \n");
+            }
             zmq_msg_recv (&msg, data_puller, 0);
+            if (comm_data.rank==0)
+            {
+                fprintf(stdout, "pointer to data \n");
+            }
             buf_ptr = zmq_msg_data (&msg);
 #else // ZEROCOPY
             zmq_recv (data_puller, buffer, recv_buff_size, 0);
@@ -351,8 +363,16 @@ int main (int argc, char **argv)
 
             if (stats_options.sobol_op != 1)
             {
+                if (comm_data.rank==0)
+                {
+                    fprintf(stdout, "compute stats \n");
+                }
                 buff_tab_ptr[0] = (double*)buf_ptr;
                 compute_stats (&data_ptr[client_rank], time_step-1, 1, buff_tab_ptr);
+                if (comm_data.rank==0)
+                {
+                    fprintf(stdout, "update iteration number \n");
+                }
                 iteration++;
             }
             else
@@ -384,12 +404,20 @@ int main (int argc, char **argv)
             string_recv(python_requester, port_name);
 #endif // BUILD_WITH_PY_ZMQ
 #ifdef ZEROCOPY
+            if (comm_data.rank==0)
+            {
+                fprintf(stdout, "closing message \n");
+            }
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
             {
                 buff_tab_ptr[i] = NULL;
             }
             buf_ptr = NULL;
             zmq_msg_close (&msg);
+            if (comm_data.rank==0)
+            {
+                fprintf(stdout, "polling \n");
+            }
 #endif // ZEROCOPY
         }
 
