@@ -136,8 +136,10 @@ options = " -p " + str(nb_parameters)\
         + " -e " + str(threshold)
 
 #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
+if (launch_melissa("valgrind mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
     print "error launching Melissa"
+#print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
+#valgrind mpirun  -n 1 /home/tterraz/avido/source/Melissa/build/src/server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7
 
 if (("sobol" in operations) or ("sobol_indices" in operations)) and (pyzmq == 1):
     converged_sobol = np.zeros(nb_proc_server,int)

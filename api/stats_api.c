@@ -510,6 +510,7 @@ void connect_to_stats (const int *local_vect_size,
 
     // end sobol only //
 
+    zmq_data.data_pusher = NULL;
     if (*sobol_rank == 0)
     {
         zmq_data.data_pusher = malloc (zmq_data.local_nb_messages * sizeof(void*));
@@ -528,6 +529,11 @@ void connect_to_stats (const int *local_vect_size,
                 fprintf (stdout, "simu %d:%d rank %d connected to %s\n", *sobol_group, *sobol_rank, *rank, port_name);
                 j += 1;
             }
+        }
+
+        if (j != zmq_data.local_nb_messages)
+        {
+            fprintf (stderr, "Warning: wrong number of data pusher ports");
         }
 #ifndef COUPLING
         if (zmq_data.sobol == 1)
@@ -581,7 +587,6 @@ void connect_to_stats (const int *local_vect_size,
         zmq_recv (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
         //
         //
-        zmq_data.data_pusher = NULL;
         zmq_data.sobol_requester = malloc (sizeof(void*));
         zmq_data.sobol_requester[0] = zmq_socket (zmq_data.context, ZMQ_REQ);
         if (0 == strcmp(master_node_name, "localhost"))
@@ -963,7 +968,7 @@ void disconnect_from_stats ()
     }
 #endif
     zmq_ctx_term (zmq_data.context);
-    if (zmq_data.data_pusher != NULL)
+    if (zmq_data.sobol_rank == 0)
     {
         free(zmq_data.data_pusher);
     }
