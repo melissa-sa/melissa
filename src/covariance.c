@@ -54,8 +54,8 @@ void init_covariance (covariance_t *covariance,
  * second input vector of double values
  *
  * @param[in,out] *covariance
- * input: previously computed partial mean,
- * output: updated partial mean
+ * input: previously computed covariance,
+ * output: incremented covariance
  *
  * @param[in] vect_size
  * size of the input vectors

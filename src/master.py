@@ -74,7 +74,6 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
         os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
     else:
         os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne_master.sh "+casedir+"/SCRIPTS/runcase")
-
     # modif xml file
     os.chdir(casedir+"/DATA")
     fichier=open(workdir+"/case1/DATA/"+xml_file_name, "r")
