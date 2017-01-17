@@ -9,8 +9,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "stats.h"
+#include <stdio.h>
+#include "min_max.h"
 
 /**
  *******************************************************************************
@@ -79,6 +79,80 @@ void min_and_max (double     in_vect[],
             if (min_max->max[i] < in_vect[i])
                 min_max->max[i] = in_vect[i];
         }
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function writes an array of min and max structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *minmax
+ * min and max structures to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void write_min_max(min_max_t *minmax,
+                   int        vect_size,
+                   int        nb_time_steps,
+                   FILE*      f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fwrite(minmax[i].min, sizeof(double), vect_size, f);
+        fwrite(minmax[i].max, sizeof(double), vect_size, f);
+        fwrite(&minmax[i].is_init, sizeof(int), vect_size, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of min and max structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *minmax
+ * min and max structures to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_min_max(min_max_t *minmax,
+                  int        vect_size,
+                  int        nb_time_steps,
+                  FILE*      f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fread(minmax[i].min, sizeof(double), vect_size, f);
+        fread(minmax[i].max, sizeof(double), vect_size, f);
+        fread(&minmax[i].is_init, sizeof(int), 1, f);
     }
 }
 

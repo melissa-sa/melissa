@@ -9,8 +9,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "stats.h"
+#include <stdio.h>
+#include "mean.h"
+#include "variance.h"
 
 /**
  *******************************************************************************
@@ -286,6 +287,78 @@ void update_global_mean_and_variance (variance_t *variance,
     }
 }
 #endif // BUILD_WITH_MPI
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function writes an array of variances structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *vars
+ * variance structures to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void write_variance(variance_t *vars,
+                    int         vect_size,
+                    int         nb_time_steps,
+                    FILE*       f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fwrite(vars[i].variance, sizeof(double), vect_size, f);
+        write_mean (&vars[i].mean_structure, vect_size, 1, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of variances structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *vars
+ * mean structures to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_variance(variance_t *vars,
+                   int         vect_size,
+                   int         nb_time_steps,
+                   FILE*       f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fread(vars[i].variance, sizeof(double), vect_size, f);
+        read_mean (&vars[i].mean_structure, vect_size, 1, f);
+    }
+}
 
 /**
  *******************************************************************************

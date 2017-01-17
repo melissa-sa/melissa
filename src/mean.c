@@ -9,8 +9,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#ifdef BUILD_WITH_MPI
+#include <mpi.h>
+#endif // BUILD_WITH_MPI
 #include <math.h>
-#include "stats.h"
+#include "mean.h"
 
 /**
  *******************************************************************************
@@ -188,6 +192,78 @@ void update_global_mean (mean_t    *mean,
     }
 }
 #endif // BUILD_WITH_MPI
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function writes an array of mean structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *means
+ * mean structures to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void write_mean(mean_t *means,
+                int     vect_size,
+                int     nb_time_steps,
+                FILE*   f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fwrite(means[i].mean, sizeof(double), vect_size, f);
+        fwrite(&means[i].increment, sizeof(int), 1, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of mean structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *means
+ * mean structures to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_mean(mean_t *means,
+               int     vect_size,
+               int     nb_time_steps,
+               FILE*   f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fread(means[i].mean, sizeof(double), vect_size, f);
+        fread(&means[i].increment, sizeof(int), 1, f);
+    }
+}
 
 /**
  *******************************************************************************

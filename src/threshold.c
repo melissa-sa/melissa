@@ -8,7 +8,8 @@
  **/
 
 #include <stdlib.h>
-#include "stats.h"
+#include <stdio.h>
+#include "threshold.h"
 
 /**
  *******************************************************************************
@@ -44,5 +45,75 @@ void update_threshold_exceedance (double    in_vect[],
     {
         if (in_vect[i] > threshold)
             threshold_exceedance[i] += 1;
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function writes an array of threshold exceedance vectors on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] **threshold
+ * threshold exceedance array of vectors to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void write_threshold(int  **threshold,
+                     int    vect_size,
+                     int    nb_time_steps,
+                     FILE*  f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fwrite(threshold[i], sizeof(int), vect_size, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of threshold exceedance vectors on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] **threshold
+ * threshold exceedance array of vectors to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_threshold(int  **threshold,
+                    int    vect_size,
+                    int    nb_time_steps,
+                    FILE*  f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fread(threshold[i], sizeof(int), vect_size, f);
     }
 }

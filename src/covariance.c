@@ -9,8 +9,13 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "stats.h"
+#include <stdio.h>
+#ifdef BUILD_WITH_MPI
+//#include <mpi.h>
+#endif // BUILD_WITH_MPI
+#include "mean.h"
+#include "variance.h"
+#include "covariance.h"
 
 /**
  *******************************************************************************

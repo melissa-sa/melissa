@@ -12,11 +12,17 @@
 #ifndef STATS_H
 #define STATS_H
 
+#include <stdio.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
-#include <stdio.h>
 #include "melissa_utils.h"
+#include "mean.h"
+#include "variance.h"
+#include "min_max.h"
+#include "threshold.h"
+#include "covariance.h"
+#include "sobol.h"
 
 /**
  *******************************************************************************
@@ -29,89 +35,10 @@
 
 enum return_status
 {
-    SUCCESS,                 /**< nothing to report                          */
-    WARNING_NOTING_RETURNED, /**< a in/out object is returned unmodified     */
-    ERROR_BAD_PARAMETER      /**< a bad parameter was givent to the function */
+    SUCCESS,                  /**< nothing to report                          */
+    WARNING_NOTHING_RETURNED, /**< a in/out object is returned unmodified     */
+    ERROR_BAD_PARAMETER       /**< a bad parameter was givent to the function */
 };
-
-/**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
- * @struct mean_s
- *
- * Structure containing an array of means, and the corresponding increment
- *
- *******************************************************************************/
-
-struct mean_s
-{
-    double *mean;      /**< mean[vect_size]        */
-    int     increment; /**< increment of this mean */
-};
-
-typedef struct mean_s mean_t; /**< type corresponding to mean_s */
-
-/**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
- * @struct variance_s
- *
- * Structure containing an array of variances and the corresponding mean structure
- *
- *******************************************************************************/
-
-struct variance_s
-{
-    double *variance;       /**< variance[vect_size] */
-    mean_t  mean_structure; /**< corresponding mean  */
-};
-
-typedef struct variance_s variance_t; /**< type corresponding to variance_s */
-
-/**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
- * @struct min_max_s
- *
- * Structure containing two arrays of min and max values
- *
- *******************************************************************************/
-
-struct min_max_s
-{
-    double *min;     /**< min[vect_size]                          */
-    double *max;     /**< max[vect_size]                          */
-    int     is_init; /**< 0 before the first update, 1 otherwhise */
-};
-
-typedef struct min_max_s min_max_t; /**< type corresponding to min_max_s */
-
-/**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
- * @struct covariance_s
- *
- * Structure containing an array of covariances and the corresponding mean structures
- *
- *******************************************************************************/
-
-struct covariance_s
-{
-    double *covariance; /**< covariance[vect_size] */
-    mean_t  mean1;      /**< corresponding mean    */
-    mean_t  mean2;      /**< corresponding mean    */
-    int     increment;  /**< increment             */
-};
-
-typedef struct covariance_s covariance_t; /**< type corresponding to covariance_s */
 
 /**
  *******************************************************************************
@@ -175,50 +102,6 @@ typedef struct conditional_variance_s conditional_variance_t; /**< type correspo
 //};
 
 //typedef struct sobol_index_s sobol_index_t; /**< type corresponding to sobol_index_s */
-
-/**
- *******************************************************************************
- *
- * @ingroup sobol
- *
- * @struct sobol_martinez_s
- *
- * Structure containing a sobol indices vector with all structures needed by Martinez update formula
- *
- *******************************************************************************/
-
-struct sobol_martinez_s
-{
-    covariance_t  first_order_covariance; /**< covariance needed by Martinez formula */
-    covariance_t  total_order_covariance; /**< covariance needed by Martinez formula */
-    variance_t    variance_k;             /**< variance needed by Martinez formula   */
-    double       *first_order_values;     /**< values of the sobol indices           */
-    double       *total_order_values;     /**< values of the sobol indices           */
-    double        confidence_interval[2]; /**< interval for 95% confidence level     */
-};
-
-typedef struct sobol_martinez_s sobol_martinez_t; /**< type corresponding to sobol_martinez_s */
-
-/**
- *******************************************************************************
- *
- * @ingroup sobol
- *
- * @struct sobol_array_s
- *
- * Structure containing an array of sobol index structures
- *
- *******************************************************************************/
-
-struct sobol_array_s
-{
-    sobol_martinez_t *sobol_martinez; /**< array of sobol indices, size nb_parameters     */
-    variance_t        variance_a;     /**< first set variance needed by Martinez formula  */
-    variance_t        variance_b;     /**< second set variance needed by Martinez formula */
-    int               iteration;      /**< number of computed groups                      */
-};
-
-typedef struct sobol_array_s sobol_array_t; /**< type corresponding to sobol_array_s */
 
 /**
  *******************************************************************************
@@ -298,87 +181,6 @@ typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s *
 
 void stats_check_options (stats_options_t  *options);
 
-void init_mean(mean_t    *mean,
-               const int  vect_size);
-
-void init_variance(variance_t *variance,
-                   const int   vect_size);
-
-void init_min_max(min_max_t *min_max,
-                  const int  vect_size);
-
-void init_covariance(covariance_t *covariance,
-                     const int     vect_size);
-
-void increment_mean (double     in_vect[],
-                     mean_t    *partial_mean,
-                     const int  vect_size);
-
-void increment_mean_and_variance (double      in_vect[],
-                                  variance_t *partial_variance,
-                                  const int   vect_size);
-
-void increment_variance (double      in_vect[],
-                         variance_t *partial_variance,
-                         const int   vect_size);
-
-void min_and_max (double     in_vect[],
-                  min_max_t *min_max,
-                  const int  vect_size);
-
-void increment_covariance (double        in_vect1[],
-                           double        in_vect2[],
-                           covariance_t *partial_covariance,
-                           const int     vect_size);
-
-void update_mean (mean_t    *mean1,
-                  mean_t    *mean2,
-                  mean_t    *updated_mean,
-                  const int  vect_size);
-
-void update_variance (variance_t *variance1,
-                      variance_t *variance2,
-                      variance_t *updated_variance,
-                      const int   vect_size);
-
-void update_covariance (covariance_t *covariance1,
-                        covariance_t *covariance2,
-                        covariance_t *updated_covariance,
-                        const int     vect_size);
-
-#ifdef BUILD_WITH_MPI
-void update_global_mean (mean_t    *mean,
-                         const int  vect_size,
-                         const int  rank,
-                         const int  comm_size,
-                         MPI_Comm   comm);
-
-void update_global_variance (variance_t *variance,
-                             const int   vect_size,
-                             const int   rank,
-                             const int   comm_size,
-                             MPI_Comm    comm);
-
-void update_global_mean_and_variance (variance_t *variance,
-                                      const int   vect_size,
-                                      const int   rank,
-                                      const int   comm_size,
-                                      MPI_Comm    comm);
-#endif // BUILD_WITH_MPI
-
-void update_threshold_exceedance (double    in_vect[],
-                                  int       threshold_exceedance[],
-                                  int       threshold,
-                                  const int vect_size);
-
-void free_mean(mean_t *mean);
-
-void free_variance (variance_t *variance);
-
-void free_min_max (min_max_t *min_max);
-
-void free_covariance (covariance_t *covariance);
-
 //void init_conditional_means (conditional_mean_t *conditional_means,
 //                             stats_data_t       *data);
 
@@ -410,25 +212,6 @@ void free_covariance (covariance_t *covariance);
 //                                  stats_data_t           *data);
 
 //void free_conditional_variance (conditional_variance_t *conditional_variance);
-
-void init_sobol_martinez (sobol_martinez_t *sobol_indices,
-                          int               vect_size);
-
-void increment_sobol_martinez (sobol_array_t *sobol_array,
-                               int            nb_parameters,
-                               double       **in_vect_tab,
-                               int            vect_size);
-
-void confidence_sobol_martinez(sobol_array_t *sobol_array,
-                               int            nb_parameters,
-                               int            vect_size);
-
-int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
-                                     double          confidence_value,
-                                     int             nb_time_steps,
-                                     int             nb_parameters);
-
-void free_sobol_martinez (sobol_martinez_t *sobol_indices);
 
 void stats_get_options (int               argc,
                         char            **argv,
@@ -476,46 +259,6 @@ void write_client_data (int *client_comm_size,
 
 int read_client_data (int  *client_comm_size,
                        int **client_vect_sizes);
-
-void write_mean(mean_t *means,
-                int     vect_size,
-                int     nb_time_steps,
-                FILE*   f);
-
-void read_mean(mean_t *means,
-               int     vect_size,
-               int     nb_time_steps,
-               FILE*   f);
-
-void write_variance(variance_t *vars,
-                    int         vect_size,
-                    int         nb_time_steps,
-                    FILE*       f);
-
-void read_variance(variance_t *vars,
-                   int         vect_size,
-                   int         nb_time_steps,
-                   FILE*       f);
-
-void write_min_max(min_max_t *minmax,
-                   int        vect_size,
-                   int        nb_time_steps,
-                   FILE*      f);
-
-void read_min_max(min_max_t *minmax,
-                  int        vect_size,
-                  int        nb_time_steps,
-                  FILE*      f);
-
-void write_threshold(int  **threshold,
-                     int    vect_size,
-                     int    nb_time_steps,
-                     FILE*  f);
-
-void read_threshold(int  **threshold,
-                    int    vect_size,
-                    int    nb_time_steps,
-                    FILE*  f);
 
 void save_stats (stats_data_t *data,
                  comm_data_t  *comm_data,

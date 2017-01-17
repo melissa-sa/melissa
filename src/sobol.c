@@ -9,8 +9,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
-#include "stats.h"
+#include "mean.h"
+#include "variance.h"
+#include "covariance.h"
+#include "sobol.h"
 
 /**
  *******************************************************************************

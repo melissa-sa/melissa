@@ -27,11 +27,17 @@ set(ALL_SRCS
 #             cond_mean.c
 #             cond_var.c
              mean.c
+             mean.h
              variance.c
+             variance.h
              min_max.c
+             min_max.h
              threshold.c
+             threshold.h
              covariance.c
+             covariance.h
              sobol.c
+             sobol.h
              get_options.c
              stats_data.c
              compute_stats.c
