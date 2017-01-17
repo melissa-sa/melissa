@@ -378,16 +378,6 @@ if (job_step == "first_step"):
     else:
         create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
     os.chdir(workdir+"/STATS")
-    if (batch_scheduler == "Slurm"):
-        os.system('sbatch "./run_study.sh"')
-    elif (batch_scheduler == "OAR"):
-        os.system('oarsub -S "./run_study.sh" --project=avido')
-
-if ((job_step == "container") or (job_step == "simu")):
-    if (not (("sobol" in operations) or ("sobol_indices" in operations))):
-        nb_simu = nb_groups
-    else:
-        nb_simu = nb_groups*(nb_parameters+2)
     A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
     np.save("Amatrix",A)
     if ("sobol" in operations) or ("sobol_indices" in operations):
@@ -411,6 +401,17 @@ if ((job_step == "container") or (job_step == "simu")):
         for k in range(len(ret)):
             if (ret[k] != 0):
                 print "error creating simulation "+str(k)+" of group "+str(i)
+    if (batch_scheduler == "Slurm"):
+        os.system('sbatch "./run_study.sh"')
+    elif (batch_scheduler == "OAR"):
+        os.system('oarsub -S "./run_study.sh" --project=avido')
+
+if ((job_step == "container") or (job_step == "simu")):
+    if (not (("sobol" in operations) or ("sobol_indices" in operations))):
+        nb_simu = nb_groups
+    else:
+        nb_simu = nb_groups*(nb_parameters+2)
+    for i in range(nb_groups):
         # scripts to launch coupled simulation groups
         os.chdir(workdir+"/group"+str(i))
         if ("sobol" in operations) or ("sobol_indices" in operations):
@@ -440,7 +441,7 @@ if ((job_step == "container") or (job_step == "simu")):
 #        poller.register(pull_simu_socket, zmq.POLLIN)
     snd_message = "continue"
     while True:
-        socks = dict(poller.poll(100))
+        socks = dict(poller.poll(1000))
         if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
 #                rcv_message = rep_melissa_socket.recv_string()
             message = dict([rep_melissa_socket.recv_string().split()])

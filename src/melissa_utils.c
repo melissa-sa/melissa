@@ -24,7 +24,7 @@
 static void print_zmq_error(int         ret,
                             const char* port_name)
 {
-    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
+    fprintf(stderr,"ERROR on port (%s)\n", port_name);
     if (ret == EINVAL)
     {
         fprintf(stderr, "The endpoint supplied is invalid.\n");
@@ -60,6 +60,26 @@ static void print_zmq_error(int         ret,
     else if (ret == EMTHREAD)
     {
         fprintf(stderr, "No I/O thread is available to accomplish the task.\n");
+    }
+    else if (ret == EAGAIN)
+    {
+        fprintf(stderr, "Non-blocking mode was requested and the message cannot be sent at the moment.\n");
+    }
+    else if (ret == ENOTSUP)
+    {
+        fprintf(stderr, "The zmq_send() operation is not supported by this socket type\n");
+    }
+    else if (ret == EFSM)
+    {
+        fprintf(stderr, "The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
+    }
+    else if (ret == EINTR)
+    {
+        fprintf(stderr, "The operation was interrupted by delivery of a signal before the message was sent.\n");
+    }
+    else if (ret == EHOSTUNREACH)
+    {
+        fprintf(stderr, "The message cannot be routed.\n");
     }
     else
     {
