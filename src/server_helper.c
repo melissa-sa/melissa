@@ -11,48 +11,6 @@
 #include "stats.h"
 #include "server.h"
 
-//#define INFINIBAND
-
-double stats_get_time ()
-{
-#ifdef BUILD_WITH_MPI
-    return MPI_Wtime();
-#else // BUILD_WITH_MPI
-    return (double)time(NULL);
-#endif // BUILD_WITH_MPI
-}
-
-void melissa_get_node_name (char *node_name)
-{
-#ifdef INFINIBAND
-    struct ifaddrs *ifap, *ifa;
-    struct sockaddr_in *sa;
-    char   *addr;
-
-    getifaddrs (&ifap);
-    for (ifa = ifap; ifa; ifa = ifa->ifa_next)
-    {
-        if (ifa->ifa_addr->sa_family==AF_INET)
-        {
-            sa = (struct sockaddr_in *) ifa->ifa_addr;
-            addr = inet_ntoa(sa->sin_addr);
-            if (strcmp (ifa->ifa_name, "ib0") == 0)
-            {
-                sprintf(node_name, "%s", addr);
-                break;
-            }
-        }
-    }
-#else // INFINIBAND
-#ifdef BUILD_WITH_MPI
-        int resultlen;
-        MPI_Get_processor_name(node_name, &resultlen);
-#else
-    gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
-#endif // BUILD_WITH_MPI
-#endif // INFINIBAND
-}
-
 void comm_n_to_m_init (int           *rcounts,
                        int           *rdispls,
                        const int      global_vect_size,
@@ -248,7 +206,7 @@ void finalize_field_data (field_ptr        field,
         }
 
 #ifdef BUILD_WITH_PROBES
-        start_write_time = stats_get_time();
+        start_write_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 //        write_stats (&(field->stats_data),
 //                     options,
@@ -261,7 +219,7 @@ void finalize_field_data (field_ptr        field,
                              local_vect_sizes,
                              field->name);
 #ifdef BUILD_WITH_PROBES
-        end_write_time = stats_get_time();
+        end_write_time = melissa_get_time();
         *write_time += end_write_time - start_write_time;
 #endif // BUILD_WITH_PROBES
 

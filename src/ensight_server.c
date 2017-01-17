@@ -49,7 +49,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
 
 #ifdef BUILD_WITH_PROBES
-    start_time = stats_get_time();
+    start_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
@@ -102,17 +102,17 @@ int main (int argc, char **argv)
 
                     sprintf(file_name, "results.%s.%.*d", field, 5, time_step +1);
 #ifdef BUILD_WITH_PROBES
-                    start_comm_time = stats_get_time();
+                    start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
                     read_ensight (stats_options, comm_data, buffer, local_vect_sizes, file_name);
 #ifdef BUILD_WITH_PROBES
-                    end_comm_time = stats_get_time();
+                    end_comm_time = melissa_get_time();
                     total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
                     memcpy(buff_tab_ptr[rank_id], buffer, local_vect_sizes[comm_data.rank] * sizeof(double));
 
 #ifdef BUILD_WITH_PROBES
-                    start_computation_time = stats_get_time();
+                    start_computation_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
                     if (stats_options.sobol_op != 1)
@@ -132,7 +132,7 @@ int main (int argc, char **argv)
                         //                                                                        stats_options.nb_parameters);
 
 #ifdef BUILD_WITH_PROBES
-                        end_computation_time = stats_get_time();
+                        end_computation_time = melissa_get_time();
                         total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
                         if (comm_data.rank==0 && (iteration % 10) == 0 )
@@ -202,7 +202,7 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Average reading time:            %g s\n", total_comm_time);
         fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
-        fprintf (stdout, " --- Total time:                      %g s\n", stats_get_time() - start_time);
+        fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
         fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&stats_options));
         fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
     }

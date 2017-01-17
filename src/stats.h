@@ -525,4 +525,15 @@ void read_saved_stats (stats_data_t *data,
                        char         *field_name,
                        int           client_rank);
 
+// melissa_utils.c
+
+void* melissa_malloc (size_t size);
+
+void* melissa_calloc (size_t num,
+                      size_t size);
+
+double melissa_get_time ();
+
+void melissa_get_node_name (char *node_name);
+
 #endif // STATS_H

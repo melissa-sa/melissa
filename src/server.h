@@ -52,10 +52,6 @@ struct pull_data_s /**< Helper structure for push pull socket */
 };
 typedef struct pull_data_s pull_data_t; /**< type corresponding to pull_data_s */
 
-double stats_get_time ();
-
-void melissa_get_node_name (char *node_name);
-
 void comm_n_to_m_init (int           *rcounts,
                        int           *rdispls,
                        const int      global_vect_size,

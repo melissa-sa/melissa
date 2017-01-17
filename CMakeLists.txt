@@ -37,7 +37,7 @@ set(ALL_SRCS
              compute_stats.c
              server.c
              server_helper.c
-             server_helper.c
+             melissa_utils.c
              write_stats.c
              save_data.c
              server.h

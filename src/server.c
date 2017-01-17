@@ -73,7 +73,7 @@ int main (int argc, char **argv)
     melissa_get_node_name (node_name);
     fprintf(stdout, "node name = %s, rank = %d\n", node_name, comm_data.rank);
 #ifdef BUILD_WITH_PROBES
-    start_time = stats_get_time();
+    start_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
@@ -169,7 +169,7 @@ int main (int argc, char **argv)
     while (1)
     {
 #ifdef BUILD_WITH_PROBES
-        start_wait_time = stats_get_time();
+        start_wait_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
         zmq_pollitem_t items [] = {
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
@@ -177,7 +177,7 @@ int main (int argc, char **argv)
         };
         zmq_poll (items, 2, 100);
 #ifdef BUILD_WITH_PROBES
-        end_wait_time = stats_get_time();
+        end_wait_time = melissa_get_time();
         total_wait_time += end_wait_time - start_wait_time;
 #endif // BUILD_WITH_PROBES
 
@@ -186,7 +186,7 @@ int main (int argc, char **argv)
             if (comm_data.rank == 0)
             {
 #ifdef BUILD_WITH_PROBES
-                start_comm_time = stats_get_time();
+                start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
                 // new simulation wants to connect
                 zmq_recv (connexion_responder, rinit_tab, 2 * sizeof(int), 0);
@@ -197,7 +197,7 @@ int main (int argc, char **argv)
                     first_init = 1;
                 }
 #ifdef BUILD_WITH_PROBES
-                end_comm_time = stats_get_time();
+                end_comm_time = melissa_get_time();
                 total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
             }
@@ -216,7 +216,7 @@ int main (int argc, char **argv)
         if (get_next_message == 1)
         {
 #ifdef BUILD_WITH_PROBES
-            start_comm_time = stats_get_time();
+            start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
             // new simulation wants to connect, step two
 
@@ -229,7 +229,7 @@ int main (int argc, char **argv)
                 first_connect = 1;
             }
 #ifdef BUILD_WITH_PROBES
-            end_comm_time = stats_get_time();
+            end_comm_time = melissa_get_time();
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank == 0)
@@ -289,7 +289,7 @@ int main (int argc, char **argv)
         if (items[1].revents & ZMQ_POLLIN)
         {
 #ifdef BUILD_WITH_PROBES
-            start_comm_time = stats_get_time();
+            start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 #ifdef ZEROCOPY
 #ifdef DEBUG
@@ -318,7 +318,7 @@ int main (int argc, char **argv)
             buf_ptr = buffer;
 #endif // ZEROCOPY
 #ifdef BUILD_WITH_PROBES
-            end_comm_time = stats_get_time();
+            end_comm_time = melissa_get_time();
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
 
@@ -364,7 +364,7 @@ int main (int argc, char **argv)
 #else // ZEROCOPY
             total_bytes_recv += recv_buff_size;
 #endif // ZEROCOPY
-            start_computation_time = stats_get_time();
+            start_computation_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
             if (stats_options.sobol_op != 1)
@@ -401,7 +401,7 @@ int main (int argc, char **argv)
                                                                         stats_options.nb_parameters);
             }
 #ifdef BUILD_WITH_PROBES
-            end_computation_time = stats_get_time();
+            end_computation_time = melissa_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank==0 && ((iteration % 10) == 0 || iteration < 10) )
@@ -552,7 +552,7 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
         fprintf (stdout, " --- Waiting time:                    %g s\n", total_wait_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
-        fprintf (stdout, " --- Total time:                      %g s\n", stats_get_time() - start_time);
+        fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
         fprintf (stdout, " --- Bytes recieved:                  %ld bytes\n",total_bytes_recv);
         fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&stats_options));
         fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
