@@ -134,7 +134,7 @@ int read_client_data (int  *client_comm_size,
         {
             ret = 0;
         }
-        *client_vect_sizes = malloc (*client_comm_size * sizeof(int));
+        *client_vect_sizes = melissa_malloc (*client_comm_size * sizeof(int));
         if (*client_comm_size == fread(*client_vect_sizes, sizeof(int), *client_comm_size, f));
         {
             ret = 0;

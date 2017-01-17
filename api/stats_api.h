@@ -8,10 +8,10 @@
  *
  **/
 
-#include <mpi.h>
-
 #ifndef STATS_API_H
 #define STATS_API_H
+
+#include <mpi.h>
 
 void connect_to_stats(const int *local_vect_size,
                       const int *comm_size,

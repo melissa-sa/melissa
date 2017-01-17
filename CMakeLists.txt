@@ -38,6 +38,7 @@ set(ALL_SRCS
              server.c
              server_helper.c
              melissa_utils.c
+             melissa_utils.h
              write_stats.c
              save_data.c
              server.h

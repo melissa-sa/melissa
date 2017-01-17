@@ -27,38 +27,38 @@ static void malloc_data (stats_data_t *data)
 
     if (data->options->mean_op == 1 && data->options->variance_op == 0)
     {
-        data->means = malloc (data->options->nb_time_steps * sizeof(mean_t));
+        data->means = melissa_malloc (data->options->nb_time_steps * sizeof(mean_t));
         for (i=0; i<data->options->nb_time_steps; i++)
             init_mean (&(data->means[i]), data->vect_size);
     }
 
     if (data->options->variance_op == 1)
     {
-        data->variances = malloc (data->options->nb_time_steps * sizeof(variance_t));
+        data->variances = melissa_malloc (data->options->nb_time_steps * sizeof(variance_t));
         for (i=0; i<data->options->nb_time_steps; i++)
             init_variance (&(data->variances[i]), data->vect_size);
     }
 
     if (data->options->min_and_max_op == 1)
     {
-        data->min_max = malloc (data->options->nb_time_steps * sizeof(min_max_t));
+        data->min_max = melissa_malloc (data->options->nb_time_steps * sizeof(min_max_t));
         for (i=0; i<data->options->nb_time_steps; i++)
             init_min_max (&(data->min_max[i]), data->vect_size);
     }
 
     if (data->options->threshold_op == 1)
     {
-        data->thresholds = malloc (data->options->nb_time_steps * sizeof(int*));
+        data->thresholds = melissa_malloc (data->options->nb_time_steps * sizeof(int*));
         for (i=0; i<data->options->nb_time_steps; i++)
-            data->thresholds[i] = calloc (data->vect_size, sizeof(int));
+            data->thresholds[i] = melissa_calloc (data->vect_size, sizeof(int));
     }
 
     if (data->options->sobol_op == 1)
     {
-        data->sobol_indices = malloc (data->options->nb_time_steps * sizeof(sobol_array_t));
+        data->sobol_indices = melissa_malloc (data->options->nb_time_steps * sizeof(sobol_array_t));
         for (i=0; i<data->options->nb_time_steps; i++)
         {
-            data->sobol_indices[i].sobol_martinez = malloc (data->options->nb_parameters * sizeof(sobol_martinez_t));
+            data->sobol_indices[i].sobol_martinez = melissa_malloc (data->options->nb_parameters * sizeof(sobol_martinez_t));
             init_variance (&data->sobol_indices[i].variance_b, data->vect_size);
             init_variance (&data->sobol_indices[i].variance_a, data->vect_size);
             for (j=0; j<data->options->nb_parameters; j++)
@@ -69,7 +69,7 @@ static void malloc_data (stats_data_t *data)
         }
     }
 
-    data->computed = calloc (data->options->nb_time_steps, sizeof(int));
+    data->computed = melissa_calloc (data->options->nb_time_steps, sizeof(int));
 }
 
 /**
@@ -162,28 +162,28 @@ void free_data (stats_data_t *data)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
             free_mean (&(data->means[i]));
-        free (data->means);
+        melissa_free (data->means);
     }
 
     if (data->options->variance_op == 1)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
             free_variance (&(data->variances[i]));
-        free (data->variances);
+        melissa_free (data->variances);
     }
 
     if (data->options->min_and_max_op == 1)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
             free_min_max (&(data->min_max[i]));
-        free (data->min_max);
+        melissa_free (data->min_max);
     }
 
     if (data->options->threshold_op == 1)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
-            free (data->thresholds[i]);
-        free (data->thresholds);
+            melissa_free (data->thresholds[i]);
+        melissa_free (data->thresholds);
     }
 
     if (data->options->sobol_op == 1)
@@ -196,12 +196,12 @@ void free_data (stats_data_t *data)
             {
                 free_sobol_martinez (&(data->sobol_indices[i].sobol_martinez[j]));
             }
-            free (data->sobol_indices[i].sobol_martinez);
+            melissa_free (data->sobol_indices[i].sobol_martinez);
         }
-        free (data->sobol_indices);
+        melissa_free (data->sobol_indices);
     }
 
-    free (data->computed);
+    melissa_free (data->computed);
 
     data->options = NULL;
 

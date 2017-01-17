@@ -32,7 +32,7 @@
 void init_covariance (covariance_t *covariance,
                       const int     vect_size)
 {
-    covariance->covariance = calloc (vect_size, sizeof(double));
+    covariance->covariance = melissa_calloc (vect_size, sizeof(double));
     init_mean (&covariance->mean1, vect_size);
     init_mean (&covariance->mean2, vect_size);
     covariance->increment = 0;
@@ -144,7 +144,7 @@ void update_covariance (covariance_t *covariance1,
 
 void free_covariance (covariance_t *covariance)
 {
-    free (covariance->covariance);
+    melissa_free (covariance->covariance);
     free_mean (&covariance->mean1);
     free_mean (&covariance->mean2);
 }

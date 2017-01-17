@@ -77,9 +77,6 @@ void finalize_field_data (field_ptr        field,
 
 long int count_bytes_written (stats_options_t  *options);
 
-void print_zmq_error(int         ret,
-                     const char* port_name);
-
 int string_recv (void *socket,
                  char *recv_buff);
 

@@ -84,9 +84,9 @@ void comm_n_to_m_init (int           *rcounts,
 
     new_message = 0;
 
-    pull_data->push_rank = malloc (pull_data->total_nb_messages * sizeof(int));
-    pull_data->pull_rank = malloc (pull_data->total_nb_messages * sizeof(int));
-    pull_data->message_sizes = malloc (pull_data->total_nb_messages * sizeof(int));
+    pull_data->push_rank = melissa_malloc (pull_data->total_nb_messages * sizeof(int));
+    pull_data->pull_rank = melissa_malloc (pull_data->total_nb_messages * sizeof(int));
+    pull_data->message_sizes = melissa_malloc (pull_data->total_nb_messages * sizeof(int));
 
     pull_data->push_rank[0] = 0;
     pull_data->pull_rank[0] = 0;
@@ -144,8 +144,8 @@ void add_field (field_ptr *field, char* field_name, int data_size)
     int i;
     if (*field == NULL)
     {
-        *field = malloc(sizeof(field_t));
-        (*field)->stats_data = malloc (data_size * sizeof(stats_data_t));
+        *field = melissa_malloc(sizeof(field_t));
+        (*field)->stats_data = melissa_malloc (data_size * sizeof(stats_data_t));
         for (i=0; i<data_size; i++)
         {
             (*field)->stats_data[i].is_valid=0;
@@ -230,8 +230,8 @@ void finalize_field_data (field_ptr        field,
                 free_data (&field->stats_data[i]);
             }
         }
-        free (field->stats_data);
-        free (field);
+        melissa_free (field->stats_data);
+        melissa_free (field);
         field = NULL;
     }
     return;
@@ -261,53 +261,6 @@ long int count_bytes_written (stats_options_t  *options)
         bytes_written += options->nb_parameters * 2 *options->global_vect_size*sizeof(float)*options->nb_time_steps;
     }
     return bytes_written;
-}
-
-void print_zmq_error(int         ret,
-                     const char* port_name)
-{
-    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-    if (ret == EINVAL)
-    {
-        fprintf(stderr, "The endpoint supplied is invalid.\n");
-    }
-    else if (ret == EPROTONOSUPPORT)
-    {
-        fprintf(stderr, "The requested transport protocol is not supported.\n");
-    }
-    else if (ret == ENOCOMPATPROTO)
-    {
-        fprintf(stderr, "The requested transport protocol is not compatible with the socket type.\n");
-    }
-    else if (ret == EADDRINUSE)
-    {
-        fprintf(stderr, "The requested address is already in use.\n");
-    }
-    else if (ret == EADDRNOTAVAIL)
-    {
-        fprintf(stderr, "The requested address was not local.\n");
-    }
-    else if (ret == ENODEV)
-    {
-        fprintf(stderr, "The requested address specifies a nonexistent interface.\n");
-    }
-    else if (ret == ETERM)
-    {
-        fprintf(stderr, "The ZeroMQ context associated with the specified socket was terminated.\n");
-    }
-    else if (ret == ENOTSOCK)
-    {
-        fprintf(stderr, "The provided socket was invalid.\n");
-    }
-    else if (ret == EMTHREAD)
-    {
-        fprintf(stderr, "No I/O thread is available to accomplish the task.\n");
-    }
-    else
-    {
-        fprintf(stderr, "Unknown error.\n");
-    }
-    exit(0);
 }
 
 int string_recv (void  *socket,

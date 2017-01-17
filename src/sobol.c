@@ -37,8 +37,8 @@ void init_sobol_martinez (sobol_martinez_t *sobol_indices,
     init_covariance (&(sobol_indices->total_order_covariance), vect_size);
     init_variance (&(sobol_indices->variance_k), vect_size);
 
-    sobol_indices->first_order_values = calloc (vect_size, sizeof(double));
-    sobol_indices->total_order_values = calloc (vect_size, sizeof(double));
+    sobol_indices->first_order_values = melissa_calloc (vect_size, sizeof(double));
+    sobol_indices->total_order_values = melissa_calloc (vect_size, sizeof(double));
     sobol_indices->confidence_interval[0] = 1;
     sobol_indices->confidence_interval[1] = 1;
 }
@@ -226,6 +226,6 @@ void free_sobol_martinez (sobol_martinez_t *sobol_indices)
     free_covariance (&(sobol_indices->first_order_covariance));
     free_covariance (&(sobol_indices->total_order_covariance));
     free_variance (&(sobol_indices->variance_k));
-    free (sobol_indices->first_order_values);
-    free (sobol_indices->total_order_values);
+    melissa_free (sobol_indices->first_order_values);
+    melissa_free (sobol_indices->total_order_values);
 }

@@ -32,7 +32,7 @@
 void init_variance (variance_t *variance,
                     const int   vect_size)
 {
-    variance->variance = calloc (vect_size, sizeof(double));
+    variance->variance = melissa_calloc (vect_size, sizeof(double));
     init_mean (&(variance->mean_structure),
                vect_size);
 }
@@ -249,9 +249,9 @@ void update_global_mean_and_variance (variance_t *variance,
 
     if (rank == 0)
     {
-        global_mean = malloc (vect_size * sizeof(double));
+        global_mean = melissa_malloc (vect_size * sizeof(double));
         memcpy (global_mean, variance->mean_structure.mean, vect_size * sizeof(double));
-        global_variance = malloc (vect_size * sizeof(double));
+        global_variance = melissa_malloc (vect_size * sizeof(double));
         memcpy (global_variance, variance->variance, vect_size * sizeof(double));
 
         for (i=1; i<comm_size; i++)
@@ -274,9 +274,9 @@ void update_global_mean_and_variance (variance_t *variance,
             variance->mean_structure.increment += temp_inc;
         }
         memcpy (variance->mean_structure.mean, global_mean, vect_size * sizeof(double));
-        free (global_mean);
+        melissa_free (global_mean);
         memcpy (variance->variance, global_variance, vect_size * sizeof(double));
-        free (global_variance);
+        melissa_free (global_variance);
     }
     else // rank == 0
     {
@@ -303,6 +303,6 @@ void update_global_mean_and_variance (variance_t *variance,
 
 void free_variance (variance_t *variance)
 {
-    free (variance->mean_structure.mean);
-    free (variance->variance);
+    melissa_free (variance->mean_structure.mean);
+    melissa_free (variance->variance);
 }

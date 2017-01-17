@@ -68,14 +68,14 @@ int main (int argc, char **argv)
 
     stats_options.global_vect_size = 10;
 
-    local_vect_sizes = malloc (comm_data.comm_size * sizeof(int));
+    local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
     for (i=0; i<comm_data.comm_size; i++)
     {
         local_vect_sizes[i] = stats_options.global_vect_size / comm_data.comm_size;
         if (i < stats_options.global_vect_size % comm_data.comm_size)
             local_vect_sizes[i] += 1;
     }
-    buffer = malloc (local_vect_sizes[comm_data.rank] * sizeof(double));
+    buffer = melissa_malloc (local_vect_sizes[comm_data.rank] * sizeof(double));
 
     nb_iterations = stats_options.nb_groups * stats_options.nb_time_steps ;
     sprintf(field_name[0], "HeatC");
@@ -170,10 +170,10 @@ int main (int argc, char **argv)
     {
         for (i=0; i<stats_options.nb_parameters+2; i++)
         {
-            free (buff_tab_ptr[i]);
+            melissa_free (buff_tab_ptr[i]);
         }
     }
-    free (buff_tab_ptr);
+    melissa_free (buff_tab_ptr);
 
     if (end_signal == 0)
     {
@@ -183,7 +183,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
                             );
     }
-    free (buffer);
+    melissa_free (buffer);
 
 #ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI

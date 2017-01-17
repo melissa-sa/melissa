@@ -340,7 +340,7 @@ void write_stats_ensight (stats_data_t    **data,
         offset += local_vect_sizes[i];
     }
 
-    s_buffer = malloc (options->global_vect_size * sizeof(float));
+    s_buffer = melissa_malloc (options->global_vect_size * sizeof(float));
 
     if (options->mean_op == 1 && options->variance_op == 0)
     {
@@ -836,7 +836,7 @@ void write_stats_ensight (stats_data_t    **data,
             }
         }
     }
-    free (s_buffer);
+    melissa_free (s_buffer);
 }
 
 /**
@@ -880,11 +880,11 @@ void read_ensight (stats_options_t  *options,
 
     if (comm_data->rank == 0)
     {
-        r_buffer = malloc (options->global_vect_size * sizeof(float));
+        r_buffer = melissa_malloc (options->global_vect_size * sizeof(float));
     }
     else
     {
-        r_buffer = malloc (local_vect_sizes[comm_data->rank] * sizeof(float));
+        r_buffer = melissa_malloc (local_vect_sizes[comm_data->rank] * sizeof(float));
     }
 
     if (comm_data->rank == 0)
@@ -916,6 +916,6 @@ void read_ensight (stats_options_t  *options,
     {
         in_vect[i] = (double)r_buffer[i];
     }
-    free (r_buffer);
+    melissa_free (r_buffer);
 #endif // BUILD_WITH_MPI
 }

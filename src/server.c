@@ -95,42 +95,22 @@ int main (int argc, char **argv)
     port_no = 100 + comm_data.rank;
     sprintf (port_name, "tcp://*:11%d", port_no);
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
-    ret = zmq_bind (data_puller, port_name);
-    if (ret != 0)
-    {
-        ret = errno;
-        print_zmq_error(ret, port_name);
-    }
+    melissa_bind (data_puller, port_name);
 #ifdef BUILD_WITH_PY_ZMQ
     if(stats_options.sobol_op == 1)
     {
 
         sprintf (port_name, "tcp://localhost:5555");
-        ret = zmq_connect (python_requester, port_name);
-        if (ret != 0)
-        {
-            ret = errno;
-            print_zmq_error(ret, port_name);
-        }
+        melissa_connect (python_requester, port_name);
     }
 #endif // BUILD_WITH_PY_ZMQ
 
     if (comm_data.rank == 0)
     {
-        ret = zmq_bind (init_responder, "tcp://*:2002");
-        if (ret != 0)
-        {
-            ret = errno;
-            print_zmq_error(ret, "tcp://*:2002");
-        }
-        ret = zmq_bind (connexion_responder, "tcp://*:2003");
-        if (ret != 0)
-        {
-            ret = errno;
-            print_zmq_error(ret, "tcp://*:2003");
-        }
+        melissa_bind (init_responder, "tcp://*:2002");
+        melissa_bind (connexion_responder, "tcp://*:2003");
 
-        node_names = malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size * sizeof(char));
+        node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
 
         first_connect = 2;
         first_init = 2;
@@ -150,7 +130,7 @@ int main (int argc, char **argv)
         MPI_Bcast(&comm_data.client_comm_size, 1, MPI_INT, 0, comm_data.comm);
         if (comm_data.rank != 0)
         {
-            client_vect_sizes = malloc (comm_data.client_comm_size * sizeof(int));
+            client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
         }
         fprintf (stdout, " ok \n");
 
@@ -209,7 +189,7 @@ int main (int argc, char **argv)
             MPI_Bcast(rinit_tab, 2, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
             comm_data.client_comm_size = rinit_tab[0];
-            client_vect_sizes = malloc (comm_data.client_comm_size * sizeof(int));
+            client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
             first_init = 0;
         }
 
@@ -247,7 +227,7 @@ int main (int argc, char **argv)
             {
                 stats_options.global_vect_size += client_vect_sizes[i];
             }
-            local_vect_sizes = malloc (comm_data.comm_size * sizeof(int));
+            local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
             for (i=0; i<comm_data.comm_size; i++)
             {
                 local_vect_sizes[i] = stats_options.global_vect_size / comm_data.comm_size;
@@ -255,8 +235,8 @@ int main (int argc, char **argv)
                     local_vect_sizes[i] += 1;
             }
 
-            comm_data.rcounts = calloc (comm_data.client_comm_size, sizeof(int));
-            comm_data.rdispls = calloc (comm_data.client_comm_size, sizeof(int));
+            comm_data.rcounts = melissa_calloc (comm_data.client_comm_size, sizeof(int));
+            comm_data.rdispls = melissa_calloc (comm_data.client_comm_size, sizeof(int));
 
             comm_n_to_m_init (comm_data.rcounts,
                               comm_data.rdispls,
@@ -273,15 +253,15 @@ int main (int argc, char **argv)
                 recv_buff_size *= stats_options.nb_parameters+2;
             }
             recv_buff_size += MAX_FIELD_NAME * sizeof(char) + 4 * sizeof(int);
-            buffer = malloc (recv_buff_size);
+            buffer = melissa_malloc (recv_buff_size);
 
             if (stats_options.sobol_op == 1)
             {
-                buff_tab_ptr = malloc ((stats_options.nb_parameters + 2) * sizeof(double*));
+                buff_tab_ptr = melissa_malloc ((stats_options.nb_parameters + 2) * sizeof(double*));
             }
             else
             {
-                buff_tab_ptr = malloc (sizeof(double*));
+                buff_tab_ptr = melissa_malloc (sizeof(double*));
             }
             first_connect = 0;
         }
@@ -504,11 +484,11 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PY_ZMQ
         zmq_ctx_term (context);
     }
-    free (buff_tab_ptr);
+    melissa_free (buff_tab_ptr);
 
     if (comm_data.rank == 0)
     {
-        free(node_names);
+        melissa_free(node_names);
     }
 
     interval1 = 0;
@@ -526,9 +506,9 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
                             );
     }
-    free (buffer);
-    free (comm_data.rcounts);
-    free (comm_data.rdispls);
+    melissa_free (buffer);
+    melissa_free (comm_data.rcounts);
+    melissa_free (comm_data.rdispls);
 
 #ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI

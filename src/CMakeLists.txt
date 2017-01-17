@@ -4,6 +4,7 @@ target_link_libraries(stats m)
 install(TARGETS stats DESTINATION bin)
 install(FILES stats.h DESTINATION include)
 install(FILES server.h DESTINATION include)
+install(FILES melissa_utils.h DESTINATION include)
 configure_file(master.py master.py COPYONLY)
 
 if(BUILD_WITH_FLOWVR)

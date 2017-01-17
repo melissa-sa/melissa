@@ -32,8 +32,8 @@
 void init_min_max (min_max_t *min_max,
                    const int  vect_size)
 {
-    min_max->min = malloc (vect_size * sizeof(double));
-    min_max->max = malloc (vect_size * sizeof(double));
+    min_max->min = melissa_malloc (vect_size * sizeof(double));
+    min_max->max = melissa_malloc (vect_size * sizeof(double));
     min_max->is_init = 0;
 }
 
@@ -98,6 +98,6 @@ void min_and_max (double     in_vect[],
 
 void free_min_max (min_max_t *min_max)
 {
-    free (min_max->min);
-    free (min_max->max);
+    melissa_free (min_max->min);
+    melissa_free (min_max->max);
 }

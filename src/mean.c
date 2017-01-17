@@ -32,7 +32,7 @@
 void init_mean (mean_t    *mean,
                 const int  vect_size)
 {
-    mean->mean = calloc (vect_size, sizeof(double));
+    mean->mean = melissa_calloc (vect_size, sizeof(double));
     mean->increment = 0;
 }
 
@@ -179,7 +179,7 @@ void update_global_mean (mean_t    *mean,
             mean->increment += temp_inc;
         }
         memcpy (mean->mean, global_mean, vect_size * sizeof(double));
-        free (global_mean);
+        melissa_free (global_mean);
     }
     else // rank == 0
     {
@@ -205,5 +205,5 @@ void update_global_mean (mean_t    *mean,
 
 void free_mean (mean_t *mean)
 {
-    free (mean->mean);
+    melissa_free (mean->mean);
 }
