@@ -17,6 +17,7 @@
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
 #include "melissa_utils.h"
+#include "melissa_options.h"
 #include "mean.h"
 #include "variance.h"
 #include "min_max.h"
@@ -106,34 +107,6 @@ typedef struct conditional_variance_s conditional_variance_t; /**< type correspo
 /**
  *******************************************************************************
  *
- * @struct stats_options_s
- *
- * Structure to store options parsed from command line
- *
- *******************************************************************************/
-
-struct stats_options_s
-{
-    int                  nb_time_steps;    /**< numberb of time steps of the study                               */
-    int                  nb_parameters;    /**< nb of variables parameters of the study                          */
-    int                  nb_groups;        /**< nb of simulation sets of the study (Sobol only)                  */
-    int                  nb_simu;          /**< nb of simulation of the study                                    */
-    int                  mean_op;          /**< 1 if the user needs to calculate the mean, 0 otherwise.          */
-    int                  variance_op;      /**< 1 if the user needs to calculate the variance, 0 otherwise.      */
-    int                  min_and_max_op;   /**< 1 if the user needs to calculate min and max, 0 otherwise.       */
-    int                  threshold_op;     /**< 1 if the user needs to compute threshold exceedance, 0 otherwise */
-    double               threshold;        /**< threshold used to compute threshold exceedance                   */
-    int                  sobol_op;         /**< 1 if the user needs to compute sobol indices, 0 otherwise        */
-    int                  sobol_order;      /**< max order of the computes sobol indices                          */
-    int                  global_vect_size; /**< global size of input vector                                      */
-    int                  restart;          /**< 1 if restart, 0 otherwise                                        */
-};
-
-typedef struct stats_options_s stats_options_t; /**< type corresponding to stats_options_s */
-
-/**
- *******************************************************************************
- *
  * @struct stats_data_s
  *
  * Structure to store global parameters
@@ -179,8 +152,6 @@ struct comm_data_s
 
 typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s */
 
-void stats_check_options (stats_options_t  *options);
-
 //void init_conditional_means (conditional_mean_t *conditional_means,
 //                             stats_data_t       *data);
 
@@ -213,14 +184,6 @@ void stats_check_options (stats_options_t  *options);
 
 //void free_conditional_variance (conditional_variance_t *conditional_variance);
 
-void stats_get_options (int               argc,
-                        char            **argv,
-                        stats_options_t  *options);
-
-void print_options (stats_options_t *options);
-
-//void free_options (stats_options_t *options);
-
 long int mem_conso (stats_options_t *options);
 
 void init_data (stats_data_t    *data,
@@ -249,10 +212,6 @@ void write_stats_ensight(stats_data_t    **data,
                          char             *field);
 
 void finalize_stats (stats_data_t *data);
-
-void write_options (stats_options_t *options);
-
-int read_options(stats_options_t  *options);
 
 void write_client_data (int *client_comm_size,
                         int *client_vect_sizes);

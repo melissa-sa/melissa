@@ -1,6 +1,6 @@
 /**
  *
- * @file get_options.c
+ * @file melissa_options.c
  * @brief Parse commande line to get stats options.
  * @author Terraz Théophile
  * @date 2016-03-03

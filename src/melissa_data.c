@@ -1,6 +1,6 @@
 /**
  *
- * @file stats_data.c
+ * @file melissa_data.c
  * @brief Routines related to the stats_data structure.
  * @author Terraz Théophile
  * @date 2016-05-24

@@ -38,8 +38,9 @@ set(ALL_SRCS
              covariance.h
              sobol.c
              sobol.h
-             get_options.c
-             stats_data.c
+             melissa_options.c
+             melissa_options.h
+             melissa_data.c
              compute_stats.c
              server.c
              server_helper.c
