@@ -1,7 +1,7 @@
 /**
  *
  * @file compute_stats.c
- * @brief Functions called by the user.
+ * @brief Functions called by the server.
  * @author Terraz Théophile
  * @date 2016-15-03
  *

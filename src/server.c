@@ -58,23 +58,26 @@ int main (int argc, char **argv)
     zmq_msg_t           msg;
 
 #ifdef BUILD_WITH_MPI
+    // === init MPI === //
+
     MPI_Init (&argc, &argv);
     comm_data.comm = MPI_COMM_WORLD;
     MPI_Comm_size(comm_data.comm, &comm_data.comm_size);
     MPI_Comm_rank (comm_data.comm, &comm_data.rank);
-    if (comm_data.rank == 0)
-    {
-        fprintf(stdout, "MPI_Comm_size = %d\n", comm_data.comm_size);
-    }
 #else
     comm_data.comm_size       = 1;
     comm_data.rank            = 0;
 #endif // BUILD_WITH_MPI
+
+    // === Get the node adress === //
+
     melissa_get_node_name (node_name);
-    fprintf(stdout, "node name = %s, rank = %d\n", node_name, comm_data.rank);
+
 #ifdef BUILD_WITH_PROBES
     start_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
+
+    // === Install signal handler === //
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
             printf("\ncan't catch SIGINT\n");
@@ -83,14 +86,17 @@ int main (int argc, char **argv)
     if (signal(SIGUSR2, sig_handler) == SIG_ERR)
             printf("\ncan't catch SIGUSR2\n");
 
+    // == Read options from command line === //
+
     stats_get_options (argc, argv, &stats_options);
     if (comm_data.rank == 0)
     {
         print_options (&stats_options);
         write_options (&stats_options);
     }
-
     nb_iterations = stats_options.nb_groups * stats_options.nb_time_steps ;
+
+    // === Open data puller port === //
 
     port_no = 100 + comm_data.rank;
     sprintf (port_name, "tcp://*:11%d", port_no);
@@ -99,7 +105,6 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PY_ZMQ
     if(stats_options.sobol_op == 1)
     {
-
         sprintf (port_name, "tcp://localhost:5555");
         melissa_connect (python_requester, port_name);
     }
@@ -116,7 +121,7 @@ int main (int argc, char **argv)
         first_init = 2;
     }
 
-    // ===   Restart part   === //
+    // === Restart initialisation === //
 
     if (stats_options.restart == 1)
     {
@@ -135,7 +140,8 @@ int main (int argc, char **argv)
         fprintf (stdout, " ok \n");
 
     }
-    // === End restart part === //
+
+    // === Gather node names on node 0 === //
 
 #ifdef BUILD_WITH_MPI
     MPI_Gather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, comm_data.comm);
@@ -146,6 +152,9 @@ int main (int argc, char **argv)
     sinit_tab[0] = comm_data.comm_size;
     sinit_tab[1] = stats_options.sobol_op;
     sinit_tab[2] = stats_options.nb_parameters;
+
+    // === Main loop === //
+
     while (1)
     {
 #ifdef BUILD_WITH_PROBES
@@ -160,6 +169,8 @@ int main (int argc, char **argv)
         end_wait_time = melissa_get_time();
         total_wait_time += end_wait_time - start_wait_time;
 #endif // BUILD_WITH_PROBES
+
+        // === If message on the connexion port === //
 
         if (items[0].revents & ZMQ_POLLIN)
         {
@@ -183,6 +194,8 @@ int main (int argc, char **argv)
             }
         }
 
+        // === Only after the first connexion, broadcast client info === //
+
         if (first_init == 1)
         {
 #ifdef BUILD_WITH_MPI
@@ -192,6 +205,8 @@ int main (int argc, char **argv)
             client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
             first_init = 0;
         }
+
+        // === Second part of the connexion message, only for rank 0 === //
 
         if (get_next_message == 1)
         {
@@ -212,11 +227,11 @@ int main (int argc, char **argv)
             end_comm_time = melissa_get_time();
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
-            if (comm_data.rank == 0)
-            {
-                write_client_data (&comm_data.client_comm_size, client_vect_sizes);
-            }
+            write_client_data (&comm_data.client_comm_size, client_vect_sizes);
         }
+
+        // === Melissa structures initialisation, after the second part of the first connexion === //
+
         if (first_connect == 1 && first_init == 0)
         {
 #ifdef BUILD_WITH_MPI
@@ -266,32 +281,16 @@ int main (int argc, char **argv)
             first_connect = 0;
         }
 
+        // === Data reception and statistics computation === //
+
         if (items[1].revents & ZMQ_POLLIN)
         {
 #ifdef BUILD_WITH_PROBES
             start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 #ifdef ZEROCOPY
-#ifdef DEBUG
-            if (comm_data.rank==0)
-            {
-                fprintf(stdout, "init message \n");
-            }
-#endif //DEBUG
             zmq_msg_init (&msg);
-#ifdef DEBUG
-            if (comm_data.rank==0)
-            {
-                fprintf(stdout, "recv message \n");
-            }
-#endif //DEBUG
             zmq_msg_recv (&msg, data_puller, 0);
-#ifdef DEBUG
-            if (comm_data.rank==0)
-            {
-                fprintf(stdout, "pointer to data \n");
-            }
-#endif //DEBUG
             buf_ptr = zmq_msg_data (&msg);
 #else // ZEROCOPY
             zmq_recv (data_puller, buffer, recv_buff_size, 0);
@@ -349,20 +348,9 @@ int main (int argc, char **argv)
 
             if (stats_options.sobol_op != 1)
             {
-#ifdef DEBUG
-                if (comm_data.rank==0)
-                {
-                    fprintf(stdout, "compute stats \n");
-                }
-#endif //DEBUG
                 buff_tab_ptr[0] = (double*)buf_ptr;
+                // === Compute classical statistics === //
                 compute_stats (&data_ptr[client_rank], time_step-1, 1, buff_tab_ptr);
-#ifdef DEBUG
-                if (comm_data.rank==0)
-                {
-                    fprintf(stdout, "update iteration number \n");
-                }
-#endif //DEBUG
                 iteration++;
             }
             else
@@ -372,6 +360,7 @@ int main (int argc, char **argv)
                     buff_tab_ptr[i] = (double*)buf_ptr;
                     buf_ptr += comm_data.rcounts[client_rank] * sizeof(double);
                 }
+                // === Compute classical statistics + Sobol indices === //
                 compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
                 iteration++;
                 confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), stats_options.nb_parameters, data_ptr[client_rank].vect_size);
@@ -394,28 +383,17 @@ int main (int argc, char **argv)
             string_recv(python_requester, port_name);
 #endif // BUILD_WITH_PY_ZMQ
 #ifdef ZEROCOPY
-#ifdef DEBUG
-            if (comm_data.rank==0)
-            {
-                fprintf(stdout, "closing message \n");
-            }
-#endif //DEBUG
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
             {
                 buff_tab_ptr[i] = NULL;
             }
             buf_ptr = NULL;
             zmq_msg_close (&msg);
-#ifdef DEBUG
-            if (comm_data.rank==0)
-            {
-                fprintf(stdout, "polling \n");
-            }
-#endif //DEBUG
 #endif // ZEROCOPY
         }
 
 #ifdef BUILD_WITH_PY_ZMQ
+        // === Send a message to the Python master in case of Sobol indices convergence === //
         if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && stats_options.sobol_op == 1)
         {
             sprintf (port_name, "converged %d", comm_data.rank);
@@ -427,6 +405,8 @@ int main (int argc, char **argv)
             }
         }
 #endif // BUILD_WITH_PY_ZMQ
+
+        // === Signal handling === //
 
         if (end_signal == SIGINT)
         {
@@ -448,8 +428,7 @@ int main (int argc, char **argv)
             return 0;
             break;
         }
-
-        if (end_signal == SIGUSR1 || end_signal == SIGUSR2)
+        else if (end_signal == SIGUSR1 || end_signal == SIGUSR2)
         {
             break;
         }
@@ -470,6 +449,9 @@ int main (int argc, char **argv)
 
     if (end_signal == 0)
     {
+
+        // === Sockets deconnexion === //
+
         zmq_close (connexion_responder);
         zmq_close (init_responder);
         zmq_close (data_puller);
