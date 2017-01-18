@@ -35,7 +35,7 @@ static long int total_bytes_written = 0;
 struct field_s /**< Structure for a linked list of output fields */
 {
     char            name[MAX_FIELD_NAME]; /**< name of the field                   */
-    stats_data_t   *stats_data;           /**< stats_data structure                */
+    melissa_data_t *stats_data;           /**< stats_data structure                */
     struct field_s *next;                 /**< pointer to the next field structure */
 };
 typedef struct field_s field_t; /**< type corresponding to field_s */
@@ -63,7 +63,7 @@ void comm_n_to_m_init (int           *rcounts,
 
 void add_field (field_ptr *field, char* field_name, int data_size);
 
-stats_data_t* get_data_ptr (field_ptr field, char* field_name);
+melissa_data_t* get_data_ptr (field_ptr field, char* field_name);
 
 void finalize_field_data (field_ptr        field,
                           comm_data_t     *comm_data,

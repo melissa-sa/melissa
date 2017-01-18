@@ -36,10 +36,10 @@
  *
  *******************************************************************************/
 
-void compute_stats (stats_data_t  *data,
-                    const int      time_step,
-                    const int      nb_vect,
-                    double       **in_vect_tab)
+void compute_stats (melissa_data_t  *data,
+                    const int        time_step,
+                    const int        nb_vect,
+                    double         **in_vect_tab)
 {
     int     i, j;
     if (data->is_valid != 1)
@@ -131,7 +131,7 @@ void compute_stats (stats_data_t  *data,
  *
  *******************************************************************************/
 
-void finalize_stats (stats_data_t *data)
+void finalize_stats (melissa_data_t *data)
 {
 
 }

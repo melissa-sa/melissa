@@ -111,9 +111,9 @@ int read_client_data (int  *client_comm_size,
  *
  *******************************************************************************/
 
-void save_stats (stats_data_t *data,
-                 comm_data_t  *comm_data,
-                 char         *field_name)
+void save_stats (melissa_data_t *data,
+                 comm_data_t    *comm_data,
+                 char           *field_name)
 {
     char       file_name[256];
     int        i;
@@ -175,10 +175,10 @@ void save_stats (stats_data_t *data,
  *
  *******************************************************************************/
 
-void read_saved_stats (stats_data_t *data,
-                       comm_data_t  *comm_data,
-                       char         *field_name,
-                       int           client_rank)
+void read_saved_stats (melissa_data_t *data,
+                       comm_data_t    *comm_data,
+                       char           *field_name,
+                       int             client_rank)
 {
     char       file_name[256];
     FILE*      f = NULL;

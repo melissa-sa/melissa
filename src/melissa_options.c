@@ -13,7 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stats.h"
+#include "melissa_options.h"
+//#include "stats.h"
 
 static inline void stats_usage ()
 {

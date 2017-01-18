@@ -145,7 +145,7 @@ void add_field (field_ptr *field, char* field_name, int data_size)
     if (*field == NULL)
     {
         *field = melissa_malloc(sizeof(field_t));
-        (*field)->stats_data = melissa_malloc (data_size * sizeof(stats_data_t));
+        (*field)->stats_data = melissa_malloc (data_size * sizeof(melissa_data_t));
         for (i=0; i<data_size; i++)
         {
             (*field)->stats_data[i].is_valid=0;
@@ -159,7 +159,7 @@ void add_field (field_ptr *field, char* field_name, int data_size)
     }
 }
 
-stats_data_t* get_data_ptr (field_ptr field, char* field_name)
+melissa_data_t* get_data_ptr (field_ptr field, char* field_name)
 {
     if (field != NULL)
     {
@@ -227,7 +227,7 @@ void finalize_field_data (field_ptr        field,
         {
             if (comm_data->rcounts[i] > 0)
             {
-                free_data (&field->stats_data[i]);
+                melissa_free_data (&field->stats_data[i]);
             }
         }
         melissa_free (field->stats_data);
@@ -376,7 +376,7 @@ void global_confidence_sobol_martinez(field_ptr     field,
                                       double       *interval_tot)
 {
     int i, j, t, p;
-    stats_data_t *data;
+    melissa_data_t *data;
     if (field == NULL)
     {
         return;

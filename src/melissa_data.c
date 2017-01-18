@@ -5,7 +5,7 @@
  * @author Terraz Théophile
  * @date 2016-05-24
  *
- * @defgroup stats_data Stats data
+ * @defgroup melissa_data Stats data
  *
  **/
 
@@ -15,7 +15,7 @@
 #include <string.h>
 #include "stats.h"
 
-static void malloc_data (stats_data_t *data)
+static void melissa_alloc_data (melissa_data_t *data)
 {
     int i, j;
 
@@ -75,7 +75,7 @@ static void malloc_data (stats_data_t *data)
 /**
  *******************************************************************************
  *
- * @ingroup stats_data
+ * @ingroup melissa_data
  *
  * This function initializes the data structure
  *
@@ -92,9 +92,9 @@ static void malloc_data (stats_data_t *data)
  *
  *******************************************************************************/
 
-void init_data (stats_data_t    *data,
-                stats_options_t *options,
-                int              vect_size)
+void melissa_init_data (melissa_data_t    *data,
+                        stats_options_t *options,
+                        int              vect_size)
 {
     data->vect_size       = vect_size;
     data->options         = options;
@@ -106,8 +106,8 @@ void init_data (stats_data_t    *data,
 //    data->cond_means      = NULL;
     data->sobol_indices   = NULL;
     data->computed        = NULL;
-    check_data (data);
-    malloc_data (data);
+    melissa_check_data (data);
+    melissa_alloc_data (data);
 }
 
 /**
@@ -125,7 +125,7 @@ void init_data (stats_data_t    *data,
  *
  *******************************************************************************/
 
-void check_data (stats_data_t *data)
+void melissa_check_data (melissa_data_t *data)
 {
     // check options
     melissa_check_options(data->options);
@@ -137,7 +137,7 @@ void check_data (stats_data_t *data)
 /**
  *******************************************************************************
  *
- * @ingroup stats_data
+ * @ingroup melissa_data
  *
  * This function frees the memory in the data structure
  *
@@ -148,7 +148,7 @@ void check_data (stats_data_t *data)
  *
  *******************************************************************************/
 
-void free_data (stats_data_t *data)
+void melissa_free_data (melissa_data_t *data)
 {
     int i, j;
 

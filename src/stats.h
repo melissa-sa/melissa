@@ -18,6 +18,7 @@
 #endif // BUILD_WITH_MPI
 #include "melissa_utils.h"
 #include "melissa_options.h"
+#include "melissa_data.h"
 #include "mean.h"
 #include "variance.h"
 #include "min_max.h"
@@ -107,31 +108,6 @@ typedef struct conditional_variance_s conditional_variance_t; /**< type correspo
 /**
  *******************************************************************************
  *
- * @struct stats_data_s
- *
- * Structure to store global parameters
- *
- *******************************************************************************/
-
-struct stats_data_s
-{
-    int                  vect_size;     /**< local size of input vectors                               */
-    stats_options_t     *options;       /**< pointer to an option structure                            */
-    int                  is_valid;      /**< 1 if the structure has been checked                       */
-    mean_t              *means;         /**< array of mean structures, size nb_time_steps              */
-    variance_t          *variances;     /**< array of variance structures, size nb_time_steps          */
-    min_max_t           *min_max;       /**< array of min and max structures, size nb_time_steps       */
-    int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
-//    conditional_mean_t  *cond_means;    /**< array of conditional mean structures, size nb_time_steps  */
-    sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
-    int                 *computed;      /**< iterations counter, size nb_time_steps                    */
-};
-
-typedef struct stats_data_s stats_data_t; /**< type corresponding to stats_data_s */
-
-/**
- *******************************************************************************
- *
  * @struct comm_data_s
  *
  * Structure to store communications parameters
@@ -186,46 +162,38 @@ typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s *
 
 long int mem_conso (stats_options_t *options);
 
-void init_data (stats_data_t    *data,
-                stats_options_t *options,
-                int              vect_size);
+void compute_stats (melissa_data_t *data,
+                    const int       time_step,
+                    const int       nb_vect,
+                    double        **in_vect_tab);
 
-void check_data (stats_data_t *data);
-
-void free_data (stats_data_t *data);
-
-void compute_stats (stats_data_t  *data,
-                    const int      time_step,
-                    const int      nb_vect,
-                    double       **in_vect_tab);
-
-void write_stats(stats_data_t    **data,
+void write_stats(melissa_data_t  **data,
                  stats_options_t  *options,
                  comm_data_t      *comm_data,
                  int              *local_vect_sizes,
                  char             *field);
 
-void write_stats_ensight(stats_data_t    **data,
+void write_stats_ensight(melissa_data_t  **data,
                          stats_options_t  *options,
                          comm_data_t      *comm_data,
                          int              *local_vect_sizes,
                          char             *field);
 
-void finalize_stats (stats_data_t *data);
+void finalize_stats (melissa_data_t *data);
 
 void write_client_data (int *client_comm_size,
                         int *client_vect_sizes);
 
 int read_client_data (int  *client_comm_size,
-                       int **client_vect_sizes);
+                      int **client_vect_sizes);
 
-void save_stats (stats_data_t *data,
-                 comm_data_t  *comm_data,
-                 char         *field_name);
+void save_stats (melissa_data_t *data,
+                 comm_data_t    *comm_data,
+                 char           *field_name);
 
-void read_saved_stats (stats_data_t *data,
-                       comm_data_t  *comm_data,
-                       char         *field_name,
-                       int           client_rank);
+void read_saved_stats (melissa_data_t *data,
+                       comm_data_t    *comm_data,
+                       char           *field_name,
+                       int             client_rank);
 
 #endif // STATS_H

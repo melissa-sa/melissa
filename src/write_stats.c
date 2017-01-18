@@ -41,7 +41,7 @@
  *
  *******************************************************************************/
 
-void write_stats (stats_data_t    **data,
+void write_stats (melissa_data_t  **data,
                   stats_options_t  *options,
                   comm_data_t      *comm_data,
                   int              *local_vect_sizes,
@@ -317,7 +317,7 @@ void write_stats (stats_data_t    **data,
  *
  *******************************************************************************/
 
-void write_stats_ensight (stats_data_t    **data,
+void write_stats_ensight (melissa_data_t  **data,
                           stats_options_t  *options,
                           comm_data_t      *comm_data,
                           int              *local_vect_sizes,

@@ -41,6 +41,7 @@ set(ALL_SRCS
              melissa_options.c
              melissa_options.h
              melissa_data.c
+             melissa_data.h
              compute_stats.c
              server.c
              server_helper.c

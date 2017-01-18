@@ -24,7 +24,7 @@ void sig_handler(int signo) {
 int main (int argc, char **argv)
 {
     stats_options_t     stats_options;
-    stats_data_t       *data_ptr = NULL;
+    melissa_data_t     *data_ptr = NULL;
     field_ptr           field = NULL;
     comm_data_t         comm_data;
     int                 time_step;
@@ -328,7 +328,7 @@ int main (int argc, char **argv)
             }
             if (data_ptr[client_rank].is_valid != 1)
             {
-                init_data (&data_ptr[client_rank], &stats_options, comm_data.rcounts[client_rank]);
+                melissa_init_data (&data_ptr[client_rank], &stats_options, comm_data.rcounts[client_rank]);
                 if (stats_options.restart == 1)
                 {
                     fprintf (stdout, "reading checkpoint files...");

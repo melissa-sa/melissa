@@ -22,7 +22,7 @@ void sig_handler(int signo) {
 int main (int argc, char **argv)
 {
     stats_options_t     stats_options;
-    stats_data_t       *data_ptr = NULL;
+    melissa_data_t     *data_ptr = NULL;
     field_ptr           field = NULL;
     comm_data_t         comm_data;
     int                 time_step;
@@ -97,7 +97,7 @@ int main (int argc, char **argv)
                     data_ptr = get_data_ptr (field, field_name_ptr);
                     if (data_ptr->is_valid != 1)
                     {
-                        init_data (data_ptr, &stats_options, local_vect_sizes[comm_data.rank]);
+                        melissa_init_data (data_ptr, &stats_options, local_vect_sizes[comm_data.rank]);
                     }
 
                     sprintf(file_name, "results.%s.%.*d", field, 5, time_step +1);
