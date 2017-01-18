@@ -160,24 +160,24 @@ typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s *
 
 //void free_conditional_variance (conditional_variance_t *conditional_variance);
 
-long int mem_conso (stats_options_t *options);
+long int mem_conso (melissa_options_t *options);
 
 void compute_stats (melissa_data_t *data,
                     const int       time_step,
                     const int       nb_vect,
                     double        **in_vect_tab);
 
-void write_stats(melissa_data_t  **data,
-                 stats_options_t  *options,
-                 comm_data_t      *comm_data,
-                 int              *local_vect_sizes,
-                 char             *field);
+void write_stats(melissa_data_t    **data,
+                 melissa_options_t  *options,
+                 comm_data_t        *comm_data,
+                 int                *local_vect_sizes,
+                 char               *field);
 
-void write_stats_ensight(melissa_data_t  **data,
-                         stats_options_t  *options,
-                         comm_data_t      *comm_data,
-                         int              *local_vect_sizes,
-                         char             *field);
+void write_stats_ensight(melissa_data_t    **data,
+                         melissa_options_t  *options,
+                         comm_data_t        *comm_data,
+                         int                *local_vect_sizes,
+                         char               *field);
 
 void finalize_stats (melissa_data_t *data);
 

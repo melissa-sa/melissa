@@ -93,8 +93,8 @@ static void melissa_alloc_data (melissa_data_t *data)
  *******************************************************************************/
 
 void melissa_init_data (melissa_data_t    *data,
-                        stats_options_t *options,
-                        int              vect_size)
+                        melissa_options_t *options,
+                        int                vect_size)
 {
     data->vect_size       = vect_size;
     data->options         = options;

@@ -49,7 +49,7 @@ static inline void str_tolower (char *string)
     return;
 }
 
-static inline void init_options (stats_options_t *options)
+static inline void init_options (melissa_options_t *options)
 {
     // everything is set to 0
     options->nb_time_steps   = 0;
@@ -66,8 +66,8 @@ static inline void init_options (stats_options_t *options)
     options->restart         = 0;
 }
 
-static inline void get_operations (char            *name,
-                                   stats_options_t *options)
+static inline void get_operations (char              *name,
+                                   melissa_options_t *options)
 {
     const char  s[2] = ":";
     char       *temp_char;
@@ -139,7 +139,7 @@ static inline void get_operations (char            *name,
  *
  *******************************************************************************/
 
-void melissa_print_options (stats_options_t *options)
+void melissa_print_options (melissa_options_t *options)
 {
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "nb_time_step = %d\n", options->nb_time_steps);
@@ -185,8 +185,8 @@ void melissa_print_options (stats_options_t *options)
  *
  *******************************************************************************/
 
-void melissa_get_options (int argc, char  **argv,
-                        stats_options_t  *options)
+void melissa_get_options (int argc, char    **argv,
+                          melissa_options_t  *options)
 {
     int opt;
 
@@ -261,7 +261,7 @@ void melissa_get_options (int argc, char  **argv,
  *
  *******************************************************************************/
 
-void melissa_check_options (stats_options_t  *options)
+void melissa_check_options (melissa_options_t  *options)
 {
     // check consistency
     if (options->mean_op == 0 &&
@@ -341,7 +341,7 @@ void melissa_check_options (stats_options_t  *options)
  *
  *******************************************************************************/
 
-void melissa_write_options (stats_options_t *options)
+void melissa_write_options (melissa_options_t *options)
 {
     FILE* f;
 
@@ -366,7 +366,7 @@ void melissa_write_options (stats_options_t *options)
  *
  *******************************************************************************/
 
-int melissa_read_options (stats_options_t *options)
+int melissa_read_options (melissa_options_t *options)
 {
     FILE* f = NULL;
     int ret = 1;

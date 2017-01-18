@@ -18,7 +18,7 @@
 
 int main (int argc, char **argv)
 {
-    stats_options_t options;
+    melissa_options_t options;
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);

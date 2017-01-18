@@ -23,7 +23,7 @@ void sig_handler(int signo) {
 
 int main (int argc, char **argv)
 {
-    stats_options_t     stats_options;
+    melissa_options_t   melissa_options;
     melissa_data_t     *data_ptr = NULL;
     field_ptr           field = NULL;
     comm_data_t         comm_data;
@@ -88,13 +88,13 @@ int main (int argc, char **argv)
 
     // == Read options from command line === //
 
-    melissa_get_options (argc, argv, &stats_options);
+    melissa_get_options (argc, argv, &melissa_options);
     if (comm_data.rank == 0)
     {
-        melissa_print_options (&stats_options);
-        melissa_write_options (&stats_options);
+        melissa_print_options (&melissa_options);
+        melissa_write_options (&melissa_options);
     }
-    nb_iterations = stats_options.nb_groups * stats_options.nb_time_steps ;
+    nb_iterations = melissa_options.nb_groups * melissa_options.nb_time_steps ;
 
     // === Open data puller port === //
 
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     melissa_bind (data_puller, port_name);
 #ifdef BUILD_WITH_PY_ZMQ
-    if(stats_options.sobol_op == 1)
+    if(melissa_options.sobol_op == 1)
     {
         sprintf (port_name, "tcp://localhost:5555");
         melissa_connect (python_requester, port_name);
@@ -123,7 +123,7 @@ int main (int argc, char **argv)
 
     // === Restart initialisation === //
 
-    if (stats_options.restart == 1)
+    if (melissa_options.restart == 1)
     {
         first_connect = 1;
         first_init = 0;
@@ -150,8 +150,8 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
 
     sinit_tab[0] = comm_data.comm_size;
-    sinit_tab[1] = stats_options.sobol_op;
-    sinit_tab[2] = stats_options.nb_parameters;
+    sinit_tab[1] = melissa_options.sobol_op;
+    sinit_tab[2] = melissa_options.nb_parameters;
 
     // === Main loop === //
 
@@ -237,16 +237,16 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
             MPI_Bcast(client_vect_sizes, comm_data.client_comm_size, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
-            stats_options.global_vect_size = 0;
+            melissa_options.global_vect_size = 0;
             for (i=0; i< comm_data.client_comm_size; i++)
             {
-                stats_options.global_vect_size += client_vect_sizes[i];
+                melissa_options.global_vect_size += client_vect_sizes[i];
             }
             local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
             for (i=0; i<comm_data.comm_size; i++)
             {
-                local_vect_sizes[i] = stats_options.global_vect_size / comm_data.comm_size;
-                if (i < stats_options.global_vect_size % comm_data.comm_size)
+                local_vect_sizes[i] = melissa_options.global_vect_size / comm_data.comm_size;
+                if (i < melissa_options.global_vect_size % comm_data.comm_size)
                     local_vect_sizes[i] += 1;
             }
 
@@ -255,7 +255,7 @@ int main (int argc, char **argv)
 
             comm_n_to_m_init (comm_data.rcounts,
                               comm_data.rdispls,
-                              stats_options.global_vect_size,
+                              melissa_options.global_vect_size,
                               local_vect_sizes,
                               client_vect_sizes,
                               comm_data.client_comm_size,
@@ -263,16 +263,16 @@ int main (int argc, char **argv)
                               &pull_data);
             nb_iterations *= pull_data.local_nb_messages;
             recv_buff_size = pull_data.buff_size * sizeof(double);
-            if (stats_options.sobol_op == 1)
+            if (melissa_options.sobol_op == 1)
             {
-                recv_buff_size *= stats_options.nb_parameters+2;
+                recv_buff_size *= melissa_options.nb_parameters+2;
             }
             recv_buff_size += MAX_FIELD_NAME * sizeof(char) + 4 * sizeof(int);
             buffer = melissa_malloc (recv_buff_size);
 
-            if (stats_options.sobol_op == 1)
+            if (melissa_options.sobol_op == 1)
             {
-                buff_tab_ptr = melissa_malloc ((stats_options.nb_parameters + 2) * sizeof(double*));
+                buff_tab_ptr = melissa_malloc ((melissa_options.nb_parameters + 2) * sizeof(double*));
             }
             else
             {
@@ -328,8 +328,8 @@ int main (int argc, char **argv)
             }
             if (data_ptr[client_rank].is_valid != 1)
             {
-                melissa_init_data (&data_ptr[client_rank], &stats_options, comm_data.rcounts[client_rank]);
-                if (stats_options.restart == 1)
+                melissa_init_data (&data_ptr[client_rank], &melissa_options, comm_data.rcounts[client_rank]);
+                if (melissa_options.restart == 1)
                 {
                     fprintf (stdout, "reading checkpoint files...");
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
@@ -346,7 +346,7 @@ int main (int argc, char **argv)
             start_computation_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
-            if (stats_options.sobol_op != 1)
+            if (melissa_options.sobol_op != 1)
             {
                 buff_tab_ptr[0] = (double*)buf_ptr;
                 // === Compute classical statistics === //
@@ -355,19 +355,19 @@ int main (int argc, char **argv)
             }
             else
             {
-                for (i=0; i<stats_options.nb_parameters+2; i++)
+                for (i=0; i<melissa_options.nb_parameters+2; i++)
                 {
                     buff_tab_ptr[i] = (double*)buf_ptr;
                     buf_ptr += comm_data.rcounts[client_rank] * sizeof(double);
                 }
                 // === Compute classical statistics + Sobol indices === //
-                compute_stats (&data_ptr[client_rank], time_step-1, stats_options.nb_parameters+2, buff_tab_ptr);
+                compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr);
                 iteration++;
-                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), stats_options.nb_parameters, data_ptr[client_rank].vect_size);
+                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
                 nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
                                                                         0.01,
-                                                                        stats_options.nb_time_steps,
-                                                                        stats_options.nb_parameters);
+                                                                        melissa_options.nb_time_steps,
+                                                                        melissa_options.nb_parameters);
             }
 #ifdef BUILD_WITH_PROBES
             end_computation_time = melissa_get_time();
@@ -394,7 +394,7 @@ int main (int argc, char **argv)
 
 #ifdef BUILD_WITH_PY_ZMQ
         // === Send a message to the Python master in case of Sobol indices convergence === //
-        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && stats_options.sobol_op == 1)
+        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
         {
             sprintf (port_name, "converged %d", comm_data.rank);
             zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
@@ -434,7 +434,7 @@ int main (int argc, char **argv)
         }
 
 #ifdef BUILD_WITH_PY_ZMQ
-        if (nb_fields > 0 && stats_options.sobol_op == 0)
+        if (nb_fields > 0 && melissa_options.sobol_op == 0)
 #else  // BUILD_WITH_PY_ZMQ
         if (nb_fields > 0)
 #endif // BUILD_WITH_PY_ZMQ
@@ -456,7 +456,7 @@ int main (int argc, char **argv)
         zmq_close (init_responder);
         zmq_close (data_puller);
 #ifdef BUILD_WITH_PY_ZMQ
-        if (stats_options.sobol_op == 1)
+        if (melissa_options.sobol_op == 1)
         {
             sprintf (port_name, "finished %d", comm_data.rank);
             zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
@@ -475,14 +475,14 @@ int main (int argc, char **argv)
 
     interval1 = 0;
     interval_tot = 0;
-    if (stats_options.sobol_op == 1)
+    if (melissa_options.sobol_op == 1)
     {
         global_confidence_sobol_martinez (field, &comm_data, &interval1, &interval_tot);
     }
 
     if (end_signal == 0)
     {
-        finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes
+        finalize_field_data (field, &comm_data, &pull_data, &melissa_options, local_vect_sizes
 #ifdef BUILD_WITH_PROBES
                             , &total_write_time
 #endif // BUILD_WITH_PROBES
@@ -507,7 +507,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
-        fprintf (stdout, " --- Number of simulations:           %d\n", stats_options.nb_simu);
+        fprintf (stdout, " --- Number of simulations:           %d\n", melissa_options.nb_simu);
         fprintf (stdout, " --- Number of simulation cores:      %d\n", comm_data.client_comm_size);
         fprintf (stdout, " --- Number of analysis cores:        %d\n", comm_data.comm_size);
         fprintf (stdout, " --- Average communication time:      %g s\n", total_comm_time);
@@ -516,9 +516,9 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
         fprintf (stdout, " --- Bytes recieved:                  %ld bytes\n",total_bytes_recv);
-        fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&stats_options));
-        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
-        if (stats_options.sobol_op == 1)
+        fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&melissa_options));
+        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&melissa_options)*nb_fields);
+        if (melissa_options.sobol_op == 1)
         {
             fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
             fprintf (stdout, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);

@@ -21,7 +21,7 @@ void sig_handler(int signo) {
 
 int main (int argc, char **argv)
 {
-    stats_options_t     stats_options;
+    melissa_options_t   melissa_options;
     melissa_data_t     *data_ptr = NULL;
     field_ptr           field = NULL;
     comm_data_t         comm_data;
@@ -59,25 +59,25 @@ int main (int argc, char **argv)
     if (signal(SIGUSR2, sig_handler) == SIG_ERR)
         printf("\ncan't catch SIGUSR2\n");
 
-    melissa_get_options (argc, argv, &stats_options);
+    melissa_get_options (argc, argv, &melissa_options);
     if (comm_data.rank == 0)
     {
-        melissa_print_options (&stats_options);
-        melissa_write_options (&stats_options);
+        melissa_print_options (&melissa_options);
+        melissa_write_options (&melissa_options);
     }
 
-    stats_options.global_vect_size = 10;
+    melissa_options.global_vect_size = 10;
 
     local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
     for (i=0; i<comm_data.comm_size; i++)
     {
-        local_vect_sizes[i] = stats_options.global_vect_size / comm_data.comm_size;
-        if (i < stats_options.global_vect_size % comm_data.comm_size)
+        local_vect_sizes[i] = melissa_options.global_vect_size / comm_data.comm_size;
+        if (i < melissa_options.global_vect_size % comm_data.comm_size)
             local_vect_sizes[i] += 1;
     }
     buffer = melissa_malloc (local_vect_sizes[comm_data.rank] * sizeof(double));
 
-    nb_iterations = stats_options.nb_groups * stats_options.nb_time_steps ;
+    nb_iterations = melissa_options.nb_groups * melissa_options.nb_time_steps ;
     sprintf(field_name[0], "HeatC");
     sprintf(field_name[1], "scalar1");
     for (i=0; i<nb_fields; i++)
@@ -85,26 +85,26 @@ int main (int argc, char **argv)
         add_field(&field, field_name[i], 1);
     }
 
-    for (time_step=0; time_step<stats_options.nb_time_steps; time_step++)
+    for (time_step=0; time_step<melissa_options.nb_time_steps; time_step++)
     {
-        for (group_id=0; group_id<stats_options.nb_groups; group_id++)
+        for (group_id=0; group_id<melissa_options.nb_groups; group_id++)
         {
             for (i=0; i<nb_fields; i++)
             {
-                for (rank_id=0; rank_id<stats_options.nb_parameters+2; rank_id++)
+                for (rank_id=0; rank_id<melissa_options.nb_parameters+2; rank_id++)
                 {
                     field_name_ptr = field_name[i];
                     data_ptr = get_data_ptr (field, field_name_ptr);
                     if (data_ptr->is_valid != 1)
                     {
-                        melissa_init_data (data_ptr, &stats_options, local_vect_sizes[comm_data.rank]);
+                        melissa_init_data (data_ptr, &melissa_options, local_vect_sizes[comm_data.rank]);
                     }
 
                     sprintf(file_name, "results.%s.%.*d", field, 5, time_step +1);
 #ifdef BUILD_WITH_PROBES
                     start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-                    read_ensight (stats_options, comm_data, buffer, local_vect_sizes, file_name);
+                    read_ensight (melissa_options, comm_data, buffer, local_vect_sizes, file_name);
 #ifdef BUILD_WITH_PROBES
                     end_comm_time = melissa_get_time();
                     total_comm_time += end_comm_time - start_comm_time;
@@ -115,21 +115,21 @@ int main (int argc, char **argv)
                     start_computation_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
-                    if (stats_options.sobol_op != 1)
+                    if (melissa_options.sobol_op != 1)
                     {
                         buff_tab_ptr[0] = (double*)buffer;
                         compute_stats (data_ptr, time_step, 1, buff_tab_ptr);
                         iteration++;
                     }
-                    else if (rank_id == stats_options.nb_parameters+1)
+                    else if (rank_id == melissa_options.nb_parameters+1)
                     {
-                        compute_stats (data_ptr, time_step, stats_options.nb_parameters+2, buff_tab_ptr);
+                        compute_stats (data_ptr, time_step, melissa_options.nb_parameters+2, buff_tab_ptr);
                         iteration++;
-                        confidence_sobol_martinez (&(data_ptr->sobol_indices[time_step]), stats_options.nb_parameters, local_vect_sizes[comm_data.rank]);
+                        confidence_sobol_martinez (&(data_ptr->sobol_indices[time_step]), melissa_options.nb_parameters, local_vect_sizes[comm_data.rank]);
                         //                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
                         //                                                                        0.01,
-                        //                                                                        stats_options.nb_time_steps,
-                        //                                                                        stats_options.nb_parameters);
+                        //                                                                        melissa_options.nb_time_steps,
+                        //                                                                        melissa_options.nb_parameters);
 
 #ifdef BUILD_WITH_PROBES
                         end_computation_time = melissa_get_time();
@@ -166,9 +166,9 @@ int main (int argc, char **argv)
         }
     }
 
-    if (stats_options.sobol_op == 1)
+    if (melissa_options.sobol_op == 1)
     {
-        for (i=0; i<stats_options.nb_parameters+2; i++)
+        for (i=0; i<melissa_options.nb_parameters+2; i++)
         {
             melissa_free (buff_tab_ptr[i]);
         }
@@ -177,7 +177,7 @@ int main (int argc, char **argv)
 
     if (end_signal == 0)
     {
-        finalize_field_data (field, &comm_data, &pull_data, &stats_options, local_vect_sizes
+        finalize_field_data (field, &comm_data, &pull_data, &melissa_options, local_vect_sizes
 #ifdef BUILD_WITH_PROBES
                             , &total_write_time
 #endif // BUILD_WITH_PROBES
@@ -196,15 +196,15 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
-        fprintf (stdout, " --- Number of simulations:           %d\n", stats_options.nb_simu);
+        fprintf (stdout, " --- Number of simulations:           %d\n", melissa_options.nb_simu);
         fprintf (stdout, " --- Number of simulation cores:      %d\n", comm_data.client_comm_size);
         fprintf (stdout, " --- Number of analysis cores:        %d\n", comm_data.comm_size);
         fprintf (stdout, " --- Average reading time:            %g s\n", total_comm_time);
         fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
-        fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&stats_options));
-        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&stats_options)*nb_fields);
+        fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&melissa_options));
+        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&melissa_options)*nb_fields);
     }
 #endif // BUILD_WITH_PROBES
 

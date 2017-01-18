@@ -12,13 +12,13 @@
 /**
  *******************************************************************************
  *
- * @struct stats_options_s
+ * @struct melissa_options_s
  *
  * Structure to store options parsed from command line
  *
  *******************************************************************************/
 
-struct stats_options_s
+struct melissa_options_s
 {
     int                  nb_time_steps;    /**< numberb of time steps of the study                               */
     int                  nb_parameters;    /**< nb of variables parameters of the study                          */
@@ -35,18 +35,18 @@ struct stats_options_s
     int                  restart;          /**< 1 if restart, 0 otherwise                                        */
 };
 
-typedef struct stats_options_s stats_options_t; /**< type corresponding to stats_options_s */
+typedef struct melissa_options_s melissa_options_t; /**< type corresponding to melissa_options_s */
 
-void melissa_get_options (int               argc,
-                        char            **argv,
-                        stats_options_t  *options);
+void melissa_get_options (int                 argc,
+                          char              **argv,
+                          melissa_options_t  *options);
 
-void melissa_check_options (stats_options_t  *options);
+void melissa_check_options (melissa_options_t  *options);
 
-void melissa_print_options (stats_options_t *options);
+void melissa_print_options (melissa_options_t *options);
 
-void melissa_write_options (stats_options_t *options);
+void melissa_write_options (melissa_options_t *options);
 
-int melissa_read_options(stats_options_t  *options);
+int melissa_read_options(melissa_options_t  *options);
 
 #endif // MELISSA_OPTIONS_H

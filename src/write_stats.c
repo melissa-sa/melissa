@@ -41,11 +41,11 @@
  *
  *******************************************************************************/
 
-void write_stats (melissa_data_t  **data,
-                  stats_options_t  *options,
-                  comm_data_t      *comm_data,
-                  int              *local_vect_sizes,
-                  char             *field
+void write_stats (melissa_data_t    **data,
+                  melissa_options_t  *options,
+                  comm_data_t        *comm_data,
+                  int                *local_vect_sizes,
+                  char               *field
                   )
 {
     long long int        i, t, offset = 0;
@@ -317,11 +317,11 @@ void write_stats (melissa_data_t  **data,
  *
  *******************************************************************************/
 
-void write_stats_ensight (melissa_data_t  **data,
-                          stats_options_t  *options,
-                          comm_data_t      *comm_data,
-                          int              *local_vect_sizes,
-                          char             *field)
+void write_stats_ensight (melissa_data_t    **data,
+                          melissa_options_t  *options,
+                          comm_data_t        *comm_data,
+                          int                *local_vect_sizes,
+                          char               *field)
 {
     long int    i, j, t, param, offset=0, temp_offset=0;
     FILE*       f;
@@ -865,7 +865,7 @@ void write_stats_ensight (melissa_data_t  **data,
  *
  *******************************************************************************/
 
-void read_ensight (stats_options_t  *options,
+void read_ensight (melissa_options_t  *options,
                    comm_data_t      *comm_data,
                    double           *in_vect,
                    int              *local_vect_sizes,

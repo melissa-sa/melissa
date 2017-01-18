@@ -65,17 +65,17 @@ void add_field (field_ptr *field, char* field_name, int data_size);
 
 melissa_data_t* get_data_ptr (field_ptr field, char* field_name);
 
-void finalize_field_data (field_ptr        field,
-                          comm_data_t     *comm_data,
-                          pull_data_t     *pull_data,
-                          stats_options_t *options,
-                          int             *local_vect_sizes
+void finalize_field_data (field_ptr          field,
+                          comm_data_t       *comm_data,
+                          pull_data_t       *pull_data,
+                          melissa_options_t *options,
+                          int               *local_vect_sizes
 #ifdef BUILD_WITH_PROBES
                           , double *write_time
 #endif // BUILD_WITH_PROBES
                           );
 
-long int count_bytes_written (stats_options_t  *options);
+long int count_bytes_written (melissa_options_t  *options);
 
 int string_recv (void *socket,
                  char *recv_buff);

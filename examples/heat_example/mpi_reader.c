@@ -9,7 +9,7 @@
 
 int main (int argc, char **argv)
 {
-    stats_options_t options;
+    melissa_options_t options;
     int vect_size, i, j, t, offset = 0;
     int m = 100, n = 100;
     int comm_size, rank;

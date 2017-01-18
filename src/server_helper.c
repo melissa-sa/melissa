@@ -175,11 +175,11 @@ melissa_data_t* get_data_ptr (field_ptr field, char* field_name)
     return NULL;
 }
 
-void finalize_field_data (field_ptr        field,
-                          comm_data_t     *comm_data,
-                          pull_data_t     *pull_data,
-                          stats_options_t *options,
-                          int             *local_vect_sizes
+void finalize_field_data (field_ptr         field,
+                          comm_data_t       *comm_data,
+                          pull_data_t       *pull_data,
+                          melissa_options_t *options,
+                          int               *local_vect_sizes
 #ifdef BUILD_WITH_PROBES
                           , double *write_time
 #endif // BUILD_WITH_PROBES
@@ -237,7 +237,7 @@ void finalize_field_data (field_ptr        field,
     return;
 }
 
-long int count_bytes_written (stats_options_t  *options)
+long int count_bytes_written (melissa_options_t  *options)
 {
     long int bytes_written = 0;
     if (options->mean_op == 1)
@@ -294,7 +294,7 @@ int string_recv (void  *socket,
  *
  *******************************************************************************/
 
-long int mem_conso (stats_options_t *options)
+long int mem_conso (melissa_options_t *options)
 {
     int i = 0;
     long int memory = 0;
