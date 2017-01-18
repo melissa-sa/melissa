@@ -1,11 +1,8 @@
 /**
  *
- * @file stats.h
+ * @file melissa_options.h
  * @author Terraz Théophile
- * @date 2016-15-02
- *
- * @defgroup stats_base Basic stats
- * @defgroup sobol Sobol related stats
+ * @date 2017-15-01
  *
  **/
 
@@ -40,16 +37,16 @@ struct stats_options_s
 
 typedef struct stats_options_s stats_options_t; /**< type corresponding to stats_options_s */
 
-void stats_get_options (int               argc,
+void melissa_get_options (int               argc,
                         char            **argv,
                         stats_options_t  *options);
 
-void stats_check_options (stats_options_t  *options);
+void melissa_check_options (stats_options_t  *options);
 
-void print_options (stats_options_t *options);
+void melissa_print_options (stats_options_t *options);
 
-void write_options (stats_options_t *options);
+void melissa_write_options (stats_options_t *options);
 
-int read_options(stats_options_t  *options);
+int melissa_read_options(stats_options_t  *options);
 
 #endif // MELISSA_OPTIONS_H

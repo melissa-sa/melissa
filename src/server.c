@@ -88,11 +88,11 @@ int main (int argc, char **argv)
 
     // == Read options from command line === //
 
-    stats_get_options (argc, argv, &stats_options);
+    melissa_get_options (argc, argv, &stats_options);
     if (comm_data.rank == 0)
     {
-        print_options (&stats_options);
-        write_options (&stats_options);
+        melissa_print_options (&stats_options);
+        melissa_write_options (&stats_options);
     }
     nb_iterations = stats_options.nb_groups * stats_options.nb_time_steps ;
 

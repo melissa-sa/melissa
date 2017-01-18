@@ -128,7 +128,7 @@ void init_data (stats_data_t    *data,
 void check_data (stats_data_t *data)
 {
     // check options
-    stats_check_options(data->options);
+    melissa_check_options(data->options);
 
     // every parameter is now validated
     data->is_valid = 1;

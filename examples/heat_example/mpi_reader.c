@@ -27,7 +27,7 @@ int main (int argc, char **argv)
     MPI_Comm_size(comm, &comm_size);
     MPI_Comm_rank (comm, &rank);
 
-    stats_get_options (argc, argv, &options);
+    melissa_get_options (argc, argv, &options);
 
     vect_size = m * n;
     printf("m * n = %d * %d = %d\n",m,n,vect_size);

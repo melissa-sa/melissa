@@ -5,7 +5,7 @@
  * @author Terraz Théophile
  * @date 2016-03-03
  *
- * @defgroup get_options Get options from command line
+ * @defgroup melissa_options Get options from command line
  *
  **/
 
@@ -127,7 +127,7 @@ static inline void get_operations (char            *name,
 /**
  *******************************************************************************
  *
- * @ingroup get_options
+ * @ingroup melissa_options
  *
  * This function displays the global parameters on stdout
  *
@@ -138,7 +138,7 @@ static inline void get_operations (char            *name,
  *
  *******************************************************************************/
 
-void print_options (stats_options_t *options)
+void melissa_print_options (stats_options_t *options)
 {
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "nb_time_step = %d\n", options->nb_time_steps);
@@ -167,7 +167,7 @@ void print_options (stats_options_t *options)
 /**
  *******************************************************************************
  *
- * @ingroup get_options
+ * @ingroup melissa_options
  *
  * This function parses command line options and fill the parameter structure
  *
@@ -184,7 +184,7 @@ void print_options (stats_options_t *options)
  *
  *******************************************************************************/
 
-void stats_get_options (int argc, char  **argv,
+void melissa_get_options (int argc, char  **argv,
                         stats_options_t  *options)
 {
     int opt;
@@ -202,10 +202,10 @@ void stats_get_options (int argc, char  **argv,
 
         switch (opt) {
         case 'r':
-            if (0 == read_options (options))
+            if (0 == melissa_read_options (options))
             {
                 options->restart = 1;
-                stats_check_options (options);
+                melissa_check_options (options);
                 return;
             }
             fprintf (stdout, "WARNING: can not read option.save file\n");
@@ -241,7 +241,7 @@ void stats_get_options (int argc, char  **argv,
 
     } while (opt != -1);
 
-    stats_check_options (options);
+    melissa_check_options (options);
 
     return;
 }
@@ -249,7 +249,7 @@ void stats_get_options (int argc, char  **argv,
 /**
  *******************************************************************************
  *
- * @ingroup get_options
+ * @ingroup melissa_options
  *
  * This function validates the option structure
  *
@@ -260,7 +260,7 @@ void stats_get_options (int argc, char  **argv,
  *
  *******************************************************************************/
 
-void stats_check_options (stats_options_t  *options)
+void melissa_check_options (stats_options_t  *options)
 {
     // check consistency
     if (options->mean_op == 0 &&
@@ -324,4 +324,62 @@ void stats_check_options (stats_options_t  *options)
             exit (1);
         }
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_options
+ *
+ * This function writes the option structure on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *options
+ * pointer to the structure containing global options
+ *
+ *******************************************************************************/
+
+void melissa_write_options (stats_options_t *options)
+{
+    FILE* f;
+
+    f = fopen("options.save", "wb+");
+
+    fwrite(options, sizeof(*options), 1, f);
+
+    fclose(f);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_options
+ *
+ * This function reads a saved option structure on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] *options
+ * pointer to the structure containing global options
+ *
+ *******************************************************************************/
+
+int melissa_read_options (stats_options_t *options)
+{
+    FILE* f = NULL;
+    int ret = 1;
+
+    f = fopen("options.save", "rb");
+
+    if (f != NULL)
+    {
+        if (1 == fread(options, sizeof(*options), 1, f));
+        {
+            ret = 0;
+        }
+    }
+
+    fclose(f);
+    return ret;
 }

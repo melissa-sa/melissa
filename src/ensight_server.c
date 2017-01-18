@@ -59,11 +59,11 @@ int main (int argc, char **argv)
     if (signal(SIGUSR2, sig_handler) == SIG_ERR)
         printf("\ncan't catch SIGUSR2\n");
 
-    stats_get_options (argc, argv, &stats_options);
+    melissa_get_options (argc, argv, &stats_options);
     if (comm_data.rank == 0)
     {
-        print_options (&stats_options);
-        write_options (&stats_options);
+        melissa_print_options (&stats_options);
+        melissa_write_options (&stats_options);
     }
 
     stats_options.global_vect_size = 10;

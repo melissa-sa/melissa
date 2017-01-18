@@ -23,64 +23,6 @@
  *
  * @ingroup save_stats
  *
- * This function writes the option structure on disc
- *
- *******************************************************************************
- *
- * @param[in] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
-
-void write_options (stats_options_t *options)
-{
-    FILE* f;
-
-    f = fopen("options.save", "wb+");
-
-    fwrite(options, sizeof(*options), 1, f);
-
-    fclose(f);
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
- * This function reads a saved option structure on disc
- *
- *******************************************************************************
- *
- * @param[in,out] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
-
-int read_options (stats_options_t *options)
-{
-    FILE* f = NULL;
-    int ret = 1;
-
-    f = fopen("options.save", "rb");
-
-    if (f != NULL)
-    {
-        if (1 == fread(options, sizeof(*options), 1, f));
-        {
-            ret = 0;
-        }
-    }
-
-    fclose(f);
-    return ret;
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function saves some client data on disc
  *
  *******************************************************************************
