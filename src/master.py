@@ -469,7 +469,7 @@ if ((job_step == "container") or (job_step == "simu")):
             else:
                 snd_message = "stop"
         if (not Melissa in call_bash("oarstat -u --sql \"state = 'Running'\"")):
-            print "Melissa crashed, restart at iteration %d" % iterations_server[0]
+            print "Melissa crashed at iteration %d" % iterations_server[0]
 
 
 
