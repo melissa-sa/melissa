@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "stats.h"
+#include "melissa_data.h"
 
 #ifdef BUILD_WITH_MPI
 inline void d_print_vector (double    in_vect[],

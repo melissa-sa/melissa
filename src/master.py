@@ -17,7 +17,7 @@ nb_simu               = nb_groups*(nb_parameters+2)
 nb_time_steps         = 200
 operations            = ["mean","variance","min","max","threshold","sobol"]
 threshold             = 0.7
-mpi_OAR_options       = "--mca orte_rsh_agent \"oarsh\" --mca btl openib,sm,self --mca pml ^cm"
+mpi_OAR_options       = "--mca orte_rsh_agent \"oarsh\" --mca btl openib,sm,self --mca pml ^cm --machinefile $OAR_NODE_FILE"
 mpi_Slurm_options     = ""
 home_path             = "/scratch/G95757"
 server_path           = home_path+"/Melissa/build/src"
@@ -386,7 +386,7 @@ if (job_step == "first_step"):
         C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
     ret = np.zeros(nb_parameters + 2)
     for i in range(nb_groups):
-        create_case_str = saturne_path+"/code_saturne create -s group"+str(i)+" -c rank0"
+        create_case_str = saturne_path+"/code_saturne create --noref -s group"+str(i)+" -c rank0"
         if ("sobol" in operations) or ("sobol_indices" in operations):
             for j in range(nb_parameters+1):
                 create_case_str += " -c rank"+str(j+1)

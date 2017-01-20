@@ -4,9 +4,6 @@
  * @author Terraz Théophile
  * @date 2016-15-02
  *
- * @defgroup stats_base Basic stats
- * @defgroup sobol Sobol related stats
- *
  **/
 
 #ifndef STATS_H
@@ -105,29 +102,6 @@ typedef struct conditional_variance_s conditional_variance_t; /**< type correspo
 
 //typedef struct sobol_index_s sobol_index_t; /**< type corresponding to sobol_index_s */
 
-/**
- *******************************************************************************
- *
- * @struct comm_data_s
- *
- * Structure to store communications parameters
- *
- *******************************************************************************/
-
-struct comm_data_s
-{
-    int       rank;             /**< rank of the MPI process (0 if sequential)      */
-    int       comm_size;        /**< size of the MPI communicator (1 if sequential) */
-    int       client_comm_size; /**< size of the clients communicators              */
-    int      *rcounts;          /**< counts for receiving datas                     */
-    int      *rdispls;          /**< displacements for receiving datas              */
-#ifdef BUILD_WITH_MPI
-    MPI_Comm  comm;             /**< MPI communicator                               */
-#endif // BUILD_WITH_MPI
-};
-
-typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s */
-
 //void init_conditional_means (conditional_mean_t *conditional_means,
 //                             stats_data_t       *data);
 
@@ -159,41 +133,5 @@ typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s *
 //                                  stats_data_t           *data);
 
 //void free_conditional_variance (conditional_variance_t *conditional_variance);
-
-long int mem_conso (melissa_options_t *options);
-
-void compute_stats (melissa_data_t *data,
-                    const int       time_step,
-                    const int       nb_vect,
-                    double        **in_vect_tab);
-
-void write_stats(melissa_data_t    **data,
-                 melissa_options_t  *options,
-                 comm_data_t        *comm_data,
-                 int                *local_vect_sizes,
-                 char               *field);
-
-void write_stats_ensight(melissa_data_t    **data,
-                         melissa_options_t  *options,
-                         comm_data_t        *comm_data,
-                         int                *local_vect_sizes,
-                         char               *field);
-
-void finalize_stats (melissa_data_t *data);
-
-void write_client_data (int *client_comm_size,
-                        int *client_vect_sizes);
-
-int read_client_data (int  *client_comm_size,
-                      int **client_vect_sizes);
-
-void save_stats (melissa_data_t *data,
-                 comm_data_t    *comm_data,
-                 char           *field_name);
-
-void read_saved_stats (melissa_data_t *data,
-                       comm_data_t    *comm_data,
-                       char           *field_name,
-                       int             client_rank);
 
 #endif // STATS_H

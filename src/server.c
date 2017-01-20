@@ -9,7 +9,6 @@
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
-#include "stats.h"
 #include "server.h"
 
 #define ZEROCOPY
@@ -28,13 +27,13 @@ int main (int argc, char **argv)
     field_ptr           field = NULL;
     comm_data_t         comm_data;
     int                 time_step;
-    int                 recv_buff_size, i, j, ret, client_rank;
-    char               *buffer, *buf_ptr;
+    int                 recv_buff_size, i, client_rank;
+    char               *buffer = NULL, *buf_ptr = NULL;
     double            **buff_tab_ptr;
     int                 iteration = 0, nb_iterations = 0;
     int                 port_no;
     char                port_name[MPI_MAX_PROCESSOR_NAME] = {0};
-    char               *node_names;
+    char               *node_names = NULL;
     int                 sinit_tab[3], rinit_tab[2];
     void               *context = zmq_ctx_new ();
     char                node_name[MPI_MAX_PROCESSOR_NAME];
@@ -48,10 +47,10 @@ int main (int argc, char **argv)
     int                 first_init = 1;
     int                 first_connect = 1;
     int                 get_next_message = 0;
-    int                *client_vect_sizes, *local_vect_sizes;
+    int                *client_vect_sizes = NULL, *local_vect_sizes = NULL;
     pull_data_t         pull_data;
     int                 nb_bufferized_messages = 10;
-    char               *field_name_ptr;
+    char               *field_name_ptr = NULL;
     int                 simu_id, group_id;
     int                 nb_converged_fields = 0;
     double              interval1, interval_tot;
@@ -138,7 +137,6 @@ int main (int argc, char **argv)
             client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
         }
         fprintf (stdout, " ok \n");
-
     }
 
     // === Gather node names on node 0 === //

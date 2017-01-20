@@ -43,14 +43,14 @@ set(ALL_SRCS
              melissa_data.c
              melissa_data.h
              compute_stats.c
+             compute_stats.h
              server.c
+             server.h
              server_helper.c
              melissa_utils.c
              melissa_utils.h
-             write_stats.c
-             save_data.c
-             server.h
-             stats.h)
+             melissa_io.c
+             melissa_io.h)
 
 set(ALL_API stats_api.c
             stats_api.h

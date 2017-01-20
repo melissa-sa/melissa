@@ -9,7 +9,6 @@
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
-#include "stats.h"
 #include "server.h"
 
 static volatile int end_signal = 0;

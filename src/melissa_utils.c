@@ -19,7 +19,7 @@
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
-#include "stats.h"
+#include "melissa_options.h"
 
 static void print_zmq_error(int         ret,
                             const char* port_name)
@@ -224,7 +224,7 @@ void melissa_bind (void *socket,
  *******************************************************************************/
 
 void melissa_connect (void *socket,
-                   char *port_name)
+                      char *port_name)
 {
     int ret;
     ret = zmq_connect (socket, port_name);
@@ -302,4 +302,71 @@ void melissa_get_node_name (char *node_name)
         gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup stats_data
+ *
+ * This function computes and displays the memory consumption of the library
+ *
+ *******************************************************************************
+ *
+ * @param[in] *options
+ * pointer to the structure containing global options
+ *
+ *******************************************************************************/
+
+long int mem_conso (melissa_options_t *options)
+{
+    int i = 0;
+    long int memory = 0;
+    long int temp_mem = 0;
+
+    if (options->mean_op != 0)
+    {
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Mean memory usage:               %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->variance_op != 0 && options->mean_op == 0)
+    {
+        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Variance memory usage:           %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->variance_op != 0 && options->mean_op != 0)
+    {
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Variance memory usage:           %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->min_and_max_op != 0)
+    {
+        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/;
+        fprintf(stdout, " --- Min and max memory usage:        %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->threshold_op != 0)
+    {
+        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(int);
+        fprintf(stdout, " --- Threshold memory usage:          %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+    if (options->sobol_op != 0)
+    {
+        // sobol indices
+        temp_mem  = options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // variances
+        temp_mem += options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // covariances
+        temp_mem += options->nb_parameters * 6 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        // glob variances
+        temp_mem += 2 * options->global_vect_size * options->nb_time_steps * sizeof(double);
+        fprintf(stdout, " --- Sobol indices memory usage:      %ld bytes\n", temp_mem);
+        memory += temp_mem;
+    }
+//    fprintf(stdout, " --- Total memory usage:      %d bytes\n", memory);
+    return memory;
 }

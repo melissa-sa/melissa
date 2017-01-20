@@ -20,6 +20,29 @@
 /**
  *******************************************************************************
  *
+ * @struct comm_data_s
+ *
+ * Structure to store communications parameters
+ *
+ *******************************************************************************/
+
+struct comm_data_s
+{
+    int       rank;             /**< rank of the MPI process (0 if sequential)      */
+    int       comm_size;        /**< size of the MPI communicator (1 if sequential) */
+    int       client_comm_size; /**< size of the clients communicators              */
+    int      *rcounts;          /**< counts for receiving datas                     */
+    int      *rdispls;          /**< displacements for receiving datas              */
+#ifdef BUILD_WITH_MPI
+    MPI_Comm  comm;             /**< MPI communicator                               */
+#endif // BUILD_WITH_MPI
+};
+
+typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s */
+
+/**
+ *******************************************************************************
+ *
  * @struct melissa_data_s
  *
  * Structure to store global parameters
@@ -35,7 +58,6 @@ struct melissa_data_s
     variance_t          *variances;     /**< array of variance structures, size nb_time_steps          */
     min_max_t           *min_max;       /**< array of min and max structures, size nb_time_steps       */
     int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
-//    conditional_mean_t  *cond_means;    /**< array of conditional mean structures, size nb_time_steps  */
     sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
     int                 *computed;      /**< iterations counter, size nb_time_steps                    */
 };

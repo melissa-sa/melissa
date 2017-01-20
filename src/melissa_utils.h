@@ -13,6 +13,7 @@
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
 #include <stdio.h>
+#include "melissa_options.h"
 
 
 void* melissa_malloc (size_t size);
@@ -31,5 +32,7 @@ void melissa_connect (void *socket,
 double melissa_get_time ();
 
 void melissa_get_node_name (char *node_name);
+
+long int mem_conso (melissa_options_t *options);
 
 #endif // MELISSA_UTILS_H

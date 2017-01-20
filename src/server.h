@@ -1,7 +1,6 @@
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
-#include "stats.h"
-
+#include "melissa_data.h"
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
@@ -50,6 +49,7 @@ struct pull_data_s /**< Helper structure for push pull socket */
     int    local_nb_messages; /**< local number of messages                        */
     int    buff_size;         /**< recieve buffer size                             */
 };
+
 typedef struct pull_data_s pull_data_t; /**< type corresponding to pull_data_s */
 
 void comm_n_to_m_init (int           *rcounts,

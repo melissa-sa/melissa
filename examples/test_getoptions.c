@@ -14,7 +14,7 @@
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
-#include "stats.h"
+#include "melissa_options.h"
 
 int main (int argc, char **argv)
 {

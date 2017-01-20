@@ -437,11 +437,7 @@ void connect_to_stats (const int *local_vect_size,
         // get Sobol master node name
         if (*sobol_rank == 0)
         {
-#ifdef BUILD_WITH_MPI
-            MPI_Get_processor_name(master_node_name, &i);
-#else
-            gethostname(master_node_name, MPI_MAX_PROCESSOR_NAME);
-#endif // BUILD_WITH_MPI
+            melissa_get_node_name (master_node_name);
             if (*rank == 0)
             {
                 master_node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));

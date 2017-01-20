@@ -5,7 +5,9 @@
  * @author Terraz Théophile
  * @date 2016-05-24
  *
- * @defgroup melissa_data Stats data
+ * @defgroup melissa_data Melissa data
+ * @defgroup stats_base Basic stats
+ * @defgroup sobol Sobol related stats
  *
  **/
 
@@ -13,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stats.h"
+#include "melissa_data.h"
 
 static void melissa_alloc_data (melissa_data_t *data)
 {

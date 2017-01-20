@@ -11,6 +11,7 @@
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
+#include <stdio.h>
 
 /**
  *******************************************************************************
