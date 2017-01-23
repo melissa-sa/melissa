@@ -8,6 +8,7 @@
 
 #ifndef COVARIANCE_H
 #define COVARIANCE_H
+#include "mean.h"
 
 /**
  *******************************************************************************

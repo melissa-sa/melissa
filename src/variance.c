@@ -66,17 +66,20 @@ void increment_mean_and_variance (double      in_vect[],
     double  temp;
     int     i;
 
-    partial_variance->mean_structure.increment += 1;
-
 #pragma omp parallel for
     for (i=0; i<vect_size; i++)
     {
         temp = partial_variance->mean_structure.mean[i];
-        partial_variance->mean_structure.mean[i] = temp + (in_vect[i] - temp)/partial_variance->mean_structure.increment;
-        partial_variance->variance[i] = (partial_variance->variance[i]*(partial_variance->mean_structure.increment-1)
-                                        + (in_vect[i] - temp) * (in_vect[i] - partial_variance->mean_structure.mean[i]))
-                                        / partial_variance->mean_structure.increment;
+        partial_variance->mean_structure.mean[i] = temp + (in_vect[i] - temp)/(partial_variance->mean_structure.increment+1);
+        if (partial_variance->mean_structure.increment > 0)
+        {
+            partial_variance->variance[i] = (partial_variance->variance[i]*(partial_variance->mean_structure.increment-1)
+                                             + (in_vect[i] - temp) * (in_vect[i] - partial_variance->mean_structure.mean[i]))
+                                             / (partial_variance->mean_structure.increment);
+        }
     }
+
+    partial_variance->mean_structure.increment += 1;
 }
 
 /**
@@ -149,9 +152,16 @@ void update_variance (variance_t *variance1,
     for (i=0; i<vect_size; i++)
     {
         delta = (variance1->mean_structure.mean[i] - variance2->mean_structure.mean[i]);
-        updated_variance->variance[i] = variance1->variance[i] + variance2->variance[i]
+// Classic :
+//        updated_variance->variance[i] = variance1->variance[i] + variance2->variance[i]
+//                                        + variance1->mean_structure.increment * variance2->mean_structure.increment
+//                                        * delta * delta / updated_variance->mean_structure.increment;
+// Unbiased :
+        updated_variance->variance[i] = ((variance1->mean_structure.increment - 1) * variance1->variance[i]
+                                        + (variance2->mean_structure.increment - 1) * variance2->variance[i]
                                         + variance1->mean_structure.increment * variance2->mean_structure.increment
-                                        * delta * delta / updated_variance->mean_structure.increment;
+                                        * delta * delta / updated_variance->mean_structure.increment)
+                                        / (updated_variance->mean_structure.increment - 1);
     }
 }
 
