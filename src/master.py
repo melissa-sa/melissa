@@ -14,7 +14,7 @@ batch_scheduler       = "Slurm"
 nb_parameters         = 6
 nb_groups             = 1000
 nb_simu               = nb_groups*(nb_parameters+2)
-nb_time_steps         = 200
+nb_time_steps         = 100
 operations            = ["mean","variance","min","max","threshold","sobol"]
 threshold             = 0.7
 mpi_OAR_options       = "--mca orte_rsh_agent \"oarsh\" --mca btl openib,sm,self --mca pml ^cm --machinefile $OAR_NODE_FILE"
@@ -35,8 +35,8 @@ nodes_saturne         = 4
 proc_per_node_saturne = 14
 openmp_threads        = 2
 nodes_melissa         = 3
-walltime_saturne      = "10:00:0"
-walltime_container    = "10:00:0"
+walltime_saturne      = "1:20:0"
+walltime_container    = "1:20:0"
 walltime_melissa      = "120:00:0"
 frontend              = "eofront2"
 coupling              = 1
@@ -112,16 +112,6 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
     fichier.close()
     os.system("cp "+workdir+"/case1/SRC/cs_user_mesh.c "+casedir+"/SRC/cs_user_mesh.c")
     return 0
-
-#def launch_simu (Ai, param):
-#    os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
-#    os.system("mpirun -n 3 ./heatc "+str(Ai[0])+" "+param)
-
-#def launch_melissa (command_line):
-#    os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
-#    os.system("mkdir resu")
-#    os.system("cd resu")
-#    os.system(command_line)
 
 def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_procs_max):
     contenu=""
