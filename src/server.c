@@ -418,6 +418,23 @@ int main (int argc, char **argv)
         }
 #endif // BUILD_WITH_PY_ZMQ
 
+        if (iteration % 1000 == 0)
+        {
+            field_ptr fptr = field;
+            while (fptr != NULL)
+            {
+                save_stats (fptr->stats_data, &comm_data, fptr->name);
+                fptr = field->next;
+                if (comm_data.rank == 0)
+                {
+                    char dir[256];
+                    getcwd(dir, 256*sizeof(char));
+                    fprintf(stderr, "statistic fields saved in %s\n", dir);
+                }
+            }
+        }
+
+
         // === Signal handling === //
 
         if (end_signal == SIGINT)

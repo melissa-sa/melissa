@@ -37,7 +37,7 @@ openmp_threads        = 2
 nodes_melissa         = 3
 walltime_saturne      = "1:20:0"
 walltime_container    = "1:20:0"
-walltime_melissa      = "120:00:0"
+walltime_melissa      = "240:00:0"
 frontend              = "eofront2"
 coupling              = 1
 xml_file_name         = "bundle_3x2_f16_param.xml"
@@ -239,6 +239,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "                                                                   \n"
     contenu += "# run Melissa                                                      \n"
     contenu += "echo  \"### Launch Melissa\"                                       \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
     contenu += "                                                                   \n"
