@@ -36,10 +36,10 @@ int main(int *argc, char **argv)
 
     for (j=0; j<vect_size * n; j++)
     {
-        tableau1[j] = j;
-        tableau2[j] = 2 * j;
+        tableau1[j] = rand();
+        tableau2[j] = rand();
     }
-    fprintf (stdout, "ref_mean1 = ");
+    fprintf (stdout, "ref_mean1       = ");
     for (i=0; i<vect_size; i++)
     {
         for (j=0; j<n; j++)
@@ -51,7 +51,7 @@ int main(int *argc, char **argv)
         ref_mean2[i] /= (double)n;
         fprintf (stdout, "%g ", ref_mean1[i]);
     }
-    fprintf (stdout, "ref_mean2 = ");
+    fprintf (stdout, "\nref_mean2       = ");
     for (i=0; i<vect_size; i++)
     {
         fprintf (stdout, "%g ", ref_mean2[i]);
@@ -73,7 +73,7 @@ int main(int *argc, char **argv)
 
     // covariance //
 
-    fprintf (stdout, "\nref_covariance = ");
+    fprintf (stdout, "\nref_covariance       = ");
     for (i=0; i<vect_size; i++)
     {
         for (j=0; j<n; j++)
@@ -88,10 +88,17 @@ int main(int *argc, char **argv)
     {
         fprintf (stdout, "%g ", my_covariance.covariance[i]);
     }
+    for (i=0; i<vect_size; i++)
+    {
+        if (fabs((my_covariance.covariance[i] - ref_covariance[i])/ref_covariance[i]) > 10E-12)
+        {
+            fprintf (stdout, "\ncovariance failed (%g, i=%d)\n", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
+        }
+    }
 
     // variance //
 
-    fprintf (stdout, "\nref_variance = ");
+    fprintf (stdout, "\nref_variance       = ");
     for (i=0; i<vect_size; i++)
     {
         for (j=0; j<n; j++)
@@ -111,4 +118,11 @@ int main(int *argc, char **argv)
         fprintf (stdout, "%g ", my_variance.variance[i]);
     }
     fprintf (stdout, "\n");
+    for (i=0; i<vect_size; i++)
+    {
+        if (fabs((my_variance.variance[i] - ref_variance[i])/ref_variance[i]) > 10E-12)
+        {
+            fprintf (stdout, "variance failed\n");
+        }
+    }
 }
