@@ -16,6 +16,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
+#ifdef BUILD_WITH_MPI
+#include <mpi.h>
+#endif // BUILD_WITH_ZMPI
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
@@ -251,7 +254,7 @@ void melissa_connect (void *socket,
 double melissa_get_time ()
 {
 #ifdef BUILD_WITH_MPI
-    return MPI_Wtime();
+    return (double)MPI_Wtime();
 #else // BUILD_WITH_MPI
     return (double)time(NULL);
 #endif // BUILD_WITH_MPI

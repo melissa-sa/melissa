@@ -1,6 +1,7 @@
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
 #include "melissa_data.h"
+#include "melissa_utils.h"
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
@@ -12,24 +13,6 @@
 #ifndef MAX_FIELD_NAME
 #define MAX_FIELD_NAME 128
 #endif
-
-#ifdef BUILD_WITH_PROBES
-static double start_time;
-static double total_comm_time = 0;
-static double start_comm_time;
-static double end_comm_time;
-static double total_computation_time = 0;
-static double start_computation_time;
-static double end_computation_time;
-static double total_wait_time = 0;
-static double start_wait_time;
-static double end_wait_time;
-static double total_write_time = 0;
-static double start_write_time;
-static double end_write_time;
-static long int total_bytes_recv = 0;
-static long int total_bytes_written = 0;
-#endif // BUILD_WITH_PROBES
 
 struct field_s /**< Structure for a linked list of output fields */
 {

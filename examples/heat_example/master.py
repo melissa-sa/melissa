@@ -19,45 +19,48 @@ def create_matrix_k(A, B, k):
   Ck[:,k] = np.array(B[:,k])
   return Ck
 
-def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_server, nb_parameters):
+def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
   os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+  os.system("export OMP_NUM_THREADS=2")
   parameters = ""
   for i in Ai:
       parameters += str(i) + " "
   parameters += str(sobol_rank) + " "
   parameters += str(sobol_group)
-  print "mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &"
-  return os.system("mpirun -n "+str(nb_proc_server)+" ./heatc "+parameters+" &")
+  print "mpirun -n "+str(nb_proc_simu)+" ./heatc "+parameters+" &"
+  return os.system("mpirun -n "+str(nb_proc_simu)+" ./heatc "+parameters+" &")
 
-def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_server, nb_parameters):
+def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
   os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+  os.system("export OMP_NUM_THREADS=2")
   command = "mpirun"
   parameters = ""
   for j in Ai:
       parameters += str(j) + " "
   parameters += str(0) + " "
   parameters += str(sobol_group)
-  command += " -n "+str(nb_proc_server)+" ./heatc "+parameters
+  command += " -n "+str(nb_proc_simu)+" ./heatc "+parameters
   parameters = ""
   for j in Bi:
       parameters += str(j) + " "
   parameters += str(1) + " "
   parameters += str(sobol_group)
   command += " :"
-  command += " -n "+str(nb_proc_server)+" ./heatc "+parameters
+  command += " -n "+str(nb_proc_simu)+" ./heatc "+parameters
   for j in range(nb_parameters):
       parameters = ""
       for i in C[j][sobol_group,:]:
-          parameters += str(i+2) + " "
-      parameters += str(j) + " "
+          parameters += str(i) + " "
+      parameters += str(j+2) + " "
       parameters += str(sobol_group)
       command += " :"
-      command += " -n "+str(nb_proc_server)+" ./heatc "+parameters
+      command += " -n "+str(nb_proc_simu)+" ./heatc "+parameters
   print command
   return os.system(command+" &")
 
 def launch_melissa (command_line):
   os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+  os.system("export OMP_NUM_THREADS=2")
   if (not os.path.isdir("resu")):
       os.system("mkdir resu")
   os.system("cd resu")
@@ -66,15 +69,15 @@ def launch_melissa (command_line):
 # ------------- options ------------- #
 
 nb_parameters = 2
-nb_simu = 8
+nb_simu = 4
 nb_groups = 5
 nb_time_steps = 100
 operations = ["mean","variance","min","max","threshold","sobol"]
 threshold = 0.7
 op_str=""
 mpi_options = ""
-nb_proc_simu = 1
-nb_proc_server = 1
+nb_proc_simu = 2
+nb_proc_server = 2
 server_path = "/home/tterraz/avido/source/Melissa/build/src"
 range_min = np.zeros(nb_parameters)
 range_max = np.zeros(nb_parameters)
@@ -107,17 +110,17 @@ ret = np.zeros(nb_parameters + 2)
 for i in range(nb_groups):
   if ("sobol" in operations) or ("sobol_indices" in operations):
     if (coupling == 0):
-      ret[0] = launch_simu(A[i,:], 0, i, nb_proc_server, nb_parameters)
-      ret[1] = launch_simu(B[i,:], 1, i, nb_proc_server, nb_parameters)
+      ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
+      ret[1] = launch_simu(B[i,:], 1, i, nb_proc_simu, nb_parameters)
       for j in range(nb_parameters):
-        ret[j+2] = launch_simu(C[j][i,:], j+2, i, nb_proc_server, nb_parameters)
+        ret[j+2] = launch_simu(C[j][i,:], j+2, i, nb_proc_simu, nb_parameters)
       for k in range(len(ret)):
         if (ret[k] != 0):
           print "error launching simulation "+str(i)+" of group "+str(k)
     else:
-      launch_coupled_simu(A[i,:], B[i,:], C, i, nb_proc_server, nb_parameters)
+      launch_coupled_simu(A[i,:], B[i,:], C, i, nb_proc_simu, nb_parameters)
   else:
-    ret[0] = launch_simu(A[i,:], 0, i, nb_proc_server, nb_parameters)
+    ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
     if (ret[0] != 0):
       print "error launching simulation "+str(i)
 
@@ -136,7 +139,7 @@ options = " -p " + str(nb_parameters)\
         + " -e " + str(threshold)
 
 #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-if (launch_melissa("valgrind mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
+if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
     print "error launching Melissa"
 #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
 #valgrind mpirun  -n 1 /home/tterraz/avido/source/Melissa/build/src/server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7

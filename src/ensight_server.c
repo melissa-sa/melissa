@@ -36,6 +36,20 @@ int main (int argc, char **argv)
     char               *field_name_ptr;
     int                 rank_id, group_id;
     char                file_name[256];
+#ifdef BUILD_WITH_PROBES
+    double              start_time;
+    double              total_comm_time = 0;
+    double              start_comm_time;
+    double              end_comm_time;
+    double              total_computation_time = 0;
+    double              start_computation_time;
+    double              end_computation_time;
+    double              total_wait_time = 0;
+    double              start_wait_time;
+    double              end_wait_time;
+    double              total_write_time = 0;
+    long int            total_bytes_recv = 0;
+#endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);

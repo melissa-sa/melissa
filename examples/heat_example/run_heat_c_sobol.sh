@@ -5,6 +5,7 @@ let "t=0"
 let "tmax=1"
 let "g=0"
 let "gmax=4"
+export OMP_NUM_THREADS=2
 while [ $t -le $tmax ]
 do
   while [ $g -lt $gmax ]

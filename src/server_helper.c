@@ -181,10 +181,11 @@ void finalize_field_data (field_ptr         field,
                           melissa_options_t *options,
                           int               *local_vect_sizes
 #ifdef BUILD_WITH_PROBES
-                          , double *write_time
+                          , double *total_write_time
 #endif // BUILD_WITH_PROBES
                           )
 {
+    double start_write_time, end_write_time;
     int i;
     if (field == NULL)
     {
@@ -194,7 +195,7 @@ void finalize_field_data (field_ptr         field,
     {
         finalize_field_data (field->next, comm_data, pull_data, options, local_vect_sizes
 #ifdef BUILD_WITH_PROBES
-                             , &total_write_time
+                             , total_write_time
 #endif // BUILD_WITH_PROBES
                              );
         for (i=0; i<comm_data->client_comm_size; i++)
@@ -220,7 +221,7 @@ void finalize_field_data (field_ptr         field,
                              field->name);
 #ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();
-        *write_time += end_write_time - start_write_time;
+        *total_write_time += end_write_time - start_write_time;
 #endif // BUILD_WITH_PROBES
 
         for (i=0; i<comm_data->client_comm_size; i++)

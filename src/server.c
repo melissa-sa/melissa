@@ -55,6 +55,20 @@ int main (int argc, char **argv)
     int                 nb_converged_fields = 0;
     double              interval1, interval_tot;
     zmq_msg_t           msg;
+#ifdef BUILD_WITH_PROBES
+    double              start_time = 0;
+    double              total_comm_time = 0;
+    double              start_comm_time = 0;
+    double              end_comm_time = 0;
+    double              total_computation_time = 0;
+    double              start_computation_time = 0;
+    double              end_computation_time = 0;
+    double              total_wait_time = 0;
+    double              start_wait_time = 0;
+    double              end_wait_time = 0;
+    double              total_write_time = 0;
+    long int            total_bytes_recv = 0;
+#endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
     // === init MPI === //

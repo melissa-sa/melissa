@@ -1,8 +1,8 @@
 
-add_library(stats ${ALL_SRCS})
+add_library(stats ${ALL_SRCS} ${ALL_INCS})
 target_link_libraries(stats m)
 install(TARGETS stats DESTINATION bin)
-install(FILES *.h DESTINATION include)
+install(FILES ${ALL_INCS} DESTINATION include)
 configure_file(master.py master.py COPYONLY)
 
 if(BUILD_WITH_FLOWVR)

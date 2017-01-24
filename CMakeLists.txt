@@ -27,29 +27,31 @@ set(ALL_SRCS
 #             cond_mean.c
 #             cond_var.c
              mean.c
-             mean.h
              variance.c
-             variance.h
              min_max.c
-             min_max.h
              threshold.c
-             threshold.h
              covariance.c
-             covariance.h
              sobol.c
-             sobol.h
              melissa_options.c
-             melissa_options.h
              melissa_data.c
-             melissa_data.h
              compute_stats.c
-             compute_stats.h
              server.c
-             server.h
              server_helper.c
              melissa_utils.c
+             melissa_io.c)
+
+set(ALL_INCS
+             mean.h
+             variance.h
+             min_max.h
+             threshold.h
+             covariance.h
+             sobol.h
+             melissa_options.h
+             melissa_data.h
+             compute_stats.h
+             server.h
              melissa_utils.h
-             melissa_io.c
              melissa_io.h)
 
 set(ALL_API stats_api.c
@@ -172,7 +174,7 @@ if(BUILD_DOCUMENTATION)
   endif(NOT DOXYGEN_FOUND)
 
   set(DOX_SOURCES )
-  foreach( _file ${ALL_SRCS} )
+  foreach( _file ${ALL_SRCS} ${ALL_INCS})
     set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/src/${_file}" )
   endforeach()
 
