@@ -13,7 +13,7 @@ import re
 batch_scheduler       = "Slurm"
 nb_parameters         = 6
 nb_groups             = 1000
-nb_simu               = nb_groups*(nb_parameters+2)
+#nb_simu               = nb_groups*(nb_parameters+2)
 nb_time_steps         = 100
 operations            = ["mean","variance","min","max","threshold","sobol"]
 threshold             = 0.7
@@ -29,8 +29,8 @@ range_min[0:2]        = 0.1
 range_max[0:2]        = 0.9
 range_min[2:4]        = 0.1
 range_max[2:4]        = 0.9
-range_min[4:6]        = 0.08
-range_max[4:6]        = 0.8
+range_min[4:6]        = 0.88
+range_max[4:6]        = 1.2
 nodes_saturne         = 4
 proc_per_node_saturne = 14
 openmp_threads        = 2
@@ -166,10 +166,12 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
         contenu += "#SBATCH --cpus-per-task="+str(openmp_threads)+"                                 \n"
         contenu += "#SBATCH --wckey=P11UK:AVIDO                                                     \n"
         contenu += "#SBATCH --partition=cn                                                          \n"
+        contenu += "#SBATCH --mem=0                                                                 \n"
         contenu += "#SBATCH --time="+walltime_container+"                                           \n"
         contenu += "#SBATCH -o coupling.%j.log                                                      \n"
         contenu += "#SBATCH -e coupling.%j.err                                                      \n"
         contenu += "module load openmpi/2.0.1                                                       \n"
+        contenu += "module load icc/2017                                                            \n"
         contenu += "module load ifort/2017                                                          \n"
         contenu += "env | grep SLURM                                                                \n"
     elif (batch_scheduler == "OAR"):
@@ -196,9 +198,10 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "#!/bin/bash                                                        \n"
     if (batch_scheduler == "Slurm"):
         contenu += "#SBATCH -N "+str(nodes_melissa)+"                                  \n"
-        contenu += "#SBATCH --ntasks-per-node=2                                        \n"
+        contenu += "#SBATCH --ntasks-per-node=14                                        \n"
         contenu += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
-        contenu += "#SBATCH --partition=cn                                             \n"
+        contenu += "#SBATCH --partition=bm                                             \n"
+        contenu += "#SBATCH --mem=0                                                    \n"
         contenu += "#SBATCH --time="+walltime_melissa+"                                \n"
         contenu += "#SBATCH -o melissa.%j.log                                          \n"
         contenu += "#SBATCH -e melissa.%j.err                                          \n"
@@ -338,6 +341,11 @@ if len(sys.argv) > 1:
 else:
     job_step = "first_step"
 
+if (not (("sobol" in operations) or ("sobol_indices" in operations))):
+    nb_simu = nb_groups
+else:
+    nb_simu = nb_groups*(nb_parameters+2)
+
 if (job_step == "first_step"):
     op_str = ""
     if (batch_scheduler == "Slurm"):
@@ -408,17 +416,17 @@ if ((job_step == "container") or (job_step == "simu")):
         if ("sobol" in operations) or ("sobol_indices" in operations):
             create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
             if (batch_scheduler == "Slurm"):
-                os.system('sbatch "../STATS/run_cas_couple.sh" --job-name=Saturnes'+str(i))
+                os.system('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))
             elif (batch_scheduler == "OAR"):
                 os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
         else:
             os.chdir("./rank0/SCRIPTS")
             if (batch_scheduler == "Slurm"):
-                os.system('sbatch "./runcase" --job-name=Saturne'+str(i))
+                os.system('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))
             elif (batch_scheduler == "OAR"):
                 os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
 
-if ((job_step == "container") or (job_step == "simu")):
+if ((job_step == "containerplop") or (job_step == "simuplop")):
     converged_sobol = np.zeros(nb_proc_server,int)
     iterations_server = np.zeros(nb_proc_server,int)
     finished_server = np.zeros(nb_proc_server,int)
