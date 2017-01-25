@@ -1,6 +1,7 @@
 
 add_library(stats ${ALL_SRCS} ${ALL_INCS})
 target_link_libraries(stats m)
+target_compile_options(stats BEFORE PUBLIC -fPIC)
 install(TARGETS stats DESTINATION bin)
 install(FILES ${ALL_INCS} DESTINATION include)
 configure_file(master.py master.py COPYONLY)

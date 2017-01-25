@@ -138,7 +138,7 @@ if(BUILD_WITH_OpenMP)
   endif(OPENMP_FOUND)
 endif(BUILD_WITH_OpenMP)
 
-option(BUILD_WITH_FLOWVR "Build with FlowVR interface" ON)
+option(BUILD_WITH_FLOWVR "Build with FlowVR interface" OFF)
 
 if(BUILD_WITH_FLOWVR)
   find_package(FlowVR)
