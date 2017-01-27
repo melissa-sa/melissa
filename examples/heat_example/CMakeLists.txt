@@ -10,6 +10,3 @@ target_link_libraries(heatf ${EXAMPLES_LIBS} stats_api_fortran)
 
 add_executable(heatc heat_utils.f90 heat.c)
 target_link_libraries(heatc ${EXAMPLES_LIBS} stats_api)
-
-add_executable(mpi_reader mpi_reader.c)
-target_link_libraries(mpi_reader ${EXTRA_LIBS} stats)

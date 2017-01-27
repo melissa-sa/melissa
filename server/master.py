@@ -400,6 +400,7 @@ if (job_step == "first_step"):
         for k in range(len(ret)):
             if (ret[k] != 0):
                 print "error creating simulation "+str(k)+" of group "+str(i)
+    os.chdir(workdir+"/STATS")
     if (batch_scheduler == "Slurm"):
         os.system('sbatch "./run_study.sh"')
     elif (batch_scheduler == "OAR"):

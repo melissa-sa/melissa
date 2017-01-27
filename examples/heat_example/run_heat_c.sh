@@ -13,12 +13,12 @@ if [ ! -d "./resu" ];then
 mkdir resu
 fi
 cd resu
-mpirun -n 2 ../../../src/server $command_line &
+mpirun -n 2 ../../../server/server $command_line &
 sleep 2
 #killall -s SIGINT server
 #command_line="-p 1 -g 3 -t 100 -e 2 -o min:max -r"
 #sleep 1
-#mpirun -n 2 ../../../src/server $command_line
+#mpirun -n 2 ../../../server/server $command_line
 #cd ..
 #sleep 2
 #killall -USR1 mpirun

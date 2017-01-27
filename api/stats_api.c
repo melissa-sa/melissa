@@ -86,15 +86,6 @@ static double end_comm_time;
 static long int total_bytes_sent;
 #endif // BUILD_WITH_PROBES
 
-static double stats_get_time ()
-{
-#ifdef BUILD_WITH_MPI
-    return MPI_Wtime();
-#else // BUILD_WITH_MPI
-    return (double)time(NULL);
-#endif // BUILD_WITH_MPI
-}
-
 void my_free (void *data, void *hint)
 {
     melissa_free (data);

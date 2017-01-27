@@ -23,41 +23,8 @@ cmake_minimum_required(VERSION 2.8)
 #        find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 #endfunction(find_python_module)
 
-set(ALL_SRCS
-#             cond_mean.c
-#             cond_var.c
-             mean.c
-             variance.c
-             min_max.c
-             threshold.c
-             covariance.c
-             sobol.c
-             melissa_options.c
-             melissa_data.c
-             compute_stats.c
-             server.c
-             server_helper.c
-             melissa_utils.c
-             melissa_io.c)
-
-set(ALL_INCS
-             mean.h
-             variance.h
-             min_max.h
-             threshold.h
-             covariance.h
-             sobol.h
-             melissa_options.h
-             melissa_data.h
-             compute_stats.h
-             server.h
-             melissa_utils.h
-             melissa_io.h)
-
-set(ALL_API stats_api.c
-            stats_api.h
-            stats_api_no_mpi.h)
-set(ALL_API_fortran stats_api_fortran.f90)
+set(ALL_SRCS )
+set(ALL_INCS )
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -168,6 +135,28 @@ else(DOXYGEN_FOUND)
   option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
 endif(DOXYGEN_FOUND)
 
+option(BUILD_WITH_PROBES "Set probes for bench" ON)
+if(BUILD_WITH_PROBES)
+    add_definitions( -DBUILD_WITH_PROBES )
+endif(BUILD_WITH_PROBES)
+
+include_directories("${PROJECT_SOURCE_DIR}/utils")
+add_subdirectory(utils)
+
+include_directories("${PROJECT_SOURCE_DIR}/stats")
+add_subdirectory(stats)
+
+include_directories("${PROJECT_SOURCE_DIR}/server")
+add_subdirectory(server)
+
+include_directories("${PROJECT_SOURCE_DIR}/api")
+add_subdirectory(api)
+
+option(BUILD_EXAMPLES "Build examples" ON)
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif(BUILD_EXAMPLES)
+
 if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
     message(FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly")
@@ -187,19 +176,3 @@ if(BUILD_DOCUMENTATION)
     COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile
     SOURCES ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
 endif(BUILD_DOCUMENTATION)
-
-option(BUILD_WITH_PROBES "Set probes for bench" ON)
-if(BUILD_WITH_PROBES)
-    add_definitions( -DBUILD_WITH_PROBES )
-endif(BUILD_WITH_PROBES)
-
-include_directories("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory(src)
-
-include_directories("${PROJECT_SOURCE_DIR}/api")
-add_subdirectory(api)
-
-option(BUILD_EXAMPLES "Build examples" ON)
-if(BUILD_EXAMPLES)
-  add_subdirectory(examples)
-endif(BUILD_EXAMPLES)

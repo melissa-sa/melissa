@@ -6,14 +6,6 @@
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
 
-#ifndef MPI_MAX_PROCESSOR_NAME
-#define MPI_MAX_PROCESSOR_NAME 256
-#endif
-
-#ifndef MAX_FIELD_NAME
-#define MAX_FIELD_NAME 128
-#endif
-
 struct field_s /**< Structure for a linked list of output fields */
 {
     char            name[MAX_FIELD_NAME]; /**< name of the field                   */
