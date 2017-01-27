@@ -170,7 +170,9 @@ int main (int argc, char **argv)
                                 fprintf(stderr, "\nstatistic fields saved in %s\n", dir);
                             }
                         }
+#ifdef BUILD_WITH_MPI
                         MPI_Finalize ();
+#endif // BUILD_WITH_MPI
                         return 0;
                         break;
                     }

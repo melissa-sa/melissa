@@ -22,6 +22,7 @@
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
+#include "melissa_utils.h"
 
 static void print_zmq_error(int         ret,
                             const char* port_name)

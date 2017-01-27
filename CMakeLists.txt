@@ -39,30 +39,33 @@ find_package(PkgConfig REQUIRED)
 find_package(PythonLibs)
 
 
+
+
 option(BUILD_WITH_ZMQ "Build with ZeroMQ" ON)
 
 if(BUILD_WITH_ZMQ)
-  pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
-  include_directories(${ZMQ_INCLUDE_DIRS} )
-  if(ZMQ_LIBRARIES)
+  mark_as_advanced(FORCE ZMQ_LIBRARY
+                         ZMQ_INCLUDE_DIR)
+  find_path(ZMQ_DIR NAMES include/zmq.h)
+  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
+  find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
+  set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
+  include_directories( ${ZMQ_INCLUDE_DIR} )
+  if(ZMQ_LIBRARY)
     set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${ZMQ_LIBRARIES} )
-    link_directories(${ZMQ_LIBRARY_DIRS})
-  endif(ZMQ_LIBRARIES)
-  if(ZMQ_LIBRARIES AND ZMQ_INCLUDE_DIRS)
+                   ${ZMQ_LIBRARY} )
+    set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
+    pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
+  endif(ZMQ_LIBRARY)
+  if(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
     set(ZMQ_FOUND TRUE)
-    message(STATUS "ZeroMQ Found, libdir: ${ZMQ_LIBRARY_DIRS}, includedir: ${ZMQ_INCLUDE_DIRS}, version=${ZMQ_VERSION} ")
+    message(STATUS "ZeroMQ Found")
     add_definitions( -DBUILD_WITH_ZMQ )
-#    find_python_module(zmq)
-    option(BUILD_WITH_PY_ZMQ "Build with PY_ZMQ" ON)
-    if(BUILD_WITH_PY_ZMQ)
-      add_definitions( -DBUILD_WITH_PY_ZMQ )
-    endif(BUILD_WITH_PY_ZMQ)
-  else(ZMQ_LIBRARIES AND ZMQ_INCLUDE_DIRS)
+  else(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
     # Disable  Option if missing dependencies
     set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)
     message(STATUS "ZeroMQ missing. BUILD_WITH_ZMQ option turned OFF")
-  endif(ZMQ_LIBRARIES AND ZMQ_INCLUDE_DIRS)
+  endif(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
 endif(BUILD_WITH_ZMQ)
 
 option(BUILD_WITH_MPI "Build with MPI" ON)

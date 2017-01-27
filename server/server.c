@@ -145,7 +145,9 @@ int main (int argc, char **argv)
         {
             read_client_data(&comm_data.client_comm_size, &client_vect_sizes);
         }
+#ifdef BUILD_WITH_MPI
         MPI_Bcast(&comm_data.client_comm_size, 1, MPI_INT, 0, comm_data.comm);
+#endif // BUILD_WITH_MPI
         if (comm_data.rank != 0)
         {
             client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
@@ -453,7 +455,9 @@ int main (int argc, char **argv)
                     fprintf(stderr, "statistic fields saved in %s\n\n", dir);
                 }
             }
+#ifdef BUILD_WITH_MPI
             MPI_Finalize ();
+#endif // BUILD_WITH_MPI
             return 0;
             break;
         }

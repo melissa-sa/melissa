@@ -423,8 +423,9 @@ void connect_to_stats (const int *local_vect_size,
     if (zmq_data.sobol == 1)
     {
         // split MPI_COMM_WORLD for coupled Code_Saturne simulations
+#ifdef COUPLING
         MPI_Comm_split(MPI_COMM_WORLD, *rank, *sobol_rank, &zmq_data.comm_sobol);
-#ifndef COUPLING
+#else // COUPLING
         // get Sobol master node name
         if (*sobol_rank == 0)
         {
@@ -434,9 +435,15 @@ void connect_to_stats (const int *local_vect_size,
                 master_node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
             }
 #ifdef BUILD_WITH_MPI
-            MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
+            if (*comm_size > 1)
+            {
+                MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
+            }
+            else
 #else // BUILD_WITH_MPI
-            memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
+            {
+                memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
+            }
 #endif // BUILD_WITH_MPI
         }
 
@@ -474,11 +481,7 @@ void connect_to_stats (const int *local_vect_size,
                 {
                     sprintf (port_name, "tcp://*:3004");
                 }
-                ret = melissa_bind (master_requester, port_name);
-                if (ret != 0)
-                {
-                    fprintf(stderr,"ERROR on binding (%s)\n",port_name);
-                }
+                melissa_bind (master_requester, port_name);
             }
         }
         else // if *sobol_rank != 0
@@ -492,7 +495,7 @@ void connect_to_stats (const int *local_vect_size,
             {
                 sprintf (port_name, "tcp://%s:3004", master_node_name);
             }
-            ret = melissa_connect (master_requester, port_name);
+            melissa_connect (master_requester, port_name);
         }
 #endif // ndef COUPLING
     }
@@ -559,11 +562,7 @@ void connect_to_stats (const int *local_vect_size,
                 {
                     sprintf (port_name, "tcp://*:4%d", 100 + *rank * (zmq_data.nb_parameters+1) + i);
                 }
-                ret = melissa_bind (zmq_data.sobol_requester[i], port_name);
-                if (ret != 0)
-                {
-                    fprintf(stderr,"ERROR on binding (%s)\n", port_name);
-                }
+                melissa_bind (zmq_data.sobol_requester[i], port_name);
             }
         }
     }

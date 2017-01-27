@@ -257,6 +257,7 @@ void write_stats (melissa_data_t    **data,
     MPI_Status status;
 #else // BUILD_WITH_MPI
     FILE* f;
+    int j;
 #endif // BUILD_WITH_MPI
     char       file_name[256];
     int        max_size_time;
@@ -479,7 +480,39 @@ void write_stats (melissa_data_t    **data,
 #else // BUILD_WITH_MPI
                         for (j=0; j<comm_data->rcounts[i]; j++)
                         {
-                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_martinez[p].values[j]);
+                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values[j]);
+                        }
+#endif // BUILD_WITH_MPI
+                    }
+                }
+#ifdef BUILD_WITH_MPI
+                MPI_File_close (&f);
+#else // BUILD_WITH_MPI
+                fclose(f);
+#endif // BUILD_WITH_MPI
+            }
+        }
+        // total order
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            for (p=0; p<options->nb_parameters; p++)
+            {
+                sprintf(file_name, "%s_sobol_total_indices_%.*d.%d",field,  max_size_time, t+1, p);
+#ifdef BUILD_WITH_MPI
+                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+                f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
+                for (i=0; i<comm_data->client_comm_size; i++)
+                {
+                    if (comm_data->rcounts[i] > 0)
+                    {
+#ifdef BUILD_WITH_MPI
+                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, comm_data->rcounts[i], MPI_INT, &status);
+#else // BUILD_WITH_MPI
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values[j]);
                         }
 #endif // BUILD_WITH_MPI
                     }
@@ -533,7 +566,9 @@ void write_stats_ensight (melissa_data_t    **data,
     double      time_value = 0;
     float      *s_buffer;
     char        c_buffer[81], c_buffer2[81];
+#ifdef BUILD_WITH_MPI
     MPI_Status  status;
+#endif // BUILD_WITH_MPI
     int32_t     n;
 
     max_size_time=floor(log10(options->nb_time_steps))+1;
@@ -1078,7 +1113,9 @@ void read_ensight (melissa_options_t  *options,
     FILE*       f;
     float      *r_buffer;
     char        c_buffer[81];
+#ifdef BUILD_WITH_MPI
     MPI_Status  status;
+#endif // BUILD_WITH_MPI
     int32_t     n;
 
     if (comm_data->rank == 0)

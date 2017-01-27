@@ -91,7 +91,9 @@ int main(int argc, char **argv)
                       &sobol_tab[1],
                       &comm);
 #else // BUILD_WITH_MPI
-    connect_to_stats_no_mpi (&my_vect_size);
+    connect_to_stats_no_mpi (&my_vect_size,
+                             &sobol_tab[0],
+                             &sobol_tab[1]);
 #endif // BUILD_WITH_MPI
 
     while (time_step < nb_time_steps)
