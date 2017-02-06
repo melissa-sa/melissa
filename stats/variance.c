@@ -63,13 +63,12 @@ void increment_mean_and_variance (double      in_vect[],
                                   variance_t *partial_variance,
                                   const int   vect_size)
 {
-    double  temp;
     int     i;
 
 #pragma omp parallel for
     for (i=0; i<vect_size; i++)
     {
-        temp = partial_variance->mean_structure.mean[i];
+        double temp = partial_variance->mean_structure.mean[i];
         partial_variance->mean_structure.mean[i] = temp + (in_vect[i] - temp)/(partial_variance->mean_structure.increment+1);
         if (partial_variance->mean_structure.increment > 0)
         {
@@ -140,7 +139,6 @@ void update_variance (variance_t *variance1,
                       variance_t *updated_variance,
                       const int   vect_size)
 {
-    double  delta;
     int     i;
 
     update_mean(&variance1->mean_structure,
@@ -151,7 +149,7 @@ void update_variance (variance_t *variance1,
 #pragma omp parallel for
     for (i=0; i<vect_size; i++)
     {
-        delta = (variance1->mean_structure.mean[i] - variance2->mean_structure.mean[i]);
+        double delta = (variance1->mean_structure.mean[i] - variance2->mean_structure.mean[i]);
 // Classic :
 //        updated_variance->variance[i] = variance1->variance[i] + variance2->variance[i]
 //                                        + variance1->mean_structure.increment * variance2->mean_structure.increment
@@ -344,7 +342,7 @@ void write_variance(variance_t *vars,
  *******************************************************************************
  *
  * @param[in] *vars
- * mean structures to read, size nb_time_steps
+ * variance structures to read, size nb_time_steps
  *
  * @param[in] vect_size
  * size of double vectors

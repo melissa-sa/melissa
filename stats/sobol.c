@@ -214,6 +214,106 @@ int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
 /**
  *******************************************************************************
  *
+ * @ingroup save_stats
+ *
+ * This function writes an array of sobol_martinez structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *sobol_array
+ * sobol_array structures to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] nb_parameters
+ * number of parameters of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void write_sobol(sobol_array_t *sobol_array,
+                 int            vect_size,
+                 int            nb_time_steps,
+                 int            nb_parameters,
+                 FILE*          f)
+{
+    int i, j;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        for (j=0; j<nb_parameters; j++)
+        {
+            write_covariance (&sobol_array[i].sobol_martinez[j].first_order_covariance, vect_size, 1, f);
+            write_covariance (&sobol_array[i].sobol_martinez[j].total_order_covariance, vect_size, 1, f);
+            write_variance (&sobol_array[i].sobol_martinez[j].variance_k, vect_size, 1, f);
+            fwrite(sobol_array[i].sobol_martinez[j].first_order_values, sizeof(double), vect_size,f);
+            fwrite(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
+            fwrite(sobol_array[i].sobol_martinez[j].confidence_interval, sizeof(double), 2,f);
+        }
+        write_variance(&sobol_array[i].variance_a, vect_size, 1, f);
+        write_variance(&sobol_array[i].variance_b, vect_size, 1, f);
+        fwrite(&sobol_array[i].iteration, sizeof(int), 1,f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of sobol_martinez structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *sobol_array
+ * sobol_array structures to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] nb_parameters
+ * number of parameters of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_sobol(sobol_array_t *sobol_array,
+                 int            vect_size,
+                 int            nb_time_steps,
+                 int            nb_parameters,
+                 FILE*          f)
+{
+    int i, j;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        for (j=0; j<nb_parameters; j++)
+        {
+            read_covariance (&sobol_array[i].sobol_martinez[j].first_order_covariance, vect_size, 1, f);
+            read_covariance (&sobol_array[i].sobol_martinez[j].total_order_covariance, vect_size, 1, f);
+            read_variance (&sobol_array[i].sobol_martinez[j].variance_k, vect_size, 1, f);
+            fread(sobol_array[i].sobol_martinez[j].first_order_values, sizeof(double), vect_size,f);
+            fread(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
+            fread(sobol_array[i].sobol_martinez[j].confidence_interval, sizeof(double), 2,f);
+        }
+        read_variance(&sobol_array[i].variance_a, vect_size, 1, f);
+        read_variance(&sobol_array[i].variance_b, vect_size, 1, f);
+        fread(&sobol_array[i].iteration, sizeof(int), 1,f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
  * @ingroup sobol
  *
  * This function frees a Martinez Sobol indices structure

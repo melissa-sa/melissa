@@ -7,6 +7,7 @@ target_link_libraries(test_base ${EXAMPLES_LIBS} melissa_stats)
 
 add_executable(test_covariance test_covariance.c)
 target_link_libraries(test_covariance ${EXAMPLES_LIBS} melissa_stats)
+add_test(TestVariance ${EXECUTABLE_OUTPUT_PATH}/test_covariance)
 
 #add_executable(test_sobol test_sobol.c)
 #target_link_libraries(test_sobol ${EXAMPLES_LIBS})

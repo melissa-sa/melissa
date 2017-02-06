@@ -141,10 +141,9 @@ void save_stats (melissa_data_t *data,
             }
             if (data[i].options->sobol_op != 0)
             {
-//                TODO
-//                write_sobol(data->thresholds, data->vect_size, data->options->nb_time_steps, f);
+                write_sobol(data[i].sobol_indices, data->vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
-            fwrite(data[i].computed, sizeof(int), 1, f);
+//            fwrite(data[i].computed, sizeof(int), 1, f);
         }
     }
 }
@@ -210,8 +209,7 @@ void read_saved_stats (melissa_data_t *data,
             }
             if (data[client_rank].options->sobol_op != 0)
             {
-//                TODO
-//                read_sobol(data->thresholds, data->vect_size, data->options->nb_time_steps, f);
+                read_sobol(data[client_rank].sobol_indices, data->vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
             }
 //            fread(&data[client_rank].computed, sizeof(int), 1, f);
         }

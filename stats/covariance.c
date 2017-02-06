@@ -72,7 +72,6 @@ void increment_covariance (double        in_vect1[],
                            covariance_t *covariance,
                            const int     vect_size)
 {
-//    double  temp;
     int     i;
 
     increment_mean(in_vect1, &(covariance->mean1), vect_size);
@@ -133,6 +132,82 @@ void update_covariance (covariance_t *covariance1,
     }
     update_mean (&covariance1->mean1, &covariance2->mean1, &updated_covariance->mean1, vect_size);
     update_mean (&covariance1->mean2, &covariance2->mean2, &updated_covariance->mean2, vect_size);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function writes an array of covariances structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *covars
+ * covariance structures to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void write_covariance(covariance_t *covars,
+                      int           vect_size,
+                      int           nb_time_steps,
+                      FILE*         f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fwrite(covars[i].covariance, sizeof(double), vect_size, f);
+        write_mean (&covars[i].mean1, vect_size, 1, f);
+        write_mean (&covars[i].mean2, vect_size, 1, f);
+        fwrite(&covars[i].increment, sizeof(int), 1, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of covariances structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *covars
+ * covariance structures to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_covariance(covariance_t *covars,
+                     int           vect_size,
+                     int           nb_time_steps,
+                     FILE*         f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fread(covars[i].covariance, sizeof(double), vect_size, f);
+        read_mean (&covars[i].mean1, vect_size, 1, f);
+        read_mean (&covars[i].mean2, vect_size, 1, f);
+        fread(&covars[i].increment, sizeof(int), 1, f);
+    }
 }
 
 /**

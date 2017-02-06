@@ -65,7 +65,6 @@ void increment_mean (double     in_vect[],
                      mean_t    *partial_mean,
                      const int  vect_size)
 {
-    double  temp;
     int     i;
 
     partial_mean->increment += 1;
@@ -73,7 +72,7 @@ void increment_mean (double     in_vect[],
 #pragma omp parallel for
     for (i=0; i<vect_size; i++)
     {
-        temp = partial_mean->mean[i];
+        double temp = partial_mean->mean[i];
         partial_mean->mean[i] = temp + (in_vect[i] - temp)/partial_mean->increment;
     }
 }
@@ -106,7 +105,6 @@ void update_mean (mean_t    *mean1,
                   mean_t    *updated_mean,
                   const int  vect_size)
 {
-    double  delta;
     int     i;
 
     updated_mean->increment = mean2->increment + mean1->increment;
@@ -114,7 +112,7 @@ void update_mean (mean_t    *mean1,
 #pragma omp parallel for
     for (i=0; i<vect_size; i++)
     {
-        delta = (mean2->mean[i] - mean1->mean[i]);
+        double delta = (mean2->mean[i] - mean1->mean[i]);
         updated_mean->mean[i] = mean1->mean[i] + mean2->increment * delta / updated_mean->increment;
     }
 }

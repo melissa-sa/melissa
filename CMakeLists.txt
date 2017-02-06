@@ -1,6 +1,7 @@
 project(stats C CXX Fortran)
 
 cmake_minimum_required(VERSION 2.8)
+include(CTest)
 
 #function(find_python_module module)
 #        string(TOUPPER ${module} module_upper)

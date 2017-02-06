@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "melissa_data.h"
+#include "mean.h"
+#include "variance.h"
+#include "covariance.h"
 
 int main(int *argc, char **argv)
 {
@@ -36,8 +38,8 @@ int main(int *argc, char **argv)
 
     for (j=0; j<vect_size * n; j++)
     {
-        tableau1[j] = rand();
-        tableau2[j] = rand();
+        tableau1[j] = rand() / (double)RAND_MAX * (1000);
+        tableau2[j] = rand() / (double)RAND_MAX * (1000);
     }
     fprintf (stdout, "ref_mean1       = ");
     for (i=0; i<vect_size; i++)
@@ -125,4 +127,5 @@ int main(int *argc, char **argv)
             fprintf (stdout, "variance failed\n");
         }
     }
+    return 0;
 }
