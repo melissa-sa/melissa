@@ -19,6 +19,7 @@ operations            = ["mean","variance","min","max","threshold","sobol"]
 threshold             = 0.7
 mpi_OAR_options       = "--mca orte_rsh_agent \"oarsh\" --mca btl openib,sm,self --mca pml ^cm --machinefile $OAR_NODE_FILE"
 mpi_Slurm_options     = ""
+mpi_CCC_options       = ""
 home_path             = "/scratch/G95757"
 server_path           = home_path+"/Melissa/build/src"
 workdir               = "/scratch/G95757/etude_eole"
@@ -161,25 +162,33 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
     fichier=open("run_cas_couple.sh", "w")
     contenu += "#!/bin/bash                                                                     \n"
     if (batch_scheduler == "Slurm"):
-        contenu += "#SBATCH -N "+str(nodes_saturne*(nb_parameters+2))+"                             \n"
-        contenu += "#SBATCH --ntasks="+str(proc_per_node_saturne*nodes_saturne*(nb_parameters+2))+" \n"
-        contenu += "#SBATCH --cpus-per-task="+str(openmp_threads)+"                                 \n"
-        contenu += "#SBATCH --wckey=P11UK:AVIDO                                                     \n"
-        contenu += "#SBATCH --partition=cn                                                          \n"
-        contenu += "#SBATCH --mem=0                                                                 \n"
-        contenu += "#SBATCH --time="+walltime_container+"                                           \n"
-        contenu += "#SBATCH -o coupling.%j.log                                                      \n"
-        contenu += "#SBATCH -e coupling.%j.err                                                      \n"
-        contenu += "module load openmpi/2.0.1                                                       \n"
-        contenu += "module load icc/2017                                                            \n"
-        contenu += "module load ifort/2017                                                          \n"
-        contenu += "env | grep SLURM                                                                \n"
+        contenu += "#SBATCH -N "+str(nodes_saturne*(nb_parameters+2))+"                                    \n"
+        contenu += "#SBATCH --ntasks="+str(proc_per_node_saturne*nodes_saturne*(nb_parameters+2))+"        \n"
+        contenu += "#SBATCH --cpus-per-task="+str(openmp_threads)+"                                        \n"
+        contenu += "#SBATCH --wckey=P11UK:AVIDO                                                            \n"
+        contenu += "#SBATCH --partition=cn                                                                 \n"
+        contenu += "#SBATCH --mem=0                                                                        \n"
+        contenu += "#SBATCH --time="+walltime_container+"                                                  \n"
+        contenu += "#SBATCH -o coupling.%j.log                                                             \n"
+        contenu += "#SBATCH -e coupling.%j.err                                                             \n"
+        contenu += "module load openmpi/2.0.1                                                              \n"
+        contenu += "module load icc/2017                                                                   \n"
+        contenu += "module load ifort/2017                                                                 \n"
+        contenu += "env | grep SLURM                                                                       \n"
     elif (batch_scheduler == "OAR"):
         contenu += "#OAR -l nodes="+str(nodes_saturne*(nb_parameters+2))+",walltime="+walltime_container+ "\n"
         contenu += "#OAR -O coupling.%jobid%.log                                                           \n"
         contenu += "#OAR -E coupling.%jobid%.err                                                           \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                                    \n"
         contenu += "ulimit -s unlimited                                                                    \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(proc_per_node_saturne*nodes_saturne*(nb_parameters+2))+"                \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                                       \n"
+        contenu += "#MSUB -o coupling.%I.log                                                               \n"
+        contenu += "#MSUB -e coupling.%I.err                                                               \n"
+        contenu += "#MSUB -T "+walltime_container+"                                                        \n"
+        contenu += "#MSUB -A gen10064                                                                      \n"
+        contenu += "#MSUB -q standard                                                                      \n"
     contenu += "GROUP=$(basename `pwd` | cut -dp -f2)                                           \n"
     contenu += "cd "+workdir+"/group${GROUP}                                                    \n"
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                                  \n"
@@ -214,7 +223,16 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#OAR -E melissa.%jobid%.err                                        \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
         contenu += "ulimit -s unlimited                                                \n"
-        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
+        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"                                                                 \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(8*nodes_melissa*(nb_parameters+2))+"                \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
+        contenu += "#MSUB -o melissa.%I.log                                            \n"
+        contenu += "#MSUB -e melissa.%I.err                                            \n"
+        contenu += "#MSUB -T "+walltime_melissa+"                                      \n"
+        contenu += "#MSUB -A gen10064                                                  \n"
+        contenu += "#MSUB -r Melissa                                                   \n"
+        contenu += "#MSUB -q standard                                                  \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "FRONTEND="+frontend+"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
@@ -225,7 +243,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "cd $WORK_DIR                                                       \n"
     contenu += "# launch simulation jobs                                           \n"
     contenu += "echo  \"### Launch saturne jobs\"                                  \n"
-    if (batch_scheduler == "Slurm"):
+    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
         if ("sobol" in options) or ("sobol_indices" in options):
             contenu += "python "+workdir+"/master.py container                             \n"
         else:
@@ -321,6 +339,14 @@ def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_thread
         contenu += "#OAR -E saturne.%jobid%.err                                        \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
         contenu += "ulimit -s unlimited                                                \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(proc_per_node_saturne*nodes_saturne)+"                \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                                      \n"
+        contenu += "#MSUB -o saturne.%I.log                                                               \n"
+        contenu += "#MSUB -e saturne.%I.err                                                               \n"
+        contenu += "#MSUB -T "+walltime_container+"                                                       \n"
+        contenu += "#MSUB -A gen10064                                                                     \n"
+        contenu += "#MSUB -q standard                                                                     \n"
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
     contenu += "export PATH="+saturne_path+"/:$PATH                                \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
@@ -350,6 +376,8 @@ if (job_step == "first_step"):
     op_str = ""
     if (batch_scheduler == "Slurm"):
         mpi_options = mpi_Slurm_options
+    elif (batch_scheduler == "CCC"):
+        mpi_options = mpi_CCC_options
     elif (batch_scheduler == "OAR"):
         mpi_options = mpi_OAR_options
     for i in range(len(operations)):
@@ -403,6 +431,8 @@ if (job_step == "first_step"):
     os.chdir(workdir+"/STATS")
     if (batch_scheduler == "Slurm"):
         os.system('sbatch "./run_study.sh"')
+    elif (batch_scheduler == "CCC"):
+        os.system('ccc_msub "./run_study.sh"')
     elif (batch_scheduler == "OAR"):
         os.system('oarsub -S "./run_study.sh" --project=avido')
 
@@ -418,58 +448,70 @@ if ((job_step == "container") or (job_step == "simu")):
             create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
             if (batch_scheduler == "Slurm"):
                 os.system('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))
+            elif (batch_scheduler == "CCC"):
+                os.system('ccc_msub "../STATS/run_cas_couple.sh" --exclusive -r Saturnes'+str(i))
             elif (batch_scheduler == "OAR"):
                 os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
         else:
             os.chdir("./rank0/SCRIPTS")
             if (batch_scheduler == "Slurm"):
                 os.system('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))
+            elif (batch_scheduler == "CCC"):
+                os.system('ccc_msub "./runcase" --exclusive -r Saturne'+str(i))
             elif (batch_scheduler == "OAR"):
                 os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
 
 if ((job_step == "containerplop") or (job_step == "simuplop")):
-    converged_sobol = np.zeros(nb_proc_server,int)
-    iterations_server = np.zeros(nb_proc_server,int)
-    finished_server = np.zeros(nb_proc_server,int)
-    context = zmq.Context()
-    rep_melissa_socket = context.socket(zmq.REP)
-    rep_melissa_socket.bind("tcp://*:5555")
-#        pull_simu_socket = context.socket(zmq.PULL)
-#        pull_simu_socket.bind("tcp://*:5556")
-    poller = zmq.Poller()
-    poller.register(rep_melissa_socket, zmq.POLLIN)
-#        poller.register(pull_simu_socket, zmq.POLLIN)
-    snd_message = "continue"
+    username = "terrazth"
+#    converged_sobol = np.zeros(nb_proc_server,int)
+#    iterations_server = np.zeros(nb_proc_server,int)
+#    finished_server = np.zeros(nb_proc_server,int)
+#    context = zmq.Context()
+#    rep_melissa_socket = context.socket(zmq.REP)
+#    rep_melissa_socket.bind("tcp://*:5555")
+##        pull_simu_socket = context.socket(zmq.PULL)
+##        pull_simu_socket.bind("tcp://*:5556")
+#    poller = zmq.Poller()
+#    poller.register(rep_melissa_socket, zmq.POLLIN)
+##        poller.register(pull_simu_socket, zmq.POLLIN)
+#    snd_message = "continue"
     while True:
-        socks = dict(poller.poll(1000))
-        if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
-#                rcv_message = rep_melissa_socket.recv_string()
-            message = dict([rep_melissa_socket.recv_string().split()])
-            if (converged in message):
-                rep_melissa_socket.send_string(snd_message)
-                converged_sobol[int(message[converged])] = 1
-            elif (finished in message):
-                rep_melissa_socket.send_string(snd_message)
-                finished_server[int(message[finished])] = 1
-                if (not 0 in finished_server):
-                    break
-            elif (iteration in message):
-                rep_melissa_socket.send_string(snd_message)
-                iteration_server[int(message[iteration])] += 1
-#            if (pull_simu_socket in socks.keys() and socks[pull_simu_socket] == zmq.POLLIN):
-#                rcv_message = pull_simu_socket.recv_string()
-#                message = int(rcv_message)
-#                if (message >= 0 and message < nb_groups):
-        if (not 0 in converged_sobol):
-            print "Cancel pending simulation jobs..."
-            os.system("oardel "+re.sub('\n',' ',call_bash("oarstat -u --sql \"state = 'Waiting'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'")))
-            running_jobs = call_bash("oarstat -u --sql \"state = 'Running'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
-            if (range(running_jobs) == 0):
-                snd_message = "continue"
-            else:
-                snd_message = "stop"
-        if (not Melissa in call_bash("oarstat -u --sql \"state = 'Running'\"")):
-            print "Melissa crashed at iteration %d" % iterations_server[0]
+#        socks = dict(poller.poll(1000))
+#        if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
+##                rcv_message = rep_melissa_socket.recv_string()
+#            message = dict([rep_melissa_socket.recv_string().split()])
+#            if (converged in message):
+#                rep_melissa_socket.send_string(snd_message)
+#                converged_sobol[int(message[converged])] = 1
+#            elif (finished in message):
+#                rep_melissa_socket.send_string(snd_message)
+#                finished_server[int(message[finished])] = 1
+#                if (not 0 in finished_server):
+#                    break
+#            elif (iteration in message):
+#                rep_melissa_socket.send_string(snd_message)
+#                iteration_server[int(message[iteration])] += 1
+##            if (pull_simu_socket in socks.keys() and socks[pull_simu_socket] == zmq.POLLIN):
+##                rcv_message = pull_simu_socket.recv_string()
+##                message = int(rcv_message)
+##                if (message >= 0 and message < nb_groups):
+#        if (not 0 in converged_sobol):
+#            print "Cancel pending simulation jobs..."
+#            os.system("oardel "+re.sub('\n',' ',call_bash("oarstat -u --sql \"state = 'Waiting'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'")))
+#            running_jobs = call_bash("oarstat -u --sql \"state = 'Running'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
+#            if (range(running_jobs) == 0):
+#                snd_message = "continue"
+#            else:
+#                snd_message = "stop"
+        time.sleep(300)
+        if (batch_scheduler == "OAR"):
+            if (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
+                print "Melissa crashed at iteration %d" % iterations_server[0]
+        elif (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+            if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
+#                print "Melissa crashed at iteration %d" % iterations_server[0]
+                print "Melissa job terminated, killing remaining jobs..."
+                call_bash("scancel -u +"username"+ ")
 
 
 
