@@ -5,8 +5,12 @@ configure_file(run_heat_c.sh run_heat_c.sh COPYONLY)
 configure_file(run_heat_c_sobol.sh run_heat_c_sobol.sh COPYONLY)
 configure_file(master.py master.py COPYONLY)
 
-add_executable(heatf ../../api/stats_api_fortran.f90 heat_utils.f90 heat.f90)
-target_link_libraries(heatf ${EXAMPLES_LIBS} stats_api_fortran)
+add_library(heat_utils heat_utils.f90)
+target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
+target_link_libraries(heat_utils ${EXAMPLES_LIBS})
 
-add_executable(heatc heat_utils.f90 heat.c)
-target_link_libraries(heatc ${EXAMPLES_LIBS} stats_api)
+add_executable(heatf ../../api/stats_api_fortran.f90 heat.f90)
+target_link_libraries(heatf ${EXAMPLES_LIBS} stats_api_fortran heat_utils)
+
+add_executable(heatc heat.c)
+target_link_libraries(heatc ${EXAMPLES_LIBS} stats_api heat_utils)

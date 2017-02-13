@@ -1,6 +1,6 @@
 project(stats C CXX Fortran)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 include(CTest)
 
 #function(find_python_module module)
@@ -75,7 +75,7 @@ if(BUILD_WITH_MPI)
   find_package(MPI)
   if(MPI_FOUND)
     set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${MPI_LIBRARIES} )
+                   ${MPI_LIBRARIES})
     add_definitions( -DBUILD_WITH_MPI )
     include_directories( ${MPI_INCLUDE_PATH} )
     add_definitions(${MPI_Fortran_COMPILE_FLAGS})

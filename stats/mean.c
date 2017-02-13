@@ -162,7 +162,7 @@ void update_global_mean (mean_t    *mean,
 
     if (rank == 0)
     {
-        global_mean = malloc (vect_size * sizeof(double));
+        global_mean = melissa_malloc (vect_size * sizeof(double));
         memcpy (global_mean, mean->mean, vect_size * sizeof(double));
 
         for (i=1; i<comm_size; i++)

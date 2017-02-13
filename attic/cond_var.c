@@ -44,7 +44,7 @@
 
 //    conditional_variance->order = 0;
 
-//    conditional_variance->fixed_indices = malloc (data->options->nb_parameters * sizeof(int));
+//    conditional_variance->fixed_indices = melissa_malloc (data->options->nb_parameters * sizeof(int));
 //    memcpy (conditional_variance->fixed_indices, indices_to_fix, data->options->nb_parameters * sizeof(int));
 
 //    for (i=0; i<data->options->nb_parameters; i++)
@@ -83,7 +83,7 @@
 //    int     i, j;
 //    int     ret;
 
-//    param = malloc(data->options->nb_parameters * sizeof(int));
+//    param = melissa_malloc(data->options->nb_parameters * sizeof(int));
 //#pragma omp parallel for
 //    for (i=0; i<data->options->nb_parameters; i++)
 //    {
@@ -97,7 +97,7 @@
 //        }
 //    }
 
-//    mean = calloc(data->vect_size, sizeof(double));
+//    mean = melissa_calloc(data->vect_size, sizeof(double));
 
 //    i = 0;
 //    while (i<data->options->nb_parameters)

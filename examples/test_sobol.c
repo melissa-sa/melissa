@@ -43,7 +43,7 @@ int main (int argc, char **argv)
 
     options.nb_time_steps    = 1; // not used here
     options.nb_parameters    = 3; // number of parameters
-    options.size_parameters  = malloc (options.nb_parameters * sizeof(int)); // nb of values taken by each parameter
+    options.size_parameters  = melissa_malloc (options.nb_parameters * sizeof(int)); // nb of values taken by each parameter
     for (i=0; i<options.nb_parameters; i++)
         options.size_parameters[i] = i+2;
 

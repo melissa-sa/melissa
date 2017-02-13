@@ -96,7 +96,7 @@ static void print_zmq_error(int         ret,
  *
  * @ingroup melissa_utils
  *
- * Wraper around malloc
+ * Wraper around melissa_malloc
  *
  *******************************************************************************
  *
@@ -113,11 +113,12 @@ void* melissa_malloc (size_t size)
     ptr = malloc (size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR malloc failed");
+        fprintf (stderr, "ERROR melissa_malloc failed");
         exit(0);
     }
     else
     {
+//        fprintf(stdout, "Allocated size : %d\n",size);
         return ptr;
     }
 }
@@ -127,7 +128,7 @@ void* melissa_malloc (size_t size)
  *
  * @ingroup melissa_utils
  *
- * Wraper around calloc
+ * Wraper around melissa_calloc
  *
  *******************************************************************************
  *
@@ -148,11 +149,12 @@ void* melissa_calloc (size_t num,
     ptr = calloc (num, size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR calloc failed");
+        fprintf (stderr, "ERROR melissa_calloc failed");
         exit(0);
     }
     else
     {
+//        fprintf(stdout, "Allocated size : %d\n",size * num);
         return ptr;
     }
 }

@@ -33,7 +33,7 @@ int main (int argc, char **argv)
     vect_size = m * n;
     printf("m * n = %d * %d = %d\n",m,n,vect_size);
 
-    out_vect = malloc (vect_size * sizeof(double));
+    out_vect = melissa_malloc (vect_size * sizeof(double));
 
     max_size_time=floor(log10(options.nb_time_steps))+1;
 

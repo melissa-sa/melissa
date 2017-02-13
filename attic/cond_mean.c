@@ -47,11 +47,11 @@ void init_conditional_means (conditional_mean_t *conditional_means,
 
     conditional_means->is_leaf = 0;
 
-    conditional_means->indices = malloc (data->options->nb_parameters * sizeof(int));
+    conditional_means->indices = melissa_malloc (data->options->nb_parameters * sizeof(int));
     for (i=0; i<data->options->nb_parameters; i++)
         conditional_means->indices[i] = -1;
 
-    conditional_means->indice_ptr = malloc ((data->options->nb_parameters +1) * sizeof(int));
+    conditional_means->indice_ptr = melissa_malloc ((data->options->nb_parameters +1) * sizeof(int));
 
     conditional_means->indice_ptr_size = data->options->nb_parameters+1;
 
@@ -61,7 +61,7 @@ void init_conditional_means (conditional_mean_t *conditional_means,
 //        conditional_means->indice_ptr[i+1] = conditional_means->indice_ptr[i] + data->options->size_parameters[i];
     }
 
-    conditional_means->next_conditional_means = malloc ((conditional_means->indice_ptr[data->options->nb_parameters]) * sizeof(conditional_mean_t));
+    conditional_means->next_conditional_means = melissa_malloc ((conditional_means->indice_ptr[data->options->nb_parameters]) * sizeof(conditional_mean_t));
 
     next_cond_mean = conditional_means->next_conditional_means;
     for (i=0; i<data->options->nb_parameters; i++)
@@ -126,7 +126,7 @@ void init_next_conditional_mean (conditional_mean_t *conditional_means,
 
     conditional_means->is_leaf = 0;
 
-    conditional_means->indices = malloc (data->options->nb_parameters * sizeof(int));
+    conditional_means->indices = melissa_malloc (data->options->nb_parameters * sizeof(int));
     memcpy (conditional_means->indices , previous_indices, data->options->nb_parameters * sizeof(int));
 
     conditional_means->indices[new_fixed_parameter[0]] = new_fixed_parameter[1];
@@ -138,7 +138,7 @@ void init_next_conditional_mean (conditional_mean_t *conditional_means,
         return;
     }
 
-    conditional_means->indice_ptr = malloc ((nb_parameters_to_fix +1) * sizeof(int));
+    conditional_means->indice_ptr = melissa_malloc ((nb_parameters_to_fix +1) * sizeof(int));
 
     conditional_means->indice_ptr_size = nb_parameters_to_fix +1;
 
@@ -153,7 +153,7 @@ void init_next_conditional_mean (conditional_mean_t *conditional_means,
         }
     }
 
-    conditional_means->next_conditional_means = malloc ( (conditional_means->indice_ptr[nb_parameters_to_fix]) * sizeof(conditional_mean_t));
+    conditional_means->next_conditional_means = melissa_malloc ( (conditional_means->indice_ptr[nb_parameters_to_fix]) * sizeof(conditional_mean_t));
 
     next_cond_mean = conditional_means->next_conditional_means;
 

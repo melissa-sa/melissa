@@ -21,7 +21,7 @@ mpi_OAR_options       = "--mca orte_rsh_agent \"oarsh\" --mca btl openib,sm,self
 mpi_Slurm_options     = ""
 mpi_CCC_options       = ""
 home_path             = "/scratch/G95757"
-server_path           = home_path+"/Melissa/build/src"
+server_path           = home_path+"/Melissa/build/server"
 workdir               = "/scratch/G95757/etude_eole"
 saturne_path          = home_path+"/Code_Saturne/4.3/arch/eole/ompi/bin"
 range_min             = np.zeros(nb_parameters,float)
@@ -42,6 +42,7 @@ walltime_melissa      = "240:00:0"
 frontend              = "eofront2"
 coupling              = 1
 xml_file_name         = "bundle_3x2_f16_param.xml"
+username              = "terrazth"
 
 #=======================================#
 #               functions               #
@@ -104,7 +105,7 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
         elif ("param_duree_injection_haut=" in ligne):
             contenu += 'param_duree_injection_haut='+str(Ai[4])+'\n'
         elif ("param_duree_injection_bas=" in ligne):
-            contenu += 'param_duree_injection_haut='+str(Ai[5])+'\n'
+            contenu += 'param_duree_injection_bas='+str(Ai[5])+'\n'
         else:
             contenu += ligne
     fichier.close()
@@ -223,7 +224,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#OAR -E melissa.%jobid%.err                                        \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
         contenu += "ulimit -s unlimited                                                \n"
-        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"                                                                 \n"
+        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
     elif (batch_scheduler == "CCC"):
         contenu += "#MSUB -n "+str(8*nodes_melissa*(nb_parameters+2))+"                \n"
         contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
@@ -240,29 +241,31 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "# generate server name files                                       \n"
     contenu += "cd "+workdir+"/case1/DATA                                          \n"
     contenu += server_path+"/../examples/create_file_server_name                   \n"
+    contenu += "# run Melissa                                                      \n"
+    contenu += "echo  \"### Launch Melissa\"                                       \n"
     contenu += "cd $WORK_DIR                                                       \n"
+    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+        contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
+        contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
+    elif (batch_scheduler == "OAR"):
+        contenu += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
+        contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
     contenu += "# launch simulation jobs                                           \n"
     contenu += "echo  \"### Launch saturne jobs\"                                  \n"
+    contenu += "cd $WORK_DIR                                                       \n"
     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
         if ("sobol" in options) or ("sobol_indices" in options):
             contenu += "python "+workdir+"/master.py container                             \n"
         else:
             contenu += "python "+workdir+"/master.py simu                                  \n"
-        contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
-        contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
     elif (batch_scheduler == "OAR"):
         if ("sobol" in options) or ("sobol_indices" in options):
             contenu += "ssh $FRONTEND \"python "+workdir+"/master.py container\"           \n"
         else:
             contenu += "ssh $FRONTEND \"python "+workdir+"/master.py simu\"                \n"
-        contenu += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
-        contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
-    contenu += "                                                                   \n"
-    contenu += "# run Melissa                                                      \n"
-    contenu += "echo  \"### Launch Melissa\"                                       \n"
-    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
-    contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
     contenu += "                                                                   \n"
     contenu += "wait %1                                                            \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
@@ -413,21 +416,22 @@ if (job_step == "first_step"):
         C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
     ret = np.zeros(nb_parameters + 2)
     for i in range(nb_groups):
-        create_case_str = saturne_path+"/code_saturne create --noref -s group"+str(i)+" -c rank0"
-        if ("sobol" in operations) or ("sobol_indices" in operations):
-            for j in range(nb_parameters+1):
-                create_case_str += " -c rank"+str(j+1)
-        os.chdir(workdir)
-        print create_case_str
-        os.system(create_case_str)
-        ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
-        if ("sobol" in operations) or ("sobol_indices" in operations):
-            ret[1] = create_case(B[i,:], 1, i, workdir, xml_file_name)
-            for j in range(nb_parameters):
-                ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
-        for k in range(len(ret)):
-            if (ret[k] != 0):
-                print "error creating simulation "+str(k)+" of group "+str(i)
+        if (not os.path.isdir(workdir+"/group"+str(i))):
+            create_case_str = saturne_path+"/code_saturne create --noref -s group"+str(i)+" -c rank0"
+            if ("sobol" in operations) or ("sobol_indices" in operations):
+                for j in range(nb_parameters+1):
+                    create_case_str += " -c rank"+str(j+1)
+            os.chdir(workdir)
+            print create_case_str
+            os.system(create_case_str)
+            ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
+            if ("sobol" in operations) or ("sobol_indices" in operations):
+                ret[1] = create_case(B[i,:], 1, i, workdir, xml_file_name)
+                for j in range(nb_parameters):
+                    ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
+            for k in range(len(ret)):
+                if (ret[k] != 0):
+                    print "error creating simulation "+str(k)+" of group "+str(i)
     os.chdir(workdir+"/STATS")
     if (batch_scheduler == "Slurm"):
         os.system('sbatch "./run_study.sh"')
@@ -442,6 +446,9 @@ if ((job_step == "container") or (job_step == "simu")):
     else:
         nb_simu = nb_groups*(nb_parameters+2)
     for i in range(nb_groups):
+        for j in range(nb_parameters+2):
+            casedir = workdir+"/group"+str(i)+"/rank"+str(j)
+            os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         # scripts to launch coupled simulation groups
         os.chdir(workdir+"/group"+str(i))
         if ("sobol" in operations) or ("sobol_indices" in operations):
@@ -449,7 +456,7 @@ if ((job_step == "container") or (job_step == "simu")):
             if (batch_scheduler == "Slurm"):
                 os.system('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))
             elif (batch_scheduler == "CCC"):
-                os.system('ccc_msub "../STATS/run_cas_couple.sh" --exclusive -r Saturnes'+str(i))
+                os.system('ccc_msub "../STATS/run_cas_couple.sh")
             elif (batch_scheduler == "OAR"):
                 os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
         else:
@@ -457,12 +464,18 @@ if ((job_step == "container") or (job_step == "simu")):
             if (batch_scheduler == "Slurm"):
                 os.system('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))
             elif (batch_scheduler == "CCC"):
-                os.system('ccc_msub "./runcase" --exclusive -r Saturne'+str(i))
+                os.system('ccc_msub "./runcase")
             elif (batch_scheduler == "OAR"):
                 os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
+        if (batch_scheduler == "CCC"):
+            if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
+                call_bash("scancel -u "+username")
+                break
+            while (int(call_bash("squeue -u "+username+" | wc -l")) >= 250)
+                time.sleep(30)
+
 
 if ((job_step == "containerplop") or (job_step == "simuplop")):
-    username = "terrazth"
 #    converged_sobol = np.zeros(nb_proc_server,int)
 #    iterations_server = np.zeros(nb_proc_server,int)
 #    finished_server = np.zeros(nb_proc_server,int)
@@ -511,7 +524,7 @@ if ((job_step == "containerplop") or (job_step == "simuplop")):
             if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
 #                print "Melissa crashed at iteration %d" % iterations_server[0]
                 print "Melissa job terminated, killing remaining jobs..."
-                call_bash("scancel -u +"username"+ ")
+                call_bash("scancel -u "+username)
 
 
 
