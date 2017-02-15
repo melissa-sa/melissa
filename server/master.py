@@ -13,7 +13,6 @@ import re
 batch_scheduler       = "Slurm"
 nb_parameters         = 6
 nb_groups             = 1000
-#nb_simu               = nb_groups*(nb_parameters+2)
 nb_time_steps         = 100
 operations            = ["mean","variance","min","max","threshold","sobol"]
 threshold             = 0.7
@@ -252,22 +251,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
-    contenu += "# launch simulation jobs                                           \n"
-    contenu += "echo  \"### Launch saturne jobs\"                                  \n"
-    contenu += "cd $WORK_DIR                                                       \n"
-    if (batch_scheduler == "Slurm")):
-        if ("sobol" in options) or ("sobol_indices" in options):
-            contenu += "python "+workdir+"/master.py container                             \n"
-        else:
-            contenu += "python "+workdir+"/master.py simu                                  \n"
-    elif (batch_scheduler == "OAR" or (batch_scheduler == "CCC"):
-        if ("sobol" in options) or ("sobol_indices" in options):
-            contenu += "ssh $FRONTEND \"python "+workdir+"/master.py container\"           \n"
-        else:
-            contenu += "ssh $FRONTEND \"python "+workdir+"/master.py simu\"                \n"
-    contenu += "                                                                   \n"
-    contenu += "wait %1                                                            \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+"          \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "cd "+workdir+"                                                     \n"
     fichier.write(contenu)
@@ -440,42 +424,58 @@ if (job_step == "first_step"):
     elif (batch_scheduler == "OAR"):
         os.system('oarsub -S "./run_study.sh" --project=avido')
 
-if ((job_step == "container") or (job_step == "simu")):
-    if (not (("sobol" in operations) or ("sobol_indices" in operations))):
-        nb_simu = nb_groups
+#if ((job_step == "container") or (job_step == "simu")):
+
+if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+    while (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
+        time.sleep(30)
+if (batch_scheduler == "OAR"):
+    while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
+        time.sleep(30)
+
+for i in range(nb_groups):
+    for j in range(nb_parameters+2):
+        casedir = workdir+"/group"+str(i)+"/rank"+str(j)
+        os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
+    # scripts to launch coupled simulation groups
+    os.chdir(workdir+"/group"+str(i))
+    if ("sobol" in operations) or ("sobol_indices" in operations):
+        create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
+        if (batch_scheduler == "Slurm"):
+            os.system('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))
+        elif (batch_scheduler == "CCC"):
+            os.system('ccc_msub "../STATS/run_cas_couple.sh")
+        elif (batch_scheduler == "OAR"):
+            os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
     else:
-        nb_simu = nb_groups*(nb_parameters+2)
-    for i in range(nb_groups):
-        for j in range(nb_parameters+2):
-            casedir = workdir+"/group"+str(i)+"/rank"+str(j)
-            os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
-        # scripts to launch coupled simulation groups
-        os.chdir(workdir+"/group"+str(i))
-        if ("sobol" in operations) or ("sobol_indices" in operations):
-            create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
-            if (batch_scheduler == "Slurm"):
-                os.system('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))
-            elif (batch_scheduler == "CCC"):
-                os.system('ccc_msub "../STATS/run_cas_couple.sh")
-            elif (batch_scheduler == "OAR"):
-                os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
-        else:
-            os.chdir("./rank0/SCRIPTS")
-            if (batch_scheduler == "Slurm"):
-                os.system('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))
-            elif (batch_scheduler == "CCC"):
-                os.system('ccc_msub "./runcase")
-            elif (batch_scheduler == "OAR"):
-                os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
-        if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-            if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
-                call_bash("scancel -u "+username")
-                break
-            while (int(call_bash("squeue -u "+username+" | wc -l")) >= 250)
-                time.sleep(30)
+        os.chdir("./rank0/SCRIPTS")
+        if (batch_scheduler == "Slurm"):
+            os.system('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))
+        elif (batch_scheduler == "CCC"):
+            os.system('ccc_msub "./runcase")
+        elif (batch_scheduler == "OAR"):
+            os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
+    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+        if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
+            call_bash("scancel -u "+username")
+            break
+        while (int(call_bash("squeue -u "+username+" | wc -l")) >= 250)
+            time.sleep(30)
 
+while True:
+    time.sleep(300)
+    if (batch_scheduler == "OAR"):
+        if (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
+            time.sleep(10)
+            print "Melissa job terminated, killing remaining jobs..."
+            running_jobs = call_bash("oarstat -u --sql | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
+            call_bash("oardel "+running_jobs)
+    elif (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+        if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
+            time.sleep(10)
+            print "Melissa job terminated, killing remaining jobs..."
+            call_bash("scancel -u "+username)
 
-if ((job_step == "containerplop") or (job_step == "simuplop")):
 #    converged_sobol = np.zeros(nb_proc_server,int)
 #    iterations_server = np.zeros(nb_proc_server,int)
 #    finished_server = np.zeros(nb_proc_server,int)
@@ -488,7 +488,7 @@ if ((job_step == "containerplop") or (job_step == "simuplop")):
 #    poller.register(rep_melissa_socket, zmq.POLLIN)
 ##        poller.register(pull_simu_socket, zmq.POLLIN)
 #    snd_message = "continue"
-    while True:
+#    while True:
 #        socks = dict(poller.poll(1000))
 #        if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
 ##                rcv_message = rep_melissa_socket.recv_string()
@@ -516,15 +516,6 @@ if ((job_step == "containerplop") or (job_step == "simuplop")):
 #                snd_message = "continue"
 #            else:
 #                snd_message = "stop"
-        time.sleep(300)
-        if (batch_scheduler == "OAR"):
-            if (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
-                print "Melissa crashed at iteration %d" % iterations_server[0]
-        elif (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-            if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
-#                print "Melissa crashed at iteration %d" % iterations_server[0]
-                print "Melissa job terminated, killing remaining jobs..."
-                call_bash("scancel -u "+username)
 
 
 
