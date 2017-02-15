@@ -88,7 +88,7 @@ static long int total_bytes_sent;
 
 void my_free (void *data, void *hint)
 {
-    melissa_free (data);
+    free (data);
 }
 
 
@@ -217,9 +217,9 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
 
     new_message = 0;
 
-    data->push_rank = melissa_malloc (data->total_nb_messages * sizeof(int));
-    data->pull_rank = melissa_malloc (data->total_nb_messages * sizeof(int));
-    data->message_sizes = melissa_malloc (data->total_nb_messages * sizeof(int));
+    data->push_rank = malloc (data->total_nb_messages * sizeof(int));
+    data->pull_rank = malloc (data->total_nb_messages * sizeof(int));
+    data->message_sizes = malloc (data->total_nb_messages * sizeof(int));
 
     data->push_rank[0] = 0;
     data->pull_rank[0] = 0;
@@ -366,7 +366,7 @@ void connect_to_stats (const int *local_vect_size,
     }
 
     // bcast infos from server
-    zmq_data.local_vect_sizes = melissa_malloc(*comm_size * sizeof(int));
+    zmq_data.local_vect_sizes = malloc(*comm_size * sizeof(int));
 
 #ifdef BUILD_WITH_MPI
     if (*comm_size > 1)
@@ -390,7 +390,7 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.sobol = zmq_data.rinit_tab[1];
     zmq_data.nb_parameters = zmq_data.rinit_tab[2];
 
-    zmq_data.server_vect_size = melissa_calloc (zmq_data.nb_proc_server, sizeof(int));
+    zmq_data.server_vect_size = calloc (zmq_data.nb_proc_server, sizeof(int));
 
     for (i=0; i<zmq_data.nb_proc_server; i++)
     {
@@ -399,12 +399,12 @@ void connect_to_stats (const int *local_vect_size,
             zmq_data.server_vect_size[i] += 1;
     }
 
-    zmq_data.send_counts = melissa_calloc (zmq_data.nb_proc_server, sizeof(int));
-    zmq_data.sdispls     = melissa_calloc (zmq_data.nb_proc_server, sizeof(int));
+    zmq_data.send_counts = calloc (zmq_data.nb_proc_server, sizeof(int));
+    zmq_data.sdispls     = calloc (zmq_data.nb_proc_server, sizeof(int));
 
     comm_n_to_m_init (&zmq_data, global_vect_size, zmq_data.local_vect_sizes, *rank);
 
-    node_names = melissa_malloc (zmq_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+    node_names = malloc (zmq_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
 
     if (*rank == 0)
     {
@@ -432,7 +432,7 @@ void connect_to_stats (const int *local_vect_size,
             melissa_get_node_name (master_node_name);
             if (*rank == 0)
             {
-                master_node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
+                master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
             }
 #ifdef BUILD_WITH_MPI
             if (*comm_size > 1)
@@ -505,7 +505,7 @@ void connect_to_stats (const int *local_vect_size,
     zmq_data.data_pusher = NULL;
     if (*sobol_rank == 0)
     {
-        zmq_data.data_pusher = melissa_malloc (zmq_data.local_nb_messages * sizeof(void*));
+        zmq_data.data_pusher = malloc (zmq_data.local_nb_messages * sizeof(void*));
 
         j = 0;
         for (i=0; i<zmq_data.total_nb_messages; i++)
@@ -550,7 +550,7 @@ void connect_to_stats (const int *local_vect_size,
                     //
                 }
             }
-            zmq_data.sobol_requester = melissa_malloc ((zmq_data.nb_parameters + 1) * sizeof(void*));
+            zmq_data.sobol_requester = malloc ((zmq_data.nb_parameters + 1) * sizeof(void*));
             for (i=0; i<zmq_data.nb_parameters + 1; i++)
             {
                 zmq_data.sobol_requester[i] = zmq_socket (zmq_data.context, ZMQ_REP);
@@ -575,7 +575,7 @@ void connect_to_stats (const int *local_vect_size,
         zmq_recv (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
         //
         //
-        zmq_data.sobol_requester = melissa_malloc (sizeof(void*));
+        zmq_data.sobol_requester = malloc (sizeof(void*));
         zmq_data.sobol_requester[0] = zmq_socket (zmq_data.context, ZMQ_REQ);
         if (0 == strcmp(master_node_name, "localhost"))
         {
@@ -601,16 +601,16 @@ void connect_to_stats (const int *local_vect_size,
     }
     zmq_data.send_buff_size += 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
 #ifndef ZEROCOPY
-    zmq_data.buffer = melissa_malloc (zmq_data.send_buff_size);
+    zmq_data.buffer = malloc (zmq_data.send_buff_size);
 #endif // ZEROCOPY
     if (zmq_data.sobol)
     {
         if (*sobol_rank == 0)
         {
-            zmq_data.buffer_sobol = melissa_malloc ((zmq_data.nb_parameters+2) * *local_vect_size * sizeof (double*));
+            zmq_data.buffer_sobol = malloc ((zmq_data.nb_parameters+2) * *local_vect_size * sizeof (double*));
         }
     }
-    melissa_free (node_names);
+    free (node_names);
 }
 
 #ifdef BUILD_WITH_MPI
@@ -796,7 +796,7 @@ void send_to_stats       (const int  *time_step,
                 {
                     buff_size += zmq_data.send_counts[zmq_data.pull_rank[i]] * (zmq_data.nb_parameters + 1) * sizeof(double);
                 }
-                zmq_data.buffer = melissa_malloc (buff_size);
+                zmq_data.buffer = malloc (buff_size);
                 buff_ptr = zmq_data.buffer;
                 memcpy(buff_ptr, time_step, sizeof(int));
                 buff_ptr += sizeof(int);
@@ -958,19 +958,19 @@ void disconnect_from_stats ()
     zmq_ctx_term (zmq_data.context);
     if (zmq_data.sobol_rank == 0)
     {
-        melissa_free(zmq_data.data_pusher);
+        free(zmq_data.data_pusher);
     }
-    melissa_free(zmq_data.send_counts);
-    melissa_free(zmq_data.sdispls);
-    melissa_free(zmq_data.server_vect_size);
+    free(zmq_data.send_counts);
+    free(zmq_data.sdispls);
+    free(zmq_data.server_vect_size);
 #ifndef ZEROCOPY
-    melissa_free(zmq_data.buffer);
+    free(zmq_data.buffer);
 #endif // ZEROCOPY
     if (zmq_data.sobol == 1 && zmq_data.sobol_rank == 0)
     {
-        melissa_free(zmq_data.buffer_sobol);
+        free(zmq_data.buffer_sobol);
     }
-    melissa_free(zmq_data.local_vect_sizes);
+    free(zmq_data.local_vect_sizes);
 
 #ifdef BUILD_WITH_PROBES
     fprintf (stdout, " --- Simulation comm time: %g s\n",total_comm_time);

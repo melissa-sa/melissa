@@ -226,7 +226,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "ulimit -s unlimited                                                \n"
         contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
     elif (batch_scheduler == "CCC"):
-        contenu += "#MSUB -n "+str(8*nodes_melissa*(nb_parameters+2))+"                \n"
+        contenu += "#MSUB -n "+str(nodes_melissa*16))+"                                \n"
         contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
         contenu += "#MSUB -o melissa.%I.log                                            \n"
         contenu += "#MSUB -e melissa.%I.err                                            \n"
@@ -256,12 +256,12 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "# launch simulation jobs                                           \n"
     contenu += "echo  \"### Launch saturne jobs\"                                  \n"
     contenu += "cd $WORK_DIR                                                       \n"
-    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+    if (batch_scheduler == "Slurm")):
         if ("sobol" in options) or ("sobol_indices" in options):
             contenu += "python "+workdir+"/master.py container                             \n"
         else:
             contenu += "python "+workdir+"/master.py simu                                  \n"
-    elif (batch_scheduler == "OAR"):
+    elif (batch_scheduler == "OAR" or (batch_scheduler == "CCC"):
         if ("sobol" in options) or ("sobol_indices" in options):
             contenu += "ssh $FRONTEND \"python "+workdir+"/master.py container\"           \n"
         else:
@@ -416,22 +416,22 @@ if (job_step == "first_step"):
         C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
     ret = np.zeros(nb_parameters + 2)
     for i in range(nb_groups):
+        os.chdir(workdir)
         if (not os.path.isdir(workdir+"/group"+str(i))):
             create_case_str = saturne_path+"/code_saturne create --noref -s group"+str(i)+" -c rank0"
             if ("sobol" in operations) or ("sobol_indices" in operations):
                 for j in range(nb_parameters+1):
                     create_case_str += " -c rank"+str(j+1)
-            os.chdir(workdir)
             print create_case_str
             os.system(create_case_str)
-            ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
-            if ("sobol" in operations) or ("sobol_indices" in operations):
-                ret[1] = create_case(B[i,:], 1, i, workdir, xml_file_name)
-                for j in range(nb_parameters):
-                    ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
-            for k in range(len(ret)):
-                if (ret[k] != 0):
-                    print "error creating simulation "+str(k)+" of group "+str(i)
+        ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
+        if ("sobol" in operations) or ("sobol_indices" in operations):
+            ret[1] = create_case(B[i,:], 1, i, workdir, xml_file_name)
+            for j in range(nb_parameters):
+                ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
+        for k in range(len(ret)):
+            if (ret[k] != 0):
+                print "error creating simulation "+str(k)+" of group "+str(i)
     os.chdir(workdir+"/STATS")
     if (batch_scheduler == "Slurm"):
         os.system('sbatch "./run_study.sh"')
@@ -467,7 +467,7 @@ if ((job_step == "container") or (job_step == "simu")):
                 os.system('ccc_msub "./runcase")
             elif (batch_scheduler == "OAR"):
                 os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
-        if (batch_scheduler == "CCC"):
+        if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
             if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
                 call_bash("scancel -u "+username")
                 break
