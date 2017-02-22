@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "threshold.h"
+#include "melissa_utils.h"
 
 /**
  *******************************************************************************

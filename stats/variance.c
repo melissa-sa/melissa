@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include "mean.h"
 #include "variance.h"
+#include "melissa_utils.h"
 
 /**
  *******************************************************************************

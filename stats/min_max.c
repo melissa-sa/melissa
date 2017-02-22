@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "min_max.h"
+#include "melissa_utils.h"
 
 /**
  *******************************************************************************

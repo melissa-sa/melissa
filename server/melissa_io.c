@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "melissa_data.h"
+#include "melissa_utils.h"
 
 /**
  *******************************************************************************

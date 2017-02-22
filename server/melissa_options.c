@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "melissa_options.h"
+#include "melissa_utils.h"
 //#include "stats.h"
 
 static inline void stats_usage ()

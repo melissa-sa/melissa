@@ -16,6 +16,7 @@
 #include "mean.h"
 #include "variance.h"
 #include "covariance.h"
+#include "melissa_utils.h"
 
 /**
  *******************************************************************************

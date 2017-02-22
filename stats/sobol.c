@@ -15,6 +15,7 @@
 #include "variance.h"
 #include "covariance.h"
 #include "sobol.h"
+#include "melissa_utils.h"
 
 /**
  *******************************************************************************

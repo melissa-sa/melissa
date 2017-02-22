@@ -15,6 +15,7 @@
 #endif // BUILD_WITH_MPI
 #include <math.h>
 #include "mean.h"
+#include "melissa_utils.h"
 
 /**
  *******************************************************************************

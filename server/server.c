@@ -14,6 +14,7 @@
 #include "compute_stats.h"
 #include "melissa_options.h"
 #include "melissa_data.h"
+#include "melissa_utils.h"
 
 #define ZEROCOPY
 

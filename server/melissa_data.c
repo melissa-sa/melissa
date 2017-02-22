@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "melissa_data.h"
+#include "melissa_utils.h"
 
 static void melissa_alloc_data (melissa_data_t *data)
 {

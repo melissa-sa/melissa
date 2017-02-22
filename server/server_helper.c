@@ -8,7 +8,10 @@
 #ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
+#include "compute_stats.h"
+#include "melissa_options.h"
 #include "melissa_data.h"
+#include "melissa_io.h"
 #include "server.h"
 
 void comm_n_to_m_init (int           *rcounts,
