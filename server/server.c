@@ -10,6 +10,10 @@
 #include <zmq.h>
 #endif // BUILD_WITH_ZMQ
 #include "server.h"
+#include "melissa_io.h"
+#include "compute_stats.h"
+#include "melissa_options.h"
+#include "melissa_data.h"
 
 #define ZEROCOPY
 
@@ -67,7 +71,7 @@ int main (int argc, char **argv)
     double              start_wait_time = 0;
     double              end_wait_time = 0;
     double              total_write_time = 0;
-    long int            total_bytes_recv = 0;
+    long int            total_mbytes_recv = 0;
 #endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
@@ -353,9 +357,9 @@ int main (int argc, char **argv)
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
 #ifdef BUILD_WITH_PROBES
 #ifdef ZEROCOPY
-            total_bytes_recv += zmq_msg_size (&msg);
+            total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
 #else // ZEROCOPY
-            total_bytes_recv += recv_buff_size;
+            total_mbytes_recv += recv_buff_size / 1000000;
 #endif // ZEROCOPY
             start_computation_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
@@ -420,7 +424,7 @@ int main (int argc, char **argv)
         }
 #endif // BUILD_WITH_PY_ZMQ
 
-        if (iteration % 1000 == 0)
+        if (iteration % 10 == 0)
         {
             field_ptr fptr = field;
             while (fptr != NULL)
@@ -535,8 +539,8 @@ int main (int argc, char **argv)
     interval_tot = temp1;
     MPI_Reduce (&total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     total_comm_time = temp1 / comm_data.comm_size;
-    MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    total_bytes_recv = temp2;
+    MPI_Reduce (&total_mbytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_mbytes_recv = temp2;
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
@@ -548,9 +552,9 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Waiting time:                    %g s\n", total_wait_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
-        fprintf (stdout, " --- Bytes recieved:                  %ld bytes\n",total_bytes_recv);
+        fprintf (stdout, " --- MB recieved:                     %ld bytes\n",total_mbytes_recv);
         fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&melissa_options));
-        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_bytes_written(&melissa_options)*nb_fields);
+        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_mbytes_written(&melissa_options)*nb_fields);
         if (melissa_options.sobol_op == 1)
         {
             fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);

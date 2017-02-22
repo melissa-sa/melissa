@@ -1,9 +1,4 @@
 
-set(ALL_API stats_api.c
-            stats_api.h
-            stats_api_no_mpi.h
-            ../utils/melissa_utils.c
-            ../utils/melissa_utils.h)
 add_library(stats_api ${ALL_API})
 target_compile_options(stats_api BEFORE PUBLIC -fPIC)
 install(TARGETS stats_api DESTINATION bin)

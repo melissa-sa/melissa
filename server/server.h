@@ -50,7 +50,7 @@ void finalize_field_data (field_ptr          field,
 #endif // BUILD_WITH_PROBES
                           );
 
-long int count_bytes_written (melissa_options_t  *options);
+long int count_mbytes_written (melissa_options_t  *options);
 
 int string_recv (void *socket,
                  char *recv_buff);

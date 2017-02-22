@@ -6,9 +6,10 @@
 *
 **/
 
-#ifndef SOBOL_H
-#define SOBOL_H
+#ifndef MELISSA_IO_H
+#define MELISSA_IO_H
 #include "melissa_data.h"
+#include "melissa_options.h"
 
 void write_stats(melissa_data_t    **data,
                  melissa_options_t  *options,
@@ -37,4 +38,10 @@ void read_saved_stats (melissa_data_t *data,
                        char           *field_name,
                        int             client_rank);
 
-#endif // SOBOL_H
+void read_ensight (melissa_options_t  *options,
+                   comm_data_t      *comm_data,
+                   double           *in_vect,
+                   int              *local_vect_sizes,
+                   char             *file_name);
+
+#endif // MELISSA_IO_H

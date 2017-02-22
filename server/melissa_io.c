@@ -36,7 +36,6 @@ void write_client_data (int *client_comm_size,
                         int *client_vect_sizes)
 {
     FILE* f;
-    int i;
 
     f = fopen("client_data.save", "wb+");
 
@@ -77,7 +76,7 @@ int read_client_data (int  *client_comm_size,
         {
             ret = 0;
         }
-        *client_vect_sizes = melissa_malloc (*client_comm_size * sizeof(int));
+        *client_vect_sizes = malloc (*client_comm_size * sizeof(int));
         if (*client_comm_size == fread(*client_vect_sizes, sizeof(int), *client_comm_size, f));
         {
             ret = 0;
@@ -249,7 +248,8 @@ void write_stats (melissa_data_t    **data,
                   char               *field
                   )
 {
-    long long int        i, t, offset = 0;
+    long long int        i, offset = 0;
+    int                  t;
 #ifdef BUILD_WITH_MPI
     MPI_File   f;
     MPI_Status status;
@@ -271,7 +271,7 @@ void write_stats (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_mean_%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "%s_mean_%.*d", field, max_size_time, (int)t+1);
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -303,7 +303,7 @@ void write_stats (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_variance_%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "%s_variance_%.*d", field, max_size_time, (int)t+1);
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -334,7 +334,7 @@ void write_stats (melissa_data_t    **data,
         {
             for (t=0; t<options->nb_time_steps; t++)
             {
-                sprintf(file_name, "%s_mean_%.*d", field, max_size_time, t+1);
+                sprintf(file_name, "%s_mean_%.*d", field, max_size_time, (int)t+1);
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -367,7 +367,7 @@ void write_stats (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_min_%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "%s_min_%.*d", field, max_size_time, (int)t+1);
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -396,7 +396,7 @@ void write_stats (melissa_data_t    **data,
 
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_max_%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "%s_max_%.*d", field, max_size_time, (int)t+1);
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -428,7 +428,7 @@ void write_stats (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_threshold_exceedance_%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "%s_threshold_exceedance_%.*d", field, max_size_time, (int)t+1);
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -463,7 +463,7 @@ void write_stats (melissa_data_t    **data,
         {
             for (p=0; p<options->nb_parameters; p++)
             {
-                sprintf(file_name, "%s_sobol_indices_%.*d.%d",field,  max_size_time, t+1, p);
+                sprintf(file_name, "%s_sobol_indices_%.*d.%d",field,  max_size_time, (int)t+1, p);
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -495,7 +495,7 @@ void write_stats (melissa_data_t    **data,
         {
             for (p=0; p<options->nb_parameters; p++)
             {
-                sprintf(file_name, "%s_sobol_total_indices_%.*d.%d",field,  max_size_time, t+1, p);
+                sprintf(file_name, "%s_sobol_total_indices_%.*d.%d",field,  max_size_time, (int)t+1, p);
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -557,7 +557,8 @@ void write_stats_ensight (melissa_data_t    **data,
                           int                *local_vect_sizes,
                           char               *field)
 {
-    long int    i, j, t, param, offset=0, temp_offset=0;
+    long int    i, j, offset=0, temp_offset=0;
+    int         t, param;
     FILE*       f;
     char        file_name[256];
     int         max_size_time;
@@ -584,7 +585,7 @@ void write_stats_ensight (melissa_data_t    **data,
         for (t=0; t<options->nb_time_steps; t++)
         {
             time_value += 0.0012;
-            sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, (int)t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
@@ -613,7 +614,7 @@ void write_stats_ensight (melissa_data_t    **data,
             if (comm_data->rank == 0)
             {
                 f = fopen(file_name, "w");
-                sprintf(c_buffer, "%s_mean (time values: %d, %g)", field, t, time_value);
+                sprintf(c_buffer, "%s_mean (time values: %d, %g)", field, (int)t, time_value);
                 strncpy(c_buffer2, c_buffer, 80);
                 for (i=strlen(c_buffer); i < 80; i++)
                   c_buffer2[i] = ' ';
@@ -646,7 +647,7 @@ void write_stats_ensight (melissa_data_t    **data,
         for (t=0; t<options->nb_time_steps; t++)
         {
             time_value += 0.0012;
-            sprintf(file_name, "results.%s_variance.%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "results.%s_variance.%.*d", field, max_size_time, (int)t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
@@ -675,7 +676,7 @@ void write_stats_ensight (melissa_data_t    **data,
             if (comm_data->rank == 0)
             {
                 f = fopen(file_name, "w");
-                sprintf(c_buffer, "%s_variance (time values: %d, %g)", field, t, time_value);
+                sprintf(c_buffer, "%s_variance (time values: %d, %g)", field, (int)t, time_value);
                 strncpy(c_buffer2, c_buffer, 80);
                 for (i=strlen(c_buffer); i < 80; i++)
                   c_buffer2[i] = ' ';
@@ -707,7 +708,7 @@ void write_stats_ensight (melissa_data_t    **data,
             for (t=0; t<options->nb_time_steps; t++)
             {
                 time_value += 0.0012;
-                sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, t+1);
+                sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time,(int) t+1);
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if (comm_data->rcounts[i] > 0)
@@ -736,7 +737,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 if (comm_data->rank == 0)
                 {
                     f = fopen(file_name, "w");
-                    sprintf(c_buffer, "%s_mean (time values: %d, %g)", field, t, time_value);
+                    sprintf(c_buffer, "%s_mean (time values: %d, %g)", field, (int)t, time_value);
                     strncpy(c_buffer2, c_buffer, 80);
                     for (i=strlen(c_buffer); i < 80; i++)
                       c_buffer2[i] = ' ';
@@ -770,7 +771,7 @@ void write_stats_ensight (melissa_data_t    **data,
         for (t=0; t<options->nb_time_steps; t++)
         {
             time_value += 0.0012;
-            sprintf(file_name, "results.%s_min.%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "results.%s_min.%.*d", field, max_size_time, (int)t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
@@ -799,7 +800,7 @@ void write_stats_ensight (melissa_data_t    **data,
             if (comm_data->rank == 0)
             {
                 f = fopen(file_name, "w");
-                sprintf(c_buffer, "%s_min (time values: %d, %g)", field, t, time_value);
+                sprintf(c_buffer, "%s_min (time values: %d, %g)", field, (int)t, time_value);
                 strncpy(c_buffer2, c_buffer, 80);
                 for (i=strlen(c_buffer); i < 80; i++)
                   c_buffer2[i] = ' ';
@@ -829,7 +830,7 @@ void write_stats_ensight (melissa_data_t    **data,
         for (t=0; t<options->nb_time_steps; t++)
         {
             time_value += 0.0012;
-            sprintf(file_name, "results.%s_max.%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "results.%s_max.%.*d", field, max_size_time, (int)t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
@@ -858,7 +859,7 @@ void write_stats_ensight (melissa_data_t    **data,
             if (comm_data->rank == 0)
             {
                 f = fopen(file_name, "w");
-                sprintf(c_buffer, "%s_max (time values: %d, %g)", field, t, time_value);
+                sprintf(c_buffer, "%s_max (time values: %d, %g)", field, (int)t, time_value);
                 strncpy(c_buffer2, c_buffer, 80);
                 for (i=strlen(c_buffer); i < 80; i++)
                   c_buffer2[i] = ' ';
@@ -891,7 +892,7 @@ void write_stats_ensight (melissa_data_t    **data,
         for (t=0; t<options->nb_time_steps; t++)
         {
             time_value += 0.0012;
-            sprintf(file_name, "results.%s_min.%.*d", field, max_size_time, t+1);
+            sprintf(file_name, "results.%s_min.%.*d", field, max_size_time,(int) t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (comm_data->rcounts[i] > 0)
@@ -920,7 +921,7 @@ void write_stats_ensight (melissa_data_t    **data,
             if (comm_data->rank == 0)
             {
                 f = fopen(file_name, "w");
-                sprintf(c_buffer, "%s_min (time values: %d, %g)", field, t, time_value);
+                sprintf(c_buffer, "%s_min (time values: %d, %g)", field, (int)t, time_value);
                 strncpy(c_buffer2, c_buffer, 80);
                 for (i=strlen(c_buffer); i < 80; i++)
                   c_buffer2[i] = ' ';
@@ -955,7 +956,7 @@ void write_stats_ensight (melissa_data_t    **data,
             for (t=0; t<options->nb_time_steps; t++)
             {
                 time_value += 0.0012;
-                sprintf(file_name, "results.%s_sobol%d.%.*d", field, param, max_size_time, t+1);
+                sprintf(file_name, "results.%s_sobol%d.%.*d", field, param, max_size_time, (int)(t+1));
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if (comm_data->rcounts[i] > 0)
@@ -984,7 +985,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 if (comm_data->rank == 0)
                 {
                     f = fopen(file_name, "w");
-                    sprintf(c_buffer, "%s_sobol%d (time values: %d, %g)", field, param, t, time_value);
+                    sprintf(c_buffer, "%s_sobol%d (time values: %d, %g)", field, param, (int)t, time_value);
                     strncpy(c_buffer2, c_buffer, 80);
                     for (i=strlen(c_buffer); i < 80; i++)
                       c_buffer2[i] = ' ';
@@ -1016,7 +1017,7 @@ void write_stats_ensight (melissa_data_t    **data,
             for (t=0; t<options->nb_time_steps; t++)
             {
                 time_value += 0.0012;
-                sprintf(file_name, "results.%s_sobol_tot%d.%.*d", field, param, max_size_time, t+1);
+                sprintf(file_name, "results.%s_sobol_tot%d.%.*d", field, param, max_size_time, (int)t+1);
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if (comm_data->rcounts[i] > 0)
@@ -1045,7 +1046,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 if (comm_data->rank == 0)
                 {
                     f = fopen(file_name, "w");
-                    sprintf(c_buffer, "%s_sobol_tot%d (time values: %d, %g)", field, param, t, time_value);
+                    sprintf(c_buffer, "%s_sobol_tot%d (time values: %d, %g)", field, param, (int)t, time_value);
                     strncpy(c_buffer2, c_buffer, 80);
                     for (i=strlen(c_buffer); i < 80; i++)
                       c_buffer2[i] = ' ';
@@ -1118,16 +1119,17 @@ void read_ensight (melissa_options_t  *options,
 
     if (comm_data->rank == 0)
     {
-        r_buffer = melissa_malloc (options->global_vect_size * sizeof(float));
+        r_buffer = malloc (options->global_vect_size * sizeof(float));
     }
     else
     {
-        r_buffer = melissa_malloc (local_vect_sizes[comm_data->rank] * sizeof(float));
+        r_buffer = malloc (local_vect_sizes[comm_data->rank] * sizeof(float));
     }
 
     if (comm_data->rank == 0)
     {
         f = fopen(file_name, "r");
+        if (f == NULL) printf ("f = NULL\n");
         fread (c_buffer, sizeof(char), 80, f);
         fread (c_buffer, sizeof(char), 80, f);
         fread (&n, sizeof(int32_t), 1, f);

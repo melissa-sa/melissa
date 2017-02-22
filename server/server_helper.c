@@ -238,30 +238,30 @@ void finalize_field_data (field_ptr         field,
     return;
 }
 
-long int count_bytes_written (melissa_options_t  *options)
+long int count_mbytes_written (melissa_options_t  *options)
 {
-    long int bytes_written = 0;
+    long int mbytes_written = 0;
     if (options->mean_op == 1)
     {
-        bytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps;
+        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
     }
     if (options->variance_op == 1)
     {
-        bytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps;
+        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
     }
     if (options->min_and_max_op == 1)
     {
-        bytes_written += 2*options->global_vect_size*sizeof(float)*options->nb_time_steps;
+        mbytes_written += 2*options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
     }
     if (options->threshold_op == 1)
     {
-        bytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps;
+        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
     }
     if (options->sobol_op == 1)
     {
-        bytes_written += options->nb_parameters * 2 *options->global_vect_size*sizeof(float)*options->nb_time_steps;
+        mbytes_written += options->nb_parameters * 2 *options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
     }
-    return bytes_written;
+    return mbytes_written;
 }
 
 int string_recv (void  *socket,

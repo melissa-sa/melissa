@@ -115,7 +115,7 @@ void write_min_max(min_max_t *minmax,
     {
         fwrite(minmax[i].min, sizeof(double), vect_size, f);
         fwrite(minmax[i].max, sizeof(double), vect_size, f);
-        fwrite(&minmax[i].is_init, sizeof(int), vect_size, f);
+        fwrite(&minmax[i].is_init, sizeof(int), 1, f);
     }
 }
 

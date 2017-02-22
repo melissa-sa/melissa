@@ -15,7 +15,7 @@
 #include "variance.h"
 #include "covariance.h"
 
-int main(int *argc, char **argv)
+int main(int argc, char **argv)
 {
     double       *tableau1 = NULL, *tableau2 = NULL;
     double       *ref_mean1 = NULL, *ref_mean2 = NULL;

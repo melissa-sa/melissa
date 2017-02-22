@@ -144,16 +144,59 @@ if(BUILD_WITH_PROBES)
     add_definitions( -DBUILD_WITH_PROBES )
 endif(BUILD_WITH_PROBES)
 
+set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c)
+set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
+set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
+set(ALL_INCS ${ALL_INCS} ${UTILS_H})
+
 include_directories("${PROJECT_SOURCE_DIR}/utils")
+
 add_subdirectory(utils)
 
-include_directories("${PROJECT_SOURCE_DIR}/stats")
+set(STATS_C covariance.c
+            variance.c
+            mean.c
+            min_max.c
+            sobol.c
+            threshold.c)
+set(ALL_SRCS ${ALL_SRCS} ${STATS_C})
+set(STATS_H covariance.h
+            variance.h
+            mean.h
+            min_max.h
+            sobol.h
+            threshold.h)
+set(ALL_INCS ${ALL_INCS} ${STATS_H})
+
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")
+
 add_subdirectory(stats)
 
-include_directories("${PROJECT_SOURCE_DIR}/server")
+set(SERVER_SRC compute_stats.c
+               melissa_data.c
+               melissa_io.c
+               melissa_options.c
+               server_helper.c)
+set(ALL_SRCS ${ALL_SRCS} ${SERVER_SRC})
+set(SERVER_H compute_stats.h
+             melissa_data.h
+             melissa_io.h
+             melissa_options.h
+             server.h)
+set(ALL_INCS ${ALL_INCS} ${SERVER_H})
+
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
+
 add_subdirectory(server)
 
-include_directories("${PROJECT_SOURCE_DIR}/api")
+set(ALL_API stats_api.c
+            stats_api.h
+            stats_api_no_mpi.h
+            ${UTILS_C}
+            ${UTILS_H})
+
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
+
 add_subdirectory(api)
 
 option(BUILD_EXAMPLES "Build examples" ON)
