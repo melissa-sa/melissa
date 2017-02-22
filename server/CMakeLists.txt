@@ -7,9 +7,9 @@ if(BUILD_WITH_FLOWVR)
 endif(BUILD_WITH_FLOWVR)
 
 if(BUILD_WITH_ZMQ)
-  add_executable(server ${UTILS_H} ${SERVER_SRC} ${SERVER_H} server.c)
+  add_executable(server ${SERVER_SRC} ${SERVER_H} server.c)
   target_link_libraries(server ${EXTRA_LIBS} melissa_utils melissa_stats)
 endif(BUILD_WITH_ZMQ)
 
-add_executable(ensight_server ${UTILS_H} ${SERVER_SRC} ${SERVER_H} ensight_server.c)
+add_executable(ensight_server ${SERVER_SRC} ${SERVER_H} ensight_server.c)
 target_link_libraries(ensight_server ${EXTRA_LIBS} melissa_utils melissa_stats)

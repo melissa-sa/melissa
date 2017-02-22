@@ -144,9 +144,11 @@ if(BUILD_WITH_PROBES)
     add_definitions( -DBUILD_WITH_PROBES )
 endif(BUILD_WITH_PROBES)
 
-set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c)
+set(UTILS_C melissa_utils.c)
+#set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c)
 set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
-set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
+set(UTILS_H melissa_utils.h)
+#set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
 set(ALL_INCS ${ALL_INCS} ${UTILS_H})
 
 include_directories("${PROJECT_SOURCE_DIR}/utils")
@@ -191,9 +193,7 @@ add_subdirectory(server)
 
 set(ALL_API stats_api.c
             stats_api.h
-            stats_api_no_mpi.h
-            ${UTILS_C}
-            ${UTILS_H})
+            stats_api_no_mpi.h)
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
 

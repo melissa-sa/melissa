@@ -29,7 +29,7 @@ int main (int argc, char **argv)
     field_ptr           field = NULL;
     comm_data_t         comm_data;
     int                 time_step;
-    int                 i, j;
+    int                 i;
     double             *buffer;
     double            **buff_tab_ptr;
     int                 iteration = 0, nb_iterations = 0;
@@ -48,9 +48,6 @@ int main (int argc, char **argv)
     double              total_computation_time = 0;
     double              start_computation_time;
     double              end_computation_time;
-    double              total_wait_time = 0;
-    double              start_wait_time;
-    double              end_wait_time;
     double              total_write_time = 0;
     long int            total_bytes_recv = 0;
 #endif // BUILD_WITH_PROBES
