@@ -553,9 +553,9 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Waiting time:                    %g s\n", total_wait_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
-        fprintf (stdout, " --- MB recieved:                     %ld bytes\n",total_mbytes_recv);
-        fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&melissa_options));
-        fprintf (stdout, " --- Bytes written:                   %ld bytes\n", count_mbytes_written(&melissa_options)*nb_fields);
+        fprintf (stdout, " --- MB recieved:                     %ld MB\n",total_mbytes_recv);
+        fprintf (stdout, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
+        fprintf (stdout, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&melissa_options)*nb_fields);
         if (melissa_options.sobol_op == 1)
         {
             fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
