@@ -221,11 +221,12 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#OAR -l nodes="+str(nodes_melissa)+",walltime="+walltime_melissa+ "\n"
         contenu += "#OAR -O melissa.%jobid%.log                                        \n"
         contenu += "#OAR -E melissa.%jobid%.err                                        \n"
+        contenu += "#OAR -n Melissa                                                    \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
         contenu += "ulimit -s unlimited                                                \n"
         contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
     elif (batch_scheduler == "CCC"):
-        contenu += "#MSUB -n "+str(nodes_melissa*16))+"                                \n"
+        contenu += "#MSUB -n "+str(nodes_melissa*16)+"                                 \n"
         contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
         contenu += "#MSUB -o melissa.%I.log                                            \n"
         contenu += "#MSUB -e melissa.%I.err                                            \n"
@@ -406,7 +407,7 @@ if (job_step == "first_step"):
             if ("sobol" in operations) or ("sobol_indices" in operations):
                 for j in range(nb_parameters+1):
                     create_case_str += " -c rank"+str(j+1)
-            print create_case_str
+            create_case_str
             os.system(create_case_str)
         ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
         if ("sobol" in operations) or ("sobol_indices" in operations):
@@ -415,7 +416,7 @@ if (job_step == "first_step"):
                 ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
         for k in range(len(ret)):
             if (ret[k] != 0):
-                print "error creating simulation "+str(k)+" of group "+str(i)
+                "error creating simulation "+str(k)+" of group "+str(i)
     os.chdir(workdir+"/STATS")
     if (batch_scheduler == "Slurm"):
         os.system('sbatch "./run_study.sh"')
@@ -444,7 +445,7 @@ for i in range(nb_groups):
         if (batch_scheduler == "Slurm"):
             os.system('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))
         elif (batch_scheduler == "CCC"):
-            os.system('ccc_msub "../STATS/run_cas_couple.sh")
+            os.system('ccc_msub "../STATS/run_cas_couple.sh"')
         elif (batch_scheduler == "OAR"):
             os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
     else:
@@ -452,14 +453,14 @@ for i in range(nb_groups):
         if (batch_scheduler == "Slurm"):
             os.system('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))
         elif (batch_scheduler == "CCC"):
-            os.system('ccc_msub "./runcase")
+            os.system('ccc_msub "./runcase"')
         elif (batch_scheduler == "OAR"):
             os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
         if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
-            call_bash("scancel -u "+username")
+            call_bash("scancel -u "+username)
             break
-        while (int(call_bash("squeue -u "+username+" | wc -l")) >= 250)
+        while (int(call_bash("squeue -u "+username+" | wc -l")) >= 250):
             time.sleep(30)
 
 while True:
@@ -467,13 +468,13 @@ while True:
     if (batch_scheduler == "OAR"):
         if (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
             time.sleep(10)
-            print "Melissa job terminated, killing remaining jobs..."
+            "Melissa job terminated, killing remaining jobs..."
             running_jobs = call_bash("oarstat -u --sql | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
             call_bash("oardel "+running_jobs)
     elif (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
         if (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
             time.sleep(10)
-            print "Melissa job terminated, killing remaining jobs..."
+            "Melissa job terminated, killing remaining jobs..."
             call_bash("scancel -u "+username)
 
 #    converged_sobol = np.zeros(nb_proc_server,int)
