@@ -63,9 +63,9 @@ int main (int argc, char **argv)
     comm_data.rank            = 0;
 #endif // BUILD_WITH_MPI
     comm_data.client_comm_size = 1;
-    comm_data.rcounts = malloc (sizeof(int));
+    comm_data.rcounts = melissa_malloc (sizeof(int));
     comm_data.rcounts[0] = 1;
-    comm_data.rdispls = malloc (sizeof(int));
+    comm_data.rdispls = melissa_malloc (sizeof(int));
     comm_data.rdispls[0] = 0;
 
 #ifdef BUILD_WITH_PROBES
@@ -88,26 +88,26 @@ int main (int argc, char **argv)
 
     melissa_options.global_vect_size = 10;
 
-    local_vect_sizes = malloc (comm_data.comm_size * sizeof(int));
+    local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
     for (i=0; i<comm_data.comm_size; i++)
     {
         local_vect_sizes[i] = melissa_options.global_vect_size / comm_data.comm_size;
         if (i < melissa_options.global_vect_size % comm_data.comm_size)
             local_vect_sizes[i] += 1;
     }
-    buffer = malloc (local_vect_sizes[comm_data.rank] * sizeof(double));
+    buffer = melissa_malloc (local_vect_sizes[comm_data.rank] * sizeof(double));
 
     if (melissa_options.sobol_op == 1)
     {
-        buff_tab_ptr = malloc ((melissa_options.nb_parameters + 2) * sizeof(double*));
+        buff_tab_ptr = melissa_malloc ((melissa_options.nb_parameters + 2) * sizeof(double*));
         for (i=0; i<melissa_options.nb_parameters+2; i++)
         {
-            buff_tab_ptr[i] = malloc (local_vect_sizes[comm_data.rank] * sizeof(double));
+            buff_tab_ptr[i] = melissa_malloc (local_vect_sizes[comm_data.rank] * sizeof(double));
         }
     }
     else
     {
-        buff_tab_ptr = malloc (sizeof(double*));
+        buff_tab_ptr = melissa_malloc (sizeof(double*));
     }
 
     nb_iterations = melissa_options.nb_groups * melissa_options.nb_time_steps ;

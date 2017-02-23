@@ -225,7 +225,6 @@ void melissa_free_data (melissa_data_t *data)
 
 long int mem_conso (melissa_options_t *options)
 {
-    int i = 0;
     long int memory = 0;
     long int temp_mem = 0;
 

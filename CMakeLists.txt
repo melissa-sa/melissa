@@ -144,10 +144,8 @@ if(BUILD_WITH_PROBES)
     add_definitions( -DBUILD_WITH_PROBES )
 endif(BUILD_WITH_PROBES)
 
-set(UTILS_C melissa_utils.c)
 set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c)
 set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
-set(UTILS_H melissa_utils.h)
 set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
 set(ALL_INCS ${ALL_INCS} ${UTILS_H})
 

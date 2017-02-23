@@ -11,11 +11,11 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include "melissa_options.h"
 #include "melissa_utils.h"
-//#include "stats.h"
 
 static inline void stats_usage ()
 {
@@ -72,7 +72,6 @@ static inline void get_operations (char              *name,
 {
     const char  s[2] = ":";
     char       *temp_char;
-    int         i;
 
     if (name == NULL || name[0] == '-' || name[0] == ':')
     {
@@ -89,7 +88,6 @@ static inline void get_operations (char              *name,
 
     /* get the first token */
     temp_char = strtok (name, s);
-    i = 0;
 
     /* walk through other tokens */
     while( temp_char != NULL )

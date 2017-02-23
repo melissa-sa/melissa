@@ -107,7 +107,6 @@ int main (int argc, char **argv)
     int         i, j;
     int         n = 5; // n expériences
     int         vect_size = 5; // size points de l'espace
-    int         compteur;
     int         comm_size, rank;
 
 #ifndef BUILD_WITH_MPI
@@ -130,7 +129,6 @@ int main (int argc, char **argv)
     temp_variance           = calloc (vect_size, sizeof(double));
     my_threshold_exceedance = calloc (vect_size, sizeof(int));
     my_temp_exceedance      = calloc (vect_size, sizeof(int));
-    compteur = 0;
     tab_ptr = tableau;
     for (j=0; j<vect_size; j++, tab_ptr++)
     {

@@ -42,7 +42,6 @@ void compute_stats (melissa_data_t  *data,
                     const int        nb_vect,
                     double         **in_vect_tab)
 {
-    int     i, j;
     if (data->is_valid != 1)
     {
         fprintf (stderr, "ERROR: data structure not valid (compute_stats)\n");
