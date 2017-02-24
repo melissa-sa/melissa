@@ -22,6 +22,33 @@
  *
  * @ingroup sobol
  *
+ * This function initialise a Jansen Sobol indices structure
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] *sobol_indices
+ * input: reference or pointer to an uninitialised sobol indices structure,
+ * output: initialised structure, with values and variances set to 0
+ *
+ * @param[in] vect_size
+ * size of the input vectors
+ *
+ *******************************************************************************/
+
+void init_sobol_jansen (sobol_jansen_t *sobol_indices,
+                        int             vect_size)
+{
+    sobol_indices->summ_a = melissa_calloc (vect_size, sizeof(double));
+    sobol_indices->summ_b = melissa_calloc (vect_size, sizeof(double));
+    sobol_indices->first_order_values = melissa_calloc (vect_size, sizeof(double));
+    sobol_indices->total_order_values = melissa_calloc (vect_size, sizeof(double));
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup sobol
+ *
  * This function initialise a Martinez Sobol indices structure
  *
  *******************************************************************************
@@ -46,6 +73,84 @@ void init_sobol_martinez (sobol_martinez_t *sobol_indices,
     sobol_indices->total_order_values = melissa_calloc (vect_size, sizeof(double));
     sobol_indices->confidence_interval[0] = 1;
     sobol_indices->confidence_interval[1] = 1;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup sobol
+ *
+ * This function computes Sobol indices using Jansen formula
+ *
+ *******************************************************************************
+ *
+ * @param[out] *sobol_array
+ * computed sobol indices, using Jansen formula
+ *
+ * @param[in] nb_parameters
+ * size of sobol_array->sobol_jansen
+ *
+ * @param[in] **in_vect_tab
+ * array of input vectors
+ *
+ * @param[in] vect_size
+ * size of input vectors
+ *
+ *******************************************************************************/
+
+void increment_sobol_jansen (sobol_array_t *sobol_array,
+                             int            nb_parameters,
+                             double       **in_vect_tab,
+                             int            vect_size)
+{
+    int i, j;
+    double epsylon = 1e-12;
+
+    increment_variance (in_vect_tab[0], &(sobol_array->variance_a), vect_size);
+    sobol_array->iteration += 1;
+
+    for (i=0; i< nb_parameters; i++)
+    {
+#pragma omp parallel for
+        for (j=0; j<vect_size; j++)
+        {
+            sobol_array->sobol_jansen[i].summ_a[j] += (in_vect_tab[0][j] + in_vect_tab[i+2][j])*(in_vect_tab[0][j] + in_vect_tab[i+2][j]);
+        }
+#pragma omp parallel for
+        for (j=0; j<vect_size; j++)
+        {
+            sobol_array->sobol_jansen[i].summ_b[j] += (in_vect_tab[1][j] + in_vect_tab[i+2][j])*(in_vect_tab[1][j] + in_vect_tab[i+2][j]);
+        }
+#pragma omp parallel for
+        for (j=0; j<vect_size; j++)
+        {
+            if (sobol_array->variance_a.variance[j] > epsylon)
+            {
+                sobol_array->sobol_jansen[i].first_order_values[j] = 1 - (sobol_array->sobol_jansen[i].summ_b[j]
+                                                                          /(2*sobol_array->iteration-1))
+                                                                          /sobol_array->variance_a.variance[j];
+            }
+            else
+            {
+                sobol_array->sobol_jansen[i].first_order_values[j] = 0;
+            }
+        }
+
+#pragma omp parallel for
+        for (j=0; j<vect_size; j++)
+        {
+            if (sobol_array->variance_a.variance[j] > epsylon)
+            {
+                sobol_array->sobol_jansen[i].total_order_values[j] = (sobol_array->sobol_jansen[i].summ_a[j]
+                                                                      /(2*sobol_array->iteration-1))
+                                                                      /sobol_array->variance_a.variance[j];
+            }
+            else
+            {
+                sobol_array->sobol_jansen[i].total_order_values[j] = 0;
+            }
+        }
+    }
 }
 
 /**
@@ -91,7 +196,7 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
 #pragma omp parallel for
         for (j=0; j<vect_size; j++)
         {
-            if (sobol_array->sobol_martinez[i].variance_k.variance[j] < epsylon || sobol_array->variance_b.variance[j] < epsylon)
+            if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_b.variance[j] > epsylon)
             {
                 sobol_array->sobol_martinez[i].first_order_values[j] = sobol_array->sobol_martinez[i].first_order_covariance.covariance[j]
                         / ( sqrt(sobol_array->variance_b.variance[j])
@@ -106,7 +211,7 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
 #pragma omp parallel for
         for (j=0; j<vect_size; j++)
         {
-            if (sobol_array->sobol_martinez[i].variance_k.variance[j] < epsylon || sobol_array->variance_a.variance[j] < epsylon)
+            if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_a.variance[j] > epsylon)
             {
                 sobol_array->sobol_martinez[i].total_order_values[j] = 1.0 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[j]
                         / ( sqrt(sobol_array->variance_a.variance[j])
@@ -114,7 +219,7 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
             }
             else
             {
-                sobol_array->sobol_martinez[i].first_order_values[j] = 0;
+                sobol_array->sobol_martinez[i].total_order_values[j] = 0;
             }
         }
     }
@@ -349,6 +454,28 @@ void read_sobol(sobol_array_t *sobol_array,
         read_variance(&sobol_array[i].variance_b, vect_size, 1, f);
         fread(&sobol_array[i].iteration, sizeof(int), 1,f);
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup sobol
+ *
+ * This function frees a Jansen Sobol indices structure
+ *
+ *******************************************************************************
+ *
+ * @param[in] *sobol_indices
+ * reference or pointer to a sobol index structure to free
+ *
+ *******************************************************************************/
+
+void free_sobol_jansen (sobol_jansen_t *sobol_indices)
+{
+    melissa_free (sobol_indices->summ_a);
+    melissa_free (sobol_indices->summ_b);
+    melissa_free (sobol_indices->first_order_values);
+    melissa_free (sobol_indices->total_order_values);
 }
 
 /**
