@@ -103,7 +103,7 @@ int main (int argc, char **argv)
     variance_t  my_variance;
     min_max_t   my_min_and_max;
     int        *my_threshold_exceedance = NULL, *my_temp_exceedance = NULL;
-    double     *tab_ptr = NULL, *temp_variance = NULL;
+    double     *temp_variance = NULL;
     int         i, j;
     int         n = 5; // n expériences
     int         vect_size = 5; // size points de l'espace
@@ -129,10 +129,14 @@ int main (int argc, char **argv)
     temp_variance           = calloc (vect_size, sizeof(double));
     my_threshold_exceedance = calloc (vect_size, sizeof(int));
     my_temp_exceedance      = calloc (vect_size, sizeof(int));
-    tab_ptr = tableau;
-    for (j=0; j<vect_size; j++, tab_ptr++)
+//    tab_ptr = tableau;
+//    for (j=0; j<vect_size; j++, tab_ptr++)
+//    {
+//        *tab_ptr += rank*n;
+//    }
+    for (j=0; j<vect_size; j++)
     {
-        *tab_ptr += rank*n;
+        tableau[j] = rand() / (double)RAND_MAX * (1000 * (rank+1));
     }
 
     for (i=0; i<n; i++)
@@ -140,12 +144,11 @@ int main (int argc, char **argv)
         increment_mean (tableau, &my_mean, vect_size);
         increment_variance (tableau, &my_variance, vect_size);
         min_and_max (tableau, &my_min_and_max, vect_size);
-        update_threshold_exceedance (tableau, my_threshold_exceedance, 85.5, vect_size);
+        update_threshold_exceedance (tableau, my_threshold_exceedance, 500.0, vect_size);
 
-        tab_ptr = tableau;
-        for (j=0; j<vect_size; j++, tab_ptr++)
+        for (j=0; j<vect_size; j++)
         {
-            *tab_ptr += 1.;
+            tableau[j] = rand() / (double)RAND_MAX * (1000 * (rank+1));
         }
     }
 
