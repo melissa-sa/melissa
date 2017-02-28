@@ -22,6 +22,8 @@
 #define MAX_FIELD_NAME 128
 #endif
 
+void melissa_logo ();
+
 void* melissa_malloc (size_t size);
 
 void* melissa_calloc (size_t num,

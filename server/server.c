@@ -87,6 +87,11 @@ int main (int argc, char **argv)
     comm_data.rank            = 0;
 #endif // BUILD_WITH_MPI
 
+    if (comm_data.rank == 0)
+    {
+        melissa_logo ();
+    }
+
     // === Get the node adress === //
 
     melissa_get_node_name (node_name);
