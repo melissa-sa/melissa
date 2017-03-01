@@ -430,7 +430,7 @@ int main (int argc, char **argv)
         }
 #endif // BUILD_WITH_PY_ZMQ
 
-        if (iteration % 10 == 0)
+        if (iteration % 1000 == 0)
         {
             field_ptr fptr = field;
             while (fptr != NULL)
