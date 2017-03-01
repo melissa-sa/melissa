@@ -109,7 +109,7 @@ int main (int argc, char **argv)
     if (signal(SIGUSR2, sig_handler) == SIG_ERR)
             printf("\ncan't catch SIGUSR2\n");
 
-    // == Read options from command line === //
+    // === Read options from command line === //
 
     melissa_get_options (argc, argv, &melissa_options);
     if (comm_data.rank == 0)

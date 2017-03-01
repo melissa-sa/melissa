@@ -24,6 +24,7 @@ int main(int argc, char **argv)
     int           n = 5; // n expériences
     int           vect_size = 5; // size points de l'espace
     int           i, j;
+    int           ret = 0;
 
     init_covariance (&my_covariance, vect_size);
     tableau1 = calloc (n * vect_size, sizeof(double));
@@ -92,7 +93,8 @@ int main(int argc, char **argv)
         if (fabs((my_covariance.covariance[i] - ref_covariance[i])/ref_covariance[i]) > 10E-12)
         {
             fprintf (stdout, "\ncovariance failed (%g, i=%d)\n", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
+            ret = 1;
         }
     }
-    return 0;
+    return ret;
 }

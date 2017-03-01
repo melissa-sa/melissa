@@ -23,6 +23,7 @@ int main(int argc, char **argv)
     int           n = 5; // n expériences
     int           vect_size = 5; // size points de l'espace
     int           i, j;
+    int           ret = 0;
 
     init_mean (&my_mean, vect_size);
     tableau = calloc (n * vect_size, sizeof(double));
@@ -57,7 +58,8 @@ int main(int argc, char **argv)
         if (fabs((my_mean.mean[i] - ref_mean[i])/ref_mean[i]) > 10E-12)
         {
             fprintf (stdout, "\nmean failed (iterative mean = %g, ref mean = %g, i=%d)\n", my_mean.mean[i], ref_mean[i], i);
+            ret = 1;
         }
     }
-    return 0;
+    return ret;
 }
