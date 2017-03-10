@@ -136,7 +136,7 @@ int main (int argc, char **argv)
 
                     sprintf(file_name, "results.%s.%.*d", field_name_ptr, 5, time_step +1);
 #ifdef BUILD_WITH_PROBES
-                    fprintf(stdout, " Read results.%s.%.*d\n", field_name_ptr, 5, time_step +1);
+//                    fprintf(stdout, " Read results.%s.%.*d\n", field_name_ptr, 5, time_step +1);
                     start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
                     read_ensight (&melissa_options, &comm_data, buffer, local_vect_sizes, file_name);
@@ -150,7 +150,7 @@ int main (int argc, char **argv)
                     }
 
 #ifdef BUILD_WITH_PROBES
-                    fprintf(stdout, " compute results...\n");
+//                    fprintf(stdout, " compute results...\n");
                     start_computation_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
@@ -202,6 +202,7 @@ int main (int argc, char **argv)
                         return 0;
                         break;
                     }
+                    MPI_Barrier(comm_data.comm);
                 }
             }
         }
@@ -230,9 +231,9 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
     double temp1;
     long int temp2;
-    MPI_Reduce (&total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce (&total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, comm_data.comm);
     total_comm_time = temp1 / comm_data.comm_size;
-    MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, comm_data.comm);
     total_bytes_recv = temp2;
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)

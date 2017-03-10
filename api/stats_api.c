@@ -549,7 +549,7 @@ void connect_to_stats (const int *local_vect_size,
                     //
                     //
                 }
-            }
+            }sobol_rank
             zmq_data.sobol_requester = malloc ((zmq_data.nb_parameters + 1) * sizeof(void*));
             for (i=0; i<zmq_data.nb_parameters + 1; i++)
             {
@@ -811,7 +811,7 @@ void send_to_stats       (const int  *time_step,
                 memcpy (buff_ptr, &send_vect[zmq_data.sdispls[zmq_data.pull_rank[i]]], zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
                 if (zmq_data.sobol == 1)
                 {
-                    for (k=0; k<zmq_data.nb_parameters + 1; k++)
+                    for (k=1; k<zmq_data.nb_parameters + 2; k++)
                     {
                         buff_ptr += zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double);
                         memcpy (buff_ptr, &zmq_data.buffer_sobol[k*local_vect_size + zmq_data.sdispls[zmq_data.pull_rank[i]]],

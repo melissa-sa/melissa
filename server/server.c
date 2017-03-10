@@ -73,6 +73,8 @@ int main (int argc, char **argv)
     double              end_wait_time = 0;
     double              total_write_time = 0;
     long int            total_mbytes_recv = 0;
+    int                *step_simu;
+    double             *last_message_simu;
 #endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
@@ -118,6 +120,8 @@ int main (int argc, char **argv)
         melissa_write_options (&melissa_options);
     }
     nb_iterations = melissa_options.nb_groups * melissa_options.nb_time_steps ;
+    step_simu = melissa_calloc (melissa_options.nb_groups, sizeof(int));
+    last_message_simu = melissa_calloc (melissa_options.nb_groups, sizeof(double));
 
     // === Open data puller port === //
 
@@ -330,6 +334,7 @@ int main (int argc, char **argv)
             simu_id = *buf_ptr;
             buf_ptr += sizeof(int);
             group_id = *buf_ptr;
+            step_simu[group_id] += 1;
             buf_ptr += sizeof(int);
             client_rank = *buf_ptr;
             buf_ptr += sizeof(int);
@@ -510,6 +515,8 @@ int main (int argc, char **argv)
         zmq_ctx_term (context);
     }
     melissa_free (buff_tab_ptr);
+    melissa_free (step_simu);
+    melissa_free (last_message_simu);
 
     if (comm_data.rank == 0)
     {
