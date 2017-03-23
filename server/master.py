@@ -434,6 +434,8 @@ if (batch_scheduler == "OAR"):
     while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
         time.sleep(30)
 
+job_id = list()
+job_states = np.zeros(nb_groups)
 for i in range(nb_groups):
     for j in range(nb_parameters+2):
         casedir = workdir+"/group"+str(i)+"/rank"+str(j)
@@ -443,17 +445,17 @@ for i in range(nb_groups):
     if ("sobol" in operations) or ("sobol_indices" in operations):
         create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
         if (batch_scheduler == "Slurm"):
-            os.system('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))
+            job_id.append(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i)).split()[-1])
         elif (batch_scheduler == "CCC"):
-            os.system('ccc_msub "../STATS/run_cas_couple.sh"')
+            job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"').split()[-1])
         elif (batch_scheduler == "OAR"):
             os.system('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')
     else:
         os.chdir("./rank0/SCRIPTS")
         if (batch_scheduler == "Slurm"):
-            os.system('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))
+            job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i)).split()[-1])
         elif (batch_scheduler == "CCC"):
-            os.system('ccc_msub "./runcase"')
+            job_id.append(call_bash('ccc_msub "./runcase"').split()[-1])
         elif (batch_scheduler == "OAR"):
             os.system('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')
     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):

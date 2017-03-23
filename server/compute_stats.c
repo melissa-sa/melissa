@@ -40,7 +40,8 @@
 void compute_stats (melissa_data_t  *data,
                     const int        time_step,
                     const int        nb_vect,
-                    double         **in_vect_tab)
+                    double         **in_vect_tab,
+                    const int        group_id)
 {
     if (data->is_valid != 1)
     {
@@ -113,8 +114,7 @@ void compute_stats (melissa_data_t  *data,
             update_threshold_exceedance (in_vect_tab[1], data->thresholds[time_step], data->options->threshold, data->vect_size);
         }
     }
-
-    data->computed[time_step] += 1;
+    data->step_simu[group_id] += 1;
 }
 
 /**

@@ -191,6 +191,8 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
+add_subdirectory(master)
+
 set(ALL_API stats_api.c
             stats_api.h
             stats_api_no_mpi.h)

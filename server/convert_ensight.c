@@ -119,7 +119,7 @@ int main (int argc, char **argv)
                       comm_data.rank,
                       &pull_data);
     field_name_ptr = field_name[0];
-    add_field(&field, field_name_ptr, comm_data.client_comm_size);
+    add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.nb_groups);
     data_ptr = get_data_ptr (field, field_name_ptr);
     for (i=0; i<comm_data.client_comm_size; i++)
     {

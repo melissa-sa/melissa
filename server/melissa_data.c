@@ -70,7 +70,7 @@ static void melissa_alloc_data (melissa_data_t *data)
         }
     }
 
-    data->computed = melissa_calloc (data->options->nb_time_steps, sizeof(int));
+    data->step_simu = melissa_calloc (data->options->nb_groups, sizeof(int));
 }
 
 /**
@@ -106,7 +106,7 @@ void melissa_init_data (melissa_data_t    *data,
     data->thresholds      = NULL;
 //    data->cond_means      = NULL;
     data->sobol_indices   = NULL;
-    data->computed        = NULL;
+    data->step_simu       = NULL;
     melissa_check_data (data);
     melissa_alloc_data (data);
 }
@@ -202,7 +202,7 @@ void melissa_free_data (melissa_data_t *data)
         melissa_free (data->sobol_indices);
     }
 
-    melissa_free (data->computed);
+    melissa_free (data->step_simu);
 
     data->options = NULL;
 

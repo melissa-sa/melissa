@@ -143,7 +143,7 @@ void save_stats (melissa_data_t *data,
             {
                 write_sobol(data[i].sobol_indices, data->vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
-//            fwrite(data[i].computed, sizeof(int), 1, f);
+            fwrite(data[i].step_simu, sizeof(int), data[i].options->nb_groups, f);
         }
     }
 }
@@ -179,8 +179,6 @@ void read_saved_stats (melissa_data_t *data,
     char       file_name[256];
     FILE*      f = NULL;
 
-//    for (i=0; i<comm_data->client_comm_size; i++)
-//    {
         if (comm_data->rcounts[client_rank] > 0)
         {
             sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, client_rank);
@@ -211,9 +209,8 @@ void read_saved_stats (melissa_data_t *data,
             {
                 read_sobol(data[client_rank].sobol_indices, data->vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
             }
-//            fread(&data[client_rank].computed, sizeof(int), 1, f);
+            fread(data[client_rank].step_simu, sizeof(int), data[client_rank].options->nb_groups, f);
         }
-//    }
 }
 
 /**

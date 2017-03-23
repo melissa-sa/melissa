@@ -142,7 +142,7 @@ void comm_n_to_m_init (int           *rcounts,
     }
 }
 
-void add_field (field_ptr *field, char* field_name, int data_size)
+void add_field (field_ptr *field, char* field_name, int data_size, int nb_simu)
 {
     int i;
     if (*field == NULL)
@@ -158,7 +158,7 @@ void add_field (field_ptr *field, char* field_name, int data_size)
     }
     else
     {
-        add_field (&(*field)->next, field_name, data_size);
+        add_field (&(*field)->next, field_name, data_size, nb_simu);
     }
 }
 
@@ -176,6 +176,47 @@ melissa_data_t* get_data_ptr (field_ptr field, char* field_name)
         }
     }
     return NULL;
+}
+
+//void increment_step_simu(field_ptr field, char* field_name, int group_id)
+//{
+//    if (field == NULL)
+//    {
+//        return;
+//    }
+//    if (strcmp(field->name, field_name) == 0)
+//    {
+//        field->step_simu[group_id] += 1;
+//        return;
+//    }
+//    else
+//    {
+//        increment_step_simu(field->next, field_name, group_id);
+//    }
+//}
+
+int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_steps, int client_comm_size)
+{
+    int i;
+
+    if (field == NULL)
+    {
+        return simu_state;
+    }
+    else
+    {
+        for (i=0; i<client_comm_size; i++)
+        {
+            if (field->stats_data[i].is_valid == 1)
+            {
+                if (field->stats_data[i].step_simu[group_id] < nb_time_steps-1)
+                {
+                    return 1;
+                }
+            }
+        }
+        return check_simu_state(field->next, simu_state, group_id, nb_time_steps, client_comm_size);
+    }
 }
 
 void finalize_field_data (field_ptr         field,
@@ -349,4 +390,52 @@ void global_confidence_sobol_martinez(field_ptr     field,
             }
         }
     }
+}
+
+int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu)
+{
+    int detected_timeouts = 0;
+    int i;
+    double timeout_simu = 100; // TODO: something more user friendly
+    double current_time = melissa_get_time();
+    for (i=0; i<nb_simu; i++)
+    {
+        if (simu_state[i] == 1)
+        {
+            if (last_message_simu[i] + timeout_simu < current_time)
+            {
+                simu_timeouts[i] = 1;
+                detected_timeouts += 1;
+            }
+        }
+    }
+    return detected_timeouts;
+}
+
+void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char* txt_buffer, void *python_requester)
+{
+    int i;
+    char *txt_ptr;
+
+    if (detected_timeouts > 10)
+    {
+        fprintf(stderr, "too much timeouts (%d)\n", detected_timeouts);
+        return;
+    }
+
+    sprintf(txt_buffer, "timeout");
+    txt_ptr = txt_buffer + strlen(txt_buffer);
+    for (i=0; i<nb_simu; i++)
+    {
+        if (simu_timeouts[i] == 1)
+        {
+            sprintf(txt_ptr, " %d", i);
+            txt_ptr = txt_buffer + strlen(txt_buffer);
+        }
+    }
+#ifdef BUILD_WITH_PY_ZMQ
+    zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
+    string_recv(python_requester, txt_buffer);
+#endif // BUILD_WITH_PY_ZMQ
+    return;
 }

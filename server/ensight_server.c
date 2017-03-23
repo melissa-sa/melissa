@@ -115,7 +115,7 @@ int main (int argc, char **argv)
     for (i=0; i<nb_fields; i++)
     {
         fprintf(stdout, "add field %s\n", field_name[i]);
-        add_field(&field, field_name[i], 1);
+        add_field(&field, field_name[i], 1, melissa_options.nb_groups);
     }
 
     for (time_step=0; time_step<melissa_options.nb_time_steps; time_step++)
@@ -157,12 +157,12 @@ int main (int argc, char **argv)
                     if (melissa_options.sobol_op != 1)
                     {
                         buff_tab_ptr[0] = (double*)buffer;
-                        compute_stats (data_ptr, time_step, 1, buff_tab_ptr);
+                        compute_stats (data_ptr, time_step, 1, buff_tab_ptr, group_id);
                         iteration++;
                     }
                     else if (rank_id == melissa_options.nb_parameters+1)
                     {
-                        compute_stats (data_ptr, time_step, melissa_options.nb_parameters+2, buff_tab_ptr);
+                        compute_stats (data_ptr, time_step, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
                         iteration++;
                         confidence_sobol_martinez (&(data_ptr->sobol_indices[time_step]), melissa_options.nb_parameters, local_vect_sizes[comm_data.rank]);
                         //                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),

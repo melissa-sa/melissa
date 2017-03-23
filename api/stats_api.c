@@ -513,7 +513,7 @@ void connect_to_stats (const int *local_vect_size,
             if (*rank == zmq_data.push_rank[i])
             {
                 zmq_data.data_pusher[j] = zmq_socket (zmq_data.context, ZMQ_PUSH);
-                zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_SNDHWM, &nb_bufferized_messages, sizeof(int));
+                zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_SNDHWM, &zmq_data.local_nb_messages, sizeof(int));
                 zmq_setsockopt (zmq_data.data_pusher[j], ZMQ_LINGER, &linger, sizeof(int));
                 port_no = 100 + zmq_data.pull_rank[i];
                 sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
@@ -852,7 +852,7 @@ void send_to_stats       (const int  *time_step,
                 memcpy (buff_ptr, &send_vect[zmq_data.sdispls[zmq_data.pull_rank[i]]], zmq_data.send_counts[zmq_data.pull_rank[i]] * sizeof(double));
                 if (zmq_data.sobol == 1)
                 {
-                    for (k=0; k<zmq_data.nb_parameters + 1; k++)
+                    for (k=1; k<zmq_data.nb_parameters + 2; k++)
                     {
                         buff_ptr += zmq_data.send_count[zmq_data.pull_rank[i]] * sizeof(double);
                         memcpy (buff_ptr, &zmq_data.buffer_sobol[k*local_vect_size + zmq_data.sdispls[zmq_data.pull_rank[i]]],

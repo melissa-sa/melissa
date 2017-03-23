@@ -37,7 +37,7 @@ int main (int argc, char **argv)
     double            **buff_tab_ptr;
     int                 iteration = 0, nb_iterations = 0;
     int                 port_no;
-    char                port_name[MPI_MAX_PROCESSOR_NAME] = {0};
+    char                txt_buffer[MPI_MAX_PROCESSOR_NAME] = {0};
     char               *node_names = NULL;
     int                 sinit_tab[3], rinit_tab[2];
     void               *context = zmq_ctx_new ();
@@ -54,7 +54,7 @@ int main (int argc, char **argv)
     int                 get_next_message = 0;
     int                *client_vect_sizes = NULL, *local_vect_sizes = NULL;
     pull_data_t         pull_data;
-    int                 nb_bufferized_messages = 10;
+    int                 nb_bufferized_messages = 32;
     char               *field_name_ptr = NULL;
     int                 simu_id, group_id;
     int                 nb_converged_fields = 0;
@@ -73,8 +73,12 @@ int main (int argc, char **argv)
     double              end_wait_time = 0;
     double              total_write_time = 0;
     long int            total_mbytes_recv = 0;
-    int                *step_simu;
     double             *last_message_simu;
+    int                *simu_state;
+    int                 old_simu_state;
+    int                *simu_timeout;
+    double              last_timeout_check;
+    int                 detected_timeouts;
 #endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
@@ -120,20 +124,21 @@ int main (int argc, char **argv)
         melissa_write_options (&melissa_options);
     }
     nb_iterations = melissa_options.nb_groups * melissa_options.nb_time_steps ;
-    step_simu = melissa_calloc (melissa_options.nb_groups, sizeof(int));
     last_message_simu = melissa_calloc (melissa_options.nb_groups, sizeof(double));
+    simu_state = melissa_calloc (melissa_options.nb_groups, sizeof(int));
+    simu_timeout = melissa_calloc (melissa_options.nb_groups, sizeof(int));
 
     // === Open data puller port === //
 
     port_no = 100 + comm_data.rank;
-    sprintf (port_name, "tcp://*:11%d", port_no);
+    sprintf (txt_buffer, "tcp://*:11%d", port_no);
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
-    melissa_bind (data_puller, port_name);
+    melissa_bind (data_puller, txt_buffer);
 #ifdef BUILD_WITH_PY_ZMQ
     if(melissa_options.sobol_op == 1)
     {
-        sprintf (port_name, "tcp://localhost:5555");
-        melissa_connect (python_requester, port_name);
+        sprintf (txt_buffer, "tcp://localhost:5555");
+        melissa_connect (python_requester, txt_buffer);
     }
 #endif // BUILD_WITH_PY_ZMQ
 
@@ -181,7 +186,9 @@ int main (int argc, char **argv)
     sinit_tab[1] = melissa_options.sobol_op;
     sinit_tab[2] = melissa_options.nb_parameters;
 
-    // === Main loop === //
+    // =================== //
+    // ===  Main loop  === //
+    // =================== //
 
     while (1)
     {
@@ -197,6 +204,27 @@ int main (int argc, char **argv)
         end_wait_time = melissa_get_time();
         total_wait_time += end_wait_time - start_wait_time;
 #endif // BUILD_WITH_PROBES
+
+        // === If no message on the connexion port === //
+
+        if (comm_data.rank == 0)
+        {
+            if ((!(items[0].revents & ZMQ_POLLIN) && !(items[1].revents & ZMQ_POLLIN) && last_timeout_check + 10 < melissa_get_time())
+                    || last_timeout_check + 10 < melissa_get_time())
+            {
+                fprintf (stdout, "no message \n");
+                detected_timeouts = check_timeouts(simu_state, simu_timeout, last_message_simu, melissa_options.nb_groups);
+                last_timeout_check = melissa_get_time();
+                send_timeouts (5, simu_timeout, melissa_options.nb_groups, txt_buffer, NULL);
+                if (detected_timeouts > 0)
+                {
+#ifdef BUILD_WITH_PY_ZMQ
+                    send_timeouts (detected_timeouts, simu_timeout, melissa_options.nb_groups, txt_buffer, python requester);
+#endif // BUILD_WITH_PY_ZMQ
+                    fprintf (stdout, "timeout detected\n");
+                }
+            }
+        }
 
         // === If message on the connexion port === //
 
@@ -334,14 +362,13 @@ int main (int argc, char **argv)
             simu_id = *buf_ptr;
             buf_ptr += sizeof(int);
             group_id = *buf_ptr;
-            step_simu[group_id] += 1;
             buf_ptr += sizeof(int);
             client_rank = *buf_ptr;
             buf_ptr += sizeof(int);
             field_name_ptr = buf_ptr;
             if (field == NULL)
             {
-                add_field(&field, field_name_ptr, comm_data.client_comm_size);
+                add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.nb_groups);
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 nb_fields += 1;
             }
@@ -350,7 +377,7 @@ int main (int argc, char **argv)
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 if (data_ptr == NULL)
                 {
-                    add_field(&field, field_name_ptr, comm_data.client_comm_size);
+                    add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.nb_groups);
                     data_ptr = get_data_ptr (field, field_name_ptr);
                     nb_fields += 1;
                 }
@@ -365,6 +392,7 @@ int main (int argc, char **argv)
                     fprintf (stdout, " ok\n");
                 }
             }
+            last_message_simu[group_id] = melissa_get_time();
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
 #ifdef BUILD_WITH_PROBES
 #ifdef ZEROCOPY
@@ -379,7 +407,7 @@ int main (int argc, char **argv)
             {
                 buff_tab_ptr[0] = (double*)buf_ptr;
                 // === Compute classical statistics === //
-                compute_stats (&data_ptr[client_rank], time_step-1, 1, buff_tab_ptr);
+                compute_stats (&data_ptr[client_rank], time_step-1, 1, buff_tab_ptr, group_id);
                 iteration++;
             }
             else
@@ -390,7 +418,7 @@ int main (int argc, char **argv)
                     buf_ptr += comm_data.rcounts[client_rank] * sizeof(double);
                 }
                 // === Compute classical statistics + Sobol indices === //
-                compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr);
+                compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
                 iteration++;
                 confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
                 nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
@@ -402,14 +430,27 @@ int main (int argc, char **argv)
             end_computation_time = melissa_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
+            old_simu_state = simu_state[group_id];
+            simu_state[group_id] = check_simu_state(field, 2, group_id, melissa_options.nb_time_steps, comm_data.client_comm_size);
+#ifdef BUILD_WITH_PY_ZMQ
+            // === Send a message to the Python master in case of simulation status update === //
+            if (old_simu_state != simu_state[group_id] && comm_data.rank == 0)
+            {
+                sprintf (txt_buffer, "simu_state %d %d", group_id, simu_state[group_id]);
+                zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
+                string_recv(python_requester, txt_buffer);
+            }
+#endif // BUILD_WITH_PY_ZMQ
+
             if (comm_data.rank==0 && ((iteration % 10) == 0 || iteration < 10) )
             {
                 fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
+                fprintf(stdout, "simu_state: %d %d %d %d %d\n", simu_state[0], simu_state[1], simu_state[2], simu_state[3], simu_state[4]);
             }
 #ifdef BUILD_WITH_PY_ZMQ
-            sprintf (port_name, "iteration %d", comm_data.rank);
-            zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
-            string_recv(python_requester, port_name);
+//            sprintf (txt_buffer, "iteration %d", comm_data.rank);
+//            zmq_send(python_requester, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
+//            string_recv(python_requester, txt_buffer);
 #endif // BUILD_WITH_PY_ZMQ
 #ifdef ZEROCOPY
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
@@ -423,16 +464,16 @@ int main (int argc, char **argv)
 
 #ifdef BUILD_WITH_PY_ZMQ
         // === Send a message to the Python master in case of Sobol indices convergence === //
-        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
-        {
-            sprintf (port_name, "converged %d", comm_data.rank);
-            zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
-            string_recv(python_requester, port_name);
-            if (strcmp ("stop", port_name))
-            {
-                break;
-            }
-        }
+//        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
+//        {
+//            sprintf (txt_buffer, "converged %d", comm_data.rank);
+//            zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
+//            string_recv(python_requester, txt_buffer);
+//            if (strcmp ("stop", txt_buffer))
+//            {
+//                break;
+//            }
+//        }
 #endif // BUILD_WITH_PY_ZMQ
 
         if (iteration % 1000 == 0)
@@ -481,11 +522,11 @@ int main (int argc, char **argv)
             break;
         }
 
-#ifdef BUILD_WITH_PY_ZMQ
-        if (nb_fields > 0 && melissa_options.sobol_op == 0)
-#else  // BUILD_WITH_PY_ZMQ
+//#ifdef BUILD_WITH_PY_ZMQ
+//        if (nb_fields > 0 && melissa_options.sobol_op == 0)
+//#else  // BUILD_WITH_PY_ZMQ
         if (nb_fields > 0)
-#endif // BUILD_WITH_PY_ZMQ
+//#endif // BUILD_WITH_PY_ZMQ
         {
             if (iteration >= nb_iterations*nb_fields)
             {
@@ -506,16 +547,15 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PY_ZMQ
         if (melissa_options.sobol_op == 1)
         {
-            sprintf (port_name, "finished %d", comm_data.rank);
-            zmq_send(python_requester, port_name, strlen(port_name) * sizeof(char), 0);
-            string_recv(python_requester, port_name);
+            sprintf (txt_buffer, "finished %d", comm_data.rank);
+            zmq_send(python_requester, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
+            string_recv(python_requester, txt_buffer);
             zmq_close (python_requester);
         }
 #endif // BUILD_WITH_PY_ZMQ
         zmq_ctx_term (context);
     }
     melissa_free (buff_tab_ptr);
-    melissa_free (step_simu);
     melissa_free (last_message_simu);
 
     if (comm_data.rank == 0)
