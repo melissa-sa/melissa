@@ -20,7 +20,7 @@ def create_matrix_k(A, B, k):
   return Ck
 
 def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
-  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+#  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
   os.system("export OMP_NUM_THREADS=2")
   parameters = ""
   for i in Ai:
@@ -31,7 +31,7 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
   return os.system("mpirun -n "+str(nb_proc_simu)+" ./heatc "+parameters+" &")
 
 def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
-  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+#  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
   os.system("export OMP_NUM_THREADS=2")
   command = "mpirun"
   parameters = ""
@@ -59,7 +59,7 @@ def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
   return os.system(command+" &")
 
 def launch_melissa (command_line):
-  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
+#  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
   os.system("export OMP_NUM_THREADS=2")
   if (not os.path.isdir("resu")):
       os.system("mkdir resu")
@@ -78,7 +78,7 @@ op_str=""
 mpi_options = ""
 nb_proc_simu = 2
 nb_proc_server = 3
-server_path = "/home/tterraz/avido/source/Melissa/build/server"
+server_path = "../../server"
 range_min = np.zeros(nb_parameters)
 range_max = np.zeros(nb_parameters)
 range_min[0] = 0
@@ -123,7 +123,7 @@ options = " -p " + str(nb_parameters)\
 if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
     print "error launching Melissa"
 #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
-#launch_melissa("valgrind --leak-check=full mpirun -n 1 /home/tterraz/avido/source/Melissa/build/server/server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
+#launch_melissa("valgrind --leak-check=full mpirun -n 1 ./server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
 
 ret = np.zeros(nb_parameters + 2)
 for i in range(nb_groups):

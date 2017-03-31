@@ -14,7 +14,7 @@
 #include "melissa_data.h"
 
 #ifdef BUILD_WITH_MPI
-inline void d_print_vector (double    in_vect[],
+void d_print_vector (double    in_vect[],
                             const int vect_size,
                             const int rank,
                             const int comm_size,
@@ -54,7 +54,7 @@ inline void d_print_vector (double    in_vect[],
     MPI_Barrier(comm);
 }
 
-inline void i_print_vector (int       in_vect[],
+void i_print_vector (int       in_vect[],
                             const int vect_size,
                             const int rank,
                             const int comm_size,
