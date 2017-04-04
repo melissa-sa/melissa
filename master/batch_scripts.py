@@ -3,6 +3,7 @@ import time
 import sys
 import re
 
+
 def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_procs_max):
     contenu=""
     fichier=open("coupling_parameters.py", "w")
@@ -91,6 +92,15 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
     os.system("chmod 744 run_cas_couple.sh")
 
 def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_melissa, mpi_options, options):
+    # signal handler definition
+    signal_handler="handler() {"
+    signal_handler+="echo \"### CLEAN-UP TIME !!!\""
+    signal_handler+="STOP=1"
+    signal_handler+="sleep 1"
+    #signal_handler+="killer"
+    signal_handler+="killall -USR1 mpirun"
+    signal_handler+="wait %1"
+    signal_handler+="}"
     contenu = ""
     fichier=open("run_study.sh", "w")
     contenu += "#!/bin/bash                                                        \n"
@@ -104,6 +114,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#SBATCH -o melissa.%j.log                                          \n"
         contenu += "#SBATCH -e melissa.%j.err                                          \n"
         contenu += "#SBATCH --job-name=Melissa                                         \n"
+        contenu += "#SBATCH --signal=B:SIGUSR2@300                                       \n"
         contenu += "module load openmpi/2.0.1                                          \n"
         contenu += "module load ifort/2017                                             \n"
     elif (batch_scheduler == "OAR"):
@@ -111,6 +122,8 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#OAR -O melissa.%jobid%.log                                        \n"
         contenu += "#OAR -E melissa.%jobid%.err                                        \n"
         contenu += "#OAR -n Melissa                                                    \n"
+        contenu += "#OAR --checkpoint 300                                              \n"
+        contenu += "#OAR --signal=SIGUSR2                                              \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
         contenu += "ulimit -s unlimited                                                \n"
         contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
@@ -123,6 +136,8 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#MSUB -A gen10064                                                  \n"
         contenu += "#MSUB -r Melissa                                                   \n"
         contenu += "#MSUB -q standard                                                  \n"
+        contenu += "#MSUB --signal=B:SIGUSR2@300                                       \n"
+    contenu += signal handler
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "FRONTEND="+frontend+"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
@@ -136,7 +151,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "if [ $# .ne. 0 ]                                                   \n"
     contenu += "then                                                               \n"
     contenu += "cd stats${1}.resu                                                  \n"
-    contenu += "else                                                                 \n"
+    contenu += "else                                                               \n"
     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
         contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
         contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
@@ -145,13 +160,15 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
     contenu += "fi                                                                 \n"
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
+    contenu += "trap handler USR2                                                  \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "if [ $# .ne. 0 ]                                                   \n"
     contenu += "then                                                               \n"
-    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" -r       \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" -r &     \n"
     contenu += "else                                                               \n"
-    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+"          \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
     contenu += "fi                                                                 \n"
+    contenu += "wait %1                                                            \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "cd "+workdir+"                                                     \n"
     fichier.write(contenu)

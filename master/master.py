@@ -78,10 +78,6 @@ class state_checker(Thread):
                         with lock_job_state:
                             job_states[i] = 3 # terminated
 
-                    if (simu_state != job_states[simu_id]-1):
-                        if (simu_state == 1 && job_states[simu_id] == 3):
-                            reboot_simu(simu_id, simu_job_id))
-
 class message_reciever(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -346,9 +342,16 @@ while !((simu_states.all == 2) and (server_state == "terminated")):
     for i in range(simu_job_id):
         with lock_simu_state
             with lock_job_state
-                if (simu_state != job_states[i]):
-                    if (simu_state == 1 && job_states[i] == 3):
+                if (simu_states[i] != job_states[i]-1):
+                    if (simu_states[i] == 1 && job_states[i] == 3):
                         reboot_simu(i, simu_job_id))
+                    if (simu_states[simu_id] == 0 && job_states[simu_id] == 3):
+                        reboot_simu(simu_id, simu_job_id))
+                    if (simu_states[simu_id] == 0 && job_states[simu_id] == 2):
+                        out=check_timeout(simu_id, simu_job_id)
+                        if (out == True):
+                            reboot_simu(simu_id, simu_job_id))
+
 
 
 running_master = False
