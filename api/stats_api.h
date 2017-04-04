@@ -13,27 +13,27 @@
 
 #include <mpi.h>
 
-void connect_to_stats(const int *local_vect_size,
-                      const int *comm_size,
-                      const int *rank,
-                      const int *sobol_rank,
-                      const int *sobol_group,
-                      MPI_Comm  *comm);
+void melissa_init(const int *local_vect_size,
+                  const int *comm_size,
+                  const int *rank,
+                  const int *sobol_rank,
+                  const int *sobol_group,
+                  MPI_Comm  *comm);
 
-void connect_from_fortran(int       *local_vect_size,
-                          int       *comm_size,
-                          int       *rank,
-                          const int *sobol_rank,
-                          const int *sobol_group,
-                          MPI_Fint  *comm);
+void melissa_init_f(int       *local_vect_size,
+                    int       *comm_size,
+                    int       *rank,
+                    const int *sobol_rank,
+                    const int *sobol_group,
+                    MPI_Fint  *comm);
 
-void send_to_stats(const int  *time_step,
-                   const char *field_name,
-                   double     *send_vect,
-                   const int  *rank,
-                   const int  *sobol_rank,
-                   const int  *sobol_group);
+void melissa_send(const int  *time_step,
+                  const char *field_name,
+                  double     *send_vect,
+                  const int  *rank,
+                  const int  *sobol_rank,
+                  const int  *sobol_group);
 
-void disconnect_from_stats();
+void melissa_finalize();
 
 #endif // STATS_API_H

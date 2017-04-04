@@ -84,16 +84,16 @@ int main(int argc, char **argv)
     out_vect = calloc (my_vect_size, sizeof(double));
 
 #ifdef BUILD_WITH_MPI
-    connect_to_stats (&my_vect_size,
-                      &comm_size,
-                      &rank,
-                      &sobol_tab[0],
-                      &sobol_tab[1],
-                      &comm);
+    melissa_init (&my_vect_size,
+                  &comm_size,
+                  &rank,
+                  &sobol_tab[0],
+                  &sobol_tab[1],
+                  &comm);
 #else // BUILD_WITH_MPI
-    connect_to_stats_no_mpi (&my_vect_size,
-                             &sobol_tab[0],
-                             &sobol_tab[1]);
+    melissa_init_no_mpi (&my_vect_size,
+                         &sobol_tab[0],
+                         &sobol_tab[1]);
 #endif // BUILD_WITH_MPI
 
     while (time_step < nb_time_steps)
@@ -101,15 +101,23 @@ int main(int argc, char **argv)
         gen_data(out_vect, &time_step, my_vect_size, rank);
         sleep (1);
 
-        send_to_stats (&time_step,
-                       "heat",
-                       out_vect,
-                       &rank,
-                       &sobol_tab[0],
-                       &sobol_tab[1] );
+#ifdef BUILD_WITH_MPI
+        melissa_send (&time_step,
+                      "heat",
+                      out_vect,
+                      &rank,
+                      &sobol_tab[0],
+                      &sobol_tab[1] );
+#else // BUILD_WITH_MPI
+        melissa_send_no_mpi (&time_step,
+                             "heat",
+                             out_vect,
+                             &sobol_tab[0],
+                             &sobol_tab[1] );
+#endif // BUILD_WITH_MPI
     }
 
-    disconnect_from_stats ();
+    melissa_finalize ();
 
     free(out_vect);
 

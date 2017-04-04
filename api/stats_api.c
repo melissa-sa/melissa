@@ -301,12 +301,12 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
  *
  *******************************************************************************/
 
-void connect_to_stats (const int *local_vect_size,
-                       const int *comm_size,
-                       const int *rank,
-                       const int *sobol_rank,
-                       const int *sobol_group,
-                       MPI_Comm  *comm)
+void melissa_init (const int *local_vect_size,
+                   const int *comm_size,
+                   const int *rank,
+                   const int *sobol_rank,
+                   const int *sobol_group,
+                   MPI_Comm  *comm)
 {
     char  *node_names = NULL;
     char   server_node_name[MPI_MAX_PROCESSOR_NAME];
@@ -619,7 +619,7 @@ void connect_to_stats (const int *local_vect_size,
  *
  * @ingroup stats_api
  *
- * Fortran wrapper for connect_to_stats (convert MPI communicator)
+ * Fortran wrapper for melissa_init (convert MPI communicator)
  *
  *******************************************************************************
  *
@@ -637,15 +637,15 @@ void connect_to_stats (const int *local_vect_size,
  *
  *******************************************************************************/
 
-void connect_from_fortran (int       *local_vect_size,
-                           int       *comm_size,
-                           int       *rank,
-                           const int *sobol_rank,
-                           const int *sobol_group,
-                           MPI_Fint  *comm_fortran)
+void melissa_init_f (int       *local_vect_size,
+                     int       *comm_size,
+                     int       *rank,
+                     const int *sobol_rank,
+                     const int *sobol_group,
+                     MPI_Fint  *comm_fortran)
 {
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
-    connect_to_stats(local_vect_size, comm_size, rank, sobol_rank, sobol_group, &comm);
+    melissa_init(local_vect_size, comm_size, rank, sobol_rank, sobol_group, &comm);
 }
 #endif // BUILD_WITH_MPI
 
@@ -669,19 +669,19 @@ void connect_from_fortran (int       *local_vect_size,
  *
  *******************************************************************************/
 
-void connect_to_stats_no_mpi (const int *vect_size,
+void melissa_init_no_mpi (const int *vect_size,
                               const int *sobol_rank,
                               const int *sobol_group)
 {
     int rank = 0;
     int comm_size = 1;
     MPI_Comm comm = 0;
-    connect_to_stats (vect_size,
-                      &comm_size,
-                      &rank,
-                      sobol_rank,
-                      sobol_group,
-                      &comm);
+    melissa_init (vect_size,
+                  &comm_size,
+                  &rank,
+                  sobol_rank,
+                  sobol_group,
+                  &comm);
 }
 
 /**
@@ -713,12 +713,12 @@ void connect_to_stats_no_mpi (const int *vect_size,
  *
  *******************************************************************************/
 
-void send_to_stats       (const int  *time_step,
-                          const char *field_name,
-                          double     *send_vect,
-                          const int  *rank,
-                          const int  *sobol_rank,
-                          const int  *sobol_group)
+void melissa_send (const int  *time_step,
+                   const char *field_name,
+                   double     *send_vect,
+                   const int  *rank,
+                   const int  *sobol_rank,
+                   const int  *sobol_group)
 {
     int   i=0, j, k, ret;
     int   buff_size;
@@ -905,19 +905,19 @@ void send_to_stats       (const int  *time_step,
  *
  *******************************************************************************/
 
-void send_to_stats_no_mpi (const int  *time_step,
-                           const char *field_name,
-                           double     *send_vect,
-                           const int  *sobol_rank,
-                           const int  *sobol_group)
+void melissa_send_no_mpi (const int  *time_step,
+                          const char *field_name,
+                          double     *send_vect,
+                          const int  *sobol_rank,
+                          const int  *sobol_group)
 {
     int rank = 0;
-    send_to_stats (time_step,
-                   field_name,
-                   send_vect,
-                   sobol_rank,
-                   sobol_group,
-                   &rank);
+    melissa_send (time_step,
+                 field_name,
+                 send_vect,
+                 sobol_rank,
+                 sobol_group,
+                 &rank);
 }
 
 /**
@@ -929,7 +929,7 @@ void send_to_stats_no_mpi (const int  *time_step,
  *
  *******************************************************************************/
 
-void disconnect_from_stats ()
+void melissa_finalize ()
 {
     int i;
 

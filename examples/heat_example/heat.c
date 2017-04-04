@@ -136,19 +136,19 @@ int main( int argc, char **argv )
   init(&u[0],&i1,&in,&dx,&dy,&nx,&lx,&ly,&temp);
   filling_A (&d,&dx,&dy,&dt,&nx,&ny,&a[0]); /* fill A */
 
-  connect_to_stats (&nb_op, &np, &me, &sobol_rank, &sobol_group, &comm);
+  melissa_init (&nb_op, &np, &me, &sobol_rank, &sobol_group, &comm);
 
   for(n=1;n<=nmax;n++)
   {
     t+=dt;
     filling_F (&nx,&ny,&u[0],&d,&dx,&dy,&dt,&t,&f[0],&i1,&in,&lx,&ly);
     conjgrad (&a[0],&f[0],&u[0],&nx,&ny,&epsilon,&i1,&in,&np,&me,&next,&previous,&fcomm);
-    send_to_stats (&n, field_name, u, &me, &sobol_rank, &sobol_group);
+    melissa_send (&n, field_name, u, &me, &sobol_rank, &sobol_group);
   }
 
   finalize (&dx,&dy,&nx,&ny,&i1,&in,&u[0],&f[0],&me);
 
-  disconnect_from_stats ();
+  melissa_finalize ();
 
   t2=MPI_Wtime();
   fprintf(stdout, "Calcul time: %g sec\n", t2-t1);

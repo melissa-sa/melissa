@@ -62,19 +62,19 @@ program heat
 
   i = 1
   n = nx*ny
-  call connect_to_stats (nb_op, np, me, sobol_rank, sobol_group, comm)
+  call melissa_init (nb_op, np, me, sobol_rank, sobol_group, comm)
 
   do n=1,nmax
     t = t + dt
     call filling_F(nx,ny,U,d,dx,dy,dt,t,F,i1,in,lx,ly)
     call conjgrad(A,F,U,nx,ny,epsilon,i1,in,np,me,next,previous,comm)
 
-    call send_to_stats (n, name, u, me, sobol_rank, sobol_group)
+    call melissa_send (n, name, u, me, sobol_rank, sobol_group)
   end do
 
   call finalize(dx,dy,nx,ny,i1,in,u,f,me)
 
-  call disconnect_from_stats ()
+  call melissa_finalize ()
   
   t2=mpi_wtime()
   print*,'Calcul time:', t2-t1, 'sec'
