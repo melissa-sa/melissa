@@ -157,6 +157,7 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
 
 
 running_master = True
+output = ""
 
 if (not (("sobol" in operations) or ("sobol_indices" in operations))):
     nb_simu = nb_groups
@@ -209,7 +210,7 @@ for i in range(nb_groups):
         if ("sobol" in operations) or ("sobol_indices" in operations):
             for j in range(nb_parameters+1):
                 create_case_str += " -c rank"+str(j+1)
-        create_case_str
+#        create_case_str
         os.system(create_case_str)
     ret[0] = create_case(A[i,:], 0, i, workdir, xml_file_name)
     if ("sobol" in operations) or ("sobol_indices" in operations):
@@ -218,7 +219,7 @@ for i in range(nb_groups):
             ret[j+2] = create_case(C[j][i,:], j+2, i, workdir, xml_file_name)
     for k in range(len(ret)):
         if (ret[k] != 0):
-            "error creating simulation "+str(k)+" of group "+str(i)
+            output += "error creating simulation "+str(k)+" of group "+str(i)+"\n"
 os.chdir(workdir+"/STATS")
 if (batch_scheduler == "Slurm"):
     melissa_job_id = call_bash('sbatch "./run_study.sh"').split()[-1]
@@ -259,39 +260,39 @@ for i in range(nb_groups):
     if ("sobol" in operations) or ("sobol_indices" in operations):
         create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
         if (batch_scheduler == "Slurm"):
-            simu_job_id.append(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i)).split()[-1])
+            simu_job_id.append(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1])
         elif (batch_scheduler == "CCC"):
-            simu_job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"').split()[-1])
+            simu_job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1])
         elif (batch_scheduler == "OAR"):
-            simu_job_id.append(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido').split("OAR_JOB_ID=")[1])
+            simu_job_id.append(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
     else:
         os.chdir("./rank0/SCRIPTS")
         if (batch_scheduler == "Slurm"):
-            simu_job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i)).split()[-1])
+            simu_job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1])
         elif (batch_scheduler == "CCC"):
-            simu_job_id.append(call_bash('ccc_msub "./runcase"').split()[-1])
+            simu_job_id.append(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
         elif (batch_scheduler == "OAR"):
-            simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido').split("OAR_JOB_ID=")[1])
+            simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
     with lock_state:
         job_states[i] = 1 # pending
-    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-        if (server_state != running)
-            with lock_jobs_state
-                for i in range(simu_job_id):
-                    if (simu_states[i] < 3) # submited and not terminated
-                        if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
-                            call_bash("scancel "+simu_job_id[])
-                        elif (batch_scheduler == "OAR"):
-                            call_bash("oardel "+simu_job_id)
+    if (server_state != running)
+        with lock_jobs_state
+            for i in range(simu_job_id):
+                if (simu_states[i] < 3) # submited and not terminated
+                    if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
+                        call_bash("scancel "+simu_job_id[])
+                    elif (batch_scheduler == "OAR"):
+                        call_bash("oardel "+simu_job_id)
 
-                melissa_job_id = reboot_server(workdir, melissa_first_job_id, melissa_job_id)
-                if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-                    while (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
-                        time.sleep(30)
-                if (batch_scheduler == "OAR"):
-                    while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
-                        time.sleep(30)
-        while (int(call_bash("squeue -u "+username+" | wc -l")) >= 250):
+            melissa_job_id = reboot_server(workdir, melissa_first_job_id, melissa_job_id)
+            if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+                while (not "RUNNING" in call_bash("squeue --name=Melissa -l")['out']):
+                    time.sleep(30)
+            if (batch_scheduler == "OAR"):
+                while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
+                    time.sleep(30)
+     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+        while (int(call_bash("squeue -u "+username+" | wc -l")['out']) >= 250):
             time.sleep(30)
 
 
@@ -310,10 +311,10 @@ while !((simu_states.all == 2) and (server_state == "terminated")):
 
                 melissa_job_id = reboot_server(workdir, melissa_first_job_id, melissa_job_id)
                 if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-                    while (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
+                    while (not "RUNNING" in call_bash("squeue --name=Melissa -l")['out']):
                         time.sleep(30)
                 if (batch_scheduler == "OAR"):
-                    while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
+                    while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
                         time.sleep(30)
                 for i in range(simu_job_id):
                     if (simu_states[i] < 3) # not terminated
@@ -321,19 +322,19 @@ while !((simu_states.all == 2) and (server_state == "terminated")):
                     if ("sobol" in operations) or ("sobol_indices" in operations):
                         create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
                         if (batch_scheduler == "Slurm"):
-                            simu_job_id.append(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i)).split()[-1])
+                            simu_job_id.append(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1])
                         elif (batch_scheduler == "CCC"):
-                            simu_job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"').split()[-1])
+                            simu_job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1])
                         elif (batch_scheduler == "OAR"):
-                            simu_job_id.append(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido').split("OAR_JOB_ID=")[1])
+                            simu_job_id.append(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
                     else:
                         os.chdir("./rank0/SCRIPTS")
                         if (batch_scheduler == "Slurm"):
-                            simu_job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i)).split()[-1])
+                            simu_job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1])
                         elif (batch_scheduler == "CCC"):
-                            simu_job_id.append(call_bash('ccc_msub "./runcase"').split()[-1])
+                            simu_job_id.append(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
                         elif (batch_scheduler == "OAR"):
-                            simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido').split("OAR_JOB_ID=")[1])
+                            simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
                         if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
                             call_bash("scancel "+simu_job_id[])
                         elif (batch_scheduler == "OAR"):
