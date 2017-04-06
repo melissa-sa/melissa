@@ -73,13 +73,13 @@ int main (int argc, char **argv)
     double              end_wait_time = 0;
     double              total_write_time = 0;
     long int            total_mbytes_recv = 0;
+#endif // BUILD_WITH_PROBES
     double             *last_message_simu;
     int                *simu_state;
     int                 old_simu_state;
     int                *simu_timeout;
     double              last_timeout_check;
     int                 detected_timeouts;
-#endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
     // === init MPI === //
@@ -100,6 +100,9 @@ int main (int argc, char **argv)
 
     // === Get the node adress === //
 
+    // Mettre un REGISTER ici !!!
+
+    fprintf(stdout, "len(node_name)= %d\n", sizeof(node_name));
     melissa_get_node_name (node_name);
 
 #ifdef BUILD_WITH_PROBES
@@ -123,10 +126,10 @@ int main (int argc, char **argv)
         melissa_print_options (&melissa_options);
         melissa_write_options (&melissa_options);
     }
-    nb_iterations = melissa_options.nb_groups * melissa_options.nb_time_steps ;
+    nb_iterations     = melissa_options.nb_groups * melissa_options.nb_time_steps ;
     last_message_simu = melissa_calloc (melissa_options.nb_groups, sizeof(double));
-    simu_state = melissa_calloc (melissa_options.nb_groups, sizeof(int));
-    simu_timeout = melissa_calloc (melissa_options.nb_groups, sizeof(int));
+    simu_state        = melissa_calloc (melissa_options.nb_groups, sizeof(int));
+    simu_timeout      = melissa_calloc (melissa_options.nb_groups, sizeof(int));
 
     // === Open data puller port === //
 

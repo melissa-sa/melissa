@@ -306,12 +306,15 @@ void melissa_get_node_name (char *node_name)
     char ok = 0;
 
     getifaddrs (&ifap);
+    fprintf(stdout, "plop 0\n");
     for (ifa = ifap; ifa; ifa = ifa->ifa_next)
     {
+        fprintf(stdout, "plop %d\n", ifa + 1);
         if (ifa->ifa_addr->sa_family==AF_INET)
         {
             sa = (struct sockaddr_in *) ifa->ifa_addr;
             addr = inet_ntoa(sa->sin_addr);
+            fprintf(stdout, "addr = %s\n", addr);
             if (strcmp (ifa->ifa_name, "ib0") == 0)
             {
                 sprintf(node_name, "%s", addr);
@@ -320,11 +323,13 @@ void melissa_get_node_name (char *node_name)
             }
         }
     }
+    fprintf(stdout, "prout 0\n");
     if (ok == 0)
     {
 #ifdef BUILD_WITH_MPI
         int resultlen;
         MPI_Get_processor_name(node_name, &resultlen);
+        fprintf(stdout, "result len = %d\n", resultlen);
 #else
         gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
