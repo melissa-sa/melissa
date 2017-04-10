@@ -172,7 +172,7 @@ elif (batch_scheduler == "CCC"):
 elif (batch_scheduler == "OAR"):
     mpi_options = mpi_OAR_options
 for i in range(len(operations)):
-    if (i < len(operations) - 1):
+    if (i < len(operations) - 1 and 1 < len(operations[i])):
         op_str += operations[i] + ":"
     else:
         op_str += operations[i]

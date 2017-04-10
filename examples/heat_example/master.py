@@ -66,6 +66,98 @@ def launch_melissa (command_line):
   os.system("cd resu")
   return os.system(command_line)
 
+def launch_heatc(nb_parameters,
+                 nb_simu,
+                 nb_groups,
+                 nb_time_steps,
+                 operations,
+                 threshold,
+                 mpi_options,
+                 nb_proc_simu,
+                 nb_proc_server,
+                 server_path,
+                 range_min,
+                 range_max,
+                 coupling,
+                 pyzmq):
+
+    context = zmq.Context()
+    rep_socket = context.socket(zmq.REP)
+    rep_socket.bind("tcp://*:5555")
+
+    if (not (("sobol" in operations) or ("sobol_indices" in operations))):
+        nb_groups = nb_simu
+    A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
+    np.save("Amatrix", A)
+    if ("sobol" in operations) or ("sobol_indices" in operations):
+      B = create_matrix(nb_parameters, nb_groups, range_min, range_max)
+      C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
+
+      np.save("Bmatrix", B)
+      for i in range(nb_parameters):
+        np.save("C"+str(i)+"matrix", C[i])
+
+
+    op_str=""
+    for i in range(len(operations)):
+      if (i < len(operations) - 1 and 1 < len(operations[i])):
+        op_str += operations[i] + ":"
+      else:
+        op_str += operations[i]
+
+    options = " -p " + str(nb_parameters)\
+            + " -s " + str(nb_simu)\
+            + " -g " + str(nb_groups)\
+            + " -t " + str(nb_time_steps)\
+            + " -o " + op_str\
+            + " -e " + str(threshold)
+    print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
+    if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
+        print "error launching Melissa"
+    #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
+    #launch_melissa("valgrind --leak-check=full mpirun -n 1 ./server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
+
+    ret = np.zeros(nb_parameters + 2)
+    for i in range(nb_groups):
+      if ("sobol" in operations) or ("sobol_indices" in operations):
+        if (coupling == 0):
+          ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
+          ret[1] = launch_simu(B[i,:], 1, i, nb_proc_simu, nb_parameters)
+          for j in range(nb_parameters):
+            ret[j+2] = launch_simu(C[j][i,:], j+2, i, nb_proc_simu, nb_parameters)
+          for k in range(len(ret)):
+            if (ret[k] != 0):
+              print "error launching simulation "+str(i)+" of group "+str(k)
+        else:
+          launch_coupled_simu(A[i,:], B[i,:], C, i, nb_proc_simu, nb_parameters)
+      else:
+        ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
+        if (ret[0] != 0):
+          print "error launching simulation "+str(i)
+      time.sleep(10)
+
+
+    if (("sobol" in operations) or ("sobol_indices" in operations)) and (pyzmq == 1):
+        converged_sobol = np.zeros(nb_proc_server,int)
+        finished_server = np.zeros(nb_proc_server,int)
+        snd_message = "continue"
+        while True:
+            rcv_message = rep_socket.recv_string()
+            message = int(rcv_message)
+            print "rcv_message "+rcv_message+", message "+str(message)
+            if (message >= 0 and message < nb_proc_server):
+                rep_socket.send_string("ok")
+                converged_sobol[message] = 1
+                if (not 0 in converged_sobol):
+                    snd_message = "stop"
+            else:
+                finished_server[message - nb_proc_server] = 1
+                rep_socket.send_string(snd_message)
+                if (not 0 in finished_server):
+                    break
+#       kill all simulations here
+    return 0
+
 # ------------- options ------------- #
 
 nb_parameters = 2
@@ -74,7 +166,6 @@ nb_groups = 5
 nb_time_steps = 100
 operations = ["mean","variance","min","max","threshold","sobol"]
 threshold = 0.7
-op_str=""
 mpi_options = ""
 nb_proc_simu = 2
 nb_proc_server = 3
@@ -88,79 +179,22 @@ range_max[1] = 3
 coupling = 1
 pyzmq = 0
 
-# ------------- main ------------- #
 
-context = zmq.Context()
-rep_socket = context.socket(zmq.REP)
-rep_socket.bind("tcp://*:5555")
+## ------------- main ------------- #
 
-if (not (("sobol" in operations) or ("sobol_indices" in operations))):
-    nb_groups = nb_simu
-A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
-np.save("Amatrix", A)
-if ("sobol" in operations) or ("sobol_indices" in operations):
-  B = create_matrix(nb_parameters, nb_groups, range_min, range_max)
-  C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
+if __name__ == '__main__':
+    launch_heatc(nb_parameters,
+    nb_simu,
+    nb_groups,
+    nb_time_steps,
+    operations,
+    threshold,
+    mpi_options,
+    nb_proc_simu,
+    nb_proc_server,
+    server_path,
+    range_min,
+    range_max,
+    coupling,
+    pyzmq)
 
-  np.save("Bmatrix", B)
-  for i in range(nb_parameters):
-    np.save("C"+str(i)+"matrix", C[i])
-
-
-for i in range(len(operations)):
-  if (i < len(operations) - 1):
-    op_str += operations[i] + ":"
-  else:
-    op_str += operations[i]
-
-options = " -p " + str(nb_parameters)\
-        + " -s " + str(nb_simu)\
-        + " -g " + str(nb_groups)\
-        + " -t " + str(nb_time_steps)\
-        + " -o " + op_str\
-        + " -e " + str(threshold)
-#print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
-    print "error launching Melissa"
-#print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
-#launch_melissa("valgrind --leak-check=full mpirun -n 1 ./server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
-
-ret = np.zeros(nb_parameters + 2)
-for i in range(nb_groups):
-  if ("sobol" in operations) or ("sobol_indices" in operations):
-    if (coupling == 0):
-      ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
-      ret[1] = launch_simu(B[i,:], 1, i, nb_proc_simu, nb_parameters)
-      for j in range(nb_parameters):
-        ret[j+2] = launch_simu(C[j][i,:], j+2, i, nb_proc_simu, nb_parameters)
-      for k in range(len(ret)):
-        if (ret[k] != 0):
-          print "error launching simulation "+str(i)+" of group "+str(k)
-    else:
-      launch_coupled_simu(A[i,:], B[i,:], C, i, nb_proc_simu, nb_parameters)
-  else:
-    ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
-    if (ret[0] != 0):
-      print "error launching simulation "+str(i)
-  time.sleep(10)
-
-
-if (("sobol" in operations) or ("sobol_indices" in operations)) and (pyzmq == 1):
-    converged_sobol = np.zeros(nb_proc_server,int)
-    finished_server = np.zeros(nb_proc_server,int)
-    snd_message = "continue"
-    while True:
-        rcv_message = rep_socket.recv_string()
-        message = int(rcv_message)
-        print "rcv_message "+rcv_message+", message "+str(message)
-        if (message >= 0 and message < nb_proc_server):
-            rep_socket.send_string("ok")
-            converged_sobol[message] = 1
-            if (not 0 in converged_sobol):
-                snd_message = "stop"
-        else:
-            finished_server[message - nb_proc_server] = 1
-            rep_socket.send_string(snd_message)
-            if (not 0 in finished_server):
-                break
-#       kill all simulations here
