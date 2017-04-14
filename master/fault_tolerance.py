@@ -7,6 +7,18 @@ from call_bash import *
 
 timeout = 300
 
+def to_seconds(date):
+    if len(date) == 3:
+        if len(date[0].split("-")) == 2:
+            time = 24 * 3600 * int(date[0].split("-")[0]) + 3600 * int(date[0].split("-")[1]) + 60 * int(date[1]) + int(date[2])
+        else:
+            time = 3600 * int(date[0]) + 60 * int(date[1]) + int(date[2])
+    if len(date) == 2:
+        time = 60 * int(date[0]) + int(date[1])
+    if len(date) == 1:
+        time = int(date[0])
+    return time
+
 def check_job(batch_scheduler, username, job_id):
     state = "pending"
     if (batch_scheduler == "OAR"):
@@ -21,7 +33,7 @@ def check_job(batch_scheduler, username, job_id):
                 state = "terminated"
     return state
 
-def reboot_simu(simu_id, simu_job_id):
+def reboot_simu(simu_id, simu_job_id, output):
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):
@@ -46,7 +58,7 @@ def reboot_simu(simu_id, simu_job_id):
             simu_job_id[simu_id] = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu_id)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
     return 0
 
-def reboot_server(workdir, melissa_first_job_id, melissa_job_id):
+def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output):
     os.chdir(workdir+"/STATS")
     output += "Reboot Melissa Server\n"
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
@@ -61,14 +73,13 @@ def reboot_server(workdir, melissa_first_job_id, melissa_job_id):
         melissa_job_id = call_bash('oarsub -S "./run_study.sh '+melissa_first_job_id+'" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     return melissa_job_id
 
-def check_timeout(simu_id, simu_job_id)
+def check_timeout(simu_id, simu_job_id, output):
     out = False
     if (batch_scheduler == "OAR"):
         elapsed_date = call_bash("oarstat -j "+simu_job_id)['out'].split()[13].split(":")
-            if (3600 * int(elapsed_date[0]) + 60 * int(elapsed_date[1]) + int(elapsed_date[2]) > timeout):
-                out = True
     elif (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-        if (int(call_bash("squeue --job="+job_id+" -h")['out'].split()[TODO]) > timeout):
-            out = True
-
+        elapsed_date = call_bash("squeue --job="+simu_job_id+" -h")['out'].split()[6].split(":")
+    if (to_seconds(elapsed_date) > timeout):
+        out = True
+        output += "Timeout detected on simulation "+str(simu_id)+"\n"
     return out

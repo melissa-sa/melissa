@@ -180,7 +180,7 @@ coupling = 1
 pyzmq = 0
 
 
-## ------------- main ------------- #
+# ------------- main ------------- #
 
 if __name__ == '__main__':
     launch_heatc(nb_parameters,

@@ -9,10 +9,6 @@ import zmq
 
 from threading import Thread, RLock
 
-from fault_tolerance import *
-from matrix_sobol import *
-from call_bash import *
-from batch_scripts import *
 
 #=====================================#
 #               options               #
@@ -29,6 +25,11 @@ mpi_Slurm_options     = ""
 mpi_CCC_options       = ""
 home_path             = "/scratch/G95757"
 server_path           = home_path+"/Melissa/build/server"
+sys.path.append(home_path+"/../master")
+from fault_tolerance import *
+from matrix_sobol import *
+from call_bash import *
+from batch_scripts import *
 workdir               = "/scratch/G95757/etude_eole"
 saturne_path          = home_path+"/Code_Saturne/4.3/arch/eole/ompi/bin"
 range_min             = np.zeros(nb_parameters,float)
@@ -56,7 +57,7 @@ username              = "terrazth"
 #               Threads               #
 #=====================================#
 
-lock_jobs_state = RLock()
+lock_job_state = RLock()
 lock_simu_state = RLock()
 lock_server_state = RLock()
 
@@ -84,8 +85,8 @@ class message_reciever(Thread):
     def run(self):
         while running_master == True:
             socks = dict(poller.poll(1000))
-            if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
-                message = rep_melissa_socket.recv_string().split()
+            if (pull_melissa_socket in socks.keys() and socks[pull_melissa_socket] == zmq.POLLIN):
+                message = pull_melissa_socket.recv_string().split()
                 if (message[0] == "timeout"):
                     for simu in message[1:]:
                         with lock_job_state:
@@ -182,19 +183,20 @@ options = " -p " + str(nb_parameters)\
         + " -t " + str(nb_time_steps)\
         + " -o " + op_str\
         + " -e " + str(threshold)
+output += "Options: "+options+"\n"
 if (not os.path.isdir(workdir+"/STATS")):
     os.mkdir(workdir+"/STATS")
 os.chdir(workdir+"/STATS")
-create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_melissa, mpi_options, options)
+create_run_study (workdir, frontend, nodes_melissa, openmp_threads, server_path, walltime_melissa, mpi_options, options, batch_scheduler)
 if ("sobol" in operations) or ("sobol_indices" in operations):
-    create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container)
+    create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container, batch_scheduler)
 if (not os.path.isdir(workdir+"/case1/SCRIPTS")):
     os.mkdir(workdir+"/case1/SCRIPTS")
 os.chdir(workdir+"/case1/SCRIPTS")
 if ("sobol" in operations) or ("sobol_indices" in operations):
-    create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name)
+    create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name, batch_scheduler)
 else:
-    create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name)
+    create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name, batch_scheduler)
 os.chdir(workdir+"/STATS")
 A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
 np.save("Amatrix",A)
@@ -222,28 +224,32 @@ for i in range(nb_groups):
             output += "error creating simulation "+str(k)+" of group "+str(i)+"\n"
 os.chdir(workdir+"/STATS")
 if (batch_scheduler == "Slurm"):
-    melissa_job_id = call_bash('sbatch "./run_study.sh"').split()[-1]
+    melissa_job_id = call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
 elif (batch_scheduler == "CCC"):
-    melissa_job_id = call_bash('ccc_msub "./run_study.sh"').split()[-1]
+    melissa_job_id = call_bash('ccc_msub "./run_study.sh"')['out'].split()[-1]
 elif (batch_scheduler == "OAR"):
-    melissa_job_id = call_bash('oarsub -S "./run_study.sh" --project=avido').split("OAR_JOB_ID=")[1]
+    melissa_job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
 melissa_first_job_id = melissa_job_id
+print melissa_job_id
 
 if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-    while (not "RUNNING" in call_bash("squeue --job="+melissa_job_id+" -l")):
+    while (not "RUNNING" in call_bash("squeue --job="+melissa_job_id+" -l")['out']):
         time.sleep(20)
 if (batch_scheduler == "OAR"):
-    while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
+    while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
         time.sleep(20)
 time.sleep(5) # to give time to retrieve the name of the main server node
 
-simu_job_id = list()
+simu_job_id = []
+server_state = "running"
 job_states = np.zeros(nb_groups) # not submitted
 simu_states = np.zeros(nb_groups) # simu as seen by the Server
 
 context = zmq.Context()
-rep_melissa_socket = context.socket(zmq.REP)
-rep_melissa_socket.bind("tcp://*:5555")
+pull_melissa_socket = context.socket(zmq.PULL)
+pull_melissa_socket.bind("tcp://*:5555")
+poller = zmq.Poller()
+poller.register(pull_melissa_socket, zmq.POLLIN)
 
 thread1 = state_checker()
 thread2 = message_reciever()
@@ -273,16 +279,16 @@ for i in range(nb_groups):
             simu_job_id.append(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
         elif (batch_scheduler == "OAR"):
             simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
-    with lock_state:
+    with lock_job_state:
         job_states[i] = 1 # pending
-    if (server_state != running)
-        with lock_jobs_state
+    if (server_state != "running"):
+        with lock_job_state
             for i in range(simu_job_id):
-                if (simu_states[i] < 3) # submited and not terminated
+                if (simu_states[i] < 3): # submited and not terminated
                     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
-                        call_bash("scancel "+simu_job_id[])
+                        call_bash("scancel "+simu_job_id[i])
                     elif (batch_scheduler == "OAR"):
-                        call_bash("oardel "+simu_job_id)
+                        call_bash("oardel "+simu_job_id[i])
 
             melissa_job_id = reboot_server(workdir, melissa_first_job_id, melissa_job_id)
             if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
@@ -291,23 +297,23 @@ for i in range(nb_groups):
             if (batch_scheduler == "OAR"):
                 while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
                     time.sleep(30)
-     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
         while (int(call_bash("squeue -u "+username+" | wc -l")['out']) >= 250):
             time.sleep(30)
 
 
-while !((simu_states.all == 2) and (server_state == "terminated")):
+while not((simu_states.all == 2) and (server_state == "terminated")):
     time.sleep(30)
 
     with lock_server_state:
-        if (server_state != running)
-            with lock_jobs_state
+        if (server_state != "running"):
+            with lock_job_state:
                 for i in range(simu_job_id):
-                    if (simu_states[i] < 3) # not terminated
+                    if (simu_states[i] < 3): # not terminated
                         if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
-                            call_bash("scancel "+simu_job_id[])
+                            call_bash("scancel "+simu_job_id[i])
                         elif (batch_scheduler == "OAR"):
-                            call_bash("oardel "+simu_job_id)
+                            call_bash("oardel "+simu_job_id[i])
 
                 melissa_job_id = reboot_server(workdir, melissa_first_job_id, melissa_job_id)
                 if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
@@ -317,41 +323,37 @@ while !((simu_states.all == 2) and (server_state == "terminated")):
                     while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
                         time.sleep(30)
                 for i in range(simu_job_id):
-                    if (simu_states[i] < 3) # not terminated
-                    os.chdir(workdir+"/group"+str(i))
-                    if ("sobol" in operations) or ("sobol_indices" in operations):
-                        create_coupling_parameters (nb_parameters, "None", nodes_saturne*proc_per_node_saturne, "None")
-                        if (batch_scheduler == "Slurm"):
-                            simu_job_id.append(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1])
-                        elif (batch_scheduler == "CCC"):
-                            simu_job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1])
-                        elif (batch_scheduler == "OAR"):
-                            simu_job_id.append(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
-                    else:
-                        os.chdir("./rank0/SCRIPTS")
-                        if (batch_scheduler == "Slurm"):
-                            simu_job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1])
-                        elif (batch_scheduler == "CCC"):
-                            simu_job_id.append(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
-                        elif (batch_scheduler == "OAR"):
-                            simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
-                        if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
-                            call_bash("scancel "+simu_job_id[])
-                        elif (batch_scheduler == "OAR"):
-                            call_bash("oardel "+simu_job_id)
+                    if (simu_states[i] < 3): # not terminated
+                        os.chdir(workdir+"/group"+str(i))
+                        if ("sobol" in operations) or ("sobol_indices" in operations):
+                            if (batch_scheduler == "Slurm"):
+                                simu_job_id.append(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1])
+                            elif (batch_scheduler == "CCC"):
+                                simu_job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1])
+                            elif (batch_scheduler == "OAR"):
+                                simu_job_id.append(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
+                        else:
+                            os.chdir("./rank0/SCRIPTS")
+                            if (batch_scheduler == "Slurm"):
+                                simu_job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1])
+                            elif (batch_scheduler == "CCC"):
+                                simu_job_id.append(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
+                            elif (batch_scheduler == "OAR"):
+                                simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
+
 
     for i in range(simu_job_id):
-        with lock_simu_state
-            with lock_job_state
+        with lock_simu_state:
+            with lock_job_state:
                 if (simu_states[i] != job_states[i]-1):
-                    if (simu_states[i] == 1 && job_states[i] == 3):
-                        reboot_simu(i, simu_job_id))
-                    if (simu_states[simu_id] == 0 && job_states[simu_id] == 3):
-                        reboot_simu(simu_id, simu_job_id))
-                    if (simu_states[simu_id] == 0 && job_states[simu_id] == 2):
-                        out=check_timeout(simu_id, simu_job_id)
+                    if (simu_states[i] == 1 and job_states[i] == 3):
+                        reboot_simu(i, simu_job_id, output))
+                    if (simu_states[i] == 0 and job_states[i] == 3):
+                        reboot_simu(i, simu_job_id, output))
+                    if (simu_states[i] == 0 and job_states[i] == 2):
+                        out=check_timeout(i, simu_job_id, output)
                         if (out == True):
-                            reboot_simu(simu_id, simu_job_id))
+                            reboot_simu(i, simu_job_id, output))
 
 
 
@@ -359,6 +361,12 @@ running_master = False
 
 thread1.join()
 thread2.join()
+
+fichier=open("master.out", "w")
+fichier.write(output)
+fichier.close()
+
+
 
 #while True:
 ##    time.sleep(300)
@@ -372,8 +380,8 @@ thread2.join()
 #                job_states[i] = 3 # terminated
 #while True:
 #    socks = dict(poller.poll(1000))
-#    if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
-#        message = rep_melissa_socket.recv_string().split()
+#    if (pull_melissa_socket in socks.keys() and socks[pull_melissa_socket] == zmq.POLLIN):
+#        message = pull_melissa_socket.recv_string().split()
 #        if (message[0] == "timeout"):
 #            for simu in message[1:]:
 #                reboot_job(int(simu), simu_job_id, job_states)
@@ -389,25 +397,25 @@ thread2.join()
 #    iterations_server = np.zeros(nb_proc_server,int)
 #    finished_server = np.zeros(nb_proc_server,int)
 #    context = zmq.Context()
-#    rep_melissa_socket = context.socket(zmq.REP)
-#    rep_melissa_socket.bind("tcp://*:5555")
+#    pull_melissa_socket = context.socket(zmq.REP)
+#    pull_melissa_socket.bind("tcp://*:5555")
 #    poller = zmq.Poller()
-#    poller.register(rep_melissa_socket, zmq.POLLIN)
+#    poller.register(pull_melissa_socket, zmq.POLLIN)
 #    snd_message = "continue"
 #    while True:
 #        socks = dict(poller.poll(1000))
-#        if (rep_melissa_socket in socks.keys() and socks[rep_melissa_socket] == zmq.POLLIN):
-#            message = dict([rep_melissa_socket.recv_string().split()])
+#        if (pull_melissa_socket in socks.keys() and socks[pull_melissa_socket] == zmq.POLLIN):
+#            message = dict([pull_melissa_socket.recv_string().split()])
 #            if (converged in message):
-#                rep_melissa_socket.send_string(snd_message)
+#                pull_melissa_socket.send_string(snd_message)
 #                converged_sobol[int(message[converged])] = 1
 #            elif (finished in message):
-#                rep_melissa_socket.send_string(snd_message)
+#                pull_melissa_socket.send_string(snd_message)
 #                finished_server[int(message[finished])] = 1
 #                if (not 0 in finished_server):
 #                    break
 #            elif (iteration in message):
-#                rep_melissa_socket.send_string(snd_message)
+#                pull_melissa_socket.send_string(snd_message)
 #                iteration_server[int(message[iteration])] += 1
 #        if (not 0 in converged_sobol):
 #            print "Cancel pending simulation jobs..."

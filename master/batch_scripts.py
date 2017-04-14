@@ -47,7 +47,7 @@ def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_pr
     fichier.close()
     os.system("chmod 744 coupling_parameters.py")
 
-def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container):
+def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container, batch_scheduler):
     contenu=""
     fichier=open("run_cas_couple.sh", "w")
     contenu += "#!/bin/bash                                                                     \n"
@@ -91,7 +91,7 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
     fichier.close()
     os.system("chmod 744 run_cas_couple.sh")
 
-def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_melissa, mpi_options, options):
+def create_run_study (workdir, frontend, nodes_melissa, openmp_threads, server_path, walltime_melissa, mpi_options, options, batch_scheduler):
     # signal handler definition
     signal_handler="handler() {"
     signal_handler+="echo \"### CLEAN-UP TIME !!!\""
@@ -128,7 +128,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "ulimit -s unlimited                                                \n"
         contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
     elif (batch_scheduler == "CCC"):
-        contenu += "#MSUB -n "+str(nodes_melissa*16)+"                                 \n"
+        contenu += "#MSUB -n "+str(nodes_melissa*(16/openmp_threads)+"                 \n"
         contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
         contenu += "#MSUB -o melissa.%I.log                                            \n"
         contenu += "#MSUB -e melissa.%I.err                                            \n"
@@ -137,7 +137,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
         contenu += "#MSUB -r Melissa                                                   \n"
         contenu += "#MSUB -q standard                                                  \n"
         contenu += "#MSUB --signal=B:SIGUSR2@300                                       \n"
-    contenu += signal handler
+#    contenu += signal handler
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "FRONTEND="+frontend+"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
@@ -175,7 +175,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     fichier.close()
     os.system("chmod 744 run_study.sh")
 
-def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name):
+def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name, batch_scheduler, coupling = 1):
     # script to launch simulations
     contenu=""
     fichier=open("run_saturne.sh", "w")
@@ -222,7 +222,7 @@ def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_para
     fichier.close()
     os.system("chmod 744 run_saturne_master.sh")
 
-def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name):
+def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name, batch_scheduler):
     contenu=""
     fichier=open("run_saturne_master.sh", "w")
     contenu += "#!/bin/bash                                                        \n"
