@@ -46,7 +46,7 @@ int main (int argc, char **argv)
     void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
 #ifdef BUILD_WITH_PY_ZMQ
-    void               *python_requester = zmq_socket (context, ZMQ_REQ);
+    void               *python_requester = zmq_socket (context, ZMQ_PUSH);
 #endif // BUILD_WITH_PY_ZMQ
     int                 nb_fields = 0;
     int                 first_init = 1;
@@ -138,11 +138,8 @@ int main (int argc, char **argv)
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     melissa_bind (data_puller, txt_buffer);
 #ifdef BUILD_WITH_PY_ZMQ
-    if(melissa_options.sobol_op == 1)
-    {
-        sprintf (txt_buffer, "tcp://localhost:5555");
-        melissa_connect (python_requester, txt_buffer);
-    }
+    sprintf (txt_buffer, "tcp://localhost:5555");
+    melissa_connect (python_requester, txt_buffer);
 #endif // BUILD_WITH_PY_ZMQ
 
     if (comm_data.rank == 0)
