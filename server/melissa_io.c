@@ -114,7 +114,7 @@ void save_stats (melissa_data_t *data,
 {
     char       file_name[256];
     int        i;
-    FILE*      f;
+    FILE*      f = NULL;
 
     for (i=0; i<comm_data->client_comm_size; i++)
     {

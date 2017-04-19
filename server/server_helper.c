@@ -415,22 +415,25 @@ int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_si
 void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char* txt_buffer, void *python_requester)
 {
     int i;
-//    char *txt_ptr;
 
-    if (detected_timeouts > 10)
+    if (detected_timeouts < 1)
     {
-        fprintf(stderr, "too much timeouts (%d)\n", detected_timeouts);
-        return;
-    }
-
-    for (i=0; i<nb_simu; i++)
-    {
-        if (simu_timeouts[i] == 1)
-        {
-            sprintf(txt_buffer, "timeout %d", i);
+        sprintf(txt_buffer, "timeout -1");
 #ifdef BUILD_WITH_PY_ZMQ
-            zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
+        zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
 #endif // BUILD_WITH_PY_ZMQ
+    }
+    else
+    {
+        for (i=0; i<nb_simu; i++)
+        {
+            if (simu_timeouts[i] == 1)
+            {
+                sprintf(txt_buffer, "timeout %d", i);
+    #ifdef BUILD_WITH_PY_ZMQ
+                zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
+    #endif // BUILD_WITH_PY_ZMQ
+            }
         }
     }
     return;

@@ -390,6 +390,9 @@ int main (int argc, char **argv)
                     fprintf (stdout, "reading checkpoint files...");
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
                     fprintf (stdout, " ok\n");
+                    fprintf (stdout, "sending simulations states...");
+//                    TODO
+                    fprintf (stdout, " ok\n");
                 }
             }
             last_message_simu[group_id] = melissa_get_time();
@@ -445,7 +448,6 @@ int main (int argc, char **argv)
             if (comm_data.rank==0 && ((iteration % 10) == 0 || iteration < 10) )
             {
                 fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
-                fprintf(stdout, "simu_state: %d %d %d %d %d\n", simu_state[0], simu_state[1], simu_state[2], simu_state[3], simu_state[4]);
             }
 #ifdef BUILD_WITH_PY_ZMQ
 //            sprintf (txt_buffer, "iteration %d", comm_data.rank);
