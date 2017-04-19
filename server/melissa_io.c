@@ -122,6 +122,11 @@ void save_stats (melissa_data_t *data,
         {
             sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, i);
             f = fopen(file_name, "wb+");
+            if (f == NULL)
+            {
+              fprintf(stdout,"WARNING: can not open %s%d_%d.data\n", field_name, comm_data->rank, i);
+              return;
+            }
             fwrite(&data[i].vect_size, sizeof(int), 1, f);
             if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0 && data[i].options->sobol_op == 0)
             {
@@ -144,6 +149,7 @@ void save_stats (melissa_data_t *data,
                 write_sobol(data[i].sobol_indices, data->vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
             fwrite(data[i].step_simu, sizeof(int), data[i].options->nb_groups, f);
+            fclose(f);
         }
     }
 }
@@ -210,7 +216,45 @@ void read_saved_stats (melissa_data_t *data,
                 read_sobol(data[client_rank].sobol_indices, data->vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
             }
             fread(data[client_rank].step_simu, sizeof(int), data[client_rank].options->nb_groups, f);
+            fclose(f);
         }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_io
+ *
+ * This function saves current simulation states on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *simu_states
+ * array of simulation states
+ *
+ * @param[in] *comm_data
+ * communication structure
+ *
+ * @param[in] size
+ * size of *simu_states
+ *
+ *******************************************************************************/
+
+void save_simu_states(int         *simu_states,
+                      comm_data_t *comm_data,
+                      int          size)
+{
+    char       file_name[256];
+    FILE*      f = NULL;
+    sprintf(file_name, "simu_state_%d.data",comm_data->rank);
+    f = fopen(file_name, "wb+");
+    if (f == NULL)
+    {
+      fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
+      return;
+    }
+    fwrite(simu_states, sizeof(int), size, f);
+    fclose(f);
 }
 
 /**

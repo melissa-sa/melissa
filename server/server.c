@@ -390,9 +390,9 @@ int main (int argc, char **argv)
                     fprintf (stdout, "reading checkpoint files...");
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
                     fprintf (stdout, " ok\n");
-                    fprintf (stdout, "sending simulations states...");
-//                    TODO
-                    fprintf (stdout, " ok\n");
+//                    fprintf (stdout, "sending simulations states...");
+//                    send_simulation_states(data_ptr, &comm_data, field_name_ptr, client_rank);
+//                    fprintf (stdout, " ok\n");
                 }
             }
             last_message_simu[group_id] = melissa_get_time();
@@ -484,6 +484,7 @@ int main (int argc, char **argv)
             while (fptr != NULL)
             {
                 save_stats (fptr->stats_data, &comm_data, fptr->name);
+                save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
                 fptr = field->next;
                 if (comm_data.rank == 0)
                 {
@@ -505,6 +506,7 @@ int main (int argc, char **argv)
             while (fptr != NULL)
             {
                 save_stats (fptr->stats_data, &comm_data, fptr->name);
+                save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
                 fptr = field->next;
                 if (comm_data.rank == 0)
                 {
