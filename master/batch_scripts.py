@@ -128,7 +128,7 @@ def create_run_study (workdir, frontend, nodes_melissa, openmp_threads, server_p
         contenu += "ulimit -s unlimited                                                \n"
         contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
     elif (batch_scheduler == "CCC"):
-        contenu += "#MSUB -n "+str(nodes_melissa*(16/openmp_threads)+"                 \n"
+        contenu += "#MSUB -n "+str(nodes_melissa*(16/openmp_threads))+"                 \n"
         contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
         contenu += "#MSUB -o melissa.%I.log                                            \n"
         contenu += "#MSUB -e melissa.%I.err                                            \n"
