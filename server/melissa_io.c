@@ -262,6 +262,46 @@ void save_simu_states(int         *simu_states,
  *
  * @ingroup melissa_io
  *
+ * This function reads simulation states from disc
+ *
+ *******************************************************************************
+ *
+ * @param[out] *simu_states
+ * array of simulation states
+ *
+ * @param[in] *comm_data
+ * communication structure
+ *
+ * @param[in] size
+ * size of *simu_states
+ *
+ *******************************************************************************/
+
+void read_simu_states(int         *simu_states,
+                      comm_data_t *comm_data,
+                      int          size)
+{
+    char       file_name[256];
+    FILE*      f = NULL;
+    sprintf(file_name, "simu_state_%d.data",comm_data->rank);
+    f = fopen(file_name, "rb");
+    if (f == NULL)
+    {
+      fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
+      return;
+    }
+    fread(simu_states, sizeof(int), size, f);
+#ifdef BUILD_WITH_MPI
+    MPI_Allreduce (MPI_IN_PLACE, simu_states, size, MPI_INT, MPI_MIN, comm_data->comm);
+#endif // BUILD_WITH_MPI
+    fclose(f);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_io
+ *
  * This function writes the computed statistics on files
  *
  *******************************************************************************

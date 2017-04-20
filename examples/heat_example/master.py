@@ -134,7 +134,7 @@ def launch_heatc(nb_parameters,
         ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
         if (ret[0] != 0):
           print "error launching simulation "+str(i)
-      time.sleep(10)
+      time.sleep(4)
 
 
     if (("sobol" in operations) or ("sobol_indices" in operations)) and (pyzmq == 1):

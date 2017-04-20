@@ -46,7 +46,7 @@ int main (int argc, char **argv)
     void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
 #ifdef BUILD_WITH_PY_ZMQ
-    void               *python_requester = zmq_socket (context, ZMQ_PUSH);
+    void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
 #endif // BUILD_WITH_PY_ZMQ
     int                 nb_fields = 0;
     int                 first_init = 1;
@@ -80,6 +80,7 @@ int main (int argc, char **argv)
     int                *simu_timeout;
     double              last_timeout_check;
     int                 detected_timeouts;
+    double              last_checkpoint_time;
 
 #ifdef BUILD_WITH_MPI
     // === init MPI === //
@@ -102,7 +103,6 @@ int main (int argc, char **argv)
 
     // Mettre un REGISTER ici !!!
 
-    fprintf(stdout, "len(node_name)= %d\n", sizeof(node_name));
     melissa_get_node_name (node_name);
 
 #ifdef BUILD_WITH_PROBES
@@ -130,6 +130,7 @@ int main (int argc, char **argv)
     last_message_simu = melissa_calloc (melissa_options.nb_groups, sizeof(double));
     simu_state        = melissa_calloc (melissa_options.nb_groups, sizeof(int));
     simu_timeout      = melissa_calloc (melissa_options.nb_groups, sizeof(int));
+    last_checkpoint_time = melissa_get_time();
 
     // === Open data puller port === //
 
@@ -139,7 +140,7 @@ int main (int argc, char **argv)
     melissa_bind (data_puller, txt_buffer);
 #ifdef BUILD_WITH_PY_ZMQ
     sprintf (txt_buffer, "tcp://localhost:5555");
-    melissa_connect (python_requester, txt_buffer);
+    melissa_connect (python_pusher, txt_buffer);
 #endif // BUILD_WITH_PY_ZMQ
 
     if (comm_data.rank == 0)
@@ -171,6 +172,16 @@ int main (int argc, char **argv)
         {
             client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
         }
+        fprintf (stdout, " ok \n");
+        fprintf (stdout, "reading simulation states at checkpoint time...");
+        read_simu_states(simu_state, &comm_data, melissa_options.nb_groups);
+#ifdef BUILD_WITH_PY_ZMQ
+        for (i=0; i<melissa_options.nb_groups; i++)
+        {
+            sprintf (txt_buffer, "simu_state %d %d", i, simu_state[i]);
+            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+        }
+#endif // BUILD_WITH_PY_ZMQ
         fprintf (stdout, " ok \n");
     }
 
@@ -212,7 +223,6 @@ int main (int argc, char **argv)
             if ((!(items[0].revents & ZMQ_POLLIN) && !(items[1].revents & ZMQ_POLLIN) && last_timeout_check + 10 < melissa_get_time())
                     || last_timeout_check + 10 < melissa_get_time())
             {
-                fprintf (stdout, "no message \n");
                 detected_timeouts = check_timeouts(simu_state, simu_timeout, last_message_simu, melissa_options.nb_groups);
                 last_timeout_check = melissa_get_time();
                 send_timeouts (5, simu_timeout, melissa_options.nb_groups, txt_buffer, NULL);
@@ -440,8 +450,7 @@ int main (int argc, char **argv)
             if (old_simu_state != simu_state[group_id] && comm_data.rank == 0)
             {
                 sprintf (txt_buffer, "simu_state %d %d", group_id, simu_state[group_id]);
-                zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
-                string_recv(python_requester, txt_buffer);
+                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 #endif // BUILD_WITH_PY_ZMQ
 
@@ -451,8 +460,7 @@ int main (int argc, char **argv)
             }
 #ifdef BUILD_WITH_PY_ZMQ
 //            sprintf (txt_buffer, "iteration %d", comm_data.rank);
-//            zmq_send(python_requester, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
-//            string_recv(python_requester, txt_buffer);
+//            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
 #endif // BUILD_WITH_PY_ZMQ
 #ifdef ZEROCOPY
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
@@ -469,8 +477,7 @@ int main (int argc, char **argv)
 //        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
 //        {
 //            sprintf (txt_buffer, "converged %d", comm_data.rank);
-//            zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
-//            string_recv(python_requester, txt_buffer);
+//            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
 //            if (strcmp ("stop", txt_buffer))
 //            {
 //                break;
@@ -478,21 +485,23 @@ int main (int argc, char **argv)
 //        }
 #endif // BUILD_WITH_PY_ZMQ
 
-        if (iteration % 1000 == 0)
+//        if (iteration % 100 == 0)
+        if (last_checkpoint_time  + 5 < melissa_get_time())
         {
             field_ptr fptr = field;
             while (fptr != NULL)
             {
                 save_stats (fptr->stats_data, &comm_data, fptr->name);
-                save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
-                fptr = field->next;
                 if (comm_data.rank == 0)
                 {
                     char dir[256];
                     getcwd(dir, 256*sizeof(char));
-                    fprintf(stderr, "statistic fields saved in %s\n", dir);
+                    fprintf(stderr, "statistic field %s saved in %s\n", fptr->name, dir);
                 }
+                fptr = field->next;
             }
+            save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
+            last_checkpoint_time = melissa_get_time();
         }
 
 
@@ -506,7 +515,6 @@ int main (int argc, char **argv)
             while (fptr != NULL)
             {
                 save_stats (fptr->stats_data, &comm_data, fptr->name);
-                save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
                 fptr = field->next;
                 if (comm_data.rank == 0)
                 {
@@ -515,6 +523,7 @@ int main (int argc, char **argv)
                     fprintf(stderr, "statistic fields saved in %s\n\n", dir);
                 }
             }
+            save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
 #ifdef BUILD_WITH_MPI
             MPI_Finalize ();
 #endif // BUILD_WITH_MPI
@@ -549,13 +558,12 @@ int main (int argc, char **argv)
         zmq_close (init_responder);
         zmq_close (data_puller);
 #ifdef BUILD_WITH_PY_ZMQ
-        if (melissa_options.sobol_op == 1)
-        {
-            sprintf (txt_buffer, "finished %d", comm_data.rank);
-            zmq_send(python_requester, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
-            string_recv(python_requester, txt_buffer);
-            zmq_close (python_requester);
-        }
+//        if (melissa_options.sobol_op == 1)
+//        {
+//            sprintf (txt_buffer, "finished %d", comm_data.rank);
+//            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
+//        }
+        zmq_close (python_pusher);
 #endif // BUILD_WITH_PY_ZMQ
         zmq_ctx_term (context);
     }
