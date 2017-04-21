@@ -47,6 +47,8 @@ int main (int argc, char **argv)
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
 #ifdef BUILD_WITH_PY_ZMQ
     void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
+#else // BUILD_WITH_PY_ZMQ
+    void               *python_pusher;
 #endif // BUILD_WITH_PY_ZMQ
     int                 nb_fields = 0;
     int                 first_init = 1;
@@ -80,6 +82,7 @@ int main (int argc, char **argv)
     int                *simu_timeout;
     double              last_timeout_check;
     int                 detected_timeouts;
+    int                 nb_finished_simulations = 0;
     double              last_checkpoint_time;
 
 #ifdef BUILD_WITH_MPI
@@ -175,6 +178,14 @@ int main (int argc, char **argv)
         fprintf (stdout, " ok \n");
         fprintf (stdout, "reading simulation states at checkpoint time...");
         read_simu_states(simu_state, &comm_data, melissa_options.nb_groups);
+        for (i=0; i<melissa_options.nb_groups; i++)
+        {
+            fprintf(stderr, "  simu_state[%d] = %d (rank %d)\n", i, simu_state[i], comm_data.rank);
+            if (simu_state[i] == 2)
+            {
+                nb_finished_simulations += 1;
+            }
+        }
 #ifdef BUILD_WITH_PY_ZMQ
         for (i=0; i<melissa_options.nb_groups; i++)
         {
@@ -218,20 +229,15 @@ int main (int argc, char **argv)
 
         // === If no message on the connexion port === //
 
-        if (comm_data.rank == 0)
+//        if (comm_data.rank == 0)
         {
-            if ((!(items[0].revents & ZMQ_POLLIN) && !(items[1].revents & ZMQ_POLLIN) && last_timeout_check + 10 < melissa_get_time())
-                    || last_timeout_check + 10 < melissa_get_time())
+            if (last_timeout_check + 10 < melissa_get_time())
             {
                 detected_timeouts = check_timeouts(simu_state, simu_timeout, last_message_simu, melissa_options.nb_groups);
                 last_timeout_check = melissa_get_time();
-                send_timeouts (5, simu_timeout, melissa_options.nb_groups, txt_buffer, NULL);
                 if (detected_timeouts > 0)
                 {
-#ifdef BUILD_WITH_PY_ZMQ
-                    send_timeouts (detected_timeouts, simu_timeout, melissa_options.nb_groups, txt_buffer, python requester);
-#endif // BUILD_WITH_PY_ZMQ
-                    fprintf (stdout, "timeout detected\n");
+                    send_timeouts (detected_timeouts, simu_timeout, melissa_options.nb_groups, txt_buffer, python_pusher);
                 }
             }
         }
@@ -400,9 +406,6 @@ int main (int argc, char **argv)
                     fprintf (stdout, "reading checkpoint files...");
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
                     fprintf (stdout, " ok\n");
-//                    fprintf (stdout, "sending simulations states...");
-//                    send_simulation_states(data_ptr, &comm_data, field_name_ptr, client_rank);
-//                    fprintf (stdout, " ok\n");
                 }
             }
             last_message_simu[group_id] = melissa_get_time();
@@ -433,18 +436,25 @@ int main (int argc, char **argv)
                 // === Compute classical statistics + Sobol indices === //
                 compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
                 iteration++;
-                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
-                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
-                                                                        0.01,
-                                                                        melissa_options.nb_time_steps,
-                                                                        melissa_options.nb_parameters);
+//                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
+//                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
+//                                                                        0.01,
+//                                                                        melissa_options.nb_time_steps,
+//                                                                        melissa_options.nb_parameters);
             }
 #ifdef BUILD_WITH_PROBES
             end_computation_time = melissa_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
+//            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
             old_simu_state = simu_state[group_id];
             simu_state[group_id] = check_simu_state(field, 2, group_id, melissa_options.nb_time_steps, comm_data.client_comm_size);
+
+            if (simu_state[group_id] == 2)
+            {
+                nb_finished_simulations += 1;
+                fprintf(stderr, "nb_finished_simulations: %d\n", nb_finished_simulations);
+            }
 #ifdef BUILD_WITH_PY_ZMQ
             // === Send a message to the Python master in case of simulation status update === //
             if (old_simu_state != simu_state[group_id] && comm_data.rank == 0)
@@ -458,10 +468,6 @@ int main (int argc, char **argv)
             {
                 fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
             }
-#ifdef BUILD_WITH_PY_ZMQ
-//            sprintf (txt_buffer, "iteration %d", comm_data.rank);
-//            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
-#endif // BUILD_WITH_PY_ZMQ
 #ifdef ZEROCOPY
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
             {
@@ -507,7 +513,7 @@ int main (int argc, char **argv)
 
         // === Signal handling === //
 
-        if (end_signal == SIGINT)
+        if (end_signal == SIGINT || end_signal == SIGUSR1 || end_signal == SIGUSR2)
         {
             field_ptr fptr = field;
             if (comm_data.rank == 0)
@@ -524,14 +530,13 @@ int main (int argc, char **argv)
                 }
             }
             save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
+            if (end_signal == SIGINT)
+            {
 #ifdef BUILD_WITH_MPI
-            MPI_Finalize ();
+                MPI_Finalize ();
 #endif // BUILD_WITH_MPI
-            return 0;
-            break;
-        }
-        else if (end_signal == SIGUSR1 || end_signal == SIGUSR2)
-        {
+                return 0;
+            }
             break;
         }
 
@@ -541,7 +546,11 @@ int main (int argc, char **argv)
         if (nb_fields > 0)
 //#endif // BUILD_WITH_PY_ZMQ
         {
-            if (iteration >= nb_iterations*nb_fields)
+//            if (iteration >= nb_iterations*nb_fields)
+//            {
+//                break;
+//            }
+            if (nb_finished_simulations >= melissa_options.nb_groups)
             {
                 break;
             }

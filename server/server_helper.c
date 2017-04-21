@@ -209,7 +209,11 @@ int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_
         {
             if (field->stats_data[i].is_valid == 1)
             {
-                if (field->stats_data[i].step_simu[group_id] < nb_time_steps-1)
+                if (field->stats_data[i].step_simu[group_id] > nb_time_steps)
+                {
+                    fprintf (stderr, "problem !!!!! (%d)\n", field->stats_data[i].step_simu[group_id]);
+                }
+                if (field->stats_data[i].step_simu[group_id] < nb_time_steps)
                 {
                     return 1;
                 }
@@ -396,7 +400,7 @@ int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_si
 {
     int detected_timeouts = 0;
     int i;
-    double timeout_simu = 100; // TODO: something more user friendly
+    double timeout_simu = 1; // TODO: something more user friendly
     double current_time = melissa_get_time();
     for (i=0; i<nb_simu; i++)
     {
@@ -406,13 +410,14 @@ int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_si
             {
                 simu_timeouts[i] = 1;
                 detected_timeouts += 1;
+                fprintf (stdout, "timeout detected on simulation group %d\n", i);
             }
         }
     }
     return detected_timeouts;
 }
 
-void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char* txt_buffer, void *python_requester)
+void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char* txt_buffer, void *python_pusher)
 {
     int i;
 
@@ -420,7 +425,7 @@ void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char
     {
         sprintf(txt_buffer, "timeout -1");
 #ifdef BUILD_WITH_PY_ZMQ
-        zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
+        zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
 #endif // BUILD_WITH_PY_ZMQ
     }
     else
@@ -431,7 +436,7 @@ void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char
             {
                 sprintf(txt_buffer, "timeout %d", i);
     #ifdef BUILD_WITH_PY_ZMQ
-                zmq_send(python_requester, txt_buffer, strlen(txt_buffer), 0);
+                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
     #endif // BUILD_WITH_PY_ZMQ
             }
         }

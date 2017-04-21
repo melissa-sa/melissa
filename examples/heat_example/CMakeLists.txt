@@ -4,6 +4,7 @@ configure_file(run_heat_f.sh run_heat_f.sh COPYONLY)
 configure_file(run_heat_c.sh run_heat_c.sh COPYONLY)
 configure_file(run_heat_c_sobol.sh run_heat_c_sobol.sh COPYONLY)
 configure_file(master.py master.py COPYONLY)
+configure_file(crash_server.py crash_server.py COPYONLY)
 
 add_library(heat_utils heat_utils.f90)
 target_compile_options(heat_utils BEFORE PUBLIC -fPIC)

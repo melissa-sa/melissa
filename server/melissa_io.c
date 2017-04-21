@@ -651,6 +651,7 @@ void write_stats_ensight (melissa_data_t    **data,
     MPI_Status  status;
 #endif // BUILD_WITH_MPI
     int32_t     n;
+    double temp1, temp2;
 
     max_size_time=floor(log10(options->nb_time_steps))+1;
 
@@ -1129,6 +1130,134 @@ void write_stats_ensight (melissa_data_t    **data,
                 {
                     f = fopen(file_name, "w");
                     sprintf(c_buffer, "%s_sobol_tot%d (time values: %d, %g)", field, param, (int)t, time_value);
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                      c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    n = 1;
+                    sprintf(c_buffer, "part");
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                      c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    fwrite (&n, sizeof(int32_t), 1, f);
+                    sprintf(c_buffer, "hexa8");
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                      c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    fwrite (s_buffer, sizeof(float), options->global_vect_size, f);
+
+                    fclose(f);
+                }
+            }
+        }
+        //======================//
+        // Confidence intervals //
+        //======================//
+        temp2 = 1.96/(sqrt((*data)[0].sobol_indices[0].iteration-3));
+        for (param=0; param<options->nb_parameters; param++)
+        {
+            time_value = 0;
+            for (t=0; t<options->nb_time_steps; t++)
+            {
+                time_value += 0.0012;
+                sprintf(file_name, "results.%s_sobol_confidence%d.%.*d", field, param, max_size_time, (int)(t+1));
+                for (i=0; i<comm_data->client_comm_size; i++)
+                {
+                    if (comm_data->rcounts[i] > 0)
+                    {
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            temp1 = 0.5 * log((1.0+(*data)[i].sobol_indices[t].sobol_martinez[param].first_order_values[j])/(1.0-(*data)[i].sobol_indices[t].sobol_martinez[param].first_order_values[j]));
+                            s_buffer[j + offset + comm_data->rdispls[i]] = (float)tanh(temp1 + temp2) - tanh(temp1 - temp2);
+                        }
+                    }
+                }
+#ifdef BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    temp_offset = 0;
+                    for (j=1; j<comm_data->comm_size; j++)
+                    {
+                        temp_offset += local_vect_sizes[j];
+                        MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
+                    }
+                }
+                else
+                {
+                    MPI_Send(&s_buffer[offset], local_vect_sizes[comm_data->rank], MPI_FLOAT, 0, comm_data->rank+121, comm_data->comm);
+                }
+#endif // BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    f = fopen(file_name, "w");
+                    sprintf(c_buffer, "%s_sobol_confidence%d (time values: %d, %g)", field, param, (int)t, time_value);
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                      c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    n = 1;
+                    sprintf(c_buffer, "part");
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                      c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    fwrite (&n, sizeof(int32_t), 1, f);
+                    sprintf(c_buffer, "hexa8");
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                      c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    fwrite (s_buffer, sizeof(float), options->global_vect_size, f);
+
+                    fclose(f);
+                }
+            }
+        }
+        for (param=0; param<options->nb_parameters; param++)
+        {
+            time_value = 0;
+            for (t=0; t<options->nb_time_steps; t++)
+            {
+                time_value += 0.0012;
+                sprintf(file_name, "results.%s_sobol_tot_confidence%d.%.*d", field, param, max_size_time, (int)t+1);
+                for (i=0; i<comm_data->client_comm_size; i++)
+                {
+                    if (comm_data->rcounts[i] > 0)
+                    {
+                        for (j=0; j<comm_data->rcounts[i]; j++)
+                        {
+                            temp1 = 0.5 * log((2.0-(*data)[i].sobol_indices[t].sobol_martinez[param].total_order_values[j])/(*data)[i].sobol_indices[t].sobol_martinez[param].total_order_values[j]);
+                            s_buffer[j + offset + comm_data->rdispls[i]] = (1-tanh(temp1 - temp2)) - (1-tanh(temp1 + temp2));
+                        }
+                    }
+                }
+#ifdef BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    temp_offset = 0;
+                    for (j=1; j<comm_data->comm_size; j++)
+                    {
+                        temp_offset += local_vect_sizes[j];
+                        MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
+                    }
+                }
+                else
+                {
+                    MPI_Send(&s_buffer[offset], local_vect_sizes[comm_data->rank], MPI_FLOAT, 0, comm_data->rank+121, comm_data->comm);
+                }
+#endif // BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    f = fopen(file_name, "w");
+                    sprintf(c_buffer, "%s_sobol_tot_confidence%d (time values: %d, %g)", field, param, (int)t, time_value);
                     strncpy(c_buffer2, c_buffer, 80);
                     for (i=strlen(c_buffer); i < 80; i++)
                       c_buffer2[i] = ' ';

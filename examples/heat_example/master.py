@@ -114,8 +114,7 @@ def launch_heatc(nb_parameters,
     print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
     if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
         print "error launching Melissa"
-    #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
-    #launch_melissa("valgrind --leak-check=full mpirun -n 1 ./server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
+#    launch_melissa("valgrind --leak-check=full mpirun -n 3 "+server_path+"/server"+options+" &")
 
     ret = np.zeros(nb_parameters + 2)
     for i in range(nb_groups):
