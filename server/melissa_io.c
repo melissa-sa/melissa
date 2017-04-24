@@ -128,11 +128,11 @@ void save_stats (melissa_data_t *data,
               return;
             }
             fwrite(&data[i].vect_size, sizeof(int), 1, f);
-            if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0 && data[i].options->sobol_op == 0)
+            if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0)
             {
                 write_mean(data[i].means, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
-            if (data[i].options->variance_op != 0 && data[i].options->sobol_op == 0)
+            if (data[i].options->variance_op != 0)
             {
                 write_variance(data[i].variances, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
@@ -195,11 +195,11 @@ void read_saved_stats (melissa_data_t *data,
               return;
             }
             fread(&data[client_rank].vect_size, sizeof(int), 1, f);
-            if (data[client_rank].options->mean_op != 0 && data[client_rank].options->variance_op == 0 && data[client_rank].options->sobol_op == 0)
+            if (data[client_rank].options->mean_op != 0 && data[client_rank].options->variance_op == 0/* && data[client_rank].options->sobol_op == 0*/)
             {
                 read_mean(data[client_rank].means, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
             }
-            if (data[client_rank].options->variance_op != 0 && data[client_rank].options->sobol_op == 0)
+            if (data[client_rank].options->variance_op != 0/* && data[client_rank].options->sobol_op == 0*/)
             {
                 read_variance(data[client_rank].variances, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
             }
