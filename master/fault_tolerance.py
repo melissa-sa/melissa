@@ -44,6 +44,8 @@ def reboot_simu(simu_id, simu_job_id, output):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):
         call_bash("oardel "+simu_job_id[simu_id])
+    elif (batch_scheduler == "OAR"):
+        call_bash("kill "+simu_job_id[simu_id])
     os.chdir(workdir+"/group"+str(simu_id))
     if ("sobol" in operations) or ("sobol_indices" in operations):
         output += "Reboot simulation group "+str(simu_id)+"\n"
@@ -53,6 +55,8 @@ def reboot_simu(simu_id, simu_job_id, output):
             simu_job_id[simu_id] = call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1]
         elif (batch_scheduler == "OAR"):
             simu_job_id[simu_id] = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu_id)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+        elif (batch_scheduler == "local"):
+            simu_job_id[simu_id] = call_bash('../STATS/run_cas_couple.sh & echo $!')['out']
     else:
         output += "Reboot simulation "+str(simu_id)+"\n"
         os.chdir("./rank0/SCRIPTS")
@@ -62,6 +66,8 @@ def reboot_simu(simu_id, simu_job_id, output):
             simu_job_id[simu_id] = call_bash('ccc_msub "./runcase"')['out'].split()[-1]
         elif (batch_scheduler == "OAR"):
             simu_job_id[simu_id] = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu_id)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+        elif (batch_scheduler == "local"):
+            simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
     return 0
 
 def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output):
@@ -71,12 +77,16 @@ def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output):
         call_bash("scancel "+melissa_job_id)
     elif (batch_scheduler == "OAR"):
         call_bash("oardel "+melissa_job_id)
+    elif (batch_scheduler == "local"):
+        call_bash("kill "+melissa_job_id)
     if (batch_scheduler == "Slurm"):
         melissa_job_id = call_bash('sbatch "./run_study.sh '+melissa_first_job_id+'"')['out'].split()[-1]
     elif (batch_scheduler == "CCC"):
         melissa_job_id = call_bash('ccc_msub "./run_study.sh '+melissa_first_job_id+'"')['out'].split()[-1]
     elif (batch_scheduler == "OAR"):
         melissa_job_id = call_bash('oarsub -S "./run_study.sh '+melissa_first_job_id+'" --project=avido')['out'].split("OAR_JOB_ID=")[1]
+    elif (batch_scheduler == "local"):
+        melissa_job_id = call_bash('./run_study.sh '+melissa_first_job_id+' & echo $!')['out']
     return melissa_job_id
 
 def check_timeout(simu_id, simu_job_id, output):

@@ -167,6 +167,8 @@ def launch_study(
         melissa_job_id = call_bash('ccc_msub "./run_study.sh"')['out'].split()[-1]
     elif (batch_scheduler == "OAR"):
         melissa_job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
+    elif (batch_scheduler == "local"):
+        melissa_job_id = call_bash('./run_study.sh & echo $!')['out']
     melissa_first_job_id = melissa_job_id
     print melissa_job_id
 
@@ -209,6 +211,8 @@ def launch_study(
                 simu_job_id.append(call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1])
             elif (batch_scheduler == "OAR"):
                 simu_job_id.append(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
+            elif (batch_scheduler == "local"):
+                simu_job_id.append = call_bash('../STATS/run_cas_couple.sh & echo $!')['out']
         else:
             os.chdir("./rank0/SCRIPTS")
             if (batch_scheduler == "Slurm"):
@@ -217,6 +221,8 @@ def launch_study(
                 simu_job_id.append(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
             elif (batch_scheduler == "OAR"):
                 simu_job_id.append(call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
+            elif (batch_scheduler == "local"):
+                simu_job_id.append = call_bash('./runcase & echo $!')['out']
         with lock_job_state:
             job_states[i] = 1 # pending
         if (server_state != "running"):
@@ -227,6 +233,8 @@ def launch_study(
                             call_bash("scancel "+simu_job_id[i])
                         elif (batch_scheduler == "OAR"):
                             call_bash("oardel "+simu_job_id[i])
+                        elif (batch_scheduler == "OAR"):
+                            call_bash("kill "+simu_job_id[i])
 
                 melissa_job_id = reboot_server(workdir, melissa_first_job_id, melissa_job_id)
                 if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
@@ -252,6 +260,8 @@ def launch_study(
                                 call_bash("scancel "+simu_job_id[i])
                             elif (batch_scheduler == "OAR"):
                                 call_bash("oardel "+simu_job_id[i])
+                            elif (batch_scheduler == "OAR"):
+                                call_bash("kill "+simu_job_id[i])
 
                     melissa_job_id = reboot_server(workdir, melissa_first_job_id, melissa_job_id)
                     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
@@ -265,19 +275,23 @@ def launch_study(
                             os.chdir(workdir+"/group"+str(i))
                             if ("sobol" in operations) or ("sobol_indices" in operations):
                                 if (batch_scheduler == "Slurm"):
-                                    simu_job_id[i]=call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1]
+                                    simu_job_id[i] = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1]
                                 elif (batch_scheduler == "CCC"):
-                                    simu_job_id[i]=call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1]
+                                    simu_job_id[i] = call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1]
                                 elif (batch_scheduler == "OAR"):
-                                    simu_job_id[i]=call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+                                    simu_job_id[i] = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+                                elif (batch_scheduler == "local"):
+                                    simu_job_id[i] = call_bash('../STATS/run_cas_couple.sh & echo $!')['out']
                             else:
                                 os.chdir("./rank0/SCRIPTS")
                                 if (batch_scheduler == "Slurm"):
-                                    simu_job_id[i]=call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1]
+                                    simu_job_id[i] = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1]
                                 elif (batch_scheduler == "CCC"):
-                                    simu_job_id[i]=call_bash('ccc_msub "./runcase"')['out'].split()[-1]
+                                    simu_job_id[i] = call_bash('ccc_msub "./runcase"')['out'].split()[-1]
                                 elif (batch_scheduler == "OAR"):
-                                    simu_job_id[i]=call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+                                    simu_job_id[i] = call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+                                elif (batch_scheduler == "local"):
+                                    simu_job_id[i] = call_bash('./runcase & echo $!')['out']
 
         for i in range(len(simu_job_id)):
             with lock_simu_state:
