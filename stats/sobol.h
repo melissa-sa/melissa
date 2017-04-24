@@ -100,17 +100,17 @@ int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
                                      int             nb_time_steps,
                                      int             nb_parameters);
 
-void write_sobol(sobol_array_t *sobol_array,
-                 int            vect_size,
-                 int            nb_time_steps,
-                 int            nb_parameters,
-                 FILE*          f);
+void write_sobol_martinez(sobol_array_t *sobol_array,
+                          int            vect_size,
+                          int            nb_time_steps,
+                          int            nb_parameters,
+                          FILE*          f);
 
-void read_sobol(sobol_array_t *sobol_array,
-                 int            vect_size,
-                 int            nb_time_steps,
-                 int            nb_parameters,
-                 FILE*          f);
+void read_sobol_martinez(sobol_array_t *sobol_array,
+                         int            vect_size,
+                         int            nb_time_steps,
+                         int            nb_parameters,
+                         FILE*          f);
 
 void free_sobol_jansen (sobol_jansen_t *sobol_indices);
 
