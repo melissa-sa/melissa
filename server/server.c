@@ -436,7 +436,7 @@ int main (int argc, char **argv)
                 // === Compute classical statistics + Sobol indices === //
                 compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
                 iteration++;
-//                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
+                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
 //                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
 //                                                                        0.01,
 //                                                                        melissa_options.nb_time_steps,
