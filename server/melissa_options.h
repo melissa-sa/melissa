@@ -24,9 +24,9 @@ struct melissa_options_s
     int                  nb_parameters;    /**< nb of variables parameters of the study                          */
     int                  sampling_size;    /**< nb of randomly drawn simulation parameter sets                   */
     int                  nb_simu;          /**< nb of simulation of the study                                    */
-    int                  mean_op;          /**< 1 if the user needs to calculate the mean, 0 otherwise.          */
-    int                  variance_op;      /**< 1 if the user needs to calculate the variance, 0 otherwise.      */
-    int                  min_and_max_op;   /**< 1 if the user needs to calculate min and max, 0 otherwise.       */
+    int                  mean_op;          /**< 1 if the user needs to compute the mean, 0 otherwise.            */
+    int                  variance_op;      /**< 1 if the user needs to compute the variance, 0 otherwise.        */
+    int                  min_and_max_op;   /**< 1 if the user needs to compute min and max, 0 otherwise.         */
     int                  threshold_op;     /**< 1 if the user needs to compute threshold exceedance, 0 otherwise */
     double               threshold;        /**< threshold used to compute threshold exceedance                   */
     int                  sobol_op;         /**< 1 if the user needs to compute sobol indices, 0 otherwise        */
