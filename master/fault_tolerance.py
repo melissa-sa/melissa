@@ -39,7 +39,7 @@ def check_job(batch_scheduler, username, job_id):
                 state = "terminated"
     return state
 
-def reboot_simu(simu_id, simu_job_id, output):
+def reboot_simu(simu_id, simu_job_id, output, batch_scheduler, workdir):
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):
@@ -70,7 +70,7 @@ def reboot_simu(simu_id, simu_job_id, output):
             simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
     return 0
 
-def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output):
+def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output, batch_scheduler):
     os.chdir(workdir+"/STATS")
     output += "Reboot Melissa Server\n"
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
@@ -89,64 +89,14 @@ def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output):
         melissa_job_id = call_bash('./run_study.sh '+melissa_first_job_id+' & echo $!')['out']
     return melissa_job_id
 
-def check_timeout(simu_id, simu_job_id, output):
+def check_timeout(simu_id, simu_job_id, output, batch_scheduler):
     out = False
     if (batch_scheduler == "OAR"):
-        elapsed_date = call_bash("oarstat -j "+simu_job_id)['out'].split()[13].split(":")
+        elapsed_date = call_bash("oarstat -j "+simu_job_id[simu_id])['out'].split()[13].split(":")
     elif (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
-        elapsed_date = call_bash("squeue --job="+simu_job_id+" -h")['out'].split()[6].split(":")
+        elapsed_date = call_bash("squeue --job="+simu_job_id[simu_id]+" -h")['out'].split()[6].split(":")
     if (to_seconds(elapsed_date) > timeout_simu):
         out = True
         output += "Timeout detected on simulation "+str(simu_id)+"\n"
     return out
 
-#=====================================#
-#               Threads               #
-#=====================================#
-
-lock_job_state = RLock()
-lock_simu_state = RLock()
-lock_server_state = RLock()
-timeout_server = 600
-
-class state_checker(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-        self.running_master = True
-    def run(self):
-        while self.running_master == True:
-            time.sleep(10)
-            with lock_server_state:
-                server_state = check_job(batch_scheduler, username, melissa_job_id)
-            for i in range(len(simu_job_id)):
-                if job_states[i] < 3 and job_states[i] > 0:
-                    state = check_job(batch_scheduler, username, simu_job_id[i])
-                    if ("running" == state):
-                        with lock_job_state:
-                            job_states[i] = 2 # running
-                    if ("terminated" == state):
-                        with lock_job_state:
-                            job_states[i] = 3 # terminated
-
-class message_reciever(Thread):
-    def __init__(self):
-        self.running_master = True
-        Thread.__init__(self)
-    def run(self):
-        while self.running_master == True:
-            socks = dict(poller.poll(1000))
-            if (pull_melissa_socket in socks.keys() and socks[pull_melissa_socket] == zmq.POLLIN):
-                message = pull_melissa_socket.recv_string().split()
-                if (message[0] == "timeout"):
-                    if message[1] != "-1":
-                        with lock_job_state:
-                            reboot_simu(int(simu), simu_job_id)
-                            job_states[int(simu)] = 1 # pennding or runnning
-                if (message[0] == "simu_state"):
-                    simu_id = int(message[1])
-                    simu_state = int(message[2])
-                    simu_states[simu_id] = simu_state
-                last_recieved_from_master = time.time()
-            if (time.time() - last_recieved_from_master) > timeout_server:
-                with lock_server_state:
-                    server_state = "timeout"

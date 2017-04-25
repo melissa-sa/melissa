@@ -33,6 +33,7 @@ struct melissa_options_s
     int                  sobol_order;      /**< max order of the computes sobol indices                          */
     int                  global_vect_size; /**< global size of input vector                                      */
     int                  restart;          /**< 1 if restart, 0 otherwise                                        */
+    char                 master_name[256]; /**< Melissa master node name                                         */
 };
 
 typedef struct melissa_options_s melissa_options_t; /**< type corresponding to melissa_options_s */

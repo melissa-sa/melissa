@@ -36,6 +36,7 @@ static inline void stats_usage ()
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
+            " -n <char*>     : Melissa master node name\n"
             "\n"
             );
 }
@@ -66,6 +67,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
+    sprintf (options->master_name, "localhost");
 }
 
 static inline void get_operations (char              *name,
@@ -74,7 +76,7 @@ static inline void get_operations (char              *name,
     const char  s[2] = ":";
     char       *temp_char;
 
-    if (name == NULL || name[0] == '-' || name[0] == ':')
+    if (name == NULL || name[0] & '-' || name[0] & ':')
     {
         stats_usage ();
         exit (1);
@@ -163,6 +165,7 @@ void melissa_print_options (melissa_options_t *options)
         fprintf(stdout, "    sobol indices, max order: %d\n", options->sobol_order);
     if (options->restart != 0)
         fprintf(stdout, "using options.save restart file\n");
+    fprintf(stdout, "Melissa master node name: %s\n", options->master_name);
 }
 
 /**
@@ -199,7 +202,7 @@ void melissa_get_options (int argc, char    **argv,
 
     do
     {
-        opt = getopt (argc, argv, "p:t:o:e:s:g:h:r");
+        opt = getopt (argc, argv, "p:t:o:e:s:g:h:r:n");
 
         switch (opt) {
         case 'r':
@@ -229,6 +232,9 @@ void melissa_get_options (int argc, char    **argv,
             break;
         case 'g':
             options->nb_groups = atoi (optarg);
+            break;
+        case 'n':
+            strcpy(options->master_name, optarg);
             break;
         case 'h':
             stats_usage ();
