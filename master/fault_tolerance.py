@@ -39,7 +39,7 @@ def check_job(batch_scheduler, username, job_id):
                 state = "terminated"
     return state
 
-def reboot_simu(simu_id, simu_job_id, output, batch_scheduler, workdir):
+def reboot_simu(simu_id, simu_job_id, output, batch_scheduler, workdir, operations):
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):

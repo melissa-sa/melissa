@@ -63,9 +63,9 @@ if(BUILD_WITH_ZMQ)
     message(STATUS "ZeroMQ Found")
     add_definitions( -DBUILD_WITH_ZMQ )
     option(BUILD_WITH_PY_ZMQ "Build with PyZMQ" ON)
-    if(BUILD_WITH_ZMQ)
-
-    endif(BUILD_WITH_ZMQ)
+    if(BUILD_WITH_PY_ZMQ)
+        add_definitions( -DBUILD_WITH_PY_ZMQ )
+    endif(BUILD_WITH_PY_ZMQ)
   else(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
     # Disable  Option if missing dependencies
     set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)

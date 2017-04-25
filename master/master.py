@@ -92,7 +92,7 @@ class message_reciever(Thread):
                 if (message[0] == "timeout"):
                     if message[1] != "-1":
                         with lock_job_state:
-                            reboot_simu(int(simu), simu_job_id, global_options.batch_scheduler, global_options.workdir)
+                            reboot_simu(int(simu), simu_job_id, global_options.batch_scheduler, global_options.workdir, global_options.operations)
                             job_states[int(simu)] = 1 # pennding or runnning
                 if (message[0] == "simu_state"):
                     simu_id = int(message[1])
@@ -161,7 +161,13 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
 
 def launch_study():
 
-
+    global poller
+    global simu_states
+    global simu_job_id
+    global job_states
+    global simu_states
+    global server_state
+    global melissa_job_id
     output = ""
 
     if (not (("sobol" in global_options.operations) or ("sobol_indices" in global_options.operations))):
@@ -187,7 +193,7 @@ def launch_study():
             + " -s " + str(global_options.sampling_size)\
             + " -t " + str(global_options.nb_time_steps)\
             + " -o " + op_str\
-            + " -e " + str(global_options.threshold)
+            + " -e " + str(global_options.threshold)\
             + " -n " + str(socket.gethostname())
     output += "Options: "+options+"\n"
     if (not os.path.isdir(global_options.workdir+"/STATS")):
@@ -265,13 +271,13 @@ def launch_study():
                 output += "error creating simulation "+str(k)+" of group "+str(i)+"\n"
     os.chdir(global_options.workdir+"/STATS")
     if (global_options.batch_scheduler == "Slurm"):
-        melissa_job_id = call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
+        melissa_job_id += call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
     elif (global_options.batch_scheduler == "CCC"):
-        melissa_job_id = call_bash('ccc_msub "./run_study.sh"')['out'].split()[-1]
+        melissa_job_id += call_bash('ccc_msub "./run_study.sh"')['out'].split()[-1]
     elif (global_options.batch_scheduler == "OAR"):
-        melissa_job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
+        melissa_job_id += call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     elif (global_options.batch_scheduler == "local"):
-        melissa_job_id = call_bash('./run_study.sh & echo $!')['out']
+        melissa_job_id += call_bash('./run_study.sh & echo $!')['out']
     melissa_first_job_id = melissa_job_id
     print melissa_job_id
 
@@ -334,7 +340,7 @@ def launch_study():
                         elif (global_options.batch_scheduler == "OAR"):
                             call_bash("kill "+simu_job_id[i])
 
-                melissa_job_id = reboot_server(global_options.workdir, melissa_first_job_id, melissa_job_id, global_options.batch_scheduler)
+                melissa_job_id = reboot_server(global_options.workdir, melissa_first_job_id, melissa_job_id, output, global_options.batch_scheduler)
                 if (global_options.batch_scheduler == "Slurm") or (global_options.batch_scheduler == "CCC"):
                     while (not "RUNNING" in call_bash("squeue --name=Melissa -l")['out']):
                         time.sleep(30)
@@ -396,13 +402,13 @@ def launch_study():
                 with lock_job_state:
                     if (simu_states[i] != job_states[i]-1):
                         if (simu_states[i] == 1 and job_states[i] == 3):
-                            reboot_simu(i, simu_job_id, output, global_options.batch_scheduler, global_options.workdir)
+                            reboot_simu(i, simu_job_id, output, global_options.batch_scheduler, global_options.workdir, global_options.operations)
                         if (simu_states[i] == 0 and job_states[i] == 3):
-                            reboot_simu(i, simu_job_id, output, global_options.batch_scheduler, global_options.workdir)
+                            reboot_simu(i, simu_job_id, output, global_options.batch_scheduler, global_options.workdir, global_options.operations)
                         if (simu_states[i] == 0 and job_states[i] == 2):
-                            out=check_timeout(i, simu_job_id, output, global_options.batch_scheduler)
+                            out=check_timeout(i, simu_job_id[i], output, global_options.batch_scheduler)
                             if (out == True):
-                                reboot_simu(i, simu_job_id, output, global_options.batch_scheduler, global_options.workdir)
+                                reboot_simu(i, simu_job_id, output, global_options.batch_scheduler, global_options.workdir, global_options.operations)
 
 
 

@@ -5,6 +5,27 @@ import numpy as np
 import numpy.random as rd
 import zmq
 import socket
+from threading import Thread, RLock
+
+# ------------- thread ------------- #
+
+context = zmq.Context()
+rep_socket = context.socket(zmq.PULL)
+rep_socket.bind("tcp://*:5555")
+poller = zmq.Poller()
+
+class message_reciever(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.running_master = True
+    def run(self):
+        global poller
+        while self.running_master == True:
+            socks = dict(poller.poll(1000))
+            if (rep_socket in socks.keys() and socks[rep_socket] == zmq.POLLIN):
+                message = rep_socket.recv_string()
+                print "message: "+message
+
 
 # ------------- functions ------------- #
 
@@ -81,9 +102,7 @@ def launch_heatc(nb_parameters,
                  coupling,
                  pyzmq):
 
-    context = zmq.Context()
-    rep_socket = context.socket(zmq.REP)
-    rep_socket.bind("tcp://*:5555")
+    poller.register(rep_socket, zmq.POLLIN)
 
     if (("sobol" in operations) or ("sobol_indices" in operations)):
         nb_simu = nb_groups * (nb_parameters + 2)
@@ -116,6 +135,9 @@ def launch_heatc(nb_parameters,
         print "error launching Melissa"
     #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
     #launch_melissa("valgrind --leak-check=full mpirun -n 1 ./server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
+
+    thread = message_reciever()
+    thread.start()
 
     ret = np.zeros(nb_parameters + 2)
     for i in range(nb_groups/2):
@@ -182,6 +204,8 @@ def launch_heatc(nb_parameters,
                 if (not 0 in finished_server):
                     break
 #       kill all simulations here
+    thread.running_master = False
+    thread.join()
     return 0
 
 # ------------- options ------------- #

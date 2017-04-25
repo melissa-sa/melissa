@@ -1173,7 +1173,7 @@ void write_stats_ensight (melissa_data_t    **data,
                         for (j=0; j<comm_data->rcounts[i]; j++)
                         {
                             temp1 = 0.5 * log((1.0+(*data)[i].sobol_indices[t].sobol_martinez[param].first_order_values[j])/(1.0-(*data)[i].sobol_indices[t].sobol_martinez[param].first_order_values[j]));
-                            s_buffer[j + offset + comm_data->rdispls[i]] = (float)tanh(temp1 + temp2) - tanh(temp1 - temp2);
+                            s_buffer[j + offset + comm_data->rdispls[i]] = (float)(tanh(temp1 + temp2) - tanh(temp1 - temp2));
                         }
                     }
                 }
@@ -1235,7 +1235,7 @@ void write_stats_ensight (melissa_data_t    **data,
                         for (j=0; j<comm_data->rcounts[i]; j++)
                         {
                             temp1 = 0.5 * log((2.0-(*data)[i].sobol_indices[t].sobol_martinez[param].total_order_values[j])/(*data)[i].sobol_indices[t].sobol_martinez[param].total_order_values[j]);
-                            s_buffer[j + offset + comm_data->rdispls[i]] = (1-tanh(temp1 - temp2)) - (1-tanh(temp1 + temp2));
+                            s_buffer[j + offset + comm_data->rdispls[i]] = (float)(1-tanh(temp1 - temp2)) - (1-tanh(temp1 + temp2));
                         }
                     }
                 }
