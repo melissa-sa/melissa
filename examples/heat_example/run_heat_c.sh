@@ -1,6 +1,6 @@
 #!/bin/bash
 
-command_line="-p 1 -g 3 -t 100 -e 2 -o min:max"
+command_line="-p 1 -s 3 -t 100 -e 2 -o min:max"
 #command_line="-r"
 let "t=0"
 let "tmax=2"
@@ -16,7 +16,7 @@ cd resu
 mpirun -n 2 ../../../server/server $command_line &
 sleep 2
 #killall -s SIGINT server
-#command_line="-p 1 -g 3 -t 100 -e 2 -o min:max -r"
+#command_line="-p 1 -s 3 -t 100 -e 2 -o min:max -r"
 #sleep 1
 #mpirun -n 2 ../../../server/server $command_line
 #cd ..

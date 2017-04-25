@@ -6,6 +6,7 @@ import numpy as np
 import numpy.random as rd
 import re
 import zmq
+import socket
 from fault_tolerance import *
 from matrix_sobol import *
 from call_bash import *
@@ -183,11 +184,11 @@ def launch_study():
         else:
             op_str += global_options.operations[i]
     options = " -p " + str(global_options.nb_parameters)\
-            + " -s " + str(nb_simu)\
-            + " -g " + str(nb_groups)\
+            + " -s " + str(global_options.sampling_size)\
             + " -t " + str(global_options.nb_time_steps)\
             + " -o " + op_str\
             + " -e " + str(global_options.threshold)
+            + " -n " + str(socket.gethostname())
     output += "Options: "+options+"\n"
     if (not os.path.isdir(global_options.workdir+"/STATS")):
         os.mkdir(global_options.workdir+"/STATS")

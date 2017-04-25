@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import numpy.random as rd
 import zmq
+import socket
 
 # ------------- functions ------------- #
 
@@ -67,7 +68,6 @@ def launch_melissa (command_line):
   return os.system(command_line)
 
 def launch_heatc(nb_parameters,
-                 nb_simu,
                  nb_groups,
                  nb_time_steps,
                  operations,
@@ -85,8 +85,8 @@ def launch_heatc(nb_parameters,
     rep_socket = context.socket(zmq.REP)
     rep_socket.bind("tcp://*:5555")
 
-    if (not (("sobol" in operations) or ("sobol_indices" in operations))):
-        nb_groups = nb_simu
+    if (("sobol" in operations) or ("sobol_indices" in operations)):
+        nb_simu = nb_groups * (nb_parameters + 2)
     A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
     np.save("Amatrix", A)
     if ("sobol" in operations) or ("sobol_indices" in operations):
@@ -106,11 +106,11 @@ def launch_heatc(nb_parameters,
         op_str += operations[i]
 
     options = " -p " + str(nb_parameters)\
-            + " -s " + str(nb_simu)\
-            + " -g " + str(nb_groups)\
+            + " -s " + str(nb_groups)\
             + " -t " + str(nb_time_steps)\
             + " -o " + op_str\
-            + " -e " + str(threshold)
+            + " -e " + str(threshold)\
+            + " -n " + str(socket.gethostname())
     print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
     if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
         print "error launching Melissa"
@@ -160,8 +160,7 @@ def launch_heatc(nb_parameters,
 # ------------- options ------------- #
 
 nb_parameters = 2
-nb_simu = 4
-nb_groups = 5
+sampling_size = 4
 nb_time_steps = 100
 operations = ["mean","variance","min","max","threshold","sobol"]
 threshold = 0.7
@@ -183,8 +182,7 @@ pyzmq = 0
 
 if __name__ == '__main__':
     launch_heatc(nb_parameters,
-    nb_simu,
-    nb_groups,
+    sampling_size,
     nb_time_steps,
     operations,
     threshold,

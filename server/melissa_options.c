@@ -74,8 +74,9 @@ static inline void get_operations (char              *name,
     const char  s[2] = ":";
     char       *temp_char;
 
-    if (name == NULL || name[0] & '-' || name[0] & ':')
+    if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
     {
+        printf ("plop");
         stats_usage ();
         exit (1);
     }
@@ -191,6 +192,7 @@ void melissa_get_options (int argc, char    **argv,
     int opt;
 
     if (argc == 1) {
+        fprintf (stderr, "Error: missing options\n");
         stats_usage ();
         exit (0);
     }
@@ -199,7 +201,7 @@ void melissa_get_options (int argc, char    **argv,
 
     do
     {
-        opt = getopt (argc, argv, "p:t:o:e:s:g:h:r:n");
+        opt = getopt (argc, argv, "p:t:o:e:s:g:n:hr");
 
         switch (opt) {
         case 'r':
@@ -209,7 +211,7 @@ void melissa_get_options (int argc, char    **argv,
                 melissa_check_options (options);
                 return;
             }
-            fprintf (stdout, "WARNING: can not read option.save file\n");
+            fprintf (stderr, "WARNING: can not read option.save file\n");
             options->restart = 0;
             break;
         case 'p':
@@ -228,12 +230,13 @@ void melissa_get_options (int argc, char    **argv,
             options->sampling_size = atoi (optarg);
             break;
         case 'n':
-            strcpy(options->master_name, optarg);
+            sprintf (options->master_name, optarg);
             break;
         case 'h':
             stats_usage ();
             exit (0);
         case '?':
+            fprintf (stderr, "Error: unknown option\n");
             stats_usage ();
             exit (1);
         default:
@@ -271,7 +274,7 @@ void melissa_check_options (melissa_options_t  *options)
         options->sobol_op == 0)
     {
         // default values
-        fprintf (stdout, "WARNING: no operation given, set to mean and variance\n");
+        fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");
         options->mean_op = 1;
         options->variance_op = 1;
     }
@@ -316,6 +319,12 @@ void melissa_check_options (melissa_options_t  *options)
         fprintf (stderr, "ERROR: simulations must have at least 1 time step\n");
         stats_usage ();
         exit (1);
+    }
+
+    if (options->master_name == NULL)
+    {
+        fprintf (stderr, "Warning: Melissa Master node name set to \"localhost\"\n");
+        sprintf (options->master_name, "localhost");
     }
 }
 

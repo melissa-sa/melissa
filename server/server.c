@@ -231,7 +231,7 @@ int main (int argc, char **argv)
 
 //        if (comm_data.rank == 0)
         {
-            if (last_timeout_check + 10 < melissa_get_time())
+            if (last_timeout_check + 100 < melissa_get_time())
             {
                 detected_timeouts = check_timeouts(simu_state, simu_timeout, last_message_simu, melissa_options.sampling_size);
                 last_timeout_check = melissa_get_time();
