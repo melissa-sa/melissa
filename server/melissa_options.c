@@ -22,11 +22,9 @@ static inline void stats_usage ()
     fprintf(stderr,
             " Usage:\n"
             " -p <int>       : number of parameters for the parametric study\n"
-            "                : number of simulation\n"
-            " -s <int>       : number of simulation\n"
-            " -g <int>       : number of simulation groups for Sobol indices\n"
+            " -s <int>       : study sampling size\n"
             " -t <int>       : number of time steps of the study\n"
-            " -o <op>        : operations separated by semicolons\n"
+            " -o <char*>     : operations separated by semicolons\n"
             "                  possibles values :\n"
             "                  mean\n"
             "                  variance\n"
@@ -36,7 +34,7 @@ static inline void stats_usage ()
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
-            " -n <char*>     : Melissa master node name\n"
+            " -n <char*>     : Melissa master node name (default: localhost)\n"
             "\n"
             );
 }
@@ -57,7 +55,7 @@ static inline void init_options (melissa_options_t *options)
     // everything is set to 0
     options->nb_time_steps   = 0;
     options->nb_parameters   = 0;
-    options->nb_groups       = 0;
+    options->sampling_size   = 0;
     options->nb_simu         = 0;
     options->threshold       = 0.0;
     options->mean_op         = 0;
@@ -146,8 +144,7 @@ void melissa_print_options (melissa_options_t *options)
     fprintf(stdout, "Options:\n");
     fprintf(stdout, "nb_time_step = %d\n", options->nb_time_steps);
     fprintf(stdout, "nb_parameters = %d\n", options->nb_parameters);
-    if (options->sobol_op != 0)
-        fprintf(stdout, "nb_groups = %d\n", options->nb_groups);
+    fprintf(stdout, "sampling_size = %d\n", options->sampling_size);
     fprintf(stdout, "nb_simu = %d\n", options->nb_simu);
     fprintf(stdout, "operations:\n");
     if (options->mean_op != 0)
@@ -228,10 +225,7 @@ void melissa_get_options (int argc, char    **argv,
             options->threshold = atof (optarg);
             break;
         case 's':
-            options->nb_simu = atoi (optarg);
-            break;
-        case 'g':
-            options->nb_groups = atoi (optarg);
+            options->sampling_size = atoi (optarg);
             break;
         case 'n':
             strcpy(options->master_name, optarg);
@@ -282,54 +276,46 @@ void melissa_check_options (melissa_options_t  *options)
         options->variance_op = 1;
     }
 
+    if (options->sampling_size < 2)
+    {
+        fprintf (stderr, "ERROR: study sampling size must be greater than 1\n");
+        stats_usage ();
+        exit (1);
+    }
+
     if (options->sobol_op != 0)
     {
-        if (options->nb_groups < 1)
-        {
-            fprintf (stderr, "ERROR: number of simulation groups must be > 0 for Sobol indices computation\n");
-            stats_usage ();
-            exit (1);
-        }
         if (options->nb_parameters < 2)
         {
-            fprintf (stderr, "ERROR: study must have at least 2 variable parameter\n");
+            fprintf (stderr, "ERROR: simulations must have at least 2 variable parameter\n");
             stats_usage ();
             exit (1);
         }
-        if (options->nb_simu != options->nb_groups * (options->nb_parameters + 2))
-        {
-            fprintf (stderr, "WARNING:  wrong number of simulations, set to %d\n", options->nb_groups * (options->nb_parameters + 2));
-            options->nb_simu = options->nb_groups * (options->nb_parameters + 2);
-        }
+        options->nb_simu = options->sampling_size * (options->nb_parameters + 2);
     }
     else
     {
-        if (options->nb_groups == 0)
+
+        options->nb_simu = options->sampling_size;
+        if (options->sampling_size < 2)
         {
-            options->nb_groups = options->nb_simu;
-        }
-        else if (options->nb_simu == 0)
-        {
-            options->nb_simu = options->nb_groups;
-        }
-        if (options->nb_simu < 1 && options->nb_groups < 1)
-        {
-            fprintf (stderr, "ERROR: wrong number of simulations\n");
+            fprintf (stderr, "ERROR: sampling size must be > 1\n");
             stats_usage ();
             exit (1);
         }
         if (options->nb_parameters < 1)
         {
-            fprintf (stderr, "ERROR: study must have at least 1 variable parameter\n");
+            fprintf (stderr, "ERROR: simulations must have at least 1 variable parameter\n");
             stats_usage ();
             exit (1);
         }
-        if (options->nb_time_steps < 1)
-        {
-            fprintf (stderr, "ERROR: study must have at least 1 time step\n");
-            stats_usage ();
-            exit (1);
-        }
+    }
+
+    if (options->nb_time_steps < 1)
+    {
+        fprintf (stderr, "ERROR: simulations must have at least 1 time step\n");
+        stats_usage ();
+        exit (1);
     }
 }
 

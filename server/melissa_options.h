@@ -22,7 +22,7 @@ struct melissa_options_s
 {
     int                  nb_time_steps;    /**< numberb of time steps of the study                               */
     int                  nb_parameters;    /**< nb of variables parameters of the study                          */
-    int                  nb_groups;        /**< nb of simulation sets of the study (Sobol only)                  */
+    int                  sampling_size;    /**< nb of randomly drawn simulation parameter sets                   */
     int                  nb_simu;          /**< nb of simulation of the study                                    */
     int                  mean_op;          /**< 1 if the user needs to calculate the mean, 0 otherwise.          */
     int                  variance_op;      /**< 1 if the user needs to calculate the variance, 0 otherwise.      */

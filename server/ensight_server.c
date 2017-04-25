@@ -110,17 +110,17 @@ int main (int argc, char **argv)
         buff_tab_ptr = melissa_malloc (sizeof(double*));
     }
 
-    nb_iterations = melissa_options.nb_groups * melissa_options.nb_time_steps ;
+    nb_iterations = melissa_options.sampling_size * melissa_options.nb_time_steps ;
     sprintf(field_name[0], "scalar1");
     for (i=0; i<nb_fields; i++)
     {
         fprintf(stdout, "add field %s\n", field_name[i]);
-        add_field(&field, field_name[i], 1, melissa_options.nb_groups);
+        add_field(&field, field_name[i], 1, melissa_options.sampling_size);
     }
 
     for (time_step=0; time_step<melissa_options.nb_time_steps; time_step++)
     {
-        for (group_id=0; group_id<melissa_options.nb_groups; group_id++)
+        for (group_id=0; group_id<melissa_options.sampling_size; group_id++)
         {
             for (i=0; i<nb_fields; i++)
             {

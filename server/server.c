@@ -48,7 +48,7 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PY_ZMQ
     void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
 #else // BUILD_WITH_PY_ZMQ
-    void               *python_pusher;
+    void               *python_pusher = NULL;
 #endif // BUILD_WITH_PY_ZMQ
     int                 nb_fields = 0;
     int                 first_init = 1;
@@ -129,10 +129,10 @@ int main (int argc, char **argv)
         melissa_print_options (&melissa_options);
         melissa_write_options (&melissa_options);
     }
-    nb_iterations     = melissa_options.nb_groups * melissa_options.nb_time_steps ;
-    last_message_simu = melissa_calloc (melissa_options.nb_groups, sizeof(double));
-    simu_state        = melissa_calloc (melissa_options.nb_groups, sizeof(int));
-    simu_timeout      = melissa_calloc (melissa_options.nb_groups, sizeof(int));
+    nb_iterations     = melissa_options.sampling_size * melissa_options.nb_time_steps ;
+    last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
+    simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
+    simu_timeout      = melissa_calloc (melissa_options.sampling_size, sizeof(int));
     last_checkpoint_time = melissa_get_time();
 
     // === Open data puller port === //
@@ -177,8 +177,8 @@ int main (int argc, char **argv)
         }
         fprintf (stdout, " ok \n");
         fprintf (stdout, "reading simulation states at checkpoint time...");
-        read_simu_states(simu_state, &comm_data, melissa_options.nb_groups);
-        for (i=0; i<melissa_options.nb_groups; i++)
+        read_simu_states(simu_state, &comm_data, melissa_options.sampling_size);
+        for (i=0; i<melissa_options.sampling_size; i++)
         {
             fprintf(stderr, "  simu_state[%d] = %d (rank %d)\n", i, simu_state[i], comm_data.rank);
             if (simu_state[i] == 2)
@@ -187,7 +187,7 @@ int main (int argc, char **argv)
             }
         }
 #ifdef BUILD_WITH_PY_ZMQ
-        for (i=0; i<melissa_options.nb_groups; i++)
+        for (i=0; i<melissa_options.sampling_size; i++)
         {
             sprintf (txt_buffer, "simu_state %d %d", i, simu_state[i]);
             zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
@@ -233,11 +233,11 @@ int main (int argc, char **argv)
         {
             if (last_timeout_check + 10 < melissa_get_time())
             {
-                detected_timeouts = check_timeouts(simu_state, simu_timeout, last_message_simu, melissa_options.nb_groups);
+                detected_timeouts = check_timeouts(simu_state, simu_timeout, last_message_simu, melissa_options.sampling_size);
                 last_timeout_check = melissa_get_time();
                 if (detected_timeouts > 0)
                 {
-                    send_timeouts (detected_timeouts, simu_timeout, melissa_options.nb_groups, txt_buffer, python_pusher);
+                    send_timeouts (detected_timeouts, simu_timeout, melissa_options.sampling_size, txt_buffer, python_pusher);
                 }
             }
         }
@@ -384,7 +384,7 @@ int main (int argc, char **argv)
             field_name_ptr = buf_ptr;
             if (field == NULL)
             {
-                add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.nb_groups);
+                add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.sampling_size);
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 nb_fields += 1;
             }
@@ -393,7 +393,7 @@ int main (int argc, char **argv)
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 if (data_ptr == NULL)
                 {
-                    add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.nb_groups);
+                    add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.sampling_size);
                     data_ptr = get_data_ptr (field, field_name_ptr);
                     nb_fields += 1;
                 }
@@ -506,7 +506,7 @@ int main (int argc, char **argv)
                 }
                 fptr = field->next;
             }
-            save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
+            save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
             last_checkpoint_time = melissa_get_time();
         }
 
@@ -529,7 +529,7 @@ int main (int argc, char **argv)
                     fprintf(stderr, "statistic fields saved in %s\n\n", dir);
                 }
             }
-            save_simu_states (simu_state, &comm_data, melissa_options.nb_groups);
+            save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
             if (end_signal == SIGINT)
             {
 #ifdef BUILD_WITH_MPI
@@ -550,7 +550,7 @@ int main (int argc, char **argv)
 //            {
 //                break;
 //            }
-            if (nb_finished_simulations >= melissa_options.nb_groups)
+            if (nb_finished_simulations >= melissa_options.sampling_size)
             {
                 break;
             }

@@ -148,7 +148,7 @@ void save_stats (melissa_data_t *data,
             {
                 write_sobol_martinez(data[i].sobol_indices, data->vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
-            fwrite(data[i].step_simu, sizeof(int), data[i].options->nb_groups, f);
+            fwrite(data[i].step_simu, sizeof(int), data[i].options->sampling_size, f);
             fclose(f);
         }
     }
@@ -215,7 +215,7 @@ void read_saved_stats (melissa_data_t *data,
             {
                 read_sobol_martinez(data[client_rank].sobol_indices, data->vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
             }
-            fread(data[client_rank].step_simu, sizeof(int), data[client_rank].options->nb_groups, f);
+            fread(data[client_rank].step_simu, sizeof(int), data[client_rank].options->sampling_size, f);
             fclose(f);
         }
 }

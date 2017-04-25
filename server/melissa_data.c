@@ -69,7 +69,7 @@ static void melissa_alloc_data (melissa_data_t *data)
             data->sobol_indices[i].iteration = 0;
         }
     }
-    data->step_simu = melissa_calloc (data->options->nb_groups, sizeof(int));
+    data->step_simu = melissa_calloc (data->options->sampling_size, sizeof(int));
 }
 
 /**

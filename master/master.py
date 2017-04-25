@@ -25,8 +25,8 @@ sys.path.append(global_options.home_path+"/../master")
 server_state   = ""
 melissa_job_id = ""
 simu_job_id    = []
-job_states     = np.zeros(global_options.nb_draws) # not submitted
-simu_states    = np.zeros(global_options.nb_draws) # simu as seen by the Server
+job_states     = np.zeros(global_options.sampling_size) # not submitted
+simu_states    = np.zeros(global_options.sampling_size) # simu as seen by the Server
 
 
 #=====================================#
@@ -164,10 +164,10 @@ def launch_study():
     output = ""
 
     if (not (("sobol" in global_options.operations) or ("sobol_indices" in global_options.operations))):
-        nb_simu = global_options.nb_draws
-        nb_groups = global_options.nb_draws
+        nb_simu = global_options.sampling_size
+        nb_groups = global_options.sampling_size
     else:
-        nb_groups = global_options.nb_draws
+        nb_groups = global_options.sampling_size
         nb_simu = nb_groups*(global_options.nb_parameters+2)
 
     op_str = ""
