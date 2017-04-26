@@ -5,6 +5,27 @@ import numpy as np
 import numpy.random as rd
 import zmq
 import socket
+from threading import Thread, RLock
+
+# ------------- thread ------------- #
+
+context = zmq.Context()
+rep_socket = context.socket(zmq.PULL)
+rep_socket.bind("tcp://*:5555")
+poller = zmq.Poller()
+
+class message_reciever(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+    def run(self):
+        global poller
+        while True:
+            socks = dict(poller.poll(1000))
+            if (rep_socket in socks.keys() and socks[rep_socket] == zmq.POLLIN):
+                message = rep_socket.recv_string()
+                print "message: "+message
+                if message == "stop":
+                    return 0
 
 # ------------- functions ------------- #
 
@@ -78,12 +99,10 @@ def launch_heatc(nb_parameters,
                  server_path,
                  range_min,
                  range_max,
-                 coupling,
-                 pyzmq):
+                 coupling
+                 ):
 
-    context = zmq.Context()
-    rep_socket = context.socket(zmq.REP)
-    rep_socket.bind("tcp://*:5555")
+    poller.register(rep_socket, zmq.POLLIN)
 
     if (("sobol" in operations) or ("sobol_indices" in operations)):
         nb_simu = nb_groups * (nb_parameters + 2)
@@ -116,6 +135,9 @@ def launch_heatc(nb_parameters,
         print "error launching Melissa"
 #    launch_melissa("valgrind --leak-check=full mpirun -n 3 "+server_path+"/server"+options+" &")
 
+    thread = message_reciever()
+    thread.start()
+
     ret = np.zeros(nb_parameters + 2)
     for i in range(nb_groups):
       if ("sobol" in operations) or ("sobol_indices" in operations):
@@ -133,28 +155,15 @@ def launch_heatc(nb_parameters,
         ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
         if (ret[0] != 0):
           print "error launching simulation "+str(i)
-      time.sleep(4)
+      time.sleep(2)
 
 
-    if (("sobol" in operations) or ("sobol_indices" in operations)) and (pyzmq == 1):
-        converged_sobol = np.zeros(nb_proc_server,int)
-        finished_server = np.zeros(nb_proc_server,int)
-        snd_message = "continue"
-        while True:
-            rcv_message = rep_socket.recv_string()
-            message = int(rcv_message)
-            print "rcv_message "+rcv_message+", message "+str(message)
-            if (message >= 0 and message < nb_proc_server):
-                rep_socket.send_string("ok")
-                converged_sobol[message] = 1
-                if (not 0 in converged_sobol):
-                    snd_message = "stop"
-            else:
-                finished_server[message - nb_proc_server] = 1
-                rep_socket.send_string(snd_message)
-                if (not 0 in finished_server):
-                    break
 #       kill all simulations here
+
+    print "wait thread..."
+    thread.join()
+    os.system("killall heatc")
+    print "end !"
     return 0
 
 # ------------- options ------------- #
@@ -175,7 +184,6 @@ range_max[0] = 1
 range_min[1] = 2
 range_max[1] = 3
 coupling = 1
-pyzmq = 0
 
 
 # ------------- main ------------- #
@@ -192,6 +200,5 @@ if __name__ == '__main__':
     server_path,
     range_min,
     range_max,
-    coupling,
-    pyzmq)
+    coupling)
 

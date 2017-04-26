@@ -41,8 +41,7 @@ class melissa_gui(QWidget):
         self.username       = getpass.getuser()
         self.nb_parameters  = nb_parameters
 #        self.nb_parameters  = 0
-        self.nb_simu        = nb_simu
-        self.nb_groups      = nb_groups
+        self.sampling_size      = sampling_size
         self.nb_time_steps  = nb_time_steps
         self.operations     = operations
         self.threshold      = threshold
@@ -56,7 +55,6 @@ class melissa_gui(QWidget):
 #        self.range_min      = range_min
 #        self.range_max      = range_max
         self.coupling       = coupling
-        self.pyzmq          = pyzmq
 
         self.QCheckBox_sobol = QCheckBox("Sobol Indices")
 
@@ -113,12 +111,12 @@ class melissa_gui(QWidget):
         self.fbox.addRow(QLabel(""),self.QPushButton_add)
 
         # number of groups #
-        self.label_groups = QLabel("Number of Simulation Groups")
-        self.QSpinBox_nb_groups = QSpinBox()
-        self.QSpinBox_nb_groups.setRange(2,60000)
-        self.QSpinBox_nb_groups.setValue(self.nb_groups)
-        self.QSpinBox_nb_groups.valueChanged.connect(self.change_nb_groups)
-        self.fbox.addRow(self.label_groups,self.QSpinBox_nb_groups)
+        self.label_groups = QLabel("Sampling size")
+        self.QSpinBox_sampling_size = QSpinBox()
+        self.QSpinBox_sampling_size.setRange(2,60000)
+        self.QSpinBox_sampling_size.setValue(self.sampling_size)
+        self.QSpinBox_sampling_size.valueChanged.connect(self.change_sampling_size)
+        self.fbox.addRow(self.label_groups,self.QSpinBox_sampling_size)
 
         # operations #
         self.label_operations = QLabel("Operations")
@@ -174,8 +172,7 @@ class melissa_gui(QWidget):
         self.set_operations_string()
         self.set_parameters()
         launch_heatc(self.nb_parameters,
-                     self.nb_simu,
-                     self.nb_groups,
+                     self.sampling_size,
                      self.nb_time_steps,
                      self.operations,
                      self.threshold,
@@ -185,8 +182,7 @@ class melissa_gui(QWidget):
                      self.server_path,
                      self.range_min,
                      self.range_max,
-                     self.coupling,
-                     self.pyzmq)
+                     self.coupling)
         os.chdir(cwd)
 
     def set_operations_string(self):
@@ -213,9 +209,8 @@ class melissa_gui(QWidget):
     def change_username(self):
         self.username = self.QLineEdit_username.text()
 
-    def change_nb_groups(self):
-        self.nb_groups = self.QSpinBox_nb_groups.value()
-        self.nb_simu = self.QSpinBox_nb_groups.value()
+    def change_sampling_size(self):
+        self.sampling_size = self.QSpinBox_sampling_size.value()
 
     def change_operations(self):
         self.mean_op = self.QCheckBox_mean.isChecked()

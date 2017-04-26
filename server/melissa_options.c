@@ -35,6 +35,8 @@ static inline void stats_usage ()
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
             " -n <char*>     : Melissa master node name (default: localhost)\n"
+            " -r <char*>     : Melissa restart files directory"
+            " -h             : Print this message"
             "\n"
             );
 }
@@ -65,6 +67,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
+    sprintf (options->restart_dir, ".");
     sprintf (options->master_name, "localhost");
 }
 
@@ -201,18 +204,24 @@ void melissa_get_options (int argc, char    **argv,
 
     do
     {
-        opt = getopt (argc, argv, "p:t:o:e:s:g:n:hr");
+        opt = getopt (argc, argv, "p:t:o:e:s:g:n:hr:");
 
         switch (opt) {
         case 'r':
+            sprintf (options->restart_dir, optarg);
+            if (strlen(options->restart_dir) < 1)
+            {
+                sprintf (options->restart_dir, ".");
+            }
             if (0 == melissa_read_options (options))
             {
                 options->restart = 1;
                 melissa_check_options (options);
                 return;
             }
-            fprintf (stderr, "WARNING: can not read option.save file\n");
-            options->restart = 0;
+            fprintf (stderr, "ERROR: can not read options.save file\n");
+            stats_usage ();
+            exit (1);
             break;
         case 'p':
             options->nb_parameters = atoi (optarg);
@@ -371,7 +380,9 @@ int melissa_read_options (melissa_options_t *options)
 {
     FILE* f = NULL;
     int ret = 1;
+    char file_name[256];
 
+    sprintf (file_name, "%s/options.save", options->restart_dir);
     f = fopen("options.save", "rb");
 
     if (f != NULL)

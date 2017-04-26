@@ -17,14 +17,15 @@ poller = zmq.Poller()
 class message_reciever(Thread):
     def __init__(self):
         Thread.__init__(self)
-        self.running_master = True
     def run(self):
         global poller
-        while self.running_master == True:
+        while True:
             socks = dict(poller.poll(1000))
             if (rep_socket in socks.keys() and socks[rep_socket] == zmq.POLLIN):
                 message = rep_socket.recv_string()
                 print "message: "+message
+                if message == "stop":
+                    return 0
 
 
 # ------------- functions ------------- #
@@ -163,7 +164,7 @@ def launch_heatc(nb_parameters,
     print "server killed"
     print "restarting:"
     print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r"
-    if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r &") != 0):
+    if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r . &") != 0):
         print "error launching Melissa"
 
     for i in range(nb_groups/2):
@@ -204,8 +205,8 @@ def launch_heatc(nb_parameters,
                 if (not 0 in finished_server):
                     break
 #       kill all simulations here
-    thread.running_master = False
     thread.join()
+    os.system("killall heatc")
     return 0
 
 # ------------- options ------------- #

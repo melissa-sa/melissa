@@ -429,9 +429,16 @@ if (job_step == "first_step"):
 
 if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
     while (not "RUNNING" in call_bash("squeue --name=Melissa -l")):
+        if (not "PENDING" in call_bash("squeue --name=Melissa -l")):
+            if (batch_scheduler == "Slurm"):
+                os.system('sbatch "./run_study.sh"')
+            elif (batch_scheduler == "CCC"):
+                os.system('ccc_msub "./run_study.sh"')
         time.sleep(30)
 if (batch_scheduler == "OAR"):
     while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")):
+        if (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Pending'\"")):
+            os.system('oarsub -S "./run_study.sh" --project=avido')
         time.sleep(30)
 
 job_id = list()

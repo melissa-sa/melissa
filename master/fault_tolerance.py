@@ -6,6 +6,7 @@ import re
 
 from threading import Thread, RLock
 from call_bash import *
+from batch_scripts import create_reboot_study
 
 timeout_simu = 300
 
@@ -39,7 +40,7 @@ def check_job(batch_scheduler, username, job_id):
                 state = "terminated"
     return state
 
-def reboot_simu(simu_id, simu_job_id, output, batch_scheduler, workdir, operations):
+def reboot_simu(simu_id, simu_job_id, batch_scheduler, workdir, output, operations):
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):
@@ -52,7 +53,7 @@ def reboot_simu(simu_id, simu_job_id, output, batch_scheduler, workdir, operatio
         if (batch_scheduler == "Slurm"):
             simu_job_id[simu_id] = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu_id))['out'].split()[-1]
         elif (batch_scheduler == "CCC"):
-            simu_job_id[simu_id] = call_bash('ccc_msub "../STATS/run_cas_couple.sh"')['out'].split()[-1]
+            simu_job_id[simu_id] = call_bash('ccc_msub -r Saturne'+str(simu_id)+' "../STATS/run_cas_couple.sh"')['out'].split()[-1]
         elif (batch_scheduler == "OAR"):
             simu_job_id[simu_id] = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu_id)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
         elif (batch_scheduler == "local"):
@@ -70,9 +71,28 @@ def reboot_simu(simu_id, simu_job_id, output, batch_scheduler, workdir, operatio
             simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
     return 0
 
-def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output, batch_scheduler):
+def reboot_server(workdir,
+                  melissa_first_job_id,
+                  melissa_job_id,
+                  output,
+                  batch_scheduler,
+                  nodes_melissa,
+                  openmp_threads,
+                  server_path,
+                  walltime_melissa,
+                  mpi_options,
+                  options):
     os.chdir(workdir+"/STATS")
     output += "Reboot Melissa Server\n"
+    create_reboot_study(workdir,
+                        nodes_melissa,
+                        openmp_threads,
+                        server_path,
+                        walltime_melissa,
+                        mpi_options,
+                        options,
+                        batch_scheduler,
+                        melissa_first_job_id)
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+melissa_job_id)
     elif (batch_scheduler == "OAR"):
@@ -80,13 +100,13 @@ def reboot_server(workdir, melissa_first_job_id, melissa_job_id, output, batch_s
     elif (batch_scheduler == "local"):
         call_bash("kill "+melissa_job_id)
     if (batch_scheduler == "Slurm"):
-        melissa_job_id = call_bash('sbatch "./run_study.sh '+melissa_first_job_id+'"')['out'].split()[-1]
+        melissa_job_id = call_bash('sbatch "./reboot_study.sh"')['out'].split()[-1]
     elif (batch_scheduler == "CCC"):
-        melissa_job_id = call_bash('ccc_msub "./run_study.sh '+melissa_first_job_id+'"')['out'].split()[-1]
+        melissa_job_id = call_bash('ccc_msub "./reboot_study.sh"')['out'].split()[-1]
     elif (batch_scheduler == "OAR"):
-        melissa_job_id = call_bash('oarsub -S "./run_study.sh '+melissa_first_job_id+'" --project=avido')['out'].split("OAR_JOB_ID=")[1]
+        melissa_job_id = call_bash('oarsub -S "./reboot_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     elif (batch_scheduler == "local"):
-        melissa_job_id = call_bash('./run_study.sh '+melissa_first_job_id+' & echo $!')['out']
+        melissa_job_id = call_bash('./reboot_study.sh '+melissa_first_job_id+' & echo $!')['out']
     return melissa_job_id
 
 def check_timeout(simu_id, simu_job_id, output, batch_scheduler):

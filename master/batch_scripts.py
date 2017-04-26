@@ -91,7 +91,7 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
     fichier.close()
     os.system("chmod 744 run_cas_couple.sh")
 
-def create_run_study (workdir, frontend, nodes_melissa, openmp_threads, server_path, walltime_melissa, mpi_options, options, batch_scheduler):
+def create_run_study (workdir, nodes_melissa, openmp_threads, server_path, walltime_melissa, mpi_options, options, batch_scheduler):
     # signal handler definition
     signal_handler="handler() {"
     signal_handler+="echo \"### CLEAN-UP TIME !!!\""
@@ -139,7 +139,6 @@ def create_run_study (workdir, frontend, nodes_melissa, openmp_threads, server_p
         contenu += "#MSUB --signal=B:SIGUSR2@300                                       \n"
 #    contenu += signal handler
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "FRONTEND="+frontend+"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
     contenu += "STOP=0                                                             \n"
     contenu += "# generate server name files                                       \n"
@@ -148,32 +147,97 @@ def create_run_study (workdir, frontend, nodes_melissa, openmp_threads, server_p
     contenu += "# run Melissa                                                      \n"
     contenu += "echo  \"### Launch Melissa\"                                       \n"
     contenu += "cd $WORK_DIR                                                       \n"
-    contenu += "if [ $# .ne. 0 ]                                                   \n"
-    contenu += "then                                                               \n"
-    contenu += "cd stats${1}.resu                                                  \n"
-    contenu += "else                                                               \n"
     if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
         contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
         contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
     elif (batch_scheduler == "OAR"):
         contenu += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
         contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
-    contenu += "fi                                                                 \n"
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
     contenu += "trap handler USR2                                                  \n"
-    contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "if [ $# .ne. 0 ]                                                   \n"
-    contenu += "then                                                               \n"
-    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" -r &     \n"
-    contenu += "else                                                               \n"
     contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
-    contenu += "fi                                                                 \n"
     contenu += "wait %1                                                            \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "cd "+workdir+"                                                     \n"
     fichier.write(contenu)
     fichier.close()
     os.system("chmod 744 run_study.sh")
+
+def create_reboot_study (workdir,
+                         nodes_melissa,
+                         openmp_threads,
+                         server_path,
+                         walltime_melissa,
+                         mpi_options,
+                         options,
+                         batch_scheduler,
+                         melissa_first_job_id):
+    # signal handler definition
+    signal_handler="handler() {"
+    signal_handler+="echo \"### CLEAN-UP TIME !!!\""
+    signal_handler+="STOP=1"
+    signal_handler+="sleep 1"
+    #signal_handler+="killer"
+    signal_handler+="killall -USR1 mpirun"
+    signal_handler+="wait %1"
+    signal_handler+="}"
+    contenu = ""
+    fichier=open("reboot_study.sh", "w")
+    contenu += "#!/bin/bash                                                        \n"
+    if (batch_scheduler == "Slurm"):
+        contenu += "#SBATCH -N "+str(nodes_melissa)+"                                  \n"
+        contenu += "#SBATCH --ntasks-per-node=14                                        \n"
+        contenu += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
+        contenu += "#SBATCH --partition=bm                                             \n"
+        contenu += "#SBATCH --mem=0                                                    \n"
+        contenu += "#SBATCH --time="+walltime_melissa+"                                \n"
+        contenu += "#SBATCH -o melissa.%j.log                                          \n"
+        contenu += "#SBATCH -e melissa.%j.err                                          \n"
+        contenu += "#SBATCH --job-name=Melissa                                         \n"
+        contenu += "#SBATCH --signal=B:SIGUSR2@30                                        \n"
+        contenu += "module load openmpi/2.0.1                                          \n"
+        contenu += "module load ifort/2017                                             \n"
+    elif (batch_scheduler == "OAR"):
+        contenu += "#OAR -l nodes="+str(nodes_melissa)+",walltime="+walltime_melissa+ "\n"
+        contenu += "#OAR -O melissa.%jobid%.log                                        \n"
+        contenu += "#OAR -E melissa.%jobid%.err                                        \n"
+        contenu += "#OAR -n Melissa                                                    \n"
+        contenu += "#OAR --checkpoint 300                                              \n"
+        contenu += "#OAR --signal=SIGUSR2                                              \n"
+        contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
+        contenu += "ulimit -s unlimited                                                \n"
+        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(nodes_melissa*(16/openmp_threads))+"                 \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
+        contenu += "#MSUB -o melissa.%I.log                                            \n"
+        contenu += "#MSUB -e melissa.%I.err                                            \n"
+        contenu += "#MSUB -T "+walltime_melissa+"                                      \n"
+        contenu += "#MSUB -A gen10064                                                  \n"
+        contenu += "#MSUB -r Melissa                                                   \n"
+        contenu += "#MSUB -q standard                                                  \n"
+        contenu += "#MSUB --signal=B:SIGUSR2@30                                        \n"
+     contenu += signal handler
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
+    contenu += "STOP=0                                                             \n"
+    contenu += "# generate server name files                                       \n"
+    contenu += "cd "+workdir+"/case1/DATA                                          \n"
+    contenu += server_path+"/../examples/create_file_server_name                   \n"
+    contenu += "# run Melissa                                                      \n"
+    contenu += "echo  \"### Launch Melissa\"                                       \n"
+    contenu += "cd $WORK_DIR                                                       \n"
+    contenu += "cd stats"+melissa_first_job_id+".resu                              \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
+    contenu += "trap handler USR2                                                  \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" -r ./ &     \n"
+    contenu += "wait %1                                                            \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "cd "+workdir+"                                                     \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 reboot_study.sh")
 
 def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name, batch_scheduler, coupling = 1):
     # script to launch simulations

@@ -42,9 +42,10 @@ void save_simu_states(int         *simu_states,
                       comm_data_t *comm_data,
                       int          size);
 
-void read_simu_states(int         *simu_states,
-                      comm_data_t *comm_data,
-                      int          size);
+void read_simu_states(int               *simu_states,
+                      melissa_options_t *options,
+                      comm_data_t       *comm_data,
+                      int                size);
 
 void read_ensight (melissa_options_t  *options,
                    comm_data_t      *comm_data,

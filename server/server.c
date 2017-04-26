@@ -80,7 +80,7 @@ int main (int argc, char **argv)
     int                *simu_state;
     int                 old_simu_state;
     int                *simu_timeout;
-    double              last_timeout_check;
+    double              last_timeout_check = 0;
     int                 detected_timeouts;
     int                 nb_finished_simulations = 0;
     double              last_checkpoint_time;
@@ -177,7 +177,7 @@ int main (int argc, char **argv)
         }
         fprintf (stdout, " ok \n");
         fprintf (stdout, "reading simulation states at checkpoint time...");
-        read_simu_states(simu_state, &comm_data, melissa_options.sampling_size);
+        read_simu_states(simu_state, &melissa_options, &comm_data, melissa_options.sampling_size);
         for (i=0; i<melissa_options.sampling_size; i++)
         {
             fprintf(stderr, "  simu_state[%d] = %d (rank %d)\n", i, simu_state[i], comm_data.rank);
@@ -492,7 +492,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PY_ZMQ
 
 //        if (iteration % 100 == 0)
-        if (last_checkpoint_time  + 5 < melissa_get_time())
+        if (last_checkpoint_time  + 50 < melissa_get_time())
         {
             field_ptr fptr = field;
             while (fptr != NULL)
@@ -561,23 +561,9 @@ int main (int argc, char **argv)
     if (end_signal == 0)
     {
 
-        // === Sockets deconnexion === //
-
-        zmq_close (connexion_responder);
-        zmq_close (init_responder);
-        zmq_close (data_puller);
-#ifdef BUILD_WITH_PY_ZMQ
-//        if (melissa_options.sobol_op == 1)
-//        {
-//            sprintf (txt_buffer, "finished %d", comm_data.rank);
-//            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
-//        }
-        zmq_close (python_pusher);
-#endif // BUILD_WITH_PY_ZMQ
-        zmq_ctx_term (context);
-    }
     melissa_free (buff_tab_ptr);
     melissa_free (last_message_simu);
+    }
 
     if (comm_data.rank == 0)
     {
@@ -637,6 +623,22 @@ int main (int argc, char **argv)
         fprintf (stdout, "\n");
     }
 #endif // BUILD_WITH_PROBES
+
+
+    // === Sockets deconnexion === //
+
+    zmq_close (connexion_responder);
+    zmq_close (init_responder);
+    zmq_close (data_puller);
+#ifdef BUILD_WITH_PY_ZMQ
+    if (comm_data.rank == 0 && end_signal == 0)
+    {
+        sprintf (txt_buffer, "stop");
+        zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
+    }
+    zmq_close (python_pusher);
+#endif // BUILD_WITH_PY_ZMQ
+    zmq_ctx_term (context);
 
 #ifdef BUILD_WITH_MPI
     MPI_Finalize ();
