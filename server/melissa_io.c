@@ -63,16 +63,21 @@ void write_client_data (int *client_comm_size,
  *
  *******************************************************************************/
 
-int read_client_data (int  *client_comm_size,
-                      int **client_vect_sizes)
+int read_client_data (int                *client_comm_size,
+                      int               **client_vect_sizes,
+                      melissa_options_t  *options)
 {
     FILE* f = NULL;
-    int ret = 1;
+    char  file_name[256];
+    int   ret = 1;
 
-    f = fopen("client_data.save", "rb");
+    sprintf(file_name, "%s/client_data.save", options->restart_dir);
+    fprintf(stderr, "%s/client_data.save", file_name);
+    f = fopen(file_name, "rb");
 
     if (f != NULL)
     {
+        fprintf( stdout, "File opened");
         if (1 == fread(client_comm_size, sizeof(int), 1, f));
         {
             ret = 0;
@@ -82,6 +87,10 @@ int read_client_data (int  *client_comm_size,
         {
             ret = 0;
         }
+    }
+    else
+    {
+        options->restart = 0;
     }
 
     fclose(f);

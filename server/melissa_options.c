@@ -335,6 +335,12 @@ void melissa_check_options (melissa_options_t  *options)
         fprintf (stderr, "Warning: Melissa Master node name set to \"localhost\"\n");
         sprintf (options->master_name, "localhost");
     }
+
+    if (strlen(options->restart_dir) < 1)
+    {
+        fprintf (stderr, "options->restart_dir= %s changing to .\n", options->restart_dir);
+        sprintf (options->restart_dir, ".");
+    }
 }
 
 /**
@@ -383,7 +389,7 @@ int melissa_read_options (melissa_options_t *options)
     char file_name[256];
 
     sprintf (file_name, "%s/options.save", options->restart_dir);
-    f = fopen("options.save", "rb");
+    f = fopen(file_name, "rb");
 
     if (f != NULL)
     {

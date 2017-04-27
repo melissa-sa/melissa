@@ -166,8 +166,12 @@ int main (int argc, char **argv)
         fprintf (stdout, "reading data files...");
         if (comm_data.rank == 0)
         {
-            read_client_data(&comm_data.client_comm_size, &client_vect_sizes);
+            read_client_data(&comm_data.client_comm_size, &client_vect_sizes, &melissa_options);
+            // if client_data.save doesn't exist, we set restart to 0
         }
+    }
+    if (melissa_options.restart == 1)
+    {
 #ifdef BUILD_WITH_MPI
         MPI_Bcast(&comm_data.client_comm_size, 1, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
@@ -187,10 +191,20 @@ int main (int argc, char **argv)
             }
         }
 #ifdef BUILD_WITH_PY_ZMQ
+        if (comm_data.rank == 0)
+        {
+            for (i=0; i<melissa_options.sampling_size; i++)
+            {
+                sprintf (txt_buffer, "simu_state %d %d", i, simu_state[i]);
+                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+            }
+        }
         for (i=0; i<melissa_options.sampling_size; i++)
         {
-            sprintf (txt_buffer, "simu_state %d %d", i, simu_state[i]);
-            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+            if (simu_state[i] == 1)
+            {
+                simu_state[i] = 0;
+            }
         }
 #endif // BUILD_WITH_PY_ZMQ
         fprintf (stdout, " ok \n");

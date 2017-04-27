@@ -26,8 +26,9 @@ void write_stats_ensight(melissa_data_t    **data,
 void write_client_data (int *client_comm_size,
                         int *client_vect_sizes);
 
-int read_client_data (int  *client_comm_size,
-                      int **client_vect_sizes);
+int read_client_data (int                *client_comm_size,
+                      int               **client_vect_sizes,
+                      melissa_options_t  *options);
 
 void save_stats (melissa_data_t *data,
                  comm_data_t    *comm_data,

@@ -312,12 +312,12 @@ def launch_study():
     thread2.start()
 
     for i in range(nb_groups):
-        for j in range(global_options.nb_parameters+2):
-            casedir = global_options.workdir+"/group"+str(i)+"/rank"+str(j)
-            os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         # scripts to launch coupled simulation groups
         os.chdir(global_options.workdir+"/group"+str(i))
         if ("sobol" in global_options.operations) or ("sobol_indices" in global_options.operations):
+            for j in range(global_options.nb_parameters+2):
+                casedir = global_options.workdir+"/group"+str(i)+"/rank"+str(0)
+                os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
             create_coupling_parameters (global_options.nb_parameters,
                                         "None",
                                         global_options.nodes_saturne*global_options.proc_per_node_saturne,
@@ -331,6 +331,8 @@ def launch_study():
             elif (global_options.batch_scheduler == "local"):
                 simu_job_id.append = call_bash('../STATS/run_cas_couple.sh & echo $!')['out']
         else:
+            casedir = global_options.workdir+"/group"+str(i)+"/rank0"
+            os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
             os.chdir("./rank0/SCRIPTS")
             if (global_options.batch_scheduler == "Slurm"):
                 simu_job_id.append(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1])
@@ -394,16 +396,31 @@ def launch_study():
                             elif (global_options.batch_scheduler == "OAR"):
                                 call_bash("kill "+simu_job_id[i])
 
-                    melissa_job_id = reboot_server(global_options.workdir, melissa_first_job_id, melissa_job_id, output, global_options.batch_scheduler)
+                    melissa_job_id = reboot_server(global_options.workdir,
+                                                   melissa_first_job_id,
+                                                   melissa_job_id,
+                                                   output,
+                                                   global_options.batch_scheduler,
+                                                   global_options.nodes_melissa,
+                                                   global_options.openmp_threads,
+                                                   global_options.server_path,
+                                                   global_options.walltime_melissa,
+                                                   global_options.mpi_options,
+                                                   options
+                                                   )
                     if (global_options.batch_scheduler == "Slurm") or (global_options.batch_scheduler == "CCC"):
-                        while (not "RUNNING" in call_bash("squeue --name=Melissa -l")['out']):
+                        while ("PENDING" in call_bash("squeue --name=Melissa -l")['out']):
                             time.sleep(30)
                     if (global_options.batch_scheduler == "OAR"):
-                        while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
+                        while ("Melissa" in call_bash("oarstat -u --sql \"state = 'Pending'\"")['out']):
                             time.sleep(30)
                     for i in range(len(simu_job_id)):
                         if (simu_states[i] < 3): # not terminated
                             os.chdir(global_options.workdir+"/group"+str(i))
+                            for j in range(global_options.nb_parameters+2):
+                                casedir = global_options.workdir+"/group"+str(i)+"/rank"+str(0)
+                                os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
+                            os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
                             if ("sobol" in global_options.operations) or ("sobol_indices" in global_options.operations):
                                 if (global_options.batch_scheduler == "Slurm"):
                                     simu_job_id[i] = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1]
@@ -415,6 +432,8 @@ def launch_study():
                                     simu_job_id[i] = call_bash('../STATS/run_cas_couple.sh & echo $!')['out']
                             else:
                                 os.chdir("./rank0/SCRIPTS")
+                                casedir = global_options.workdir+"/group"+str(i)+"/rank0"
+                                os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
                                 if (global_options.batch_scheduler == "Slurm"):
                                     simu_job_id[i] = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(i))['out'].split()[-1]
                                 elif (global_options.batch_scheduler == "CCC"):

@@ -163,7 +163,7 @@ def launch_heatc(nb_parameters,
     time.sleep(5)
     print "server killed"
     print "restarting:"
-    print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r"
+    print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r ."
     if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r . &") != 0):
         print "error launching Melissa"
 
