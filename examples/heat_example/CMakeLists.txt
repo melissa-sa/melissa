@@ -15,3 +15,7 @@ target_link_libraries(heatf ${EXAMPLES_LIBS} stats_api_fortran heat_utils)
 
 add_executable(heatc heat.c)
 target_link_libraries(heatc ${EXAMPLES_LIBS} stats_api heat_utils)
+
+add_test(TestHeatc python master.py)
+
+add_test(TestCrashServer python crash_server.py)

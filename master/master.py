@@ -101,7 +101,13 @@ class message_reciever(Thread):
                     if message[1] != "-1":
                         simu_id = int(message[1])
                         with lock_job_state:
-                            reboot_simu(simu_id, simu_job_id, job_states, global_options.batch_scheduler, global_options.workdir, output, global_options.operations)
+                            output += reboot_simu(simu_id,
+                                                  simu_job_id,
+                                                  job_states,
+                                                  global_options.batch_scheduler,
+                                                  global_options.workdir,
+                                                  output,
+                                                  global_options.operations)
                             job_states[simu_id] = 1 # pennding or runnning
                 if (message[0] == "simu_state"):
                     print "message: "+message[0]+" "+message[1]+" "+message[2]
@@ -289,7 +295,7 @@ def launch_study():
     elif (global_options.batch_scheduler == "local"):
         melissa_job_id += call_bash('./run_study.sh & echo $!')['out']
     melissa_first_job_id = melissa_job_id
-    print melissa_job_id
+    print "Melissa job id: "+melissa_job_id
 
     if (global_options.batch_scheduler == "Slurm") or (global_options.batch_scheduler == "CCC"):
         while (not "RUNNING" in call_bash("squeue --job="+melissa_job_id+" -l")['out']):
@@ -305,6 +311,7 @@ def launch_study():
                 melissa_job_id += call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
             time.sleep(20)
     time.sleep(5) # to give time to retrieve the name of the main server node
+    os.chdir(global_options.workdir)
 
     server_state = "running"
     poller.register(pull_melissa_socket, zmq.POLLIN)
@@ -369,8 +376,8 @@ def launch_study():
                                                global_options.server_path,
                                                global_options.walltime_melissa,
                                                global_options.mpi_options,
-                                               options
-                                               )
+                                               options)
+                output += "Reboot Melissa Server\n"
                 if (global_options.batch_scheduler == "Slurm") or (global_options.batch_scheduler == "CCC"):
                     while (not "RUNNING" in call_bash("squeue --name=Melissa -l")['out']):
                         time.sleep(30)
@@ -384,6 +391,7 @@ def launch_study():
                 time.sleep(30)
 
 
+    os.chdir(global_options.workdir)
     sleep = False
     while not(all(i == 2 for i in simu_states) and (server_state == "terminated")):
 
@@ -416,8 +424,8 @@ def launch_study():
                                                    global_options.server_path,
                                                    global_options.walltime_melissa,
                                                    global_options.mpi_options,
-                                                   options
-                                                   )
+                                                   options)
+                    output += "Reboot Melissa Server\n"
                     if (global_options.batch_scheduler == "Slurm") or (global_options.batch_scheduler == "CCC"):
                         while ("PENDING" in call_bash("squeue --name=Melissa -l")['out']):
                             time.sleep(30)
@@ -454,6 +462,7 @@ def launch_study():
                                     simu_job_id[i] = call_bash('oarsub -S "./runcase" -n Saturne'+str(i)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
                                 elif (global_options.batch_scheduler == "local"):
                                     simu_job_id[i] = call_bash('./runcase & echo $!')['out']
+                os.chdir(global_options.workdir)
                 continue
 
         for i in range(len(simu_job_id)):
@@ -461,25 +470,35 @@ def launch_study():
                 with lock_job_state:
                     print "check simulation "+str(i)+": state: "+str(simu_states[i])+", job: "+str(job_states[i]-1)
                     if (simu_states[i] != job_states[i]-1):
-                        if (simu_states[i] == 1 and job_states[i] == 3):
-                            reboot_simu(i, simu_job_id, job_states, global_options.batch_scheduler, global_options.workdir, output, global_options.operations)
-                        if (simu_states[i] == 0 and job_states[i] == 3):
-                            reboot_simu(i, simu_job_id, job_states, global_options.batch_scheduler, global_options.workdir, output, global_options.operations)
+                        if (simu_states[i] <= 1 and job_states[i] == 3):
+                            output += reboot_simu(i,
+                                                  simu_job_id,
+                                                  job_states,
+                                                  global_options.batch_scheduler,
+                                                  global_options.workdir,
+                                                  output,
+                                                  global_options.operations)
                         if (simu_states[i] == 0 and job_states[i] == 2):
                             out=check_timeout(i, simu_job_id, output, global_options.batch_scheduler)
                             if (out == True):
-                                reboot_simu(i, simu_job_id, job_states, global_options.batch_scheduler, global_options.workdir, output, global_options.operations)
+                                output += reboot_simu(i,
+                                                      simu_job_id,
+                                                      job_states,
+                                                      global_options.batch_scheduler,
+                                                      global_options.workdir,
+                                                      output,
+                                                      global_options.operations)
 
         time.sleep(30)
 
 
     thread1.running_master = False
-
     thread2.running_master = False
 
     thread1.join()
     thread2.join()
 
+    os.chdir(global_options.workdir)
     fichier=open("master.out", "w")
     fichier.write(output)
     fichier.close()

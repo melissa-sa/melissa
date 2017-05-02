@@ -40,7 +40,13 @@ def check_job(batch_scheduler, username, job_id):
                 state = "terminated"
     return state
 
-def reboot_simu(simu_id, simu_job_id, job_states, batch_scheduler, workdir, output, operations):
+def reboot_simu(simu_id,
+                simu_job_id,
+                job_states,
+                batch_scheduler,
+                workdir,
+                output,
+                operations):
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):
@@ -49,7 +55,7 @@ def reboot_simu(simu_id, simu_job_id, job_states, batch_scheduler, workdir, outp
         call_bash("kill "+simu_job_id[simu_id])
     os.chdir(workdir+"/group"+str(simu_id))
     if ("sobol" in operations) or ("sobol_indices" in operations):
-        output += "Reboot simulation group "+str(simu_id)+"\n"
+        output = "Reboot simulation group "+str(simu_id)+"\n"
         if (batch_scheduler == "Slurm"):
             simu_job_id[simu_id] = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu_id))['out'].split()[-1]
         elif (batch_scheduler == "CCC"):
@@ -59,7 +65,7 @@ def reboot_simu(simu_id, simu_job_id, job_states, batch_scheduler, workdir, outp
         elif (batch_scheduler == "local"):
             simu_job_id[simu_id] = call_bash('../STATS/run_cas_couple.sh & echo $!')['out']
     else:
-        output += "Reboot simulation "+str(simu_id)+"\n"
+        output = "Reboot simulation "+str(simu_id)+"\n"
         os.chdir("./rank0/SCRIPTS")
         if (batch_scheduler == "Slurm"):
             simu_job_id[simu_id] = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu_id))['out'].split()[-1]
@@ -70,7 +76,8 @@ def reboot_simu(simu_id, simu_job_id, job_states, batch_scheduler, workdir, outp
         elif (batch_scheduler == "local"):
             simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
     job_states[simu_id] = 1
-    return 0
+    os.chdir(workdir)
+    return output
 
 def reboot_server(workdir,
                   melissa_first_job_id,
@@ -84,7 +91,6 @@ def reboot_server(workdir,
                   mpi_options,
                   options):
     os.chdir(workdir+"/STATS")
-    output += "Reboot Melissa Server\n"
     create_reboot_study(workdir,
                         nodes_melissa,
                         openmp_threads,
@@ -108,6 +114,7 @@ def reboot_server(workdir,
         melissa_job_id = call_bash('oarsub -S "./reboot_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     elif (batch_scheduler == "local"):
         melissa_job_id = call_bash('./reboot_study.sh '+melissa_first_job_id+' & echo $!')['out']
+    os.chdir(workdir)
     return melissa_job_id
 
 def check_timeout(simu_id, simu_job_id, output, batch_scheduler):
