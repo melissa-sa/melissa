@@ -40,7 +40,7 @@ def check_job(batch_scheduler, username, job_id):
                 state = "terminated"
     return state
 
-def reboot_simu(simu_id, simu_job_id, batch_scheduler, workdir, output, operations):
+def reboot_simu(simu_id, simu_job_id, job_states, batch_scheduler, workdir, output, operations):
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):
@@ -69,6 +69,7 @@ def reboot_simu(simu_id, simu_job_id, batch_scheduler, workdir, output, operatio
             simu_job_id[simu_id] = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu_id)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
         elif (batch_scheduler == "local"):
             simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
+    job_states[simu_id] = 1
     return 0
 
 def reboot_server(workdir,
@@ -102,7 +103,7 @@ def reboot_server(workdir,
     if (batch_scheduler == "Slurm"):
         melissa_job_id = call_bash('sbatch "./reboot_study.sh"')['out'].split()[-1]
     elif (batch_scheduler == "CCC"):
-        melissa_job_id = call_bash('ccc_msub "./reboot_study.sh"')['out'].split()[-1]
+        melissa_job_id = call_bash('ccc_msub -r Melissa "./reboot_study.sh"')['out'].split()[-1]
     elif (batch_scheduler == "OAR"):
         melissa_job_id = call_bash('oarsub -S "./reboot_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     elif (batch_scheduler == "local"):

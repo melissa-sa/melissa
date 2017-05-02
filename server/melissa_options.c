@@ -35,8 +35,8 @@ static inline void stats_usage ()
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
             " -n <char*>     : Melissa master node name (default: localhost)\n"
-            " -r <char*>     : Melissa restart files directory"
-            " -h             : Print this message"
+            " -r <char*>     : Melissa restart files directory\n"
+            " -h             : Print this message\n"
             "\n"
             );
 }

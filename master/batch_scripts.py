@@ -93,14 +93,14 @@ def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_param
 
 def create_run_study (workdir, nodes_melissa, openmp_threads, server_path, walltime_melissa, mpi_options, options, batch_scheduler):
     # signal handler definition
-    signal_handler="handler() {"
-    signal_handler+="echo \"### CLEAN-UP TIME !!!\""
-    signal_handler+="STOP=1"
-    signal_handler+="sleep 1"
-    #signal_handler+="killer"
-    signal_handler+="killall -USR1 mpirun"
-    signal_handler+="wait %1"
-    signal_handler+="}"
+    signal_handler="handler() {                            \n"
+    signal_handler+="echo \"### CLEAN-UP TIME !!!\"        \n"
+    signal_handler+="STOP=1                                \n"
+    signal_handler+="sleep 1                               \n"
+    #signal_handler+="killer \n"
+    signal_handler+="killall -USR1 mpirun                  \n"
+    signal_handler+="wait %1                               \n"
+    signal_handler+="}                                     \n"
     contenu = ""
     fichier=open("run_study.sh", "w")
     contenu += "#!/bin/bash                                                        \n"
@@ -173,14 +173,14 @@ def create_reboot_study (workdir,
                          batch_scheduler,
                          melissa_first_job_id):
     # signal handler definition
-    signal_handler="handler() {"
-    signal_handler+="echo \"### CLEAN-UP TIME !!!\""
-    signal_handler+="STOP=1"
-    signal_handler+="sleep 1"
-    #signal_handler+="killer"
-    signal_handler+="killall -USR1 mpirun"
-    signal_handler+="wait %1"
-    signal_handler+="}"
+    signal_handler="handler() {                      \n"
+    signal_handler+="echo \"### CLEAN-UP TIME !!!\"  \n"
+    signal_handler+="STOP=1                          \n"
+    signal_handler+="sleep 1                         \n"
+    #signal_handler+="killer \n"
+    signal_handler+="killall -USR1 mpirun            \n"
+    signal_handler+="wait %1                         \n"
+    signal_handler+="}                               \n"
     contenu = ""
     fichier=open("reboot_study.sh", "w")
     contenu += "#!/bin/bash                                                        \n"
@@ -231,7 +231,7 @@ def create_reboot_study (workdir,
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
     contenu += "trap handler USR2                                                  \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" -r ./ &     \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" -r . &   \n"
     contenu += "wait %1                                                            \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "cd "+workdir+"                                                     \n"

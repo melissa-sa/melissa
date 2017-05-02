@@ -255,6 +255,7 @@ void save_simu_states(int         *simu_states,
 {
     char       file_name[256];
     FILE*      f = NULL;
+//    int        i;
     sprintf(file_name, "simu_state_%d.data",comm_data->rank);
     f = fopen(file_name, "wb+");
     if (f == NULL)
@@ -262,6 +263,12 @@ void save_simu_states(int         *simu_states,
       fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
       return;
     }
+//    fprintf (stdout, "simulation states (rank %d):", comm_data->);
+//    for (i=0; i<size; i++)
+//    {
+//        fprintf (stdout, " %d", simu_states[i]);
+//    }
+//    fprintf (stdout, "\n");
     fwrite(simu_states, sizeof(int), size, f);
     fclose(f);
 }
