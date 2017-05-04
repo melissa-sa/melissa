@@ -75,11 +75,13 @@ struct sobol_array_s
 
 typedef struct sobol_array_s sobol_array_t; /**< type corresponding to sobol_array_s */
 
-void init_sobol_jansen (sobol_jansen_t *sobol_indices,
-                        int             vect_size);
+void init_sobol_jansen (sobol_array_t *sobol_array,
+                        int            nb_parameters,
+                        int            vect_size);
 
-void init_sobol_martinez (sobol_martinez_t *sobol_indices,
-                          int               vect_size);
+void init_sobol_martinez (sobol_array_t *sobol_array,
+                          int            nb_parameters,
+                          int            vect_size);
 
 void increment_sobol_jansen (sobol_array_t *sobol_array,
                              int            nb_parameters,
@@ -112,8 +114,10 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
                          int            nb_parameters,
                          FILE*          f);
 
-void free_sobol_jansen (sobol_jansen_t *sobol_indices);
+void free_sobol_jansen (sobol_array_t *sobol_array,
+                        int            nb_parameters);
 
-void free_sobol_martinez (sobol_martinez_t *sobol_indices);
+void free_sobol_martinez (sobol_array_t *sobol_array,
+                          int            nb_parameters);
 
 #endif // SOBOL_H

@@ -13,7 +13,9 @@ from call_bash import *
 from batch_scripts import *
 from options import *
 from threading import Thread, RLock
+from ctypes import byref, cdll, c_int
 
+get_message = cdll.LoadLibrary('./libget_message.so')
 
 #=====================================#
 #               options               #
@@ -30,16 +32,6 @@ job_states     = np.zeros(global_options.sampling_size, dtype=np.int) # not subm
 simu_states    = np.zeros(global_options.sampling_size, dtype=np.int) # simu as seen by the Server
 output         = ""
 
-
-#=====================================#
-#               ZeroMQ                #
-#=====================================#
-
-context = zmq.Context()
-pull_melissa_socket = context.socket(zmq.PULL)
-pull_melissa_socket.bind("tcp://*:5555")
-poller = zmq.Poller()
-
 #=====================================#
 #               Threads               #
 #=====================================#
@@ -53,7 +45,6 @@ class state_checker(Thread):
         Thread.__init__(self)
         self.running_master = True
     def run(self):
-        global poller
         global job_states
         global server_state
         global global_options
@@ -85,7 +76,6 @@ class message_reciever(Thread):
         Thread.__init__(self)
         self.running_master = True
     def run(self):
-        global poller
         global simu_states
         global simu_job_id
         global job_states
@@ -93,27 +83,29 @@ class message_reciever(Thread):
         global output
         last_recieved_from_master = 0
         while self.running_master == True:
-            socks = dict(poller.poll(1000))
-            if (pull_melissa_socket in socks.keys() and socks[pull_melissa_socket] == zmq.POLLIN):
-                message = pull_melissa_socket.recv_string().split()
-                if (message[0] == "timeout"):
-                    print "message: "+message[0]+" "+message[1]
-                    if message[1] != "-1":
-                        simu_id = int(message[1])
-                        with lock_job_state:
-                            output += reboot_simu(simu_id,
-                                                  simu_job_id,
-                                                  job_states,
-                                                  global_options.batch_scheduler,
-                                                  global_options.workdir,
-                                                  output,
-                                                  global_options.operations)
-                            job_states[simu_id] = 1 # pennding or runnning
-                if (message[0] == "simu_state"):
-                    print "message: "+message[0]+" "+message[1]+" "+message[2]
+
+            c_msg = create_string_buffer('\000' * 256)
+            get_message.wait_message(c_msg)
+            message = c_msg.value.split()
+            if (message[0] == "timeout"):
+                print "message: "+message[0]+" "+message[1]
+                if message[1] != "-1":
                     simu_id = int(message[1])
-                    simu_state = int(message[2])
-                    simu_states[simu_id] = simu_state
+                    with lock_job_state:
+                        output += reboot_simu(simu_id,
+                                              simu_job_id,
+                                              job_states,
+                                              global_options.batch_scheduler,
+                                              global_options.workdir,
+                                              output,
+                                              global_options.operations)
+                        job_states[simu_id] = 1 # pennding or runnning
+                last_recieved_from_master = time.time()
+            if (message[0] == "simu_state"):
+                print "message: "+message[0]+" "+message[1]+" "+message[2]
+                simu_id = int(message[1])
+                simu_state = int(message[2])
+                simu_states[simu_id] = simu_state
                 last_recieved_from_master = time.time()
             if last_recieved_from_master > 0:
                 if (time.time() - last_recieved_from_master) > timeout_server:
@@ -314,7 +306,8 @@ def launch_study():
     os.chdir(global_options.workdir)
 
     server_state = "running"
-    poller.register(pull_melissa_socket, zmq.POLLIN)
+
+    get_message.init_message()
 
     thread1 = state_checker()
     thread2 = message_reciever()
@@ -497,6 +490,8 @@ def launch_study():
 
     thread1.join()
     thread2.join()
+
+    get_message.close_message()
 
     os.chdir(global_options.workdir)
     fichier=open("master.out", "w")

@@ -59,6 +59,11 @@ struct melissa_data_s
     min_max_t           *min_max;       /**< array of min and max structures, size nb_time_steps       */
     int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
     sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
+    void (*init_sobol)(sobol_array_t*, int, int);
+    void (*read_sobol)(sobol_array_t*, int, int, int, FILE*);
+    void (*write_sobol)(sobol_array_t*, int, int, int, FILE*);
+    void (*increment_sobol)(sobol_array_t*, int, double**, int);
+    void (*free_sobol)(sobol_array_t*, int);
     int                 *step_simu;     /**< iterations counter, size nb_groups                        */
 };
 

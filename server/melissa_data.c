@@ -57,16 +57,14 @@ static void melissa_alloc_data (melissa_data_t *data)
     if (data->options->sobol_op == 1)
     {
         data->sobol_indices = melissa_malloc (data->options->nb_time_steps * sizeof(sobol_array_t));
+        data->init_sobol = init_sobol_martinez;
+        data->read_sobol = read_sobol_martinez;
+        data->write_sobol = write_sobol_martinez;
+        data->increment_sobol = increment_sobol_martinez;
+        data->free_sobol = free_sobol_martinez;
         for (i=0; i<data->options->nb_time_steps; i++)
         {
-            data->sobol_indices[i].sobol_martinez = melissa_malloc (data->options->nb_parameters * sizeof(sobol_martinez_t));
-            init_variance (&data->sobol_indices[i].variance_b, data->vect_size);
-            init_variance (&data->sobol_indices[i].variance_a, data->vect_size);
-            for (j=0; j<data->options->nb_parameters; j++)
-            {
-                init_sobol_martinez (&data->sobol_indices[i].sobol_martinez[j], data->vect_size);
-            }
-            data->sobol_indices[i].iteration = 0;
+            data->init_sobol (&data->sobol_indices[i], data->options->nb_parameters, data->vect_size);
         }
     }
     data->step_simu = melissa_calloc (data->options->sampling_size, sizeof(int));
@@ -190,13 +188,7 @@ void melissa_free_data (melissa_data_t *data)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
         {
-            free_variance (&data->sobol_indices[i].variance_a);
-            free_variance (&data->sobol_indices[i].variance_b);
-            for (j=0; j<data->options->nb_parameters; j++)
-            {
-                free_sobol_martinez (&(data->sobol_indices[i].sobol_martinez[j]));
-            }
-            melissa_free (data->sobol_indices[i].sobol_martinez);
+            data->free_sobol (&data->sobol_indices[i], data->options->nb_parameters);
         }
         melissa_free (data->sobol_indices);
     }

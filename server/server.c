@@ -506,7 +506,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PY_ZMQ
 
 //        if (iteration % 100 == 0)
-        if (last_checkpoint_time  + 5 < melissa_get_time())
+        if (last_checkpoint_time  + 5000 < melissa_get_time())
         {
             field_ptr fptr = field;
             while (fptr != NULL)

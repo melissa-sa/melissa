@@ -35,13 +35,20 @@
  *
  *******************************************************************************/
 
-void init_sobol_jansen (sobol_jansen_t *sobol_indices,
-                        int             vect_size)
+void init_sobol_jansen (sobol_array_t *sobol_array,
+                        int            nb_parameters,
+                        int            vect_size)
 {
-    sobol_indices->summ_a = melissa_calloc (vect_size, sizeof(double));
-    sobol_indices->summ_b = melissa_calloc (vect_size, sizeof(double));
-    sobol_indices->first_order_values = melissa_calloc (vect_size, sizeof(double));
-    sobol_indices->total_order_values = melissa_calloc (vect_size, sizeof(double));
+    int j;
+    sobol_array->sobol_jansen = melissa_malloc (nb_parameters * sizeof(sobol_martinez_t));
+    init_variance (&sobol_array->variance_a, vect_size);
+    for (j=0; j<nb_parameters; j++)
+    {
+        sobol_array->sobol_jansen[j].summ_a = melissa_calloc (vect_size, sizeof(double));
+        sobol_array->sobol_jansen[j].summ_b = melissa_calloc (vect_size, sizeof(double));
+        sobol_array->sobol_jansen[j].first_order_values = melissa_calloc (vect_size, sizeof(double));
+        sobol_array->sobol_jansen[j].total_order_values = melissa_calloc (vect_size, sizeof(double));
+    }
 }
 
 /**
@@ -62,17 +69,25 @@ void init_sobol_jansen (sobol_jansen_t *sobol_indices,
  *
  *******************************************************************************/
 
-void init_sobol_martinez (sobol_martinez_t *sobol_indices,
-                          int               vect_size)
+void init_sobol_martinez (sobol_array_t *sobol_array,
+                          int            nb_parameters,
+                          int            vect_size)
 {
-    init_covariance (&(sobol_indices->first_order_covariance), vect_size);
-    init_covariance (&(sobol_indices->total_order_covariance), vect_size);
-    init_variance (&(sobol_indices->variance_k), vect_size);
+    int j;
+    sobol_array->sobol_martinez = melissa_malloc (nb_parameters * sizeof(sobol_martinez_t));
+    init_variance (&sobol_array->variance_b, vect_size);
+    init_variance (&sobol_array->variance_a, vect_size);
+    for (j=0; j<nb_parameters; j++)
+    {
+        init_covariance (&(sobol_array->sobol_martinez[j].first_order_covariance), vect_size);
+        init_covariance (&(sobol_array->sobol_martinez[j].total_order_covariance), vect_size);
+        init_variance (&(sobol_array->sobol_martinez[j].variance_k), vect_size);
 
-    sobol_indices->first_order_values = melissa_calloc (vect_size, sizeof(double));
-    sobol_indices->total_order_values = melissa_calloc (vect_size, sizeof(double));
-    sobol_indices->confidence_interval[0] = 1;
-    sobol_indices->confidence_interval[1] = 1;
+        sobol_array->sobol_martinez[j].first_order_values = melissa_calloc (vect_size, sizeof(double));
+        sobol_array->sobol_martinez[j].total_order_values = melissa_calloc (vect_size, sizeof(double));
+        sobol_array->sobol_martinez[j].confidence_interval[0] = 1;
+        sobol_array->sobol_martinez[j].confidence_interval[1] = 1;
+    }
 }
 
 /**
@@ -544,12 +559,18 @@ void read_sobol_jansen(sobol_array_t *sobol_array,
  *
  *******************************************************************************/
 
-void free_sobol_jansen (sobol_jansen_t *sobol_indices)
+void free_sobol_jansen (sobol_array_t *sobol_array, int nb_parameters)
 {
-    melissa_free (sobol_indices->summ_a);
-    melissa_free (sobol_indices->summ_b);
-    melissa_free (sobol_indices->first_order_values);
-    melissa_free (sobol_indices->total_order_values);
+    int j;
+    free_variance (&sobol_array->variance_a);
+    for (j=0; j<nb_parameters; j++)
+    {
+        melissa_free (sobol_array->sobol_jansen->summ_a);
+        melissa_free (sobol_array->sobol_jansen->summ_b);
+        melissa_free (sobol_array->sobol_jansen->first_order_values);
+        melissa_free (sobol_array->sobol_jansen->total_order_values);
+    }
+    melissa_free (sobol_array->sobol_jansen);
 }
 
 /**
@@ -566,11 +587,19 @@ void free_sobol_jansen (sobol_jansen_t *sobol_indices)
  *
  *******************************************************************************/
 
-void free_sobol_martinez (sobol_martinez_t *sobol_indices)
+void free_sobol_martinez (sobol_array_t *sobol_array,
+                          int            nb_parameters)
 {
-    free_covariance (&(sobol_indices->first_order_covariance));
-    free_covariance (&(sobol_indices->total_order_covariance));
-    free_variance (&(sobol_indices->variance_k));
-    melissa_free (sobol_indices->first_order_values);
-    melissa_free (sobol_indices->total_order_values);
+    int j;
+    free_variance (&sobol_array->variance_a);
+    free_variance (&sobol_array->variance_b);
+    for (j=0; j<nb_parameters; j++)
+    {
+        free_covariance (&sobol_array->sobol_martinez[j].first_order_covariance);
+        free_covariance (&sobol_array->sobol_martinez[j].total_order_covariance);
+        free_variance (&sobol_array->sobol_martinez[j].variance_k);
+        melissa_free (sobol_array->sobol_martinez[j].first_order_values);
+        melissa_free (sobol_array->sobol_martinez[j].total_order_values);
+    }
+    melissa_free (sobol_array->sobol_martinez);
 }
