@@ -5,9 +5,9 @@
 #include <unistd.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#include <stats_api.h>
+#include <melissa_api.h>
 #endif // BUILD_WITH_MPI
-#include <stats_api_no_mpi.h>
+#include <melissa_api_no_mpi.h>
 
 static inline void error(const int ret)
 {

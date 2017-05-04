@@ -10,11 +10,11 @@ add_library(heat_utils heat_utils.f90)
 target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
 target_link_libraries(heat_utils ${EXAMPLES_LIBS})
 
-add_executable(heatf ../../api/stats_api_fortran.f90 heat.f90)
-target_link_libraries(heatf ${EXAMPLES_LIBS} stats_api_fortran heat_utils)
+add_executable(heatf ../../api/melissa_api_fortran.f90 heat.f90)
+target_link_libraries(heatf ${EXAMPLES_LIBS} melissa_api_fortran heat_utils)
 
 add_executable(heatc heat.c)
-target_link_libraries(heatc ${EXAMPLES_LIBS} stats_api heat_utils)
+target_link_libraries(heatc ${EXAMPLES_LIBS} melissa_api heat_utils)
 
 add_test(TestHeatc python master.py)
 

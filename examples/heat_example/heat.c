@@ -7,7 +7,7 @@
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
-#include <stats_api.h>
+#include <melissa_api.h>
 
 
 void read_file(int*   ,

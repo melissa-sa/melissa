@@ -3,7 +3,7 @@ program heat
 
   use heat_utils
   use mpi
-  use stats_api_fortran
+  use melissa_api_fortran
   
   implicit none
 

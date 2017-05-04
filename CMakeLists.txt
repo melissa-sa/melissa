@@ -201,9 +201,9 @@ add_subdirectory(master)
 
 add_subdirectory(gui)
 
-set(ALL_API stats_api.c
-            stats_api.h
-            stats_api_no_mpi.h)
+set(ALL_API melissa_api.c
+            melissa_api.h
+            melissa_api_no_mpi.h)
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
 

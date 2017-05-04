@@ -7,5 +7,5 @@ if(BUILD_WITH_ZMQ)
   endif(BUILD_WITH_MPI)
 
   add_executable(client client.c)
-  target_link_libraries(client ${EXTRA_LIBS} stats_api)
+  target_link_libraries(client ${EXTRA_LIBS} melissa_api)
 endif(BUILD_WITH_ZMQ)
