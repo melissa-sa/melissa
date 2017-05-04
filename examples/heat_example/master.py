@@ -4,29 +4,24 @@ import time
 import sys
 import numpy as np
 import numpy.random as rd
-import zmq
 import socket
 from threading import Thread, RLock
+from ctypes import *
+
+get_message = cdll.LoadLibrary('../../master/libget_message.so')
 
 # ------------- thread ------------- #
-
-context = zmq.Context()
-rep_socket = context.socket(zmq.PULL)
-rep_socket.bind("tcp://*:5555")
-poller = zmq.Poller()
 
 class message_reciever(Thread):
     def __init__(self):
         Thread.__init__(self)
     def run(self):
-        global poller
         while True:
-            socks = dict(poller.poll(1000))
-            if (rep_socket in socks.keys() and socks[rep_socket] == zmq.POLLIN):
-                message = rep_socket.recv_string()
-                print "message: "+message
-                if message == "stop":
-                    return 0
+            message = create_string_buffer('\000' * 256)
+            get_message.wait_message(message)
+            print "message: "+message.value
+            if message.value == "stop":
+                return 0
 
 # ------------- functions ------------- #
 
@@ -103,8 +98,6 @@ def launch_heatc(nb_parameters,
                  coupling
                  ):
 
-    poller.register(rep_socket, zmq.POLLIN)
-
     if (("sobol" in operations) or ("sobol_indices" in operations)):
         nb_simu = nb_groups * (nb_parameters + 2)
     A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
@@ -136,6 +129,7 @@ def launch_heatc(nb_parameters,
         print "error launching Melissa"
 #    launch_melissa("valgrind --leak-check=full mpirun -n 3 "+server_path+"/server"+options+" &")
 
+    get_message.init_message()
     thread = message_reciever()
     thread.start()
 
@@ -163,6 +157,7 @@ def launch_heatc(nb_parameters,
 
     print "wait thread..."
     thread.join()
+    get_message.close_message()
     os.system("killall heatc")
     print "end !"
     return 0
