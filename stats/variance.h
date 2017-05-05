@@ -63,10 +63,10 @@ void update_global_mean_and_variance (variance_t *variance,
                                       const int   comm_size,
                                       MPI_Comm    comm);
 
-void write_variance(variance_t *vars,
-                    int         vect_size,
-                    int         nb_time_steps,
-                    FILE*       f);
+void save_variance(variance_t *vars,
+                   int         vect_size,
+                   int         nb_time_steps,
+                   FILE*       f);
 
 void read_variance(variance_t *vars,
                    int         vect_size,

@@ -14,10 +14,10 @@ void update_threshold_exceedance (double    in_vect[],
                                   int       threshold,
                                   const int vect_size);
 
-void write_threshold(int  **threshold,
-                     int    vect_size,
-                     int    nb_time_steps,
-                     FILE*  f);
+void save_threshold(int  **threshold,
+                    int    vect_size,
+                    int    nb_time_steps,
+                    FILE*  f);
 
 void read_threshold(int  **threshold,
                     int    vect_size,

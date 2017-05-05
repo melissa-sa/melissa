@@ -30,6 +30,9 @@
  * input: reference or pointer to an uninitialised sobol indices structure,
  * output: initialised structure, with values and variances set to 0
  *
+ * @param[in] nb_parameters
+ * number of parameters of the study
+ *
  * @param[in] vect_size
  * size of the input vectors
  *
@@ -63,6 +66,9 @@ void init_sobol_jansen (sobol_array_t *sobol_array,
  * @param[in,out] *sobol_indices
  * input: reference or pointer to an uninitialised sobol indices structure,
  * output: initialised structure, with values and variances set to 0
+ *
+ * @param[in] nb_parameters
+ * number of parameters of the study
  *
  * @param[in] vect_size
  * size of the input vectors
@@ -356,56 +362,6 @@ int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
  *
  * @ingroup save_stats
  *
- * This function writes an array of sobol_martinez structures on disc
- *
- *******************************************************************************
- *
- * @param[in] *sobol_array
- * sobol_array structures to save, size nb_time_steps
- *
- * @param[in] vect_size
- * size of double vectors
- *
- * @param[in] nb_time_steps
- * number of time_steps of the study
- *
- * @param[in] nb_parameters
- * number of parameters of the study
- *
- * @param[in] f
- * file descriptor
- *
- *******************************************************************************/
-
-void write_sobol_martinez(sobol_array_t *sobol_array,
-                          int            vect_size,
-                          int            nb_time_steps,
-                          int            nb_parameters,
-                          FILE*          f)
-{
-    int i, j;
-    for (i=0; i<nb_time_steps; i++)
-    {
-        for (j=0; j<nb_parameters; j++)
-        {
-            write_covariance (&sobol_array[i].sobol_martinez[j].first_order_covariance, vect_size, 1, f);
-            write_covariance (&sobol_array[i].sobol_martinez[j].total_order_covariance, vect_size, 1, f);
-            write_variance (&sobol_array[i].sobol_martinez[j].variance_k, vect_size, 1, f);
-            fwrite(sobol_array[i].sobol_martinez[j].first_order_values, sizeof(double), vect_size,f);
-            fwrite(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
-            fwrite(sobol_array[i].sobol_martinez[j].confidence_interval, sizeof(double), 2,f);
-        }
-        write_variance(&sobol_array[i].variance_a, vect_size, 1, f);
-        write_variance(&sobol_array[i].variance_b, vect_size, 1, f);
-        fwrite(&sobol_array[i].iteration, sizeof(int), 1, f);
-    }
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function writes an array of sobol_jansen structures on disc
  *
  *******************************************************************************
@@ -427,11 +383,11 @@ void write_sobol_martinez(sobol_array_t *sobol_array,
  *
  *******************************************************************************/
 
-void write_sobol_jansen(sobol_array_t *sobol_array,
-                        int            vect_size,
-                        int            nb_time_steps,
-                        int            nb_parameters,
-                        FILE*          f)
+void save_sobol_jansen(sobol_array_t *sobol_array,
+                       int            vect_size,
+                       int            nb_time_steps,
+                       int            nb_parameters,
+                       FILE*          f)
 {
     int i, j;
     for (i=0; i<nb_time_steps; i++)
@@ -443,8 +399,105 @@ void write_sobol_jansen(sobol_array_t *sobol_array,
             fwrite(sobol_array[i].sobol_jansen[j].first_order_values, sizeof(double), vect_size,f);
             fwrite(sobol_array[i].sobol_jansen[j].total_order_values, sizeof(double), vect_size,f);
         }
-        write_variance(&sobol_array[i].variance_a, vect_size, 1, f);
+        save_variance(&sobol_array[i].variance_a, vect_size, 1, f);
         fwrite(&sobol_array[i].iteration, sizeof(int), 1, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function writes an array of sobol_martinez structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *sobol_array
+ * sobol_array structures to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] nb_parameters
+ * number of parameters of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void save_sobol_martinez(sobol_array_t *sobol_array,
+                          int            vect_size,
+                          int            nb_time_steps,
+                          int            nb_parameters,
+                          FILE*          f)
+{
+    int i, j;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        for (j=0; j<nb_parameters; j++)
+        {
+            save_covariance (&sobol_array[i].sobol_martinez[j].first_order_covariance, vect_size, 1, f);
+            save_covariance (&sobol_array[i].sobol_martinez[j].total_order_covariance, vect_size, 1, f);
+            save_variance (&sobol_array[i].sobol_martinez[j].variance_k, vect_size, 1, f);
+            fwrite(sobol_array[i].sobol_martinez[j].first_order_values, sizeof(double), vect_size,f);
+            fwrite(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
+            fwrite(sobol_array[i].sobol_martinez[j].confidence_interval, sizeof(double), 2,f);
+        }
+        save_variance(&sobol_array[i].variance_a, vect_size, 1, f);
+        save_variance(&sobol_array[i].variance_b, vect_size, 1, f);
+        fwrite(&sobol_array[i].iteration, sizeof(int), 1, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of sobol_jansen structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *sobol_array
+ * sobol_array structures to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] nb_parameters
+ * number of parameters of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_sobol_jansen(sobol_array_t *sobol_array,
+                       int            vect_size,
+                       int            nb_time_steps,
+                       int            nb_parameters,
+                       FILE*          f)
+{
+    int i, j;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        for (j=0; j<nb_parameters; j++)
+        {
+            fread(sobol_array[i].sobol_jansen[j].summ_a, sizeof(double), vect_size,f);
+            fread(sobol_array[i].sobol_jansen[j].summ_b, sizeof(double), vect_size,f);
+            fread(sobol_array[i].sobol_jansen[j].first_order_values, sizeof(double), vect_size,f);
+            fread(sobol_array[i].sobol_jansen[j].total_order_values, sizeof(double), vect_size,f);
+        }
+        read_variance(&sobol_array[i].variance_a, vect_size, 1, f);
+        fread(&sobol_array[i].iteration, sizeof(int), 1, f);
     }
 }
 
@@ -501,61 +554,17 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
 /**
  *******************************************************************************
  *
- * @ingroup save_stats
- *
- * This function reads an array of sobol_jansen structures on disc
- *
- *******************************************************************************
- *
- * @param[in] *sobol_array
- * sobol_array structures to read, size nb_time_steps
- *
- * @param[in] vect_size
- * size of double vectors
- *
- * @param[in] nb_time_steps
- * number of time_steps of the study
- *
- * @param[in] nb_parameters
- * number of parameters of the study
- *
- * @param[in] f
- * file descriptor
- *
- *******************************************************************************/
-
-void read_sobol_jansen(sobol_array_t *sobol_array,
-                       int            vect_size,
-                       int            nb_time_steps,
-                       int            nb_parameters,
-                       FILE*          f)
-{
-    int i, j;
-    for (i=0; i<nb_time_steps; i++)
-    {
-        for (j=0; j<nb_parameters; j++)
-        {
-            fread(sobol_array[i].sobol_jansen[j].summ_a, sizeof(double), vect_size,f);
-            fread(sobol_array[i].sobol_jansen[j].summ_b, sizeof(double), vect_size,f);
-            fread(sobol_array[i].sobol_jansen[j].first_order_values, sizeof(double), vect_size,f);
-            fread(sobol_array[i].sobol_jansen[j].total_order_values, sizeof(double), vect_size,f);
-        }
-        read_variance(&sobol_array[i].variance_a, vect_size, 1, f);
-        fread(&sobol_array[i].iteration, sizeof(int), 1, f);
-    }
-}
-
-/**
- *******************************************************************************
- *
  * @ingroup sobol
  *
- * This function frees a Jansen Sobol indices structure
+ * This function frees a Jansen Sobol array structure
  *
  *******************************************************************************
  *
  * @param[in] *sobol_indices
  * reference or pointer to a sobol index structure to free
+ *
+ * @param[in] nb_parameters
+ * number of parameters of the study
  *
  *******************************************************************************/
 
@@ -583,7 +592,10 @@ void free_sobol_jansen (sobol_array_t *sobol_array, int nb_parameters)
  *******************************************************************************
  *
  * @param[in] *sobol_indices
- * reference or pointer to a sobol index structure to free
+ * reference or pointer to a sobol array structure to free
+ *
+ * @param[in] nb_parameters
+ * number of parameters of the study
  *
  *******************************************************************************/
 

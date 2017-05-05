@@ -52,10 +52,10 @@ void update_global_mean (mean_t    *mean,
                          MPI_Comm   comm);
 #endif // BUILD_WITH_MPI
 
-void write_mean(mean_t *means,
-                int     vect_size,
-                int     nb_time_steps,
-                FILE*   f);
+void save_mean(mean_t *means,
+               int     vect_size,
+               int     nb_time_steps,
+               FILE*   f);
 
 void read_mean(mean_t *means,
                int     vect_size,

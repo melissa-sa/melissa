@@ -215,10 +215,10 @@ void update_global_mean (mean_t    *mean,
  *
  *******************************************************************************/
 
-void write_mean(mean_t *means,
-                int     vect_size,
-                int     nb_time_steps,
-                FILE*   f)
+void save_mean(mean_t *means,
+               int     vect_size,
+               int     nb_time_steps,
+               FILE*   f)
 {
     int i;
     for (i=0; i<nb_time_steps; i++)

@@ -72,10 +72,10 @@ void update_threshold_exceedance (double    in_vect[],
  *
  *******************************************************************************/
 
-void write_threshold(int  **threshold,
-                     int    vect_size,
-                     int    nb_time_steps,
-                     FILE*  f)
+void save_threshold(int  **threshold,
+                    int    vect_size,
+                    int    nb_time_steps,
+                    FILE*  f)
 {
     int i;
     for (i=0; i<nb_time_steps; i++)

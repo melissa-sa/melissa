@@ -44,7 +44,7 @@ void update_covariance (covariance_t *covariance1,
                         covariance_t *updated_covariance,
                         const int     vect_size);
 
-void write_covariance(covariance_t *covars,
+void save_covariance(covariance_t *covars,
                       int           vect_size,
                       int           nb_time_steps,
                       FILE*         f);

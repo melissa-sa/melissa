@@ -320,16 +320,16 @@ void update_global_mean_and_variance (variance_t *variance,
  *
  *******************************************************************************/
 
-void write_variance(variance_t *vars,
-                    int         vect_size,
-                    int         nb_time_steps,
-                    FILE*       f)
+void save_variance(variance_t *vars,
+                   int         vect_size,
+                   int         nb_time_steps,
+                   FILE*       f)
 {
     int i;
     for (i=0; i<nb_time_steps; i++)
     {
         fwrite(vars[i].variance, sizeof(double), vect_size, f);
-        write_mean (&vars[i].mean_structure, vect_size, 1, f);
+        save_mean (&vars[i].mean_structure, vect_size, 1, f);
     }
 }
 

@@ -18,7 +18,7 @@
 
 static void melissa_alloc_data (melissa_data_t *data)
 {
-    int i, j;
+    int i;
 
     if (data->is_valid != 1)
     {
@@ -59,7 +59,7 @@ static void melissa_alloc_data (melissa_data_t *data)
         data->sobol_indices = melissa_malloc (data->options->nb_time_steps * sizeof(sobol_array_t));
         data->init_sobol = init_sobol_martinez;
         data->read_sobol = read_sobol_martinez;
-        data->write_sobol = write_sobol_martinez;
+        data->save_sobol = save_sobol_martinez;
         data->increment_sobol = increment_sobol_martinez;
         data->free_sobol = free_sobol_martinez;
         for (i=0; i<data->options->nb_time_steps; i++)
@@ -148,7 +148,7 @@ void melissa_check_data (melissa_data_t *data)
 
 void melissa_free_data (melissa_data_t *data)
 {
-    int i, j;
+    int i;
 
     if (data->is_valid != 1)
     {

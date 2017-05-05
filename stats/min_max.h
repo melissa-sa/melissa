@@ -36,10 +36,10 @@ void min_and_max (double     in_vect[],
                   min_max_t *min_max,
                   const int  vect_size);
 
-void write_min_max(min_max_t *minmax,
-                   int        vect_size,
-                   int        nb_time_steps,
-                   FILE*      f);
+void save_min_max(min_max_t *minmax,
+                  int        vect_size,
+                  int        nb_time_steps,
+                  FILE*      f);
 
 void read_min_max(min_max_t *minmax,
                   int        vect_size,

@@ -158,7 +158,7 @@ void update_covariance (covariance_t *covariance1,
  *
  *******************************************************************************/
 
-void write_covariance(covariance_t *covars,
+void save_covariance(covariance_t *covars,
                       int           vect_size,
                       int           nb_time_steps,
                       FILE*         f)
@@ -167,8 +167,8 @@ void write_covariance(covariance_t *covars,
     for (i=0; i<nb_time_steps; i++)
     {
         fwrite(covars[i].covariance, sizeof(double), vect_size, f);
-        write_mean (&covars[i].mean1, vect_size, 1, f);
-        write_mean (&covars[i].mean2, vect_size, 1, f);
+        save_mean (&covars[i].mean1, vect_size, 1, f);
+        save_mean (&covars[i].mean2, vect_size, 1, f);
         fwrite(&covars[i].increment, sizeof(int), 1, f);
     }
 }

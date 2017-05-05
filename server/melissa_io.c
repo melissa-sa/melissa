@@ -139,23 +139,23 @@ void save_stats (melissa_data_t *data,
             fwrite(&data[i].vect_size, sizeof(int), 1, f);
             if (data[i].options->mean_op != 0 && data[i].options->variance_op == 0)
             {
-                write_mean(data[i].means, data[i].vect_size, data[i].options->nb_time_steps, f);
+                save_mean(data[i].means, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
             if (data[i].options->variance_op != 0)
             {
-                write_variance(data[i].variances, data[i].vect_size, data[i].options->nb_time_steps, f);
+                save_variance(data[i].variances, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
             if (data[i].options->min_and_max_op != 0)
             {
-                write_min_max(data[i].min_max, data[i].vect_size, data[i].options->nb_time_steps, f);
+                save_min_max(data[i].min_max, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
             if (data[i].options->threshold_op != 0)
             {
-                write_threshold(data[i].thresholds, data[i].vect_size, data[i].options->nb_time_steps, f);
+                save_threshold(data[i].thresholds, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
             if (data[i].options->sobol_op != 0)
             {
-                write_sobol_martinez(data[i].sobol_indices, data->vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
+                data->save_sobol(data[i].sobol_indices, data->vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
             fwrite(data[i].step_simu, sizeof(int), data[i].options->sampling_size, f);
             fclose(f);
