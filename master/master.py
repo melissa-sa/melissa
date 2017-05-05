@@ -498,66 +498,6 @@ def launch_study():
     fichier.write(output)
     fichier.close()
 
-
-
-    #while True:
-    ##    time.sleep(300)
-    #    server_state = check_job(batch_scheduler, username, melissa_job_id)
-    #    for i in range(len(simu_job_id)):
-    #        if job_states[i] < 3 and job_states[i] > 0:
-    #            state = check_job(batch_scheduler, username, simu_job_id[i])
-    #            if ("running" == state):
-    #                job_states[i] = 2 # running
-    #            if ("terminated" == state):
-    #                job_states[i] = 3 # terminated
-    #while True:
-    #    socks = dict(poller.poll(1000))
-    #    if (pull_melissa_socket in socks.keys() and socks[pull_melissa_socket] == zmq.POLLIN):
-    #        message = pull_melissa_socket.recv_string().split()
-    #        if (message[0] == "timeout"):
-    #            for simu in message[1:]:
-    #                reboot_job(int(simu), simu_job_id, job_states)
-    #        if (message[0] == "simu_state"):
-    #            simu_id = int(message[1])
-    #            simu_state = int(message[2])
-    #            simu_states[simu_id] = simu_state
-    #            if (simu_state != job_states[simu_id]):
-    #                if (simu_state == 1 && job_states[simu_id] == 3):
-    #                    reboot_simu(simu_id, simu_job_id))
-
-    #    converged_sobol = np.zeros(nb_proc_server,int)
-    #    iterations_server = np.zeros(nb_proc_server,int)
-    #    finished_server = np.zeros(nb_proc_server,int)
-    #    context = zmq.Context()
-    #    pull_melissa_socket = context.socket(zmq.REP)
-    #    pull_melissa_socket.bind("tcp://*:5555")
-    #    poller = zmq.Poller()
-    #    poller.register(pull_melissa_socket, zmq.POLLIN)
-    #    snd_message = "continue"
-    #    while True:
-    #        socks = dict(poller.poll(1000))
-    #        if (pull_melissa_socket in socks.keys() and socks[pull_melissa_socket] == zmq.POLLIN):
-    #            message = dict([pull_melissa_socket.recv_string().split()])
-    #            if (converged in message):
-    #                pull_melissa_socket.send_string(snd_message)
-    #                converged_sobol[int(message[converged])] = 1
-    #            elif (finished in message):
-    #                pull_melissa_socket.send_string(snd_message)
-    #                finished_server[int(message[finished])] = 1
-    #                if (not 0 in finished_server):
-    #                    break
-    #            elif (iteration in message):
-    #                pull_melissa_socket.send_string(snd_message)
-    #                iteration_server[int(message[iteration])] += 1
-    #        if (not 0 in converged_sobol):
-    #            print "Cancel pending simulation jobs..."
-    #            os.system("oardel "+re.sub('\n',' ',call_bash("oarstat -u --sql \"state = 'Waiting'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'")))
-    #            running_jobs = call_bash("oarstat -u --sql \"state = 'Running'\" | grep 'Saturne' | grep -o '^[[:digit:]]\+'").split("\n")
-    #            if (range(running_jobs) == 0):
-    #                snd_message = "continue"
-    #            else:
-    #                snd_message = "stop"
-
 #==================================#
 #               main               #
 #==================================#

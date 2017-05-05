@@ -10,9 +10,11 @@ import imp
 
 cwd = os.getcwd()
 if len(sys.argv) == 2:
-    master_module = sys.argv[1]
+    master_path = sys.argv[1]
+    master_module = master_path+"./master.py"
 else:
-    if not os.path.isfile("./master.py"):
+    master_path = "./"
+    if not os.path.isfile(master_path+"master.py"):
         print "ERROR no master file given"
         master_module = ""
     else:
@@ -185,7 +187,7 @@ class melissa_gui(QWidget):
 
 
     def launch_heatc(self):
-        os.chdir("../examples/heat_example")
+#        os.chdir("../examples/heat_example")
         self.set_operations_string()
         self.set_parameters()
         launch_heatc(self.nb_parameters,
@@ -432,7 +434,8 @@ if __name__ == '__main__':
     if master_module == "":
         gui = error_dialog()
     else:
-        imp.load_source("master", master_module)
+        os.chdir (master_path)
+        imp.load_source("master", "./master.py")
         from master import *
         gui = melissa_gui()
         gui.show()
