@@ -6,27 +6,43 @@ from PyQt4.QtGui import *
 from copy import deepcopy
 import os, sys, signal
 import getpass
-cwd = os.getcwd()
-sys.path.append(cwd+"/../examples/heat_example")
-from master import *
+import imp
 
+cwd = os.getcwd()
+if len(sys.argv) == 2:
+    master_module = sys.argv[1]
+else:
+    if not os.path.isfile("./master.py"):
+        print "ERROR no master file given"
+        master_module = ""
+    else:
+        master_module = "./master.py"
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-class load_dialog(QDialog):
-    def __init__(self, parent = None):
-        QWidget.__init__(self, parent)
-        self.vbox = QVBoxLayout()
-        self.QLineEdit_name = QLineEdit(cwd+"/../examples/heat_example")
-        self.vbox.addWidget(self.QLineEdit_name)
-        self.hbox_button = QHBoxLayout()
-        self.QPushButton_load = QPushButton("Load",self)
-        self.QPushButton_cancel = QPushButton("Cancel",self)
-        self.hbox_button.addWidget(self.QPushButton_load)
-        self.hbox_button.addWidget(self.QPushButton_cancel)
-        self.connect(self.QPushButton_load,  SIGNAL("clicked()"), self.close)
-        self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), self.close)
-        self.vbox.addItem(self.hbox_button)
-        self.setLayout(self.vbox)
+#class load_dialog(QDialog):
+#    def __init__(self, parent = None):
+#        QWidget.__init__(self, parent)
+#        self.vbox = QVBoxLayout()
+#        self.QLineEdit_path = QLineEdit(cwd+"/../examples/heat_example")
+#        self.vbox.addWidget(self.QLineEdit_path)
+#        self.hbox_button = QHBoxLayout()
+#        self.QPushButton_load = QPushButton("Load",self)
+#        self.QPushButton_cancel = QPushButton("Cancel",self)
+#        self.hbox_button.addWidget(self.QPushButton_load)
+#        self.hbox_button.addWidget(self.QPushButton_cancel)
+#        self.connect(self.QPushButton_load,  SIGNAL("clicked()"), self.load_master)
+#        self.connect(self.QPushButton_load,  SIGNAL("clicked()"), self.close)
+#        self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), self.close)
+##        self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), parent.close)
+#        self.vbox.addItem(self.hbox_button)
+#        self.setLayout(self.vbox)
+
+#    def load_master (self):
+##        sys.path.append(cwd+"/../examples/heat_example")
+#        master_module = os.getcwd()+"/../examples/heat_example/master.py"
+#        imp.load_source("master", master_module)
+#        from master import *
+
 
 class melissa_gui(QWidget):
     def __init__(self, parent = None):
@@ -34,9 +50,9 @@ class melissa_gui(QWidget):
 
         self.fbox = QFormLayout()
 
-        self.plop = load_dialog(parent = self)
-        self.plop.setModal(True)
-        self.plop.exec_()
+#        self.plop = load_dialog(parent = self)
+#        self.plop.setModal(True)
+#        self.plop.exec_()
 
         self.username       = getpass.getuser()
         self.nb_parameters  = nb_parameters
@@ -159,6 +175,7 @@ class melissa_gui(QWidget):
         self.hbox_button.addWidget(self.QPushButton_save)
         self.hbox_button.addWidget(self.QPushButton_cancel)
         self.connect(self.QPushButton_ok,  SIGNAL("clicked()"), self.launch_heatc)
+        self.connect(self.QPushButton_save,  SIGNAL("clicked()"), self.save)
         self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), self.close)
         self.fbox.addItem(self.hbox_button)
 
@@ -272,6 +289,13 @@ class melissa_gui(QWidget):
 
     def print_plop(self, item):
         print "plop "+str(item.text())+" "+str(self.QListWidget_param.currentRow())
+
+    def save (self):
+        file = open (master_module, "w")
+
+        file.close()
+        print "data saved"
+
 
 class melissa_param_dialog(QDialog):
     def __init__(self, parent = None, status = "Add", item = None):
@@ -391,8 +415,25 @@ class melissa_parameter:
         self.range_max = range_max
 
 
+class error_dialog(QMessageBox):
+    def __init__(self, parent = None):
+        QMessageBox.__init__(self, parent)
+        self.setIcon(QMessageBox.Critical)
+        self.vbox = QVBoxLayout()
+        self.setText("ERROR: Missing Melissa Master file")
+        self.setStandardButtons(QMessageBox.Ok)
+        self.buttonClicked.connect(self.close)
+        self.setDetailedText("Usage :\neither run melissa_gui.py in a directory containing a master.py file\nor give \"path/to/melissa_master/master.py\" as an argument to ./melissa_gui.")
+        self.show()
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    gui = melissa_gui()
-    gui.show()
+    if master_module == "":
+        gui = error_dialog()
+    else:
+        imp.load_source("master", master_module)
+        from master import *
+        gui = melissa_gui()
+        gui.show()
     sys.exit(app.exec_())
