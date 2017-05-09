@@ -12,6 +12,7 @@ cwd = os.getcwd()
 if len(sys.argv) == 2:
     master_path = sys.argv[1]
     master_module = master_path+"./master.py"
+    options_module = master_path+"./options.py"
 else:
     master_path = "./"
     if not os.path.isfile(master_path+"master.py"):
@@ -19,6 +20,7 @@ else:
         master_module = ""
     else:
         master_module = "./master.py"
+        options_module = "./options.py"
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 #class load_dialog(QDialog):
@@ -59,7 +61,7 @@ class melissa_gui(QWidget):
         self.username       = getpass.getuser()
         self.nb_parameters  = nb_parameters
 #        self.nb_parameters  = 0
-        self.sampling_size      = sampling_size
+        self.sampling_size  = sampling_size
         self.nb_time_steps  = nb_time_steps
         self.operations     = operations
         self.threshold      = threshold
@@ -167,12 +169,14 @@ class melissa_gui(QWidget):
         self.QDoubleSpinBox_threshold = QDoubleSpinBox()
         self.QDoubleSpinBox_threshold.setRange(-60000,60000)
         self.fbox.addRow(self.label_threshold,self.QDoubleSpinBox_threshold)
+        self.QDoubleSpinBox_threshold.setValue(self.threshold)
+        self.connect(self.QDoubleSpinBox_threshold,  SIGNAL("editingFinished()"), self.modif_threshold)
 
         # buttons #
         self.hbox_button = QHBoxLayout()
-        self.QPushButton_ok = QPushButton("OK")
+        self.QPushButton_ok = QPushButton("Start")
         self.QPushButton_save = QPushButton("Save")
-        self.QPushButton_cancel = QPushButton("Cancel")
+        self.QPushButton_cancel = QPushButton("Close")
         self.hbox_button.addWidget(self.QPushButton_ok)
         self.hbox_button.addWidget(self.QPushButton_save)
         self.hbox_button.addWidget(self.QPushButton_cancel)
@@ -289,14 +293,34 @@ class melissa_gui(QWidget):
             print "Can not remove the last parameter"
         self.check_nb_param()
 
+    def modif_threshold(self):
+        self.threshold=float(self.QDoubleSpinBox_threshold.value())
+
     def print_plop(self, item):
         print "plop "+str(item.text())+" "+str(self.QListWidget_param.currentRow())
 
     def save (self):
-        file = open (master_module, "w")
-
+        os.getcwd()
+        file = open ("./options.py", "r")
+        contenu = ""
+        for ligne in file:
+            if "nb_parameters = " in ligne:
+                contenu += "nb_parameters = "+str(self.nb_parameters)+"\n"
+            elif "sampling_size = " in ligne:
+                contenu += "sampling_size = "+str(self.sampling_size)+"\n"
+            elif "operations = " in ligne:
+                self.set_operations_string()
+                contenu += "operations = "+str(self.operations)+"\n"
+            elif "threshold = " in ligne:
+                contenu += "threshold = "+str(self.threshold)+"\n"
+            else:
+                contenu += ligne
         file.close()
-        print "data saved"
+        file = open ("./options.py", "w")
+        file.write(contenu)
+        file.close()
+
+        print "Study saved"
 
 
 class melissa_param_dialog(QDialog):
@@ -425,8 +449,7 @@ class error_dialog(QMessageBox):
         self.setText("ERROR: Missing Melissa Master file")
         self.setStandardButtons(QMessageBox.Ok)
         self.buttonClicked.connect(self.close)
-        self.setDetailedText("Usage :\neither run melissa_gui.py in a directory containing a master.py file\nor give \"path/to/melissa_master/master.py\" as an argument to ./melissa_gui.")
-        self.show()
+        self.setDetailedText("Usage :\neither run melissa_gui.py in a directory containing a master.py file\nor give \"path/to/melissa_master/directory\" as an argument to melissa_gui.py.")
 
 
 if __name__ == '__main__':
@@ -436,7 +459,9 @@ if __name__ == '__main__':
     else:
         os.chdir (master_path)
         imp.load_source("master", "./master.py")
+        imp.load_source("options", "./options.py")
+        from options import *
         from master import *
         gui = melissa_gui()
-        gui.show()
+    gui.show()
     sys.exit(app.exec_())

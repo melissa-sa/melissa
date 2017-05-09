@@ -3,6 +3,7 @@ configure_file(data.txt data.txt COPYONLY)
 configure_file(run_heat_f.sh run_heat_f.sh COPYONLY)
 configure_file(run_heat_c.sh run_heat_c.sh COPYONLY)
 configure_file(run_heat_c_sobol.sh run_heat_c_sobol.sh COPYONLY)
+configure_file(options.py options.py COPYONLY)
 configure_file(master.py master.py COPYONLY)
 configure_file(crash_server.py crash_server.py COPYONLY)
 
