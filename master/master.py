@@ -5,7 +5,6 @@ import subprocess
 import numpy as np
 import numpy.random as rd
 import re
-import zmq
 import socket
 from fault_tolerance import *
 from matrix_sobol import *
@@ -13,9 +12,7 @@ from call_bash import *
 from batch_scripts import *
 from options import *
 from threading import Thread, RLock
-from ctypes import byref, cdll, c_int
-
-get_message = cdll.LoadLibrary('./libget_message.so')
+from ctypes import cdll, create_string_buffer
 
 #=====================================#
 #               options               #
@@ -35,6 +32,8 @@ output         = ""
 #=====================================#
 #               Threads               #
 #=====================================#
+
+get_message = cdll.LoadLibrary(global_options.server_path+'../master/libget_message.so')
 
 lock_job_state = RLock()
 lock_simu_state = RLock()
@@ -124,7 +123,7 @@ def create_case (Ai, sobol_rank, sobol_group, workdir, xml_file_name):
     else:
         parameters = "0:"+str(sobol_group)
         casedir = workdir+"/group"+str(sobol_group)+"/rank0"
-    os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
+#    os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
     if (sobol_rank > 0):
         os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
     else:
@@ -424,7 +423,7 @@ def launch_study():
                             time.sleep(30)
                         time.sleep(5)
                     if (global_options.batch_scheduler == "OAR"):
-                        while ("Melissa" in call_bash("oarstat -u --sql \"state = 'Pending'\"")['out']):
+                        while ("Melissa" in call_bash("oarstat -u --sql \"state = 'Waiting'\"")['out']):
                             time.sleep(30)
                         time.sleep(5)
                     for i in range(len(simu_job_id)):

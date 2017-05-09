@@ -29,7 +29,7 @@ def to_seconds(date):
 def check_job(batch_scheduler, username, job_id):
     state = "pending"
     if (batch_scheduler == "OAR"):
-        if (not job_id in call_bash("oarstat -u --sql \"state = 'Pending'\"")['out']):
+        if (not job_id in call_bash("oarstat -u --sql \"state = 'Waiting'\"")['out']):
             state = "running"
             if (not job_id in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
                 state = "terminated"
