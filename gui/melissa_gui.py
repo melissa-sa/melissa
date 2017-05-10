@@ -12,16 +12,9 @@ import time
 cwd = os.getcwd()
 if len(sys.argv) == 2:
     master_path = sys.argv[1]
-    master_module = master_path+"./master.py"
-    options_module = master_path+"./options.py"
 else:
     master_path = "./"
-    if not os.path.isfile(master_path+"master.py"):
-        print "ERROR no master file given"
-        master_module = ""
-    else:
-        master_module = "./master.py"
-        options_module = "./options.py"
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 #class load_dialog(QDialog):
@@ -71,8 +64,11 @@ class melissa_gui(QWidget):
         self.nb_proc_server = nb_proc_server
         self.server_path    = server_path
 #        self.server_path    = "../server"
-        self.range_min      = []
-        self.range_max      = []
+        self.range_min = []
+        self.range_max = []
+#        for i in range(nb_parameters)
+#            self.range_min.append = range_min[i]
+#            self.range_max.append = range_max[i]
 #        self.range_min      = range_min
 #        self.range_max      = range_max
         self.coupling       = coupling
@@ -95,6 +91,7 @@ class melissa_gui(QWidget):
                 self.threshold_op = True
             if ("sobol" in operations):
                 self.sobol_op = True
+        self.modified = False
 
         # Username #
         self.label_username = QLabel("User Name")
@@ -103,6 +100,7 @@ class melissa_gui(QWidget):
         self.QLineEdit_username.editingFinished.connect(self.change_username)
         self.fbox.addRow(self.label_username,self.QLineEdit_username)
 
+        print self.modified
         # batch scheduller #
         self.label_sched = QLabel("Batch Scheduller")
         self.QComboBo_sched = QComboBox()
@@ -113,8 +111,8 @@ class melissa_gui(QWidget):
         self.dialog = None
         self.label_param = QLabel("Parameters")
         self.new_param_name = "NewParam"
-        self.new_param_range_min = 0.0
-        self.new_param_range_max = 1.0
+        self.new_param_range_min = 0
+        self.new_param_range_max = 1
         self.item_list = []
         self.parameter_list = []
         self.QListWidget_param = QListWidget()
@@ -122,7 +120,7 @@ class melissa_gui(QWidget):
         self.QListWidget_param.itemDoubleClicked.connect(self.show_modif_param_dialog)
         if nb_parameters > 0:
             for i in range(nb_parameters):
-                self.add_parameter()
+                self.add_parameter(range_min[i], range_max[i])
         else:
             self.add_parameter()
         self.fbox.addRow(self.label_param,self.QListWidget_param)
@@ -191,14 +189,22 @@ class melissa_gui(QWidget):
         self.setWindowTitle("Melissa Gui")
 
     def close_gui(self):
-        close_dial = QMessageBox()
-        close_dial.setIcon(QMessageBox.Question)
-        close_dial.setText("Save unsaved changes ?")
-        close_dial.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
-        retval = close_dial.exec_()
-        print "value of pressed message box button:", retval
-        close_dial.close()
-        self.close()
+        if self.modified == True:
+            close_dial = QMessageBox()
+            close_dial.setIcon(QMessageBox.Question)
+            close_dial.setText("\nSave unsaved changes ?\n")
+            close_dial.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+            retval = close_dial.exec_()
+            if retval == close_dial.Yes:
+                self.save()
+                self.close()
+            elif retval == close_dial.No:
+                self.close()
+            else:
+                close_dial.close()
+        else:
+            self.close()
+
 
     def launch_heatc(self):
         self.setDisabled(True)
@@ -233,7 +239,6 @@ class melissa_gui(QWidget):
             self.operations.append("threshold")
         if self.sobol_op == True:
             self.operations.append("sobol")
-        print self.operations
 
     def set_parameters(self):
         for i in range(self.nb_parameters):
@@ -242,10 +247,13 @@ class melissa_gui(QWidget):
 
 
     def change_username(self):
-        self.username = self.QLineEdit_username.text()
+        if self.username != self.QLineEdit_username.text():
+            self.username = self.QLineEdit_username.text()
+            self.modified = True
 
     def change_sampling_size(self):
         self.sampling_size = self.QSpinBox_sampling_size.value()
+        self.modified = True
 
     def change_operations(self):
         self.mean_op = self.QCheckBox_mean.isChecked()
@@ -256,6 +264,7 @@ class melissa_gui(QWidget):
         if operations == []:
             self.mean_op = True
             self.variance_op = True
+        self.modified = True
 
     def check_nb_param(self):
         if self.nb_parameters < 2:
@@ -281,57 +290,58 @@ class melissa_gui(QWidget):
          self.dialog.setModal(True)
          self.dialog.show()
 
-    def add_parameter(self):
+    def add_parameter(self, range_min = 0, range_max = 1):
         if len(self.parameter_list)<nb_parameters:
-            self.parameter_list.append(melissa_parameter())
+            self.parameter_list.append(melissa_parameter(range_min = range_min, range_max = range_max))
         if len(self.parameter_list)<1:
             self.parameter_list.append(melissa_parameter())
             self.nb_parameters = 1
+            self.modified = True
         self.QListWidget_param.addItem(self.parameter_list[-1].name+"  ["+str(self.parameter_list[-1].range_min)+" : "+str(self.parameter_list[-1].range_max)+"]")
         self.QListWidget_param.setCurrentRow(self.nb_parameters-1)
-        self.check_nb_param()
-
-        print self.parameter_list[-1].name
         self.check_nb_param()
 
     def remove_parameter(self):
         if len(self.parameter_list)>1:
             row = self.QListWidget_param.currentRow()
-            print "Parameter "+str(row+1)+" deleted"
             self.nb_parameters -= 1
             self.QListWidget_param.takeItem(row)
             del self.parameter_list[row]
         else:
             print "Can not remove the last parameter"
         self.check_nb_param()
+        self.modified = True
 
     def modif_threshold(self):
         self.threshold=float(self.QDoubleSpinBox_threshold.value())
-
-    def print_plop(self, item):
-        print "plop "+str(item.text())+" "+str(self.QListWidget_param.currentRow())
+        self.modified = True
 
     def save (self):
         os.getcwd()
         file = open ("./options.py", "r")
         contenu = ""
         for ligne in file:
-            if "nb_parameters = " in ligne:
+            if "nb_parameters =" in ligne or "nb_parameters=" in ligne:
                 contenu += "nb_parameters = "+str(self.nb_parameters)+"\n"
-            elif "sampling_size = " in ligne:
+                contenu += "range_min = np.zeros(nb_parameters,float)\n"
+                contenu += "range_max = np.zeros(nb_parameters,float)\n"
+                for i in range (self.nb_parameters):
+                    contenu += "range_min["+str(i)+"] = "+str(self.parameter_list[i].range_min)+"\n"
+                    contenu += "range_max["+str(i)+"] = "+str(self.parameter_list[i].range_max)+"\n"
+            elif "sampling_size =" in ligne or "sampling_size=" in ligne:
                 contenu += "sampling_size = "+str(self.sampling_size)+"\n"
-            elif "operations = " in ligne:
+            elif "operations =" in ligne or "operations=" in ligne:
                 self.set_operations_string()
                 contenu += "operations = "+str(self.operations)+"\n"
-            elif "threshold = " in ligne:
+            elif "threshold =" in ligne or "threshold=" in ligne:
                 contenu += "threshold = "+str(self.threshold)+"\n"
-            else:
+            elif not ("range_min" in ligne or "range_max" in ligne):
                 contenu += ligne
         file.close()
         file = open ("./options.py", "w")
         file.write(contenu)
         file.close()
-
+        self.modified = False
         print "Study saved"
 
 class melissa_param_dialog(QDialog):
@@ -418,13 +428,16 @@ class melissa_param_dialog(QDialog):
 
     def change_range_min(self):
         self.new_parameter.range_min=float(self.QDoubleSpinBox_param_min.value())
+        parent.modified = True
 
     def change_range_max(self):
         self.new_parameter.range_max=float(self.QDoubleSpinBox_param_max.value())
+        parent.modified = True
 
     def add_parameter(self):
         self.parent.nb_parameters += 1
         self.parent.parameter_list.append(deepcopy(self.new_parameter))
+        parent.modified = True
 
     def edit_parameter(self):
         row = self.parent.QListWidget_param.row(self.item)
@@ -433,6 +446,7 @@ class melissa_param_dialog(QDialog):
         self.parent.QListWidget_param.takeItem(row)
         self.parent.QListWidget_param.insertItem(row, self.parent.parameter_list[row].name+"  ["+str(self.parent.parameter_list[row].range_min)+" : "+str(self.parent.parameter_list[row].range_max)+"]")
         self.parent.QListWidget_param.setCurrentRow(row)
+        parent.modified = True
 
     def change_min_of_max(self):
         if self.QDoubleSpinBox_param_max.value() < self.QDoubleSpinBox_param_min.value():
@@ -457,7 +471,7 @@ class error_dialog(QMessageBox):
         QMessageBox.__init__(self, parent)
         self.setIcon(QMessageBox.Critical)
         self.vbox = QVBoxLayout()
-        self.setText("ERROR: Missing Melissa Master file")
+        self.setText("\nERROR: Missing Melissa Master file\n")
         self.setStandardButtons(QMessageBox.Ok)
         self.buttonClicked.connect(self.close)
         self.setDetailedText("Usage :\neither run melissa_gui.py in a directory containing a master.py file\nor give \"path/to/melissa_master/directory\" as an argument to melissa_gui.py.")
@@ -465,7 +479,8 @@ class error_dialog(QMessageBox):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    if master_module == "":
+    if not os.path.isfile(master_path+"/master.py"):
+        print "ERROR no master file given"
         gui = error_dialog()
     else:
         os.chdir (master_path)
@@ -475,4 +490,7 @@ if __name__ == '__main__':
         from master import *
         gui = melissa_gui()
     gui.show()
+    resolution = QDesktopWidget().screenGeometry(QDesktopWidget().screenNumber(gui))
+    gui.move(resolution.x() + (resolution.width() / 2) - (gui.frameSize().width() / 2),
+            (resolution.y() + resolution.height() / 2) - (gui.frameSize().height() / 2))
     sys.exit(app.exec_())
