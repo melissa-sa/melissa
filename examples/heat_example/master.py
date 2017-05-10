@@ -2,12 +2,17 @@
 import os
 import time
 import sys
+import signal
 import numpy as np
 import numpy.random as rd
 import socket
+import imp
 from threading import Thread, RLock
 from ctypes import cdll, create_string_buffer
+imp.load_source("options", "./options.py")
 from options import *
+get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 # ------------- thread ------------- #
 
@@ -160,8 +165,6 @@ def launch_heatc(nb_parameters,
     os.system("killall heatc")
     print "end !"
     return 0
-
-get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
 
 # ------------- main ------------- #
 

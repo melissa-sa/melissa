@@ -1,32 +1,31 @@
+
 import os
 import time
 import sys
+import signal
 import numpy as np
 import numpy.random as rd
-import zmq
 import socket
+import imp
 from threading import Thread, RLock
+from ctypes import cdll, create_string_buffer
+imp.load_source("options", "./options.py")
+from options import *
+get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 # ------------- thread ------------- #
-
-context = zmq.Context()
-rep_socket = context.socket(zmq.PULL)
-rep_socket.bind("tcp://*:5555")
-poller = zmq.Poller()
 
 class message_reciever(Thread):
     def __init__(self):
         Thread.__init__(self)
     def run(self):
-        global poller
         while True:
-            socks = dict(poller.poll(1000))
-            if (rep_socket in socks.keys() and socks[rep_socket] == zmq.POLLIN):
-                message = rep_socket.recv_string()
-                print "message: "+message
-                if message == "stop":
-                    return 0
-
+            message = create_string_buffer('\000' * 256)
+            get_message.wait_message(message)
+            print "message: "+message.value
+            if message.value == "stop":
+                return 0
 
 # ------------- functions ------------- #
 
@@ -100,10 +99,7 @@ def launch_heatc(nb_parameters,
                  server_path,
                  range_min,
                  range_max,
-                 coupling,
-                 pyzmq):
-
-    poller.register(rep_socket, zmq.POLLIN)
+                 coupling):
 
     if (("sobol" in operations) or ("sobol_indices" in operations)):
         nb_simu = nb_groups * (nb_parameters + 2)
@@ -137,6 +133,7 @@ def launch_heatc(nb_parameters,
     #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
     #launch_melissa("valgrind --leak-check=full mpirun -n 1 ./server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
 
+    get_message.init_message()
     thread = message_reciever()
     thread.start()
 
@@ -204,39 +201,18 @@ def launch_heatc(nb_parameters,
                 rep_socket.send_string(snd_message)
                 if (not 0 in finished_server):
                     break
+
 #       kill all simulations here
     thread.join()
+    get_message.close_message()
     os.system("killall heatc")
     return 0
-
-# ------------- options ------------- #
-
-nb_parameters = 2
-sampling_size = 6
-nb_time_steps = 100
-#operations = ["mean","variance","min","max","threshold","sobol"]
-operations = ["mean","variance","min","max","threshold"]
-threshold = 0.7
-mpi_options = ""
-nb_proc_simu = 2
-nb_proc_server = 3
-server_path = "../../server"
-range_min = np.zeros(nb_parameters)
-range_max = np.zeros(nb_parameters)
-range_min[0] = 0
-range_max[0] = 1
-range_min[1] = 2
-range_max[1] = 3
-coupling = 1
-pyzmq = 0
-
 
 # ------------- main ------------- #
 
 if __name__ == '__main__':
-    nb_groups = sampling_size
     launch_heatc(nb_parameters,
-    nb_groups,
+    sampling_size,
     nb_time_steps,
     operations,
     threshold,
@@ -246,6 +222,5 @@ if __name__ == '__main__':
     server_path,
     range_min,
     range_max,
-    coupling,
-    pyzmq)
+    coupling)
 

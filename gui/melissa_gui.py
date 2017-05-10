@@ -7,6 +7,7 @@ from copy import deepcopy
 import os, sys, signal
 import getpass
 import imp
+import time
 
 cwd = os.getcwd()
 if len(sys.argv) == 2:
@@ -182,16 +183,26 @@ class melissa_gui(QWidget):
         self.hbox_button.addWidget(self.QPushButton_cancel)
         self.connect(self.QPushButton_ok,  SIGNAL("clicked()"), self.launch_heatc)
         self.connect(self.QPushButton_save,  SIGNAL("clicked()"), self.save)
-        self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), self.close)
+        self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), self.close_gui)
         self.fbox.addItem(self.hbox_button)
 
         # layout #
         self.setLayout(self.fbox)
         self.setWindowTitle("Melissa Gui")
 
+    def close_gui(self):
+        close_dial = QMessageBox()
+        close_dial.setIcon(QMessageBox.Question)
+        close_dial.setText("Save unsaved changes ?")
+        close_dial.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+        retval = close_dial.exec_()
+        print "value of pressed message box button:", retval
+        close_dial.close()
+        self.close()
 
     def launch_heatc(self):
-#        os.chdir("../examples/heat_example")
+        self.setDisabled(True)
+        QApplication.processEvents()
         self.set_operations_string()
         self.set_parameters()
         launch_heatc(self.nb_parameters,
@@ -206,7 +217,8 @@ class melissa_gui(QWidget):
                      self.range_min,
                      self.range_max,
                      self.coupling)
-        os.chdir(cwd)
+        self.setEnabled(True)
+        QApplication.processEvents()
 
     def set_operations_string(self):
         self.operations = []
@@ -321,7 +333,6 @@ class melissa_gui(QWidget):
         file.close()
 
         print "Study saved"
-
 
 class melissa_param_dialog(QDialog):
     def __init__(self, parent = None, status = "Add", item = None):
