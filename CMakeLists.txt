@@ -209,6 +209,8 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
 
 add_subdirectory(api)
 
+add_subdirectory(tests)
+
 option(BUILD_EXAMPLES "Build examples" ON)
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)

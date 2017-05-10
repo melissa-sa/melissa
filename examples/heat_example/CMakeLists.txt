@@ -16,4 +16,4 @@ target_link_libraries(heatc ${EXAMPLES_LIBS} melissa_api heat_utils)
 
 add_test(TestHeatc python master.py)
 
-add_test(TestCrashServer python crash_server.py)
+#add_test(TestCrashServer python crash_server.py)
