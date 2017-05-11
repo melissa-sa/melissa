@@ -107,15 +107,11 @@ int main (int argc, char **argv)
     int         i, j;
     int         n = 5; // n expériences
     int         vect_size = 5; // size points de l'espace
-    int         comm_size, rank;
+    int         rank = 0;
 
-#ifndef BUILD_WITH_MPI
+#ifdef BUILD_WITH_MPI
 
-    rank = 0;
-    comm_size = 1;
-
-#else // BUILD_WITH_MPI
-
+    int comm_size;
     MPI_Init (&argc, &argv);
     MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);

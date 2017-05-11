@@ -41,7 +41,6 @@ int main (int argc, char **argv)
     double              start_read_time = 0;
     double              end_read_time = 0;
     double              total_write_time = 0;
-    long int            total_bytes_recv = 0;
 #endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
@@ -143,11 +142,8 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI
     double temp1;
-    long int temp2;
     MPI_Reduce (&total_read_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     total_read_time = temp1 / comm_data.comm_size;
-    MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    total_bytes_recv = temp2;
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {

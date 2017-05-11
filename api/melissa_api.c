@@ -28,7 +28,7 @@
 #endif
 
 #ifdef BUILD_WITH_MPI
-#define COUPLING
+//#define COUPLING
 #else // BUILD_WITH_MPI
 typedef int MPI_Comm;
 #endif // BUILD_WITH_MPI
@@ -72,7 +72,7 @@ struct zmq_data_s
     int     *message_sizes;                     /**< size of the message i                                      */
     int      total_nb_messages;                 /**< total number of messages                                   */
     int      local_nb_messages;                 /**< local number of messages                                   */
-    MPI_Comm comm_sobol;                        /**< inter-groupes communicator                                 */
+    MPI_Comm comm_sobol;                        /**< inter-groups communicator                                  */
 };
 
 typedef struct zmq_data_s zmq_data_t; /**< type corresponding to zmq_data_s */
@@ -439,8 +439,8 @@ void melissa_init (const int *local_vect_size,
             {
                 MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
             }
-            else
 #else // BUILD_WITH_MPI
+            else
             {
                 memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
             }
@@ -670,8 +670,8 @@ void melissa_init_f (int       *local_vect_size,
  *******************************************************************************/
 
 void melissa_init_no_mpi (const int *vect_size,
-                              const int *sobol_rank,
-                              const int *sobol_group)
+                          const int *sobol_rank,
+                          const int *sobol_group)
 {
     int rank = 0;
     int comm_size = 1;
@@ -913,11 +913,11 @@ void melissa_send_no_mpi (const int  *time_step,
 {
     int rank = 0;
     melissa_send (time_step,
-                 field_name,
-                 send_vect,
-                 sobol_rank,
-                 sobol_group,
-                 &rank);
+                  field_name,
+                  send_vect,
+                  &rank,
+                  sobol_rank,
+                  sobol_group);
 }
 
 /**

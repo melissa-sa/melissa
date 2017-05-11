@@ -88,7 +88,7 @@ void compute_stats (melissa_data_t  *data,
     {
         if (nb_vect != data->options->nb_parameters + 2)
         {
-            fprintf (stderr, "ERROR: invalid vector nunber (compute_stats)\n");
+            fprintf (stderr, "ERROR: invalid vector number (compute_stats)\n");
             exit (1);
         }
         increment_sobol_martinez (&(data->sobol_indices[time_step]),

@@ -63,6 +63,8 @@ void update_global_mean_and_variance (variance_t *variance,
                                       const int   comm_size,
                                       MPI_Comm    comm);
 
+#endif // BUILD_WITH_MPI
+
 void save_variance(variance_t *vars,
                    int         vect_size,
                    int         nb_time_steps,
@@ -74,7 +76,5 @@ void read_variance(variance_t *vars,
                    FILE*       f);
 
 void free_variance (variance_t *variance);
-
-#endif // BUILD_WITH_MPI
 
 #endif // VARIANCE_H

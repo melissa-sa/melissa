@@ -43,14 +43,13 @@ int main (int argc, char **argv)
     char                file_name[256];
 #ifdef BUILD_WITH_PROBES
     double              start_time;
-    double              total_comm_time = 0;
+    double              total_read_time = 0;
     double              start_comm_time;
     double              end_comm_time;
     double              total_computation_time = 0;
     double              start_computation_time;
     double              end_computation_time;
     double              total_write_time = 0;
-    long int            total_bytes_recv = 0;
 #endif // BUILD_WITH_PROBES
 
 #ifdef BUILD_WITH_MPI
@@ -142,7 +141,7 @@ int main (int argc, char **argv)
                     read_ensight (&melissa_options, &comm_data, buffer, local_vect_sizes, file_name);
 #ifdef BUILD_WITH_PROBES
                     end_comm_time = melissa_get_time();
-                    total_comm_time += end_comm_time - start_comm_time;
+                    total_read_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
                     if (melissa_options.sobol_op == 1)
                     {
@@ -232,18 +231,15 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI
     double temp1;
-    long int temp2;
-    MPI_Reduce (&total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, comm_data.comm);
-    total_comm_time = temp1 / comm_data.comm_size;
-    MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, comm_data.comm);
-    total_bytes_recv = temp2;
+    MPI_Reduce (&total_read_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, comm_data.comm);
+    total_read_time = temp1 / comm_data.comm_size;
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
         fprintf (stdout, " --- Number of simulations:           %d\n", melissa_options.nb_simu);
         fprintf (stdout, " --- Number of simulation cores:      %d\n", comm_data.client_comm_size);
         fprintf (stdout, " --- Number of analysis cores:        %d\n", comm_data.comm_size);
-        fprintf (stdout, " --- Average reading time:            %g s\n", total_comm_time);
+        fprintf (stdout, " --- Average reading time:            %g s\n", total_read_time);
         fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);

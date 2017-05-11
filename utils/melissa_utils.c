@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
@@ -278,11 +279,11 @@ void melissa_connect (void *socket,
 
 double melissa_get_time ()
 {
-#ifdef BUILD_WITH_MPI
-    return (double)MPI_Wtime();
-#else // BUILD_WITH_MPI
+//#ifdef BUILD_WITH_MPI
+//    return (double)MPI_Wtime();
+//#else // BUILD_WITH_MPI
     return (double)time(NULL);
-#endif // BUILD_WITH_MPI
+//#endif // BUILD_WITH_MPI
 }
 
 /**
@@ -323,11 +324,11 @@ void melissa_get_node_name (char *node_name)
     }
     if (ok == 0)
     {
-#ifdef BUILD_WITH_MPI
-        int resultlen;
-        MPI_Get_processor_name(node_name, &resultlen);
-#else
+//#ifdef BUILD_WITH_MPI
+//        int resultlen;
+//        MPI_Get_processor_name(node_name, &resultlen);
+//#else
         gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
-#endif // BUILD_WITH_MPI
+//#endif // BUILD_WITH_MPI
     }
 }

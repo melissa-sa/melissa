@@ -95,12 +95,14 @@ int main( int argc, char **argv )
 
   MPI_Init(&argc, &argv);
 
-  temp = strtod(argv[1],NULL);
   if (argc > 1)
   {
-      temp += 2*strtod(argv[1],NULL);
+      temp = 2*strtod(argv[1],NULL);
   }
-  temp *= strtod(argv[2],NULL);
+  if (argc > 2)
+  {
+    temp *= strtod(argv[2],NULL);
+  }
   if (argc > 3)
   {
     sobol_rank  = (int)strtod(argv[argc-2],NULL);

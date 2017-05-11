@@ -542,7 +542,7 @@ void write_stats (melissa_data_t    **data,
 #else // BUILD_WITH_MPI
                     for (j=0; j<comm_data->rcounts[i]; j++)
                     {
-                        fprintf(f, "%g\n", (*data)[i].thresholds[t][j]);
+                        fprintf(f, "%d\n", (*data)[i].thresholds[t][j]);
                     }
 #endif // BUILD_WITH_MPI
                 }
@@ -656,7 +656,11 @@ void write_stats_ensight (melissa_data_t    **data,
                           int                *local_vect_sizes,
                           char               *field)
 {
-    long int    i, j, offset=0, temp_offset=0;
+#ifdef BUILD_WITH_MPI
+    long int    temp_offset=0;
+    MPI_Status  status;
+#endif // BUILD_WITH_MPI
+    long int    i, j, offset=0;
     int         t, param;
     FILE*       f;
     char        file_name[256];
@@ -664,9 +668,6 @@ void write_stats_ensight (melissa_data_t    **data,
     double      time_value = 0;
     float      *s_buffer;
     char        c_buffer[81], c_buffer2[81];
-#ifdef BUILD_WITH_MPI
-    MPI_Status  status;
-#endif // BUILD_WITH_MPI
     int32_t     n;
 //    double temp1, temp2;
 
@@ -1340,13 +1341,13 @@ void read_ensight (melissa_options_t  *options,
                    int              *local_vect_sizes,
                    char             *file_name)
 {
+#ifdef BUILD_WITH_MPI
     long int    i, j, offset=0;
+    MPI_Status  status;
+#endif // BUILD_WITH_MPI
     FILE*       f;
     float      *r_buffer;
     char        c_buffer[81];
-#ifdef BUILD_WITH_MPI
-    MPI_Status  status;
-#endif // BUILD_WITH_MPI
     int32_t     n;
 
     if (comm_data->rank == 0)
