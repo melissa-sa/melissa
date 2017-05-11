@@ -9,7 +9,8 @@ module melissa_api_fortran
                           rank,&
                           sobol_rank,&
                           sobol_group,&
-                          comm) bind(c, name = 'melissa_init_f')
+                          comm,&
+                          coupling) bind(c, name = 'melissa_init_f')
     import C_INT
     integer(kind=C_INT) :: local_vect_size
     integer(kind=C_INT) :: comm_size
@@ -17,6 +18,7 @@ module melissa_api_fortran
     integer(kind=C_INT) :: sobol_rank
     integer(kind=C_INT) :: sobol_group
     integer(kind=C_INT) :: comm
+    integer(kind=C_INT) :: coupling
   end subroutine melissa_init
 
   subroutine melissa_init_no_mpi(vect_size,&

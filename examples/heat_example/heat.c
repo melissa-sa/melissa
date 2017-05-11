@@ -90,6 +90,7 @@ int main( int argc, char **argv )
   int sobol_rank = 0;
   int sobol_group = 0;
   MPI_Comm comm;
+  int coupling = 1;
   int fcomm;
   char *field_name = "heat";
 
@@ -138,7 +139,7 @@ int main( int argc, char **argv )
   init(&u[0],&i1,&in,&dx,&dy,&nx,&lx,&ly,&temp);
   filling_A (&d,&dx,&dy,&dt,&nx,&ny,&a[0]); /* fill A */
 
-  melissa_init (&nb_op, &np, &me, &sobol_rank, &sobol_group, &comm);
+  melissa_init (&nb_op, &np, &me, &sobol_rank, &sobol_group, &comm, &coupling);
 
   for(n=1;n<=nmax;n++)
   {

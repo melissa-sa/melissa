@@ -50,7 +50,7 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
   parameters += str(sobol_rank) + " "
   parameters += str(sobol_group)
   print "./heatc_no_mpi "+parameters+" &"
-  return os.system("./heatc_no_mpi "+parameters+" &")
+  return os.system("./heatf_no_mpi "+parameters+" &")
 
 def launch_melissa (command_line):
   os.system("export OMP_NUM_THREADS=2")

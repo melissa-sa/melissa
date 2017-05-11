@@ -14,6 +14,7 @@ program heat
   real*8,dimension(3)::A
   character(len=32)::arg
   integer::comm
+  integer::coupling = 1
   character(len=6)::name
   integer::sobol_rank=0, sobol_group=0
 
@@ -62,7 +63,7 @@ program heat
 
   i = 1
   n = nx*ny
-  call melissa_init (nb_op, np, me, sobol_rank, sobol_group, comm)
+  call melissa_init (nb_op, np, me, sobol_rank, sobol_group, comm, coupling)
 
   do n=1,nmax
     t = t + dt

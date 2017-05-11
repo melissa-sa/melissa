@@ -52,6 +52,7 @@ int main(int argc, char **argv)
     double *out_vect;
     int     nb_parameters;
     int     nb_simu;
+    int     coupling = 0;
     int     vect_size, my_vect_size;
     int     comm_size, rank;
     const int sobol_tab[2] = {0,0};
@@ -89,7 +90,8 @@ int main(int argc, char **argv)
                   &rank,
                   &sobol_tab[0],
                   &sobol_tab[1],
-                  &comm);
+                  &comm,
+                  &coupling);
 #else // BUILD_WITH_MPI
     melissa_init_no_mpi (&my_vect_size,
                          &sobol_tab[0],

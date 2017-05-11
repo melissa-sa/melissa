@@ -27,9 +27,7 @@
 #define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
 
-#ifdef BUILD_WITH_MPI
-//#define COUPLING
-#else // BUILD_WITH_MPI
+#ifndef BUILD_WITH_MPI
 typedef int MPI_Comm;
 #endif // BUILD_WITH_MPI
 
@@ -72,6 +70,7 @@ struct zmq_data_s
     int     *message_sizes;                     /**< size of the message i                                      */
     int      total_nb_messages;                 /**< total number of messages                                   */
     int      local_nb_messages;                 /**< local number of messages                                   */
+    int      coupling;                          /**< coupled simulations or not                                 */
     MPI_Comm comm_sobol;                        /**< inter-groups communicator                                  */
 };
 
@@ -299,6 +298,9 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
  * @param[in] *comm
  * MPI communicator
  *
+ * @param[in] *coupling
+ * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
+ *
  *******************************************************************************/
 
 void melissa_init (const int *local_vect_size,
@@ -306,7 +308,8 @@ void melissa_init (const int *local_vect_size,
                    const int *rank,
                    const int *sobol_rank,
                    const int *sobol_group,
-                   MPI_Comm  *comm)
+                   MPI_Comm  *comm,
+                   const int *coupling)
 {
     char  *node_names = NULL;
     char   server_node_name[MPI_MAX_PROCESSOR_NAME];
@@ -315,17 +318,16 @@ void melissa_init (const int *local_vect_size,
     FILE*  file = NULL;
     int    global_vect_size = 0;
     int    linger = -1;
-#ifndef COUPLING
     char   master_node_name[MPI_MAX_PROCESSOR_NAME];
     char  *master_node_names = NULL;
     void  *master_requester = NULL;
-#endif // COUPLING
 
     zmq_data.context = zmq_ctx_new ();
     zmq_data.connexion_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
     zmq_data.init_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
     zmq_data.sobol_requester = NULL;
     zmq_data.sobol_rank = *sobol_rank;
+    zmq_data.coupling = *coupling;
     total_comm_time = 0;
     total_bytes_sent = 0;
 
@@ -422,82 +424,87 @@ void melissa_init (const int *local_vect_size,
     // sobol only part //
     if (zmq_data.sobol == 1)
     {
-        // split MPI_COMM_WORLD for coupled Code_Saturne simulations
-#ifdef COUPLING
-        MPI_Comm_split(MPI_COMM_WORLD, *rank, *sobol_rank, &zmq_data.comm_sobol);
-#else // COUPLING
-        // get Sobol master node name
-        if (*sobol_rank == 0)
+        // split MPI_COMM_WORLD for coupled simulations
+        if (zmq_data.coupling != 0)
         {
-            melissa_get_node_name (master_node_name);
-            if (*rank == 0)
-            {
-                master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
-            }
 #ifdef BUILD_WITH_MPI
-            if (*comm_size > 1)
-            {
-                MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
-            }
-#else // BUILD_WITH_MPI
-            else
-            {
-                memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
-            }
+            MPI_Comm_split(MPI_COMM_WORLD, *rank, *sobol_rank, &zmq_data.comm_sobol);
 #endif // BUILD_WITH_MPI
-        }
-
-        sprintf (port_name, "../../DATA/master_name.txt");
-        file = fopen(port_name, "r");
-
-        if (file == NULL)
-        {
-            sprintf (port_name, "master_name.txt");
-            file = fopen(port_name, "r");
-        }
-        if (file != NULL)
-        {
-            fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
-            fclose(file);
         }
         else
         {
-            strcpy (master_node_name, "localhost");
-            if (*sobol_rank == 0 && *rank == 0)
+            // get Sobol master node name
+            if (*sobol_rank == 0)
             {
-                fprintf(stdout,"WARNING: Group %d master name set to \"localhost\"\n", *sobol_group);
-            }
-        }
-        if (*sobol_rank == 0)
-        {
-            if (*rank == 0)
-            {
-                master_requester = zmq_socket (zmq_data.context, ZMQ_REP);
-                if (0 == strcmp(master_node_name, "localhost"))
+                melissa_get_node_name (master_node_name);
+                if (*rank == 0)
                 {
-                    sprintf (port_name, "tcp://*:%d", 3004+*sobol_group);
+                    master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
                 }
+#ifdef BUILD_WITH_MPI
+                if (*comm_size > 1)
+                {
+                    MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
+                }
+#else // BUILD_WITH_MPI
                 else
                 {
-                    sprintf (port_name, "tcp://*:3004");
+                    memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
                 }
-                melissa_bind (master_requester, port_name);
+#endif // BUILD_WITH_MPI
             }
-        }
-        else // if *sobol_rank != 0
-        {
-            master_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
-            if (0 == strcmp(master_node_name, "localhost"))
+
+            sprintf (port_name, "../../DATA/master_name.txt");
+            file = fopen(port_name, "r");
+
+            if (file == NULL)
             {
-                sprintf (port_name, "tcp://%s:%d", master_node_name, 3004+*sobol_group);
+                sprintf (port_name, "master_name.txt");
+                file = fopen(port_name, "r");
+            }
+            if (file != NULL)
+            {
+                fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
+                fclose(file);
             }
             else
             {
-                sprintf (port_name, "tcp://%s:3004", master_node_name);
+                strcpy (master_node_name, "localhost");
+                if (*sobol_rank == 0 && *rank == 0)
+                {
+                    fprintf(stdout,"WARNING: Group %d master name set to \"localhost\"\n", *sobol_group);
+                }
             }
-            melissa_connect (master_requester, port_name);
+            if (*sobol_rank == 0)
+            {
+                if (*rank == 0)
+                {
+                    master_requester = zmq_socket (zmq_data.context, ZMQ_REP);
+                    if (0 == strcmp(master_node_name, "localhost"))
+                    {
+                        sprintf (port_name, "tcp://*:%d", 3004+*sobol_group);
+                    }
+                    else
+                    {
+                        sprintf (port_name, "tcp://*:3004");
+                    }
+                    melissa_bind (master_requester, port_name);
+                }
+            }
+            else // if *sobol_rank != 0
+            {
+                master_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
+                if (0 == strcmp(master_node_name, "localhost"))
+                {
+                    sprintf (port_name, "tcp://%s:%d", master_node_name, 3004+*sobol_group);
+                }
+                else
+                {
+                    sprintf (port_name, "tcp://%s:3004", master_node_name);
+                }
+                melissa_connect (master_requester, port_name);
+            }
         }
-#endif // ndef COUPLING
     }
 
     // end sobol only //
@@ -527,73 +534,78 @@ void melissa_init (const int *local_vect_size,
         {
             fprintf (stderr, "Warning: wrong number of data pusher ports");
         }
-#ifndef COUPLING
-        if (zmq_data.sobol == 1)
+        if (zmq_data.coupling == 0)
         {
-            for (i=0; i<(zmq_data.nb_parameters+1)*(*comm_size); i++)
+            if (zmq_data.sobol == 1)
             {
-                if (*rank == 0)
+                for (i=0; i<(zmq_data.nb_parameters+1)*(*comm_size); i++)
                 {
-                    //
-                    // send node name here
-                    //
-                    zmq_recv (master_requester, &j, sizeof(int), 0);
+                    if (*rank == 0)
+                    {
+                        //
+                        // send node name here
+                        //
+                        zmq_recv (master_requester, &j, sizeof(int), 0);
+                        if (0 == strcmp(master_node_name, "localhost"))
+                        {
+                            zmq_send (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+                        }
+                        else
+                        {
+                            zmq_send (master_requester, &master_node_names[j*MPI_MAX_PROCESSOR_NAME], MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+                        }
+                        //
+                        //
+                    }
+                }
+                zmq_data.sobol_requester = malloc ((zmq_data.nb_parameters + 1) * sizeof(void*));
+                for (i=0; i<zmq_data.nb_parameters + 1; i++)
+                {
+                    zmq_data.sobol_requester[i] = zmq_socket (zmq_data.context, ZMQ_REP);
                     if (0 == strcmp(master_node_name, "localhost"))
                     {
-                        zmq_send (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+                        sprintf (port_name, "tcp://*:4%d", 100 + (*sobol_group * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + i));
                     }
                     else
                     {
-                        zmq_send (master_requester, &master_node_names[j*MPI_MAX_PROCESSOR_NAME], MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+                        sprintf (port_name, "tcp://*:4%d", 100 + *rank * (zmq_data.nb_parameters+1) + i);
                     }
-                    //
-                    //
+                    melissa_bind (zmq_data.sobol_requester[i], port_name);
                 }
-            }
-            zmq_data.sobol_requester = malloc ((zmq_data.nb_parameters + 1) * sizeof(void*));
-            for (i=0; i<zmq_data.nb_parameters + 1; i++)
-            {
-                zmq_data.sobol_requester[i] = zmq_socket (zmq_data.context, ZMQ_REP);
-                if (0 == strcmp(master_node_name, "localhost"))
-                {
-                    sprintf (port_name, "tcp://*:4%d", 100 + (*sobol_group * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + i));
-                }
-                else
-                {
-                    sprintf (port_name, "tcp://*:4%d", 100 + *rank * (zmq_data.nb_parameters+1) + i);
-                }
-                melissa_bind (zmq_data.sobol_requester[i], port_name);
             }
         }
     }
     else // if *sobol_rank != 0
     {
-        //
-        // ask master node name here
-        //
-        zmq_send (master_requester, rank, sizeof(int), 0);
-        zmq_recv (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-        //
-        //
-        zmq_data.sobol_requester = malloc (sizeof(void*));
-        zmq_data.sobol_requester[0] = zmq_socket (zmq_data.context, ZMQ_REQ);
-        if (0 == strcmp(master_node_name, "localhost"))
+        if (zmq_data.coupling == 0)
         {
-            sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + (*sobol_group * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + *sobol_rank - 1));
+            //
+            // ask master node name here
+            //
+            zmq_send (master_requester, rank, sizeof(int), 0);
+            zmq_recv (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+            //
+            //
+            zmq_data.sobol_requester = malloc (sizeof(void*));
+            zmq_data.sobol_requester[0] = zmq_socket (zmq_data.context, ZMQ_REQ);
+            if (0 == strcmp(master_node_name, "localhost"))
+            {
+                sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + (*sobol_group * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + *sobol_rank - 1));
+            }
+            else
+            {
+                sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + *rank * (zmq_data.nb_parameters+1) + *sobol_rank - 1);
+            }
+            melissa_connect (zmq_data.sobol_requester[0], port_name);
         }
-        else
-        {
-            sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + *rank * (zmq_data.nb_parameters+1) + *sobol_rank - 1);
-        }
-        melissa_connect (zmq_data.sobol_requester[0], port_name);
-#endif // ndef COUPLING
     }
 
     zmq_close (zmq_data.init_requester);
     zmq_close (zmq_data.connexion_requester);
-#ifndef COUPLING
-    zmq_close (master_requester);
-#endif // ndef COUPLING
+    if (zmq_data.coupling == 0)
+    {
+        zmq_close (master_requester);
+    }
     zmq_data.send_buff_size = zmq_data.buff_size * sizeof(double);
     if (zmq_data.sobol)
     {
@@ -642,10 +654,11 @@ void melissa_init_f (int       *local_vect_size,
                      int       *rank,
                      const int *sobol_rank,
                      const int *sobol_group,
-                     MPI_Fint  *comm_fortran)
+                     MPI_Fint  *comm_fortran,
+                     int       *coupling)
 {
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
-    melissa_init(local_vect_size, comm_size, rank, sobol_rank, sobol_group, &comm);
+    melissa_init(local_vect_size, comm_size, rank, sobol_rank, sobol_group, &comm, coupling);
 }
 #endif // BUILD_WITH_MPI
 
@@ -675,13 +688,15 @@ void melissa_init_no_mpi (const int *vect_size,
 {
     int rank = 0;
     int comm_size = 1;
+    int coupling = 0;
     MPI_Comm comm = 0;
     melissa_init (vect_size,
                   &comm_size,
                   &rank,
                   sobol_rank,
                   sobol_group,
-                  &comm);
+                  &comm,
+                  &coupling);
 }
 
 /**
@@ -733,52 +748,55 @@ void melissa_send (const int  *time_step,
 
     if (zmq_data.sobol == 1)
     {
-#ifndef COUPLING
-        // gather data from other ranks of the sobol group
-        if (*sobol_rank == 0)
+        if (zmq_data.coupling == 0)
         {
-            zmq_pollitem_t items [zmq_data.nb_parameters + 1];
-            for (i=0; i<zmq_data.nb_parameters + 1; i++)
+            // gather data from other ranks of the sobol group
+            if (*sobol_rank == 0)
             {
-                items[i].socket = zmq_data.sobol_requester[i];
-                items[i].fd = 0;
-                items[i].events = ZMQ_POLLIN;
-                items[i].revents = 0;
-            }
-            j=0;
-            //recv data from other ranks of the sobol group
-            while (j<zmq_data.nb_parameters + 1)
-            {
-                zmq_poll (items, zmq_data.nb_parameters + 1, -1);
+                zmq_pollitem_t items [zmq_data.nb_parameters + 1];
                 for (i=0; i<zmq_data.nb_parameters + 1; i++)
                 {
-                    if (items[i].revents & ZMQ_POLLIN)
+                    items[i].socket = zmq_data.sobol_requester[i];
+                    items[i].fd = 0;
+                    items[i].events = ZMQ_POLLIN;
+                    items[i].revents = 0;
+                }
+                j=0;
+                //recv data from other ranks of the sobol group
+                while (j<zmq_data.nb_parameters + 1)
+                {
+                    zmq_poll (items, zmq_data.nb_parameters + 1, -1);
+                    for (i=0; i<zmq_data.nb_parameters + 1; i++)
                     {
-                        zmq_recv (zmq_data.sobol_requester[i], &zmq_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
-                        j += 1;
+                        if (items[i].revents & ZMQ_POLLIN)
+                        {
+                            zmq_recv (zmq_data.sobol_requester[i], &zmq_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
+                            j += 1;
+                        }
                     }
                 }
-            }
-            for (i=0; i<zmq_data.nb_parameters + 1; i++)
-            {
+                for (i=0; i<zmq_data.nb_parameters + 1; i++)
+                {
                     zmq_send (zmq_data.sobol_requester[i], &i, sizeof(int), 0);
+                }
+            }
+            else // *sobol_rank != 0
+            {
+                //send data to rank 0 of the sobol group
+                zmq_send (zmq_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
+                zmq_recv (zmq_data.sobol_requester[0], &j, sizeof(int), 0);
+#ifdef BUILD_WITH_PROBES
+                total_bytes_sent += local_vect_size * sizeof(double);
+#endif // BUILD_WITH_PROBES
             }
         }
-        else // *sobol_rank != 0
+        else
         {
-            //send data to rank 0 of the sobol group
-            zmq_send (zmq_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
-            zmq_recv (zmq_data.sobol_requester[0], &j, sizeof(int), 0);
-#ifdef BUILD_WITH_PROBES
+            MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol);
+            //        MPI_Igather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol, request);
+            //        MPI_Wait(request, status);
             total_bytes_sent += local_vect_size * sizeof(double);
-#endif // BUILD_WITH_PROBES
         }
-#else // ndef COUPLING
-        MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol);
-//        MPI_Igather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol, request);
-//        MPI_Wait(request, status);
-        total_bytes_sent += local_vect_size * sizeof(double);
-#endif // ndef COUPLING
     }
 
 
@@ -940,7 +958,7 @@ void melissa_finalize ()
             zmq_close (zmq_data.data_pusher[i]);
         }
 #ifndef COUPLING
-        if (zmq_data.sobol == 1)
+        if (zmq_data.sobol == 1 && zmq_data.coupling == 0)
         {
             for (i=1; i<zmq_data.nb_parameters+1; i++)
             {
@@ -949,12 +967,10 @@ void melissa_finalize ()
         }
 #endif
     }
-#ifndef COUPLING
-    if (zmq_data.sobol == 1)
+    if (zmq_data.sobol == 1 && zmq_data.coupling == 0)
     {
         zmq_close (zmq_data.sobol_requester[0]);
     }
-#endif
     zmq_ctx_term (zmq_data.context);
     if (zmq_data.sobol_rank == 0)
     {

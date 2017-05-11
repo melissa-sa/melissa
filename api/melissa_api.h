@@ -18,14 +18,16 @@ void melissa_init(const int *local_vect_size,
                   const int *rank,
                   const int *sobol_rank,
                   const int *sobol_group,
-                  MPI_Comm  *comm);
+                  MPI_Comm  *comm,
+                  const int *coupling);
 
 void melissa_init_f(int       *local_vect_size,
                     int       *comm_size,
                     int       *rank,
                     const int *sobol_rank,
                     const int *sobol_group,
-                    MPI_Fint  *comm);
+                    MPI_Fint  *comm,
+                    int       *coupling);
 
 void melissa_send(const int  *time_step,
                   const char *field_name,
