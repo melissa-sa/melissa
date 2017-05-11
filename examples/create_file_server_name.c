@@ -3,6 +3,7 @@
 #include <ifaddrs.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 
 int main (int argc, char **argv)
@@ -18,7 +19,6 @@ int main (int argc, char **argv)
     if (file != NULL)
     {
         gethostname(node_name, 256);
-        fputs(node_name ,file);
 
         getifaddrs (&ifap);
         for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
@@ -28,10 +28,11 @@ int main (int argc, char **argv)
                 if (strcmp (ifa->ifa_name, "ib0") == 0)
                 {
                     printf("Interface: %s\tAddress: %s\n", ifa->ifa_name, node_addr);
-                    fputs(node_addr ,file);
+                    sprintf(node_name, "%s", node_addr);
                     break;
                 }
             }
+            fputs(node_name ,file);
         }
 
         fclose(file);

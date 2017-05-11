@@ -78,7 +78,9 @@ void increment_covariance (double        in_vect1[],
     increment_mean(in_vect1, &(covariance->mean1), vect_size);
     if (covariance->increment > 0)
     {
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (i=0; i<vect_size; i++)
         {
             covariance->covariance[i] *= (covariance->increment - 1);
@@ -121,7 +123,10 @@ void update_covariance (covariance_t *covariance1,
     int     i;
 
     updated_covariance->increment = covariance1->increment + covariance2->increment;
+
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
     for (i=0; i<vect_size; i++)
     {
         updated_covariance->covariance[i] = ((covariance1->increment - 1) * covariance1->covariance[i]

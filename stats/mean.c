@@ -70,7 +70,9 @@ void increment_mean (double     in_vect[],
 
     partial_mean->increment += 1;
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
     for (i=0; i<vect_size; i++)
     {
         double temp = partial_mean->mean[i];
@@ -110,7 +112,9 @@ void update_mean (mean_t    *mean1,
 
     updated_mean->increment = mean2->increment + mean1->increment;
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
     for (i=0; i<vect_size; i++)
     {
         double delta = (mean2->mean[i] - mean1->mean[i]);

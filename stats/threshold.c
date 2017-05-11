@@ -41,7 +41,9 @@ void update_threshold_exceedance (double    in_vect[],
 {
     int     i;
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
     for (i=0; i<vect_size; i++)
     {
         if (in_vect[i] > threshold)

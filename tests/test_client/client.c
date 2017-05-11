@@ -66,7 +66,7 @@ int main(int argc, char **argv)
     comm_size = 1;
 #endif // BUILD_WITH_MPI
 
-    if (argc < 4 || argv[1] == NULL || argv[1] == "-" || argv[1] == ":")
+    if (argc < 4 || argv[1] == NULL || strcmp (argv[1], "-") == 0 || strcmp (argv[1], ":") == 0)
     {
        fprintf(stderr,"usage: %s param1:param2:...:paramN vect_size nb_time_steps\n", argv[0]);
        error(0);

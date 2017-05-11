@@ -29,26 +29,17 @@ int main (int argc, char **argv)
     melissa_data_t     *data_ptr = NULL;
     field_ptr           field = NULL;
     comm_data_t         comm_data;
-    int                 time_step;
     int                 i;
-    double             *buffer;
-    double            **buff_tab_ptr;
-    int                 iteration = 0, nb_iterations = 0;
     const int           nb_fields = 1;
     char                field_name[1][255];
     int                *client_vect_sizes = NULL, *local_vect_sizes;
     pull_data_t         pull_data;
     char               *field_name_ptr;
-    int                 rank_id, group_id;
-    char                file_name[256];
 #ifdef BUILD_WITH_PROBES
-    double              start_time;
-    double              total_comm_time = 0;
-    double              start_comm_time;
-    double              end_comm_time;
-    double              total_computation_time = 0;
-    double              start_computation_time;
-    double              end_computation_time;
+    double              start_time = 0;
+    double              total_read_time = 0;
+    double              start_read_time = 0;
+    double              end_read_time = 0;
     double              total_write_time = 0;
     long int            total_bytes_recv = 0;
 #endif // BUILD_WITH_PROBES
@@ -127,7 +118,14 @@ int main (int argc, char **argv)
         {
             melissa_init_data (&data_ptr[i], &melissa_options, comm_data.rcounts[i]);
             fprintf (stdout, "reading checkpoint files (server %d, client %d) ... ", comm_data.rank, i);
+#ifdef BUILD_WITH_PROBES
+            melissa_get_time(start_read_time);
+#endif // BUILD_WITH_PROBES
             read_saved_stats (data_ptr, &comm_data, field_name_ptr, i);
+#ifdef BUILD_WITH_PROBES
+            melissa_get_time(end_read_time);
+            total_read_time = end_read_time - start_read_time;
+#endif // BUILD_WITH_PROBES
             fprintf (stdout, " ok\n");
         }
     }
@@ -146,8 +144,8 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
     double temp1;
     long int temp2;
-    MPI_Reduce (&total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    total_comm_time = temp1 / comm_data.comm_size;
+    MPI_Reduce (&total_read_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_read_time = temp1 / comm_data.comm_size;
     MPI_Reduce (&total_bytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     total_bytes_recv = temp2;
 #endif // BUILD_WITH_MPI
@@ -156,8 +154,7 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Number of simulations:           %d\n", melissa_options.nb_simu);
         fprintf (stdout, " --- Number of simulation cores:      %d\n", comm_data.client_comm_size);
         fprintf (stdout, " --- Number of analysis cores:        %d\n", comm_data.comm_size);
-        fprintf (stdout, " --- Average reading time:            %g s\n", total_comm_time);
-        fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
+        fprintf (stdout, " --- Average reading time:            %g s\n", total_read_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
         fprintf (stdout, " --- Stats structures memory:         %ld bytes\n", mem_conso(&melissa_options));

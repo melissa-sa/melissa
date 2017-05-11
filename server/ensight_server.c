@@ -202,7 +202,9 @@ int main (int argc, char **argv)
                         return 0;
                         break;
                     }
+#ifdef BUILD_WITH_MPI
                     MPI_Barrier(comm_data.comm);
+#endif // BUILD_WITH_MPI
                 }
             }
         }

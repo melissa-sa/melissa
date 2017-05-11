@@ -310,16 +310,16 @@ void melissa_init (const int *local_vect_size,
 {
     char  *node_names = NULL;
     char   server_node_name[MPI_MAX_PROCESSOR_NAME];
-    char   master_node_name[MPI_MAX_PROCESSOR_NAME];
-    char  *master_node_names = NULL;
     char   port_name[MPI_MAX_PROCESSOR_NAME] = {0};
     int    port_no, i, j;
     FILE*  file = NULL;
     int    global_vect_size = 0;
-    int    nb_bufferized_messages = 10;
     int    linger = -1;
-    int    ret;
+#ifndef COUPLING
+    char   master_node_name[MPI_MAX_PROCESSOR_NAME];
+    char  *master_node_names = NULL;
     void  *master_requester = NULL;
+#endif // COUPLING
 
     zmq_data.context = zmq_ctx_new ();
     zmq_data.connexion_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
@@ -549,7 +549,7 @@ void melissa_init (const int *local_vect_size,
                     //
                     //
                 }
-            }sobol_rank
+            }
             zmq_data.sobol_requester = malloc ((zmq_data.nb_parameters + 1) * sizeof(void*));
             for (i=0; i<zmq_data.nb_parameters + 1; i++)
             {

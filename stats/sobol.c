@@ -132,17 +132,23 @@ void increment_sobol_jansen (sobol_array_t *sobol_array,
 
     for (i=0; i< nb_parameters; i++)
     {
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (j=0; j<vect_size; j++)
         {
             sobol_array->sobol_jansen[i].summ_a[j] += (in_vect_tab[0][j] + in_vect_tab[i+2][j])*(in_vect_tab[0][j] + in_vect_tab[i+2][j]);
         }
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (j=0; j<vect_size; j++)
         {
             sobol_array->sobol_jansen[i].summ_b[j] += (in_vect_tab[1][j] + in_vect_tab[i+2][j])*(in_vect_tab[1][j] + in_vect_tab[i+2][j]);
         }
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (j=0; j<vect_size; j++)
         {
             if (sobol_array->variance_a.variance[j] > epsylon)
@@ -157,7 +163,9 @@ void increment_sobol_jansen (sobol_array_t *sobol_array,
             }
         }
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (j=0; j<vect_size; j++)
         {
             if (sobol_array->variance_a.variance[j] > epsylon)
@@ -214,7 +222,9 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
         increment_covariance (in_vect_tab[1], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].first_order_covariance), vect_size);
         increment_covariance (in_vect_tab[0], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].total_order_covariance), vect_size);
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (j=0; j<vect_size; j++)
         {
             if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_b.variance[j] > epsylon)
@@ -229,7 +239,9 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
             }
         }
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (j=0; j<vect_size; j++)
         {
             if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_a.variance[j] > epsylon)

@@ -108,6 +108,7 @@ if(BUILD_WITH_OpenMP)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     message(STATUS "OpenMP Found")
+    add_definitions( -DBUILD_WITH_OPENMP )
   else(OPENMP_FOUND)
     # Disable  Option if missing dependencies
     set(BUILD_WITH_OpenMP FALSE CACHE BOOL "Build with OpenMP" FORCE)

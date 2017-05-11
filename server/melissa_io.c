@@ -668,7 +668,7 @@ void write_stats_ensight (melissa_data_t    **data,
     MPI_Status  status;
 #endif // BUILD_WITH_MPI
     int32_t     n;
-    double temp1, temp2;
+//    double temp1, temp2;
 
     max_size_time=floor(log10(options->nb_time_steps))+1;
 

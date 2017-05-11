@@ -66,7 +66,9 @@ void increment_mean_and_variance (double      in_vect[],
 {
     int     i;
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
     for (i=0; i<vect_size; i++)
     {
         double temp = partial_variance->mean_structure.mean[i];
@@ -147,7 +149,9 @@ void update_variance (variance_t *variance1,
                 &updated_variance->mean_structure,
                 vect_size);
 
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
     for (i=0; i<vect_size; i++)
     {
         double delta = (variance1->mean_structure.mean[i] - variance2->mean_structure.mean[i]);

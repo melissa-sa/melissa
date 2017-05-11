@@ -72,7 +72,9 @@ void min_and_max (double     in_vect[],
     else
     {
         int     i;
+#ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (i=0; i<vect_size; i++)
         {
             if (min_max->min[i] > in_vect[i])
