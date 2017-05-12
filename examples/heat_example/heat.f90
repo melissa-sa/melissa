@@ -7,16 +7,16 @@ program heat
   
   implicit none
 
-  integer::i,j,k,nx,ny,n,nmax,me,np,i1,iN,statinfo,nb_op,next,previous,narg
-  integer,dimension(mpi_status_size)::status
-  real*8::lx,ly,dt,dx,dy,d,t,epsilon,t1,t2,temp
-  real*8,dimension(:),pointer::U => null(), F => null()
-  real*8,dimension(3)::A
-  character(len=32)::arg
-  integer::comm
-  integer::coupling = 1
-  character(len=6)::name
-  integer::sobol_rank=0, sobol_group=0
+  integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, nb_op, next, previous, narg
+  integer, dimension(mpi_status_size) :: status
+  real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2, temp
+  real*8, dimension(:), pointer :: U => null(), F => null()
+  real*8, dimension(3) :: A
+  character(len=32) :: arg
+  integer :: comm
+  integer :: coupling = 1
+  character(len=6) :: name
+  integer :: sobol_rank = 0, sobol_group = 0
 
   name = C_CHAR_"heat"//C_NULL_CHAR
 
@@ -28,24 +28,24 @@ program heat
 !  allocate(parameters(1))
 !  parameters(1) = temp
   if(narg.ge.3) then
-    call getarg(narg - 1, arg)
+    call getarg(narg-1, arg)
     read( arg, * ) sobol_rank ! sobol rank
     call getarg(narg, arg)
     read( arg, * ) sobol_group ! sobol group
   endif
   call MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, comm, statinfo);
-  call mpi_comm_rank(comm,me,statinfo)
-  call mpi_comm_size(comm,np,statinfo)
+  call mpi_comm_rank(comm, me, statinfo)
+  call mpi_comm_size(comm, np, statinfo)
   
   t1=mpi_wtime()
   
-  next=me+1
-  previous=me-1
+  next = me+1
+  previous = me-1
   
-  if(next==np)     next=mpi_proc_null
-  if(previous==-1) previous=mpi_proc_null
+  if(next == np)     next=mpi_proc_null
+  if(previous == -1) previous=mpi_proc_null
 
-  call read_file(nx,ny,lx,ly,d)
+  call read_file(nx, ny, lx, ly, d)
 
   call load(me, nx*ny, Np, i1, iN)
 
@@ -58,28 +58,28 @@ program heat
 
   allocate(U(in-i1+1))
   allocate(F(in-i1+1))
-  call init(U,i1,iN,dx,dy,nx,lx,ly,temp)
-  call filling_A(d,dx,dy,dt,nx,ny,A) ! fill A
+  call init(U, i1, iN, dx, dy, nx, lx, ly, temp)
+  call filling_A(d, dx, dy, dt, nx, ny, A) ! fill A
 
   i = 1
   n = nx*ny
   call melissa_init (nb_op, np, me, sobol_rank, sobol_group, comm, coupling)
 
-  do n=1,nmax
+  do n=1, nmax
     t = t + dt
-    call filling_F(nx,ny,U,d,dx,dy,dt,t,F,i1,in,lx,ly)
-    call conjgrad(A,F,U,nx,ny,epsilon,i1,in,np,me,next,previous,comm)
+    call filling_F(nx, ny, U, d, dx, dy, dt, t, F, i1, in, lx, ly)
+    call conjgrad(A, F, U, nx, ny, epsilon, i1, in, np, me, next, previous, comm)
 
     call melissa_send (n, name, u, me, sobol_rank, sobol_group)
   end do
 
-  call finalize(dx,dy,nx,ny,i1,in,u,f,me)
+  call finalize(dx, dy, nx, ny, i1, in, u, f, me)
 
   call melissa_finalize ()
   
-  t2=mpi_wtime()
-  print*,'Calcul time:', t2-t1, 'sec'
-  print*,'Final time step:', t
+  t2 = mpi_wtime()
+  print*, 'Calcul time:', t2-t1, 'sec'
+  print*, 'Final time step:', t
   
   deallocate(U, F)
 
