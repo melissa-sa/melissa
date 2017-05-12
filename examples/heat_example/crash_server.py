@@ -154,7 +154,7 @@ def launch_heatc(nb_parameters,
         ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
         if (ret[0] != 0):
           print "error launching simulation "+str(i)
-      time.sleep(4)
+      time.sleep(2)
     time.sleep(3)
     os.system("killall -s USR1 mpirun")
     time.sleep(5)
@@ -180,27 +180,9 @@ def launch_heatc(nb_parameters,
         ret[0] = launch_simu(A[i+nb_groups/2,:], 0, i+nb_groups/2, nb_proc_simu, nb_parameters)
         if (ret[0] != 0):
           print "error launching simulation "+str(i+nb_groups/2)
-      time.sleep(4)
-
-
-    if (("sobol" in operations) or ("sobol_indices" in operations)) and (pyzmq == 1):
-        converged_sobol = np.zeros(nb_proc_server,int)
-        finished_server = np.zeros(nb_proc_server,int)
-        snd_message = "continue"
-        while True:
-            rcv_message = rep_socket.recv_string()
-            message = int(rcv_message)
-            print "rcv_message "+rcv_message+", message "+str(message)
-            if (message >= 0 and message < nb_proc_server):
-                rep_socket.send_string("ok")
-                converged_sobol[message] = 1
-                if (not 0 in converged_sobol):
-                    snd_message = "stop"
-            else:
-                finished_server[message - nb_proc_server] = 1
-                rep_socket.send_string(snd_message)
-                if (not 0 in finished_server):
-                    break
+          os.system("killall heatc")
+          return 1
+      time.sleep(2)
 
 #       kill all simulations here
     thread.join()
@@ -223,4 +205,3 @@ if __name__ == '__main__':
     range_min,
     range_max,
     coupling)
-

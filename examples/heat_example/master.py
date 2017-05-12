@@ -156,9 +156,7 @@ def launch_heatc(nb_parameters,
           print "error launching simulation "+str(i)
       time.sleep(2)
 
-
 #       kill all simulations here
-
     print "wait thread..."
     thread.join()
     get_message.close_message()
