@@ -14,6 +14,8 @@ from options import *
 get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+executable = "heatc_no_mpi"
+
 # ------------- thread ------------- #
 
 class message_reciever(Thread):
@@ -49,8 +51,8 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
       parameters += str(i) + " "
   parameters += str(sobol_rank) + " "
   parameters += str(sobol_group)
-  print "./heatc_no_mpi "+parameters+" &"
-  return os.system("./heatc_no_mpi "+parameters+" &")
+  print "./"+executable+" "+parameters+" &"
+  return os.system("./"+executable+" "+parameters+" &")
 
 def launch_melissa (command_line):
   os.system("export OMP_NUM_THREADS=2")
@@ -59,19 +61,19 @@ def launch_melissa (command_line):
   os.system("cd resu")
   return os.system(command_line)
 
-def launch_heatc(nb_parameters,
-                 nb_groups,
-                 nb_time_steps,
-                 operations,
-                 threshold,
-                 mpi_options,
-                 nb_proc_simu,
-                 nb_proc_server,
-                 server_path,
-                 range_min,
-                 range_max,
-                 coupling
-                 ):
+def launch_heat(nb_parameters,
+                nb_groups,
+                nb_time_steps,
+                operations,
+                threshold,
+                mpi_options,
+                nb_proc_simu,
+                nb_proc_server,
+                server_path,
+                range_min,
+                range_max,
+                coupling
+                ):
 
     if (("sobol" in operations) or ("sobol_indices" in operations)):
         nb_simu = nb_groups * (nb_parameters + 2)
@@ -122,6 +124,8 @@ def launch_heatc(nb_parameters,
         ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
         if (ret[0] != 0):
           print "error launching simulation "+str(i)
+          os.system("killall "+executable)
+          return 1
       time.sleep(2)
 
 
@@ -130,7 +134,7 @@ def launch_heatc(nb_parameters,
     print "wait thread..."
     thread.join()
     get_message.close_message()
-    os.system("killall heatc_no_mpi")
+    os.system("killall "+executable)
     print "end !"
     return 0
 
@@ -138,16 +142,15 @@ def launch_heatc(nb_parameters,
 
 if __name__ == '__main__':
 
-    launch_heatc(nb_parameters,
-    sampling_size,
-    nb_time_steps,
-    operations,
-    threshold,
-    mpi_options,
-    nb_proc_simu,
-    nb_proc_server,
-    server_path,
-    range_min,
-    range_max,
-    coupling)
-
+    launch_heat(nb_parameters,
+                sampling_size,
+                nb_time_steps,
+                operations,
+                threshold,
+                mpi_options,
+                nb_proc_simu,
+                nb_proc_server,
+                server_path,
+                range_min,
+                range_max,
+                coupling)

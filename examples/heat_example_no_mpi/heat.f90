@@ -11,10 +11,8 @@ program heat
   real*8,dimension(:),pointer :: U => null(), F => null()
   real*8,dimension(3) :: A
   character(len=32) :: arg
-  character(len=6) :: name
+  character(len=5) :: name = C_CHAR_"heat"//C_NULL_CHAR
   integer :: sobol_rank = 0, sobol_group = 0
-
-  name = C_CHAR_"heat"//C_NULL_CHAR
 
   narg = iargc()
   if(narg.ge.1) call getarg(1, arg)

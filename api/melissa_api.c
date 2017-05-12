@@ -328,7 +328,7 @@ void melissa_init (const int *local_vect_size,
     zmq_data.sobol_requester = NULL;
     zmq_data.sobol_rank = *sobol_rank;
     zmq_data.coupling = *coupling;
-    total_comm_time = 0;
+    total_comm_time = 0.0;
     total_bytes_sent = 0;
 
     // get main server node name

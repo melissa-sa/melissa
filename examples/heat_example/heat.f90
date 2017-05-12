@@ -15,10 +15,8 @@ program heat
   character(len=32) :: arg
   integer :: comm
   integer :: coupling = 1
-  character(len=6) :: name
+  character(len=5) :: name = C_CHAR_"heat"//C_NULL_CHAR
   integer :: sobol_rank = 0, sobol_group = 0
-
-  name = C_CHAR_"heat"//C_NULL_CHAR
 
   call mpi_init(statinfo)
 

@@ -14,6 +14,8 @@ from options import *
 get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+executable = "heatc"
+
 # ------------- thread ------------- #
 
 class message_reciever(Thread):
@@ -49,8 +51,8 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
       parameters += str(i) + " "
   parameters += str(sobol_rank) + " "
   parameters += str(sobol_group)
-  print "mpirun -n "+str(nb_proc_simu)+" ./heatc "+parameters+" &"
-  return os.system("mpirun -n "+str(nb_proc_simu)+" ./heatc "+parameters+" &")
+  print "mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &"
+  return os.system("mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &")
 
 def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
 #  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
@@ -61,14 +63,14 @@ def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
       parameters += str(j) + " "
   parameters += str(0) + " "
   parameters += str(sobol_group)
-  command += " -n "+str(nb_proc_simu)+" ./heatc "+parameters
+  command += " -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters
   parameters = ""
   for j in Bi:
       parameters += str(j) + " "
   parameters += str(1) + " "
   parameters += str(sobol_group)
   command += " :"
-  command += " -n "+str(nb_proc_simu)+" ./heatc "+parameters
+  command += " -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters
   for j in range(nb_parameters):
       parameters = ""
       for i in C[j][sobol_group,:]:
@@ -76,7 +78,7 @@ def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
       parameters += str(j+2) + " "
       parameters += str(sobol_group)
       command += " :"
-      command += " -n "+str(nb_proc_simu)+" ./heatc "+parameters
+      command += " -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters
   print command
   return os.system(command+" &")
 
@@ -88,19 +90,19 @@ def launch_melissa (command_line):
   os.system("cd resu")
   return os.system(command_line)
 
-def launch_heatc(nb_parameters,
-                 nb_groups,
-                 nb_time_steps,
-                 operations,
-                 threshold,
-                 mpi_options,
-                 nb_proc_simu,
-                 nb_proc_server,
-                 server_path,
-                 range_min,
-                 range_max,
-                 coupling
-                 ):
+def launch_heat(nb_parameters,
+                nb_groups,
+                nb_time_steps,
+                operations,
+                threshold,
+                mpi_options,
+                nb_proc_simu,
+                nb_proc_server,
+                server_path,
+                range_min,
+                range_max,
+                coupling
+                ):
 
     if (("sobol" in operations) or ("sobol_indices" in operations)):
         nb_simu = nb_groups * (nb_parameters + 2)
@@ -154,13 +156,15 @@ def launch_heatc(nb_parameters,
         ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
         if (ret[0] != 0):
           print "error launching simulation "+str(i)
+          os.system("killall "+executable)
+          return 1
       time.sleep(2)
 
 #       kill all simulations here
     print "wait thread..."
     thread.join()
     get_message.close_message()
-    os.system("killall heatc")
+    os.system("killall "+executable)
     print "end !"
     return 0
 
@@ -168,16 +172,16 @@ def launch_heatc(nb_parameters,
 
 if __name__ == '__main__':
 
-    launch_heatc(nb_parameters,
-    sampling_size,
-    nb_time_steps,
-    operations,
-    threshold,
-    mpi_options,
-    nb_proc_simu,
-    nb_proc_server,
-    server_path,
-    range_min,
-    range_max,
-    coupling)
+    launch_heat(nb_parameters,
+                sampling_size,
+                nb_time_steps,
+                operations,
+                threshold,
+                mpi_options,
+                nb_proc_simu,
+                nb_proc_server,
+                server_path,
+                range_min,
+                range_max,
+                coupling)
 
