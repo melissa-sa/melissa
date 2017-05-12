@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <string.h>
 #include <time.h>
+#include <sys/timeb.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
@@ -282,7 +283,9 @@ double melissa_get_time ()
 //#ifdef BUILD_WITH_MPI
 //    return (double)MPI_Wtime();
 //#else // BUILD_WITH_MPI
-    return (double)time(NULL);
+    struct timeb tp;
+    ftime(&tp);
+    return (double)tp.time + (double)tp.millitm / 1000;
 //#endif // BUILD_WITH_MPI
 }
 
