@@ -792,9 +792,13 @@ void melissa_send (const int  *time_step,
         }
         else
         {
+#ifdef BUILD_WITH_MPI
             MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol);
             //        MPI_Igather(send_vect, local_vect_size, MPI_DOUBLE, zmq_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, zmq_data.comm_sobol, request);
             //        MPI_Wait(request, status);
+#else // BUILD_WITH_MPI
+            memcpy (zmq_data.buffer_sobol, send_vect, MPI_MAX_PROCESSOR_NAME);
+#endif // BUILD_WITH_MPI
             total_bytes_sent += local_vect_size * sizeof(double);
         }
     }

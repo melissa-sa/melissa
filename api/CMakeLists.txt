@@ -8,6 +8,5 @@ if(BUILD_WITH_MPI)
 endif(BUILD_WITH_MPI)
 install(FILES melissa_api_no_mpi.h DESTINATION include)
 
-add_library(melissa_api_fortran melissa_api_fortran.f90 $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(melissa_api_fortran melissa_api)
-install(TARGETS melissa_api_fortran DESTINATION bin)
+configure_file(melissa_api.f90 melissa_api.f90 COPYONLY)
+install(FILES melissa_api.f90 DESTINATION include)
