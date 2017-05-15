@@ -240,7 +240,7 @@ def create_run_study (workdir, frontend, nodes_melissa, server_path, walltime_me
     contenu += "STOP=0                                                             \n"
     contenu += "# generate server name files                                       \n"
     contenu += "cd "+workdir+"/case1/DATA                                          \n"
-    contenu += server_path+"/../examples/create_file_server_name                   \n"
+    contenu += server_path+"/../utils/create_file_server_name                   \n"
     contenu += "# run Melissa                                                      \n"
     contenu += "echo  \"### Launch Melissa\"                                       \n"
     contenu += "cd $WORK_DIR                                                       \n"
@@ -290,7 +290,7 @@ def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_para
     if (coupling != 1):
         contenu += "# generate master name file                                \n"
         contenu += "cd ../rank0/DATA                                           \n"
-        contenu += server_path+"/../examples/create_file_master_name           \n"
+        contenu += server_path+"/../utils/create_file_master_name           \n"
         contenu += "cd ..                                                      \n"
         for j in range(nb_parameters+1):
             contenu += "cp ./DATA/master_name.txt ../rank"+str(j+1)+"/DATA \n"
