@@ -15,6 +15,10 @@ get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 executable = "heatc"
+build_with_mpi = "@BUILD_WITH_MPI@"
+build_examples_with_mpi = "@BUILD_EXAMPLES_WITH_MPI@"
+if build_examples_with_mpi == "OFF":
+    executable += "_no_mpi"
 
 # ------------- thread ------------- #
 
@@ -51,8 +55,12 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
       parameters += str(i) + " "
   parameters += str(sobol_rank) + " "
   parameters += str(sobol_group)
-  print "mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &"
-  return os.system("mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &")
+  if build_examples_with_mpi == "ON":
+    print "mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &"
+    return os.system("mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &")
+  else:
+    print "./"+executable+" "+parameters+" &"
+    return os.system("./"+executable+" "+parameters+" &")
 
 def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
 #  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
@@ -90,18 +98,18 @@ def launch_melissa (command_line):
   os.system("cd resu")
   return os.system(command_line)
 
-def launch_heatc(nb_parameters,
-                 nb_groups,
-                 nb_time_steps,
-                 operations,
-                 threshold,
-                 mpi_options,
-                 nb_proc_simu,
-                 nb_proc_server,
-                 server_path,
-                 range_min,
-                 range_max,
-                 coupling):
+def launch_heat(nb_parameters,
+                nb_groups,
+                nb_time_steps,
+                operations,
+                threshold,
+                mpi_options,
+                nb_proc_simu,
+                nb_proc_server,
+                server_path,
+                range_min,
+                range_max,
+                coupling):
 
     if (("sobol" in operations) or ("sobol_indices" in operations)):
         nb_simu = nb_groups * (nb_parameters + 2)
@@ -129,11 +137,14 @@ def launch_heatc(nb_parameters,
             + " -o " + op_str\
             + " -e " + str(threshold)\
             + " -n " + str(socket.gethostname())
-    print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-    if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
+    if build_with_mpi == "ON":
+      print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
+      if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
         print "error launching Melissa"
-    #print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&"
-    #launch_melissa("valgrind --leak-check=full mpirun -n 1 ./server -p 2 -s 8 -g 5 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.7")
+    else:
+        print server_path+"/server"+options
+        if (launch_melissa(server_path+"/server"+options+"&") != 0):
+            print "error launching Melissa"
 
     get_message.init_message()
     thread = message_reciever()
@@ -142,7 +153,7 @@ def launch_heatc(nb_parameters,
     ret = np.zeros(nb_parameters + 2)
     for i in range(nb_groups/2):
       if ("sobol" in operations) or ("sobol_indices" in operations):
-        if (coupling == 0):
+        if (coupling == 0 or build_examples_with_mpi == "OFF"):
           ret[0] = launch_simu(A[i,:], 0, i, nb_proc_simu, nb_parameters)
           ret[1] = launch_simu(B[i,:], 1, i, nb_proc_simu, nb_parameters)
           for j in range(nb_parameters):
@@ -162,13 +173,18 @@ def launch_heatc(nb_parameters,
     time.sleep(5)
     print "server killed"
     print "restarting:"
-    print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r ."
-    if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r . &") != 0):
+    if build_with_mpi == "ON":
+      print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
+      if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+" -r . &") != 0):
         print "error launching Melissa"
+    else:
+        print server_path+"/server"+options
+        if (launch_melissa(server_path+"/server"+options+" -r . &") != 0):
+            print "error launching Melissa"
 
     for i in range(nb_groups/2):
       if ("sobol" in operations) or ("sobol_indices" in operations):
-        if (coupling == 0):
+        if (coupling == 0 or build_examples_with_mpi == "OFF"):
           ret[0] = launch_simu(A[i,:], 0, i+nb_groups/2, nb_proc_simu, nb_parameters)
           ret[1] = launch_simu(B[i,:], 1, i+nb_groups/2, nb_proc_simu, nb_parameters)
           for j in range(nb_parameters):
@@ -190,6 +206,7 @@ def launch_heatc(nb_parameters,
     thread.join()
     get_message.close_message()
     os.system("killall "+executable)
+    print "end !"
     return 0
 
 # ------------- main ------------- #

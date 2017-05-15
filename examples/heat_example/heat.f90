@@ -2,10 +2,11 @@
 program heat
 
   use heat_utils
-  use mpi
-  use melissa_api_fortran
-  
+  use iso_c_binding, only: C_CHAR, C_NULL_CHAR
+
   implicit none
+
+  include "melissa_api.f90"
 
   integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, nb_op, next, previous, narg
   integer, dimension(mpi_status_size) :: status

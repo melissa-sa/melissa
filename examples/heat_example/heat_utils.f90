@@ -1,9 +1,9 @@
 
 module heat_utils
-  use iso_c_binding
-  use mpi
 
   implicit none
+
+  include "mpif.h"
 
   contains
 
@@ -347,4 +347,4 @@ module heat_utils
 
   end subroutine multiply
 
-end module
+end module heat_utils
