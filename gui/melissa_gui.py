@@ -179,7 +179,7 @@ class melissa_gui(QWidget):
         self.hbox_button.addWidget(self.QPushButton_ok)
         self.hbox_button.addWidget(self.QPushButton_save)
         self.hbox_button.addWidget(self.QPushButton_cancel)
-        self.connect(self.QPushButton_ok,  SIGNAL("clicked()"), self.launch_heatc)
+        self.connect(self.QPushButton_ok,  SIGNAL("clicked()"), self.launch_heat)
         self.connect(self.QPushButton_save,  SIGNAL("clicked()"), self.save)
         self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), self.close_gui)
         self.fbox.addItem(self.hbox_button)
@@ -206,12 +206,12 @@ class melissa_gui(QWidget):
             self.close()
 
 
-    def launch_heatc(self):
+    def launch_heat(self):
         self.setDisabled(True)
         QApplication.processEvents()
         self.set_operations_string()
         self.set_parameters()
-        launch_heatc(self.nb_parameters,
+        launch_heat(self.nb_parameters,
                      self.sampling_size,
                      self.nb_time_steps,
                      self.operations,
