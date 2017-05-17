@@ -387,13 +387,13 @@ int main (int argc, char **argv)
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
 
-            time_step = *buf_ptr;
+            memcpy(&time_step, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
-            simu_id = *buf_ptr;
+            memcpy(&simu_id, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
-            group_id = *buf_ptr;
+            memcpy(&group_id, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
-            client_rank = *buf_ptr;
+            memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             field_name_ptr = buf_ptr;
             if (field == NULL)
