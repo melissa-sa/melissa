@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <math.h>
 #include "melissa_data.h"
 #include "melissa_utils.h"
@@ -78,12 +79,12 @@ int read_client_data (int                *client_comm_size,
     if (f != NULL)
     {
         fprintf( stdout, "File opened");
-        if (1 == fread(client_comm_size, sizeof(int), 1, f));
+        if (1 == fread(client_comm_size, sizeof(int), 1, f))
         {
             ret = 0;
         }
         *client_vect_sizes = malloc (*client_comm_size * sizeof(int));
-        if (*client_comm_size == fread(*client_vect_sizes, sizeof(int), *client_comm_size, f));
+        if (*client_comm_size == fread(*client_vect_sizes, sizeof(int), *client_comm_size, f))
         {
             ret = 0;
         }
