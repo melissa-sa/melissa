@@ -428,16 +428,16 @@ class melissa_param_dialog(QDialog):
 
     def change_range_min(self):
         self.new_parameter.range_min=float(self.QDoubleSpinBox_param_min.value())
-        parent.modified = True
+        self.parent.modified = True
 
     def change_range_max(self):
         self.new_parameter.range_max=float(self.QDoubleSpinBox_param_max.value())
-        parent.modified = True
+        self.parent.modified = True
 
     def add_parameter(self):
         self.parent.nb_parameters += 1
         self.parent.parameter_list.append(deepcopy(self.new_parameter))
-        parent.modified = True
+        self.parent.modified = True
 
     def edit_parameter(self):
         row = self.parent.QListWidget_param.row(self.item)
@@ -446,7 +446,7 @@ class melissa_param_dialog(QDialog):
         self.parent.QListWidget_param.takeItem(row)
         self.parent.QListWidget_param.insertItem(row, self.parent.parameter_list[row].name+"  ["+str(self.parent.parameter_list[row].range_min)+" : "+str(self.parent.parameter_list[row].range_max)+"]")
         self.parent.QListWidget_param.setCurrentRow(row)
-        parent.modified = True
+        self.parent.modified = True
 
     def change_min_of_max(self):
         if self.QDoubleSpinBox_param_max.value() < self.QDoubleSpinBox_param_min.value():

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/timeb.h>
 #include <zmq.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
@@ -51,6 +52,7 @@ void filling_F(int*   ,
                int*   ,
                int*   ,
                double*,
+               double*,
                double* );
 
 void conjgrad(double*,
@@ -85,34 +87,41 @@ int main( int argc, char **argv )
   double *u = NULL;
   double *f = NULL;
   double a[3];
+  double param[5];
   int sobol_rank = 0;
   int sobol_group = 0;
   MPI_Comm comm;
   int coupling = 1;
   int fcomm;
   char *field_name = "heat";
+  struct timeb tp;
 
   MPI_Init(&argc, &argv);
 
+  for (n=0; n<5; n++)
+      param[n] = 0;
+    if (argc > n+1)
+    {
+       param[n] = strtod(argv[n+1], NULL);
+    }
   if (argc > 1)
   {
-    temp = 2*strtod(argv[1], NULL);
-  }
-  if (argc > 2)
-  {
-    temp *= strtod(argv[2], NULL);
+      temp = param[0];
   }
   if (argc > 3)
   {
     sobol_rank  = (int)strtod(argv[argc-2], NULL);
     sobol_group = (int)strtod(argv[argc-1], NULL);
   }
+
   MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, &comm);
   MPI_Comm_rank(comm, &me);
   MPI_Comm_size(comm, &np);
   fcomm = MPI_Comm_c2f(comm);
 
-  t1=MPI_Wtime();
+
+  ftime(&tp);
+  t1 = (double)tp.time + (double)tp.millitm / 1000;
 
   next = me+1;
   previous = me-1;
@@ -142,7 +151,7 @@ int main( int argc, char **argv )
   for(n=1; n<=nmax; n++)
   {
     t+=dt;
-    filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &i1, &in, &lx, &ly);
+    filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &i1, &in, &lx, &ly, &param[0]);
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon, &i1, &in, &np, &me, &next, &previous, &fcomm);
     melissa_send (&n, field_name, u, &me, &sobol_rank, &sobol_group);
   }
@@ -151,7 +160,9 @@ int main( int argc, char **argv )
 
   melissa_finalize ();
 
-  t2 = MPI_Wtime();
+  ftime(&tp);
+  t2 = (double)tp.time + (double)tp.millitm / 1000;
+
   fprintf(stdout, "Calcul time: %g sec\n", t2-t1);
   fprintf(stdout, "Final time step: %g\n", t);
 

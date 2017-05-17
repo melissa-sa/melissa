@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
+#include <sys/timeb.h>
 #include <zmq.h>
 #include <melissa_api_no_mpi.h>
 
@@ -35,6 +35,7 @@ void filling_F(int*   ,
                double*,
                int*   ,
                double*,
+               double*,
                double* );
 
 void conjgrad(double*,
@@ -61,17 +62,21 @@ int main( int argc, char **argv )
   double *u = NULL;
   double *f = NULL;
   double a[3];
+  double param[5];
   int sobol_rank = 0;
   int sobol_group = 0;
   char *field_name = "heat";
+  struct timeb tp;
 
+  for (n=0; n<5; n++)
+      param[n] = 0;
+    if (argc > n+1)
+    {
+       param[n] = strtod(argv[n+1], NULL);
+    }
   if (argc > 1)
   {
-      temp = strtod(argv[1], NULL);
-  }
-  if (argc > 2)
-  {
-      temp *= strtod(argv[2], NULL);
+      temp = param[0];
   }
   if (argc > 3)
   {
@@ -79,7 +84,8 @@ int main( int argc, char **argv )
     sobol_group = (int)strtod(argv[argc-1], NULL);
   }
 
-  t1=(double)time(NULL);
+  ftime(&tp);
+  t1 = (double)tp.time + (double)tp.millitm / 1000;
 
   read_file(&nx,&ny,&lx,&ly,&d);
 
@@ -100,7 +106,7 @@ int main( int argc, char **argv )
   for(n=1;n<=nmax;n++)
   {
     t+=dt;
-    filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &nb_op, &lx, &ly);
+    filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &nb_op, &lx, &ly, &param[0]);
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon);
     melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sobol_group);
   }
@@ -109,7 +115,8 @@ int main( int argc, char **argv )
 
   melissa_finalize ();
 
-  t2=(double)time(NULL);
+  ftime(&tp);
+  t2 = (double)tp.time + (double)tp.millitm / 1000;
 
   fprintf(stdout, "Calcul time: %g sec\n", t2-t1);
   fprintf(stdout, "Final time step: %g\n", t);

@@ -13,6 +13,7 @@ program heat
   real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2, temp
   real*8, dimension(:), pointer :: U => null(), F => null()
   real*8, dimension(3) :: A
+  real*8,dimension(5) :: param
   character(len=32) :: arg
   integer :: comm
   integer :: coupling = 1
@@ -22,16 +23,22 @@ program heat
   call mpi_init(statinfo)
 
   narg = iargc()
-  if(narg.ge.1) call getarg(1, arg)
-  read( arg, * ) temp ! initial temperature
-!  allocate(parameters(1))
-!  parameters(1) = temp
+  param(:) = 0
+  do n=1, 5
+    if(narg.ge.n) then
+      call getarg(n, arg)
+      read( arg, * ) param(n)
+    endif
+  enddo
+  ! initial temperature
+  temp = param(1)
   if(narg.ge.3) then
-    call getarg(narg-1, arg)
+    call getarg(narg - 1, arg)
     read( arg, * ) sobol_rank ! sobol rank
     call getarg(narg, arg)
     read( arg, * ) sobol_group ! sobol group
   endif
+
   call MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, comm, statinfo);
   call mpi_comm_rank(comm, me, statinfo)
   call mpi_comm_size(comm, np, statinfo)
@@ -66,7 +73,7 @@ program heat
 
   do n=1, nmax
     t = t + dt
-    call filling_F(nx, ny, U, d, dx, dy, dt, t, F, i1, in, lx, ly)
+    call filling_F(nx, ny, U, d, dx, dy, dt, t, F, i1, in, lx, ly, param)
     call conjgrad(A, F, U, nx, ny, epsilon, i1, in, np, me, next, previous, comm)
 
     call melissa_send (n, name, u, me, sobol_rank, sobol_group)

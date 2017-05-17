@@ -19,25 +19,25 @@ module heat_utils_no_mpi
 
   end function
 
-  function g(x, y, t)
+  function g(x, y, t, param)
 
     implicit none
 
-    real*8 :: g, x, y, t
+    real*8 :: g, x, y, t, param
     !g = 0.
     !g = sin(x)+cos(y)
-    g = 0.
+    g = param
 
   end function
 
-  function h(x, y, t)
+  function h(x, y, t, param)
 
     implicit none
 
-    real*8 :: h, x, y, t
+    real*8 :: h, x, y, t, param
     !h = 0.
     !h = sin(x)+cos(y)
-    h = 1.
+    h = param
 
    end function
    
@@ -117,13 +117,14 @@ module heat_utils_no_mpi
     
   end subroutine filling_A
   
-  subroutine filling_F(nx, ny, u, d, dx, dy, dt, t, f, nb_op, lx, ly) bind (c, name = 'filling_F')
+  subroutine filling_F(nx, ny, u, d, dx, dy, dt, t, f, nb_op, lx, ly, param) bind (c, name = 'filling_F')
 
     implicit none
 
     integer, intent(in) :: nx, ny, nb_op
     real*8, dimension(*) :: f
     real*8, dimension(*) :: u
+    real*8, dimension(*) :: param
     integer :: i, j, k
     real*8, intent(in) :: d, dx, dy, dt, t, lx, ly
 
@@ -133,14 +134,14 @@ module heat_utils_no_mpi
       j = invert_num_j(nx, k)
       f(k) = f(k)+func(i*dx, j*dy, t, lx, ly)*dt+u(k)
       if (i  == 1) then
-        f(k) = f(k)+d*dt*h(0.d0, j*dy, t)/(dx**2)
+        f(k) = f(k)+d*dt*h(0.d0, j*dy, t, param(2))/(dx**2)
       else if (i  == nx) then
-        f(k) = f(k)+d*dt*h((i+1)*dx, j*dy, t)/(dx**2)
+        f(k) = f(k)+d*dt*h((i+1)*dx, j*dy, t, param(3))/(dx**2)
       end if
       if (j  == 1) then
-        f(k) = f(k)+d*dt*g(i*dx, 0.d0, t)/(dy**2)
+        f(k) = f(k)+d*dt*g(i*dx, 0.d0, t, param(4))/(dy**2)
       else if (j  == ny) then
-        f(k) = f(k)+d*dt*g(i*dx, (j+1)*dy, t)/(dy**2)
+        f(k) = f(k)+d*dt*g(i*dx, (j+1)*dy, t, param(5))/(dy**2)
       end if
     end do
   
