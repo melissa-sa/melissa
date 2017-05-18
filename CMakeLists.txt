@@ -205,7 +205,7 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
-add_subdirectory(master)
+add_subdirectory(launcher)
 
 add_subdirectory(gui)
 

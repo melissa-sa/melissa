@@ -142,7 +142,7 @@ int main (int argc, char **argv)
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     melissa_bind (data_puller, txt_buffer);
 #ifdef BUILD_WITH_PY_ZMQ
-    sprintf (txt_buffer, "tcp://%s:5555", melissa_options.master_name);
+    sprintf (txt_buffer, "tcp://%s:5555", melissa_options.launcher_name);
     melissa_connect (python_pusher, txt_buffer);
 #endif // BUILD_WITH_PY_ZMQ
 

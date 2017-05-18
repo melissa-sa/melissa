@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include "melissa_options.h"
 #include "melissa_utils.h"
 
@@ -34,7 +35,7 @@ static inline void stats_usage ()
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
-            " -n <char*>     : Melissa master node name (default: localhost)\n"
+            " -n <char*>     : Melissa launcher node name (default: localhost)\n"
             " -r <char*>     : Melissa restart files directory\n"
             " -h             : Print this message\n"
             "\n"
@@ -68,7 +69,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_order     = 0;
     options->restart         = 0;
     sprintf (options->restart_dir, ".");
-    sprintf (options->master_name, "localhost");
+    sprintf (options->launcher_name, "localhost");
 }
 
 static inline void get_operations (char              *name,
@@ -166,7 +167,7 @@ void melissa_print_options (melissa_options_t *options)
         fprintf(stdout, "    sobol indices, max order: %d\n", options->sobol_order);
     if (options->restart != 0)
         fprintf(stdout, "using options.save restart file\n");
-    fprintf(stdout, "Melissa master node name: %s\n", options->master_name);
+    fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
 }
 
 /**
@@ -239,7 +240,7 @@ void melissa_get_options (int argc, char    **argv,
             options->sampling_size = atoi (optarg);
             break;
         case 'n':
-            sprintf (options->master_name, optarg);
+            sprintf (options->launcher_name, optarg);
             break;
         case 'h':
             stats_usage ();
@@ -330,10 +331,10 @@ void melissa_check_options (melissa_options_t  *options)
         exit (1);
     }
 
-    if (options->master_name == NULL)
+    if (options->launcher_name == NULL)
     {
-        fprintf (stderr, "Warning: Melissa Master node name set to \"localhost\"\n");
-        sprintf (options->master_name, "localhost");
+        fprintf (stderr, "Warning: Melissa Launcher node name set to \"localhost\"\n");
+        sprintf (options->launcher_name, "localhost");
     }
 
     if (strlen(options->restart_dir) < 1)
