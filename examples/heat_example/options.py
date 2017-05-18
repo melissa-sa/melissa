@@ -3,10 +3,11 @@ import numpy as np
 
 # ------------- options ------------- #
 
-nb_parameters = 2
-sampling_size = 4
-nb_time_steps = 100
-operations = ["mean","variance","min","max","threshold","sobol"]
+nb_parameters = 5
+sampling_size = 1000
+nb_time_steps = 1
+#operations = ["mean","variance","min","max","threshold","sobol"]
+operations = ["mean","variance","min","max","threshold"]
 threshold = 0.7
 mpi_options = ""
 nb_proc_simu = 2
@@ -16,6 +17,12 @@ range_min = np.zeros(nb_parameters)
 range_max = np.zeros(nb_parameters)
 range_min[0] = 0
 range_max[0] = 1
-range_min[1] = 2
-range_max[1] = 3
+range_min[1] = 0
+range_max[1] = 1
+range_min[2] = 0
+range_max[2] = 1
+range_min[3] = 0
+range_max[3] = 1
+range_min[4] = 0
+range_max[4] = 1
 coupling = 1

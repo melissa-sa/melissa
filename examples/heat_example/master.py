@@ -14,7 +14,7 @@ from options import *
 get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-executable = "heatc"
+executable = "heatf"
 build_with_mpi = "@BUILD_WITH_MPI@"
 build_examples_with_mpi = "@BUILD_EXAMPLES_WITH_MPI@"
 if build_examples_with_mpi == "OFF":
@@ -171,7 +171,8 @@ def launch_heat(nb_parameters,
           print "error launching simulation "+str(i)
           os.system("killall "+executable)
           return 1
-      time.sleep(2)
+      if 10*(i/10) == i:
+          time.sleep(3)
 
 #       kill all simulations here
     print "wait thread..."

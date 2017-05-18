@@ -1,4 +1,5 @@
- 
+
+
 program heat_no_mpi
 
   use heat_utils_no_mpi
@@ -18,17 +19,23 @@ program heat_no_mpi
 
   narg = iargc()
   param(:) = 0
-  do n=1, 5
-    if(narg.ge.n) then
+  if (narg .lt. 2) then
+    print*,"Missing parameter"
+    return
+  endif
+  do n=2, 6
+    if(narg .ge. n) then
       call getarg(n, arg)
-      read( arg, * ) param(n)
+      read( arg, * ) param(n-1)
     endif
   enddo
   ! initial temperature
   temp = param(1)
-  if(narg.ge.3) then
+  if(narg .gt. 3) then
     call getarg(narg - 1, arg)
     read( arg, * ) sobol_rank ! sobol rank
+  endif
+  if(narg .gt. 2) then
     call getarg(narg, arg)
     read( arg, * ) sobol_group ! sobol group
   endif
@@ -56,10 +63,11 @@ program heat_no_mpi
     call filling_F(nx, ny, U, d, dx, dy, dt, t, F, nb_op, lx, ly, param)
     call conjgrad(A, F, U, nx, ny, epsilon)
 
-    call melissa_send_no_mpi(n, name, u, sobol_rank, sobol_group)
   end do
 
-  call finalize(dx, dy, nx, ny, nb_op, u, f)
+  n = 1
+  call melissa_send_no_mpi(n, name, u, sobol_rank, sobol_group)
+  call finalize(dx, dy, nx, ny, nb_op, u, f, sobol_group)
 
   call melissa_finalize()
   

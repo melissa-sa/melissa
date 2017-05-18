@@ -15,7 +15,8 @@ module heat_utils_no_mpi
     real*8 :: func, x, y, t, lx, ly
     !func = 2*(y-y**2+x-x**2)
     !func = sin(x)+cos(y)
-    func = (exp(-(x-lx/2.)**2))*(exp(-(y-ly/2.)**2))*cos(t*acos(0.0)/2)
+    func = 0.d0
+    !func = (exp(-(x-lx/2.)**2))*(exp(-(y-ly/2.)**2))*cos(t*acos(0.0)/2)
 
   end function
 
@@ -147,26 +148,36 @@ module heat_utils_no_mpi
   
   end subroutine filling_F
 
-  subroutine rename(name)! bind (c, name = 'rename')
+  subroutine rename(name, simu_number)! bind (c, name = 'rename')
 
     implicit none
 
     character*13 :: name
-    name = 'sol'//name//'.dat'
+    integer :: simu_number
+    character*5 :: sn
+    integer :: i1, i2, i3, i4, i5
+
+    i1 = simu_number/10000
+    i2 = (simu_number - 10000*i1)/1000
+    i3 = (simu_number - 10000*i1 - 1000*i2)/100
+    i4 = (simu_number - 10000*i1 - 1000*i2 - 100*i3)/10
+    i5 = simu_number - 10000*i1 -1000*i2 - 100*i3 - 10*i4
+    sn = char(i1+48)//char(i2+48)//char(i3+48)//char(i4+48)//char(i5+48)
+    name = 'sol'//sn//'.dat'
 
   end subroutine rename
 
-  subroutine finalize(dx, dy, nx, ny, nb_op, u, f) bind (c, name = 'finalize')
+  subroutine finalize(dx, dy, nx, ny, nb_op, u, f, simu_number) bind (c, name = 'finalize')
 
     implicit none
 
     real*8, dimension(*), intent(inout) :: u, f
-    integer, intent(in) :: nx, ny, nb_op
+    integer, intent(in) :: nx, ny, nb_op, simu_number
     real*8, intent(in) :: dx, dy
     integer :: i, j
-    character*13  :: name
+    character*13 :: name
 
-    call rename(name)
+    call rename(name, simu_number)
 
     open(unit = 13, file = name, action = 'write')
     do j = 1, nb_op

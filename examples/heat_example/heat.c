@@ -77,6 +77,7 @@ void finalize(double*,
               int*   ,
               double*,
               double*,
+              int*   ,
               int*    );
 
 int main( int argc, char **argv )
@@ -98,20 +99,26 @@ int main( int argc, char **argv )
 
   MPI_Init(&argc, &argv);
 
+  if (argc < 2)
+  {
+      fprintf (stderr, "Missing parameter");
+      return -1;
+  }
+
   for (n=0; n<5; n++)
       param[n] = 0;
     if (argc > n+1)
     {
        param[n] = strtod(argv[n+1], NULL);
     }
-  if (argc > 1)
-  {
-      temp = param[0];
-  }
+  temp = param[0];
   if (argc > 3)
   {
-    sobol_rank  = (int)strtod(argv[argc-2], NULL);
-    sobol_group = (int)strtod(argv[argc-1], NULL);
+    sobol_rank  = (int)strtol(argv[argc-2], NULL, 10);
+  }
+  if (argc > 2)
+  {
+    sobol_group = (int)strtol(argv[argc-1], NULL, 10);
   }
 
   MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, &comm);
@@ -156,7 +163,7 @@ int main( int argc, char **argv )
     melissa_send (&n, field_name, u, &me, &sobol_rank, &sobol_group);
   }
 
-  finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me);
+  finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &sobol_group);
 
   melissa_finalize ();
 

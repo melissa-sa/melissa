@@ -24,17 +24,23 @@ program heat
 
   narg = iargc()
   param(:) = 0
-  do n=1, 5
-    if(narg.ge.n) then
+  if (narg .lt. 2) then
+    print*,"Missing parameter"
+    return
+  endif
+  do n=2, 6
+    if(narg .ge. n) then
       call getarg(n, arg)
-      read( arg, * ) param(n)
+      read( arg, * ) param(n-1)
     endif
   enddo
   ! initial temperature
   temp = param(1)
-  if(narg.ge.3) then
+  if(narg .gt. 3) then
     call getarg(narg - 1, arg)
     read( arg, * ) sobol_rank ! sobol rank
+  endif
+  if(narg .gt. 2) then
     call getarg(narg, arg)
     read( arg, * ) sobol_group ! sobol group
   endif
@@ -79,7 +85,7 @@ program heat
     call melissa_send (n, name, u, me, sobol_rank, sobol_group)
   end do
 
-  call finalize(dx, dy, nx, ny, i1, in, u, f, me)
+  call finalize(dx, dy, nx, ny, i1, in, u, f, me, sobol_group)
 
   call melissa_finalize ()
   

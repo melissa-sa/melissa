@@ -51,7 +51,8 @@ void finalize(double*,
               int*   ,
               int*   ,
               double*,
-              double* );
+              double*,
+              int*    );
 
 
 int main( int argc, char **argv )
@@ -68,20 +69,26 @@ int main( int argc, char **argv )
   char *field_name = "heat";
   struct timeb tp;
 
+  if (argc < 2)
+  {
+    fprintf (stderr, "Missing parameter\n");
+    return -1;
+  }
+
   for (n=0; n<5; n++)
       param[n] = 0;
     if (argc > n+1)
     {
        param[n] = strtod(argv[n+1], NULL);
     }
-  if (argc > 1)
-  {
-      temp = param[0];
-  }
+  temp = param[0];
   if (argc > 3)
   {
-    sobol_rank  = (int)strtod(argv[argc-2], NULL);
-    sobol_group = (int)strtod(argv[argc-1], NULL);
+    sobol_rank  = (int)strtol(argv[argc-2], NULL, 10);
+  }
+  if (argc > 2)
+  {
+    sobol_group = (int)strtol(argv[argc-1], NULL, 10);
   }
 
   ftime(&tp);
@@ -108,10 +115,12 @@ int main( int argc, char **argv )
     t+=dt;
     filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &nb_op, &lx, &ly, &param[0]);
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon);
-    melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sobol_group);
   }
 
-  finalize (&dx, &dy, &nx, &ny, &nb_op, &u[0], &f[0]);
+  n = 1;
+
+  melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sobol_group);
+  finalize (&dx, &dy, &nx, &ny, &nb_op, &u[0], &f[0], &sobol_group);
 
   melissa_finalize ();
 
