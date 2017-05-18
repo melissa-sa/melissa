@@ -98,6 +98,82 @@ void increment_quantile (quantile_t *quantile,
 /**
  *******************************************************************************
  *
+ * @ingroup save_stats
+ *
+ * This function writes an array of quantile structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *quantile
+ * quantile structures to save, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void save_quantile(quantile_t *quantiles,
+                   int         vect_size,
+                   int         nb_time_steps,
+                   FILE*       f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fwrite(quantiles[i].quantile, sizeof(double), vect_size, f);
+        fwrite(&quantiles[i].increment, sizeof(int), 1, f);
+        fwrite(&quantiles[i].alpha, sizeof(double), 1, f);
+        fwrite(&quantiles[i].gamma, sizeof(double), 1, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup save_stats
+ *
+ * This function reads an array of quantile structures on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *quantile
+ * quantile structures to read, size nb_time_steps
+ *
+ * @param[in] vect_size
+ * size of double vectors
+ *
+ * @param[in] nb_time_steps
+ * number of time_steps of the study
+ *
+ * @param[in] f
+ * file descriptor
+ *
+ *******************************************************************************/
+
+void read_quantile(quantile_t *quantiles,
+                   int         vect_size,
+                   int         nb_time_steps,
+                   FILE*       f)
+{
+    int i;
+    for (i=0; i<nb_time_steps; i++)
+    {
+        fread(quantiles[i].quantile, sizeof(double), vect_size, f);
+        fread(&quantiles[i].increment, sizeof(int), 1, f);
+        fread(&quantiles[i].alpha, sizeof(double), 1, f);
+        fread(&quantiles[i].gamma, sizeof(double), 1, f);
+    }
+}
+
+/**
+ *******************************************************************************
+ *
  * @ingroup stats_base
  *
  * This function frees a quantile structure.
