@@ -174,14 +174,16 @@ set(STATS_C covariance.c
             mean.c
             min_max.c
             sobol.c
-            threshold.c)
+            threshold.c
+            quantile.c)
 set(ALL_SRCS ${ALL_SRCS} ${STATS_C})
 set(STATS_H covariance.h
             variance.h
             mean.h
             min_max.h
             sobol.h
-            threshold.h)
+            threshold.h
+            quantile.h)
 set(ALL_INCS ${ALL_INCS} ${STATS_H})
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")

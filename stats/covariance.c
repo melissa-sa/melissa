@@ -53,29 +53,29 @@ void init_covariance (covariance_t *covariance,
  *
  *******************************************************************************
  *
+ * @param[in,out] *covariance
+ * input: previously computed covariance,
+ * output: incremented covariance
+ *
  * @param[in] in_vect1[]
  * first input vector of double values
  *
  * @param[in] in_vect2[]
  * second input vector of double values
  *
- * @param[in,out] *covariance
- * input: previously computed covariance,
- * output: incremented covariance
- *
  * @param[in] vect_size
  * size of the input vectors
  *
  *******************************************************************************/
 
-void increment_covariance (double        in_vect1[],
+void increment_covariance (covariance_t *covariance,
+                           double        in_vect1[],
                            double        in_vect2[],
-                           covariance_t *covariance,
                            const int     vect_size)
 {
     int     i;
 
-    increment_mean(in_vect1, &(covariance->mean1), vect_size);
+    increment_mean(&(covariance->mean1), in_vect1, vect_size);
     if (covariance->increment > 0)
     {
 #ifdef BUILD_WITH_OPENMP
@@ -88,7 +88,7 @@ void increment_covariance (double        in_vect1[],
             covariance->covariance[i] /= (double)(covariance->increment);
         }
     }
-    increment_mean(in_vect2, &(covariance->mean2), vect_size);
+    increment_mean(&(covariance->mean2), in_vect2, vect_size);
     covariance->increment += 1;
 }
 
@@ -164,9 +164,9 @@ void update_covariance (covariance_t *covariance1,
  *******************************************************************************/
 
 void save_covariance(covariance_t *covars,
-                      int           vect_size,
-                      int           nb_time_steps,
-                      FILE*         f)
+                     int           vect_size,
+                     int           nb_time_steps,
+                     FILE*         f)
 {
     int i;
     for (i=0; i<nb_time_steps; i++)

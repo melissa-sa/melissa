@@ -35,8 +35,8 @@ typedef struct mean_s mean_t; /**< type corresponding to mean_s */
 void init_mean(mean_t    *mean,
                const int  vect_size);
 
-void increment_mean (double     in_vect[],
-                     mean_t    *partial_mean,
+void increment_mean (mean_t    *mean,
+                     double     in_vect[],
                      const int  vect_size);
 
 void update_mean (mean_t    *mean1,

@@ -137,10 +137,10 @@ int main (int argc, char **argv)
 
     for (i=0; i<n; i++)
     {
-        increment_mean (tableau, &my_mean, vect_size);
-        increment_variance (tableau, &my_variance, vect_size);
-        min_and_max (tableau, &my_min_and_max, vect_size);
-        update_threshold_exceedance (tableau, my_threshold_exceedance, 500.0, vect_size);
+        increment_mean (&my_mean, tableau, vect_size);
+        increment_variance (&my_variance, tableau, vect_size);
+        min_and_max (&my_min_and_max, tableau, vect_size);
+        update_threshold_exceedance (my_threshold_exceedance, 500.0, tableau, vect_size);
 
         for (j=0; j<vect_size; j++)
         {

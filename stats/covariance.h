@@ -34,9 +34,9 @@ typedef struct covariance_s covariance_t; /**< type corresponding to covariance_
 void init_covariance(covariance_t *covariance,
                      const int     vect_size);
 
-void increment_covariance (double        in_vect1[],
+void increment_covariance (covariance_t *partial_covariance,
+                           double        in_vect1[],
                            double        in_vect2[],
-                           covariance_t *partial_covariance,
                            const int     vect_size);
 
 void update_covariance (covariance_t *covariance1,
@@ -45,9 +45,9 @@ void update_covariance (covariance_t *covariance1,
                         const int     vect_size);
 
 void save_covariance(covariance_t *covars,
-                      int           vect_size,
-                      int           nb_time_steps,
-                      FILE*         f);
+                     int           vect_size,
+                     int           nb_time_steps,
+                     FILE*         f);
 
 void read_covariance(covariance_t *covars,
                      int           vect_size,

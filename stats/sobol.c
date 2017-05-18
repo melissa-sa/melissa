@@ -127,7 +127,7 @@ void increment_sobol_jansen (sobol_array_t *sobol_array,
     int i, j;
     double epsylon = 1e-12;
 
-    increment_variance (in_vect_tab[0], &(sobol_array->variance_a), vect_size);
+    increment_variance (&(sobol_array->variance_a), in_vect_tab[0], vect_size);
     sobol_array->iteration += 1;
 
     for (i=0; i< nb_parameters; i++)
@@ -213,14 +213,14 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
     int i, j;
     double epsylon = 1e-12;
 
-    increment_variance (in_vect_tab[0], &(sobol_array->variance_a), vect_size);
-    increment_variance (in_vect_tab[1], &(sobol_array->variance_b), vect_size);
+    increment_variance (&(sobol_array->variance_a), in_vect_tab[0], vect_size);
+    increment_variance (&(sobol_array->variance_b), in_vect_tab[1], vect_size);
 
     for (i=0; i< nb_parameters; i++)
     {
-        increment_variance (in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].variance_k), vect_size);
-        increment_covariance (in_vect_tab[1], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].first_order_covariance), vect_size);
-        increment_covariance (in_vect_tab[0], in_vect_tab[i+2], &(sobol_array->sobol_martinez[i].total_order_covariance), vect_size);
+        increment_variance (&(sobol_array->sobol_martinez[i].variance_k), in_vect_tab[i+2], vect_size);
+        increment_covariance (&(sobol_array->sobol_martinez[i].first_order_covariance), in_vect_tab[1], in_vect_tab[i+2], vect_size);
+        increment_covariance (&(sobol_array->sobol_martinez[i].total_order_covariance), in_vect_tab[0], in_vect_tab[i+2], vect_size);
 
 #ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for

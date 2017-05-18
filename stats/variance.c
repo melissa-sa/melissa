@@ -48,20 +48,20 @@ void init_variance (variance_t *variance,
  *
  *******************************************************************************
  *
- * @param[in] in_vect[]
- * input vector of double values
- *
  * @param[in,out] *partial_variance
  * input: previously computed partial variance,
  * output: updated partial variance
+ *
+ * @param[in] in_vect[]
+ * input vector of double values
  *
  * @param[in] vect_size
  * size of the input vectors
  *
  *******************************************************************************/
 
-void increment_mean_and_variance (double      in_vect[],
-                                  variance_t *partial_variance,
+void increment_mean_and_variance (variance_t *partial_variance,
+                                  double      in_vect[],
                                   const int   vect_size)
 {
     int     i;
@@ -93,24 +93,24 @@ void increment_mean_and_variance (double      in_vect[],
  *
  *******************************************************************************
  *
- * @param[in] in_vect[]
- * input vector of double values
- *
  * @param[in,out] *partial_variance
  * input: previously computed partial variance,
  * output: updated partial variance
+ *
+ * @param[in] in_vect[]
+ * input vector of double values
  *
  * @param[in] vect_size
  * size of the input vectors
  *
  *******************************************************************************/
 
-void increment_variance (double      in_vect[],
-                         variance_t *partial_variance,
+void increment_variance (variance_t *partial_variance,
+                         double      in_vect[],
                          const int   vect_size)
 {
-    increment_mean_and_variance (in_vect,
-                                 partial_variance,
+    increment_mean_and_variance (partial_variance,
+                                 in_vect,
                                  vect_size);
 }
 

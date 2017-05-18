@@ -36,12 +36,12 @@ typedef struct variance_s variance_t; /**< type corresponding to variance_s */
 void init_variance(variance_t *variance,
                    const int   vect_size);
 
-void increment_mean_and_variance (double      in_vect[],
-                                  variance_t *partial_variance,
+void increment_mean_and_variance (variance_t *partial_variance,
+                                  double      in_vect[],
                                   const int   vect_size);
 
-void increment_variance (double      in_vect[],
-                         variance_t *partial_variance,
+void increment_variance (variance_t *partial_variance,
+                         double      in_vect[],
                          const int   vect_size);
 
 void update_variance (variance_t *variance1,

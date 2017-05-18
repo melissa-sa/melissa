@@ -9,9 +9,9 @@
 #ifndef THRESHOLD_H
 #define THRESHOLD_H
 
-void update_threshold_exceedance (double    in_vect[],
-                                  int       threshold_exceedance[],
+void update_threshold_exceedance (int       threshold_exceedance[],
                                   int       threshold,
+                                  double    in_vect[],
                                   const int vect_size);
 
 void save_threshold(int  **threshold,

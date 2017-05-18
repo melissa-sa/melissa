@@ -21,22 +21,22 @@
  *
  *******************************************************************************
  *
- * @param[in] in_vect[]
- * input vector of double values
- *
  * @param[in,out] threshold_exceedance[]
  * number of threshold exceedance occurences
  *
  * @param[in] threshold
+ *
+ * @param[in] in_vect[]
+ * input vector of double values
  *
  * @param[in] vect_size
  * size of the input vector
  *
  *******************************************************************************/
 
-void update_threshold_exceedance (double    in_vect[],
-                                  int       threshold_exceedance[],
+void update_threshold_exceedance (int       threshold_exceedance[],
                                   int       threshold,
+                                  double    in_vect[],
                                   const int vect_size)
 {
     int     i;

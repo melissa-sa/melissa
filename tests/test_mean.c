@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     }
     for (j=0; j<n; j++)
     {
-        increment_mean (&tableau[j * vect_size], &my_mean, vect_size);
+        increment_mean (&my_mean, &tableau[j * vect_size], vect_size);
     }
     fprintf (stdout, "\niterative mean = ");
     for (i=0; i<vect_size; i++)

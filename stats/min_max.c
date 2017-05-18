@@ -48,19 +48,19 @@ void init_min_max (min_max_t *min_max,
  *
  *******************************************************************************
  *
- * @param[in] in_vect[]
- * input vector of double values
- *
  * @param[in,out] *min_max
  * the min and max structure
+ *
+ * @param[in] in_vect[]
+ * input vector of double values
  *
  * @param[in] vect_size
  * size of the input vectors
  *
  *******************************************************************************/
 
-void min_and_max (double     in_vect[],
-                  min_max_t *min_max,
+void min_and_max (min_max_t *min_max,
+                  double     in_vect[],
                   const int  vect_size)
 {
     if (min_max->is_init == 0)

@@ -50,33 +50,33 @@ void init_mean (mean_t    *mean,
  *
  *******************************************************************************
  *
- * @param[in] in_vect[]
- * input vector of double values
- *
  * @param[in,out] *partial_mean
  * input: previously computed partial mean,
  * output: updated partial mean
+ *
+ * @param[in] in_vect[]
+ * input vector of double values
  *
  * @param[in] vect_size
  * size of the input vectors
  *
  *******************************************************************************/
 
-void increment_mean (double     in_vect[],
-                     mean_t    *partial_mean,
+void increment_mean (mean_t    *mean,
+                     double     in_vect[],
                      const int  vect_size)
 {
     int     i;
 
-    partial_mean->increment += 1;
+    mean->increment += 1;
 
 #ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
 #endif // BUILD_WITH_OPENMP
     for (i=0; i<vect_size; i++)
     {
-        double temp = partial_mean->mean[i];
-        partial_mean->mean[i] = temp + (in_vect[i] - temp)/partial_mean->increment;
+        double temp = mean->mean[i];
+        mean->mean[i] = temp + (in_vect[i] - temp)/mean->increment;
     }
 }
 

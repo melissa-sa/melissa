@@ -32,8 +32,8 @@ typedef struct min_max_s min_max_t; /**< type corresponding to min_max_s */
 void init_min_max(min_max_t *min_max,
                   const int  vect_size);
 
-void min_and_max (double     in_vect[],
-                  min_max_t *min_max,
+void min_and_max (min_max_t *min_max,
+                  double     in_vect[],
                   const int  vect_size);
 
 void save_min_max(min_max_t *minmax,

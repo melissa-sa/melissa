@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     }
     for (j=0; j<n; j++)
     {
-        increment_covariance (&tableau1[j * vect_size], &tableau2[j * vect_size], &my_covariance, vect_size);
+        increment_covariance (&my_covariance, &tableau1[j * vect_size], &tableau2[j * vect_size], vect_size);
     }
     fprintf (stdout, "\ncovariance mean1 = ");
     for (i=0; i<vect_size; i++)

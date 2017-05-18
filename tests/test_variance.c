@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     }
     for (j=0; j<n; j++)
     {
-        increment_variance (&tableau[j * vect_size], &my_variance, vect_size);
+        increment_variance (&my_variance, &tableau[j * vect_size], vect_size);
     }
     fprintf (stdout, "\nvariance mean = ");
     for (i=0; i<vect_size; i++)
