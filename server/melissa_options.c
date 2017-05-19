@@ -32,6 +32,7 @@ static inline void stats_usage ()
             "                  min\n"
             "                  max\n"
             "                  threshold_exceedance\n"
+            "                  quantile\n"
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
@@ -65,6 +66,7 @@ static inline void init_options (melissa_options_t *options)
     options->variance_op     = 0;
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
+    options->quantile_op     = 0;
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
@@ -100,11 +102,11 @@ static inline void get_operations (char              *name,
     {
         str_tolower (temp_char);
 
-        if (0 == strcmp(temp_char, "mean"))
+        if (0 == strcmp(temp_char, "mean") || 0 == strcmp(temp_char, "means"))
         {
             options->mean_op = 1;
         }
-        else if (0 == strcmp(temp_char, "variance") || 0 == strcmp(temp_char, "var"))
+        else if (0 == strcmp(temp_char, "variance") || 0 == strcmp(temp_char, "variances") || 0 == strcmp(temp_char, "var"))
         {
             options->variance_op = 1;
         }
@@ -115,6 +117,10 @@ static inline void get_operations (char              *name,
         else if (0 == strcmp(temp_char, "threshold") || 0 == strcmp(temp_char, "threshold_exceedance"))
         {
             options->threshold_op = 1;
+        }
+        else if (0 == strcmp(temp_char, "quantile") || 0 == strcmp(temp_char, "quantiles"))
+        {
+            options->quantile_op = 1;
         }
         else if (0 == strcmp(temp_char, "sobol") || 0 == strcmp(temp_char, "sobol_indices"))
         {
@@ -281,6 +287,7 @@ void melissa_check_options (melissa_options_t  *options)
         options->variance_op == 0 &&
         options->min_and_max_op == 0 &&
         options->threshold_op == 0 &&
+        options->quantile_op == 0 &&
         options->sobol_op == 0)
     {
         // default values

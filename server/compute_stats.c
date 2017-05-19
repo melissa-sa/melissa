@@ -72,6 +72,11 @@ void compute_stats (melissa_data_t  *data,
         update_threshold_exceedance (data->thresholds[time_step], data->options->threshold, in_vect_tab[0], data->vect_size);
     }
 
+    if (data->options->quantile_op == 1)
+    {
+        increment_quantile (&(data->quantiles[time_step]), data->options->sampling_size, in_vect_tab[0], data->vect_size);
+    }
+
     if (data->options->sobol_op != 1)
     {
         if (data->options->mean_op == 1 && data->options->variance_op == 0)
@@ -120,6 +125,11 @@ void compute_stats (melissa_data_t  *data,
         if (data->options->threshold_op == 1)
         {
             update_threshold_exceedance (data->thresholds[time_step], data->options->threshold, in_vect_tab[1], data->vect_size);
+        }
+
+        if (data->options->quantile_op == 1)
+        {
+            increment_quantile (&(data->quantiles[time_step]), data->options->sampling_size, in_vect_tab[1], data->vect_size);
         }
     }
     data->step_simu[group_id] += 1;

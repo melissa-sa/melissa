@@ -154,6 +154,10 @@ void save_stats (melissa_data_t *data,
             {
                 save_threshold(data[i].thresholds, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
+            if (data[i].options->quantile_op != 0)
+            {
+                save_quantile(data[i].quantiles, data[i].vect_size, data[i].options->nb_time_steps, f);
+            }
             if (data[i].options->sobol_op != 0)
             {
                 data->save_sobol(data[i].sobol_indices, data->vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
@@ -220,6 +224,10 @@ void read_saved_stats (melissa_data_t *data,
             if (data[client_rank].options->threshold_op != 0)
             {
                 read_threshold(data[client_rank].thresholds, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
+            }
+            if (data[client_rank].options->quantile_op != 0)
+            {
+                read_quantile(data[client_rank].quantiles, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
             }
             if (data[client_rank].options->sobol_op != 0)
             {
@@ -544,6 +552,38 @@ void write_stats (melissa_data_t    **data,
                     for (j=0; j<comm_data->rcounts[i]; j++)
                     {
                         fprintf(f, "%d\n", (*data)[i].thresholds[t][j]);
+                    }
+#endif // BUILD_WITH_MPI
+                }
+            }
+#ifdef BUILD_WITH_MPI
+            MPI_File_close (&f);
+#else // BUILD_WITH_MPI
+            fclose(f);
+#endif // BUILD_WITH_MPI
+        }
+    }
+
+    if (options->quantile_op == 1)
+    {
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "%s_quantile_%.*d", field, max_size_time, (int)t+1);
+#ifdef BUILD_WITH_MPI
+            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+#else // BUILD_WITH_MPI
+            f = fopen(file_name, "w");
+#endif // BUILD_WITH_MPI
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (comm_data->rcounts[i] > 0)
+                {
+#ifdef BUILD_WITH_MPI
+                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].quantiles[t].quantile, comm_data->rcounts[i], MPI_DOUBLE, &status);
+#else // BUILD_WITH_MPI
+                    for (j=0; j<comm_data->rcounts[i]; j++)
+                    {
+                        fprintf(f, "%g\n", (*data)[i].quantiles[t].quantile[j]);
                     }
 #endif // BUILD_WITH_MPI
                 }

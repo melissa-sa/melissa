@@ -27,6 +27,7 @@ melissa_job_id = ""
 simu_job_id    = []
 job_states     = np.zeros(global_options.sampling_size, dtype=np.int) # not submitted
 simu_states    = np.zeros(global_options.sampling_size, dtype=np.int) # simu as seen by the Server
+simu_crash     = np.zeros(global_options.sampling_size, dtype=np.int) # number of simulation crash for each parameter set
 output         = ""
 
 #=====================================#
@@ -91,6 +92,7 @@ class message_reciever(Thread):
                 if message[1] != "-1":
                     simu_id = int(message[1])
                     with lock_job_state:
+                        simu_crash[simu_id] += 1
                         output += reboot_simu(simu_id,
                                               simu_job_id,
                                               job_states,
@@ -463,6 +465,7 @@ def launch_study():
                     print "check simulation "+str(i)+": state: "+str(simu_states[i])+", job: "+str(job_states[i]-1)
                     if (simu_states[i] != job_states[i]-1):
                         if (simu_states[i] <= 1 and job_states[i] == 3):
+                            simu_crash[i] += 1
                             output += reboot_simu(i,
                                                   simu_job_id,
                                                   job_states,
@@ -473,6 +476,7 @@ def launch_study():
                         if (simu_states[i] == 0 and job_states[i] == 2):
                             out=check_timeout(i, simu_job_id, output, global_options.batch_scheduler)
                             if (out == True):
+                                simu_crash[i] += 1
                                 output += reboot_simu(i,
                                                       simu_job_id,
                                                       job_states,

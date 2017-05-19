@@ -14,6 +14,7 @@
 #include "variance.h"
 #include "min_max.h"
 #include "threshold.h"
+#include "quantile.h"
 #include "covariance.h"
 #include "sobol.h"
 
@@ -58,6 +59,7 @@ struct melissa_data_s
     variance_t          *variances;     /**< array of variance structures, size nb_time_steps          */
     min_max_t           *min_max;       /**< array of min and max structures, size nb_time_steps       */
     int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
+    quantile_t          *quantiles;     /**< array of quantile structures, size nb_time_steps          */
     sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
     void (*init_sobol)(sobol_array_t*, int, int);
     void (*read_sobol)(sobol_array_t*, int, int, int, FILE*);

@@ -171,8 +171,7 @@ def launch_heat(nb_parameters,
           print "error launching simulation "+str(i)
           os.system("killall "+executable)
           return 1
-      if 10*(i/10) == i:
-          time.sleep(3)
+        time.sleep(1)
 
 #       kill all simulations here
     print "wait thread..."

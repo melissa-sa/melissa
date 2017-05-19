@@ -39,13 +39,17 @@
 
 void init_quantile (quantile_t   *quantile,
                     const int     vect_size,
-                    const double  alpha,
-                    const double  gamma)
+                    const double  alpha)
 {
+    int i;
+
     quantile->quantile = melissa_calloc (vect_size, sizeof(double));
+    for (i=0; i<vect_size; i++)
+    {
+        quantile->quantile[i] = alpha;
+    }
     quantile->increment = 0;
     quantile->alpha = alpha;
-    quantile->gamma = gamma;
 }
 
 /**
@@ -60,6 +64,9 @@ void init_quantile (quantile_t   *quantile,
  * @param[in] in_vect[]
  * input vector of double values
  *
+ * @param[in] nmax
+ * maximum number of iterations
+ *
  * @param[in,out] *partial_mean
  * input: previously computed partial mean,
  * output: updated partial mean
@@ -70,28 +77,40 @@ void init_quantile (quantile_t   *quantile,
  *******************************************************************************/
 
 void increment_quantile (quantile_t *quantile,
+                         const int   nmax,
                          double      in_vect[],
                          const int   vect_size)
 {
-    int     i;
-    double j;
+    int    i;
+    double temp, gamma;
 
     quantile->increment += 1;
 
 #ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
 #endif // BUILD_WITH_OPENMP
+    if (quantile->increment > 1)
+    {
     for (i=0; i<vect_size; i++)
     {
-        if (quantile->quantile[i] <= in_vect[i])
+        gamma = quantile->increment*(0.9/(nmax-1)) - 0.9/(nmax-1) +0.1;
+        if (quantile->quantile[i] >= in_vect[i])
         {
-            j = 1 - quantile->alpha;
+            temp = 1 - quantile->alpha;
         }
         else
         {
-            j = 0 - quantile->alpha;
+            temp = 0 - quantile->alpha;
         }
-        quantile->quantile[i] -= (1/(pow(quantile->increment, quantile->gamma))) * j;
+        quantile->quantile[i] -= temp/pow(quantile->increment, gamma);
+    }
+    }
+    else
+    {
+        for (i=0; i<vect_size; i++)
+        {
+            quantile->quantile[i] = in_vect[i];
+        }
     }
 }
 
@@ -129,7 +148,6 @@ void save_quantile(quantile_t *quantiles,
         fwrite(quantiles[i].quantile, sizeof(double), vect_size, f);
         fwrite(&quantiles[i].increment, sizeof(int), 1, f);
         fwrite(&quantiles[i].alpha, sizeof(double), 1, f);
-        fwrite(&quantiles[i].gamma, sizeof(double), 1, f);
     }
 }
 
@@ -167,7 +185,6 @@ void read_quantile(quantile_t *quantiles,
         fread(quantiles[i].quantile, sizeof(double), vect_size, f);
         fread(&quantiles[i].increment, sizeof(int), 1, f);
         fread(&quantiles[i].alpha, sizeof(double), 1, f);
-        fread(&quantiles[i].gamma, sizeof(double), 1, f);
     }
 }
 

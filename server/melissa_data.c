@@ -54,6 +54,13 @@ static void melissa_alloc_data (melissa_data_t *data)
             data->thresholds[i] = melissa_calloc (data->vect_size, sizeof(int));
     }
 
+    if (data->options->quantile_op == 1)
+    {
+        data->quantiles = melissa_malloc (data->options->nb_time_steps * sizeof(quantile_t));
+        for (i=0; i<data->options->nb_time_steps; i++)
+            init_quantile (&(data->quantiles[i]), data->vect_size, 0.95);
+    }
+
     if (data->options->sobol_op == 1)
     {
         data->sobol_indices = melissa_malloc (data->options->nb_time_steps * sizeof(sobol_array_t));
@@ -182,6 +189,13 @@ void melissa_free_data (melissa_data_t *data)
         for (i=0; i<data->options->nb_time_steps; i++)
             melissa_free (data->thresholds[i]);
         melissa_free (data->thresholds);
+    }
+
+    if (data->options->quantile_op == 1)
+    {
+        for (i=0; i<data->options->nb_time_steps; i++)
+            free_quantile (&(data->quantiles[i]));
+        melissa_free (data->quantiles);
     }
 
     if (data->options->sobol_op == 1)

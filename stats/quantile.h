@@ -27,18 +27,17 @@ struct quantile_s
 {
     double *quantile;  /**< quantile[vect_size]        */
     int     increment; /**< increment of this quantile */
-    double  alpha;     /**< alpha */
-    double  gamma;     /**< gamma */
+    double  alpha;     /**< alpha                      */
 };
 
 typedef struct quantile_s quantile_t; /**< type corresponding to quantile_s */
 
 void init_quantile (quantile_t   *quantile,
                     const int     vect_size,
-                    const double  alpha,
-                    const double  gamma);
+                    const double  alpha);
 
 void increment_quantile (quantile_t *quantile,
+                         const int   nmax,
                          double      in_vect[],
                          const int   vect_size);
 
