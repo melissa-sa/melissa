@@ -175,6 +175,7 @@ def launch_heat(nb_parameters,
 
 #       kill all simulations here
     print "wait thread..."
+    time.sleep(10)
     thread.join()
     get_message.close_message()
     os.system("killall "+executable)

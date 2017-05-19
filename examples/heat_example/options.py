@@ -4,14 +4,14 @@ import numpy as np
 # ------------- options ------------- #
 
 nb_parameters = 5
-sampling_size = 100
+sampling_size = 10
 nb_time_steps = 1
 #operations = ["mean","variance","min","max","threshold","sobol"]
 operations = ["mean","variance","min","max","threshold", "quantile"]
 threshold = 0.7
 mpi_options = ""
 nb_proc_simu = 2
-nb_proc_server = 2
+nb_proc_server = 1
 server_path = "../../server"
 range_min = np.zeros(nb_parameters)
 range_max = np.zeros(nb_parameters)

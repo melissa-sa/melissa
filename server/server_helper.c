@@ -218,6 +218,10 @@ int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_
                     return 1;
                 }
             }
+            else
+            {
+                return 1;
+            }
         }
         return check_simu_state(field->next, simu_state, group_id, nb_time_steps, client_comm_size);
     }

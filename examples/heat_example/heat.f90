@@ -82,9 +82,10 @@ program heat
     call filling_F(nx, ny, U, d, dx, dy, dt, t, F, i1, in, lx, ly, param)
     call conjgrad(A, F, U, nx, ny, epsilon, i1, in, np, me, next, previous, comm)
 
-    call melissa_send (n, name, u, me, sobol_rank, sobol_group)
   end do
 
+  n = 1
+  call melissa_send(n, name, u, me, sobol_rank, sobol_group)
   call finalize(dx, dy, nx, ny, i1, in, u, f, me, sobol_group)
 
   call melissa_finalize ()
