@@ -50,9 +50,9 @@ void init_mean (mean_t    *mean,
  *
  *******************************************************************************
  *
- * @param[in,out] *partial_mean
- * input: previously computed partial mean,
- * output: updated partial mean
+ * @param[in,out] *mean
+ * input: previously computed iterative mean,
+ * output: updated mean
  *
  * @param[in] in_vect[]
  * input vector of double values

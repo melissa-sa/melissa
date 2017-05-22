@@ -1,6 +1,6 @@
 /**
  *
- * @file stats_api.h
+ * @file melissa_api_no_mpi.h
  * @author Terraz Théophile
  * @date 2016-09-05
  *

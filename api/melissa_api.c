@@ -1,6 +1,6 @@
 /**
  *
- * @file stats_api.c
+ * @file melissa_api.c
  * @brief API Functions.
  * @author Terraz Théophile
  * @date 2016-09-05
@@ -28,15 +28,15 @@
 #endif
 
 #ifndef BUILD_WITH_MPI
-typedef int MPI_Comm;
+typedef int MPI_Comm; /**< Convert MPI_Comm to int when built without MPI */
 #endif // BUILD_WITH_MPI
 
-#define ZEROCOPY
+#define ZEROCOPY /**< Use ZMQ zero copy messages */
 
 /**
  *******************************************************************************
  *
- * @ingroup stats_api
+ * @ingroup melissa_api
  *
  * @struct zmq_data_s
  *
@@ -85,13 +85,13 @@ static double end_comm_time;
 static long int total_bytes_sent;
 #endif // BUILD_WITH_PROBES
 
-void my_free (void *data, void *hint)
+static void my_free (void *data, void *hint)
 {
     free (data);
 }
 
 
-void print_zmq_error(int ret)
+static void print_zmq_error(int ret)
 {
     if (ret == EAGAIN)
     {
@@ -274,7 +274,7 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
 /**
  *******************************************************************************
  *
- * @ingroup stats_api
+ * @ingroup melissa_api
  *
  * This function initialise connexion with the stats library
  *
@@ -283,8 +283,8 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
  * @param[in] *local_vect_size
  * sise of the local data vector to send to the library
  *
- * @param[in] *global_vect_size
- * sise of the global data vector to send to the library
+ * @param[in] *comm_size
+ * sise of the MPI communicator comm
  *
  * @param[in] *rank
  * MPI rank
@@ -629,23 +629,32 @@ void melissa_init (const int *local_vect_size,
 /**
  *******************************************************************************
  *
- * @ingroup stats_api
+ * @ingroup melissa_api
  *
  * Fortran wrapper for melissa_init (convert MPI communicator)
  *
  *******************************************************************************
  *
- * @param[in] *nb_parameters
- * number of variable parameters of the parametric study
- *
  * @param[in] *local_vect_size
  * sise of the local data vector to send to the library
  *
- * @param[in] *global_vect_size
- * sise of the global data vector to send to the library
+ * @param[in] *comm_size
+ * sise of the MPI communicator comm
+ *
+ * @param[in] *rank
+ * MPI rank
+ *
+ * @param[in] *sobol_rank
+ * Sobol indice rank in Sobol group
+ *
+ * @param[in] *sobol_group
+ * Sobol group
  *
  * @param[in] *comm_fortran
  * Fortran MPI communicator
+ *
+ * @param[in] *coupling
+ * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
  *
  *******************************************************************************/
 
@@ -665,9 +674,9 @@ void melissa_init_f (int       *local_vect_size,
 /**
  *******************************************************************************
  *
- * @ingroup stats_api
+ * @ingroup melissa_api
  *
- * This function initialise connexion with Melissa for sequential simulations
+ * This function initialise connexion with Melissa Server for sequential simulations
  *
  *******************************************************************************
  *
@@ -702,29 +711,29 @@ void melissa_init_no_mpi (const int *vect_size,
 /**
  *******************************************************************************
  *
- * @ingroup stats_api
+ * @ingroup melissa_api
  *
- * This function sends data to the stats library
+ * This function sends data to Melissa Server
  *
  *******************************************************************************
  *
  * @param[in] time_step
  * current time step of the simulation
  *
- * @param[in] *parameters
- * array of parameters
- *
- * @param[in] *nb_parameters
- * size of *parameters
+ * @param[in] *field_name
+ * name of the field to send to Melissa Server
  *
  * @param[in] *send_vect
  * local data array to send to the statistic library
  *
- * @param[in] *local_vect_size
- * sise of the local data vector to send to the library
+ * @param[in] *rank
+ * MPI rank
  *
- * @param[in] *comm
- * MPI communicator
+ * @param[in] *sobol_rank
+ * Sobol indice rank in Sobol group
+ *
+ * @param[in] *sobol_group
+ * Sobol group
  *
  *******************************************************************************/
 
@@ -904,7 +913,7 @@ void melissa_send (const int  *time_step,
 /**
  *******************************************************************************
  *
- * @ingroup stats_api
+ * @ingroup melissa_api
  *
  * This function sends data to the stats library
  *
@@ -913,17 +922,17 @@ void melissa_send (const int  *time_step,
  * @param[in] time_step
  * current time step of the simulation
  *
- * @param[in] *parameters
- * array of parameters
- *
- * @param[in] *nb_parameters
- * size of *parameters
+ * @param[in] *field_name
+ * name of the field to send to Melissa Server
  *
  * @param[in] *send_vect
  * local data array to send to the statistic library
  *
- * @param[in] *local_vect_size
- * sise of the local data vector to send to the library
+ * @param[in] *sobol_rank
+ * Sobol indice rank in Sobol group
+ *
+ * @param[in] *sobol_group
+ * Sobol group
  *
  *******************************************************************************/
 
@@ -945,7 +954,7 @@ void melissa_send_no_mpi (const int  *time_step,
 /**
  *******************************************************************************
  *
- * @ingroup stats_api
+ * @ingroup melissa_api
  *
  * This function disconects the simulation from the statistic library
  *

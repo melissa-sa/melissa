@@ -62,6 +62,9 @@ void write_client_data (int *client_comm_size,
  * @param[out] **client_vect_sizes
  * client vector sizes
  *
+ * @param[in] *options
+ * Melissa option structure
+ *
  *******************************************************************************/
 
 int read_client_data (int                *client_comm_size,
@@ -294,6 +297,9 @@ void save_simu_states(int         *simu_states,
  * @param[out] *simu_states
  * array of simulation states
  *
+ * @param[in] *options
+ * Melissa option structure
+ *
  * @param[in] *comm_data
  * communication structure
  *
@@ -336,7 +342,7 @@ void read_simu_states(int               *simu_states,
  * pointer to the array of structures containing statistics data
  *
  * @param[in] *options
- * option structure
+ * Melissa option structure
  *
  * @param[in] comm_data
  * structure containing communications parameters

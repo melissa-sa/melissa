@@ -32,9 +32,6 @@
  * @param[in] alpha
  * alpha parameter of the algotithm
  *
- * @param[in] gamma
- * gamma initial value
- *
  *******************************************************************************/
 
 void init_quantile (quantile_t   *quantile,
@@ -61,15 +58,15 @@ void init_quantile (quantile_t   *quantile,
  *
  *******************************************************************************
  *
- * @param[in] in_vect[]
- * input vector of double values
+ * @param[in,out] *quantile
+ * input: previously computed iterative quantile,
+ * output: updated partial quantile
  *
  * @param[in] nmax
  * maximum number of iterations
  *
- * @param[in,out] *partial_mean
- * input: previously computed partial mean,
- * output: updated partial mean
+ * @param[in] in_vect[]
+ * input vector of double values
  *
  * @param[in] vect_size
  * size of the input vectors
@@ -123,7 +120,7 @@ void increment_quantile (quantile_t *quantile,
  *
  *******************************************************************************
  *
- * @param[in] *quantile
+ * @param[in] *quantiles
  * quantile structures to save, size nb_time_steps
  *
  * @param[in] vect_size
@@ -160,7 +157,7 @@ void save_quantile(quantile_t *quantiles,
  *
  *******************************************************************************
  *
- * @param[in] *quantile
+ * @param[in] *quantiles
  * quantile structures to read, size nb_time_steps
  *
  * @param[in] vect_size

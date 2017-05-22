@@ -26,7 +26,7 @@
  *
  *******************************************************************************
  *
- * @param[in,out] *sobol_indices
+ * @param[in,out] *sobol_array
  * input: reference or pointer to an uninitialised sobol indices structure,
  * output: initialised structure, with values and variances set to 0
  *
@@ -63,7 +63,7 @@ void init_sobol_jansen (sobol_array_t *sobol_array,
  *
  *******************************************************************************
  *
- * @param[in,out] *sobol_indices
+ * @param[in,out] *sobol_array
  * input: reference or pointer to an uninitialised sobol indices structure,
  * output: initialised structure, with values and variances set to 0
  *
@@ -572,7 +572,7 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
  *
  *******************************************************************************
  *
- * @param[in] *sobol_indices
+ * @param[in] *sobol_array
  * reference or pointer to a sobol index structure to free
  *
  * @param[in] nb_parameters
@@ -580,7 +580,8 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
  *
  *******************************************************************************/
 
-void free_sobol_jansen (sobol_array_t *sobol_array, int nb_parameters)
+void free_sobol_jansen (sobol_array_t *sobol_array,
+                        int            nb_parameters)
 {
     int j;
     free_variance (&sobol_array->variance_a);
@@ -603,7 +604,7 @@ void free_sobol_jansen (sobol_array_t *sobol_array, int nb_parameters)
  *
  *******************************************************************************
  *
- * @param[in] *sobol_indices
+ * @param[in] *sobol_array
  * reference or pointer to a sobol array structure to free
  *
  * @param[in] nb_parameters

@@ -35,6 +35,9 @@
  * @param[in] **in_vect_tab
  * array of input vectors
  *
+ * @param[in] group_id
+ * ID of the simulation providing in_vect_tab
+ *
  *******************************************************************************/
 
 void compute_stats (melissa_data_t  *data,

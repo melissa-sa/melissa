@@ -41,39 +41,36 @@ find_package(PkgConfig REQUIRED)
 
 find_package(PythonLibs)
 
-
-
+option(BUILD_EXAMPLES "Build examples" ON)
 
 option(BUILD_WITH_ZMQ "Build with ZeroMQ" ON)
 
-if(BUILD_WITH_ZMQ)
-  mark_as_advanced(FORCE ZMQ_LIBRARY
-                         ZMQ_INCLUDE_DIR)
-  find_path(ZMQ_DIR NAMES include/zmq.h)
-  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
-  find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
-  set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
-  include_directories( ${ZMQ_INCLUDE_DIR} )
-  if(ZMQ_LIBRARY)
-    set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${ZMQ_LIBRARY} )
-    set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
-    pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
-  endif(ZMQ_LIBRARY)
-  if(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
-    set(ZMQ_FOUND TRUE)
-    message(STATUS "ZeroMQ Found")
-    add_definitions( -DBUILD_WITH_ZMQ )
-    option(BUILD_WITH_PY_ZMQ "Build with PyZMQ" ON)
-    if(BUILD_WITH_PY_ZMQ)
-        add_definitions( -DBUILD_WITH_PY_ZMQ )
-    endif(BUILD_WITH_PY_ZMQ)
-  else(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
-    # Disable  Option if missing dependencies
-    set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)
-    message(STATUS "ZeroMQ missing. BUILD_WITH_ZMQ option turned OFF")
-  endif(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
-endif(BUILD_WITH_ZMQ)
+mark_as_advanced(FORCE ZMQ_LIBRARY
+                       ZMQ_INCLUDE_DIR)
+find_path(ZMQ_DIR NAMES include/zmq.h)
+find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
+find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
+set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
+include_directories( ${ZMQ_INCLUDE_DIR} )
+if(ZMQ_LIBRARY)
+  set(EXTRA_LIBS ${EXTRA_LIBS}
+                 ${ZMQ_LIBRARY} )
+  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
+  pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
+endif(ZMQ_LIBRARY)
+if(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
+  set(ZMQ_FOUND TRUE)
+  message(STATUS "ZeroMQ Found")
+  add_definitions( -DBUILD_WITH_ZMQ )
+  option(BUILD_WITH_PY_ZMQ "Build with PyZMQ" ON)
+  if(BUILD_WITH_PY_ZMQ)
+      add_definitions( -DBUILD_WITH_PY_ZMQ )
+  endif(BUILD_WITH_PY_ZMQ)
+else(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
+  # Disable  Option if missing dependencies
+  set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)
+  message(STATUS "ZeroMQ missing. BUILD_WITH_ZMQ option turned OFF")
+endif(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
 
 option(BUILD_WITH_MPI "Build with MPI" ON)
 
@@ -93,8 +90,13 @@ if(BUILD_WITH_MPI)
     if(NOT MPI_Fortran_FOUND)
         find_package(MPI REQUIRED)
     endif(NOT MPI_Fortran_FOUND)
-    option(BUILD_EXAMPLES_WITH_MPI "Build examples with MPI" ON)
-  mark_as_advanced(CLEAR BUILD_EXAMPLES_WITH_MPI)
+    if(BUILD_EXAMPLES)
+      option(BUILD_EXAMPLES_WITH_MPI "Build examples with MPI" ON)
+      mark_as_advanced(CLEAR BUILD_EXAMPLES_WITH_MPI)
+    else(BUILD_EXAMPLES)
+      option(BUILD_EXAMPLES_WITH_MPI "Build examples with MPI" OFF)
+      mark_as_advanced(FORCE BUILD_EXAMPLES_WITH_MPI)
+    endif(BUILD_EXAMPLES)
   else(MPI_FOUND)
     # Disable  Option if missing dependencies
     set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
@@ -164,6 +166,8 @@ set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c)
 set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
 set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
 set(ALL_INCS ${ALL_INCS} ${UTILS_H})
+set(DOX_SOURCES ${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c
+                               ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
 
 include_directories("${PROJECT_SOURCE_DIR}/utils")
 
@@ -185,6 +189,9 @@ set(STATS_H covariance.h
             threshold.h
             quantile.h)
 set(ALL_INCS ${ALL_INCS} ${STATS_H})
+foreach( _file ${STATS_C} ${STATS_H})
+  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/stats/${_file}" )
+endforeach()
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")
 
@@ -202,6 +209,9 @@ set(SERVER_H compute_stats.h
              melissa_options.h
              server.h)
 set(ALL_INCS ${ALL_INCS} ${SERVER_H})
+foreach( _file ${SERVER_SRC} ${SERVER_H})
+  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/server/${_file}" )
+endforeach()
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
@@ -214,6 +224,9 @@ add_subdirectory(gui)
 set(ALL_API melissa_api.c
             melissa_api.h
             melissa_api_no_mpi.h)
+foreach( _file ${ALL_API})
+  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/api/${_file}" )
+endforeach()
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
 
@@ -221,7 +234,6 @@ add_subdirectory(api)
 
 add_subdirectory(tests)
 
-option(BUILD_EXAMPLES "Build examples" ON)
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif(BUILD_EXAMPLES)
@@ -230,11 +242,6 @@ if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
     message(FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly")
   endif(NOT DOXYGEN_FOUND)
-
-  set(DOX_SOURCES )
-  foreach( _file ${ALL_SRCS} ${ALL_INCS})
-    set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/src/${_file}" )
-  endforeach()
 
   # Configure the Template Doxyfile for our project
   set(DOX_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs)

@@ -52,21 +52,21 @@ typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s *
 
 struct melissa_data_s
 {
-    int                  vect_size;     /**< local size of input vectors                               */
-    melissa_options_t   *options;       /**< pointer to an option structure                            */
-    int                  is_valid;      /**< 1 if the structure has been checked                       */
-    mean_t              *means;         /**< array of mean structures, size nb_time_steps              */
-    variance_t          *variances;     /**< array of variance structures, size nb_time_steps          */
-    min_max_t           *min_max;       /**< array of min and max structures, size nb_time_steps       */
-    int                **thresholds;    /**< array of threshold exceedance vectors, size nb_time_steps */
-    quantile_t          *quantiles;     /**< array of quantile structures, size nb_time_steps          */
-    sobol_array_t       *sobol_indices; /**< array of sobol array structures, size nb_time_steps       */
-    void (*init_sobol)(sobol_array_t*, int, int);
-    void (*read_sobol)(sobol_array_t*, int, int, int, FILE*);
-    void (*save_sobol)(sobol_array_t*, int, int, int, FILE*);
-    void (*increment_sobol)(sobol_array_t*, int, double**, int);
-    void (*free_sobol)(sobol_array_t*, int);
-    int                 *step_simu;     /**< iterations counter, size nb_groups                        */
+    int                  vect_size;                              /**< local size of input vectors                               */
+    melissa_options_t   *options;                                /**< pointer to an option structure                            */
+    int                  is_valid;                               /**< 1 if the structure has been checked                       */
+    mean_t              *means;                                  /**< array of mean structures, size nb_time_steps              */
+    variance_t          *variances;                              /**< array of variance structures, size nb_time_steps          */
+    min_max_t           *min_max;                                /**< array of min and max structures, size nb_time_steps       */
+    int                **thresholds;                             /**< array of threshold exceedance vectors, size nb_time_steps */
+    quantile_t          *quantiles;                              /**< array of quantile structures, size nb_time_steps          */
+    sobol_array_t       *sobol_indices;                          /**< array of sobol array structures, size nb_time_steps       */
+    void (*init_sobol)(sobol_array_t*, int, int);                /**< pointer to Sobol initialization function                  */
+    void (*read_sobol)(sobol_array_t*, int, int, int, FILE*);    /**< pointer to Sobol read function                            */
+    void (*save_sobol)(sobol_array_t*, int, int, int, FILE*);    /**< pointer to Sobol save function                            */
+    void (*increment_sobol)(sobol_array_t*, int, double**, int); /**< pointer to Sobol increment function                       */
+    void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                            */
+    int                 *step_simu;                              /**< iterations counter, size nb_groups                        */
 };
 
 typedef struct melissa_data_s melissa_data_t; /**< type corresponding to melissa_data_s */

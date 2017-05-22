@@ -11,7 +11,7 @@ from threading import Thread, RLock
 from ctypes import cdll, create_string_buffer
 imp.load_source("options", "./options.py")
 from options import *
-get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
+get_message = cdll.LoadLibrary("@CMAKE_BINARY_DIR@/launcher/libget_message.so")
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 executable = "heatf"
@@ -175,9 +175,9 @@ def launch_heat(nb_parameters,
 
 #       kill all simulations here
     print "wait thread..."
-    time.sleep(10)
     thread.join()
     get_message.close_message()
+    time.sleep(1)
     os.system("killall "+executable)
     print "end !"
     return 0
