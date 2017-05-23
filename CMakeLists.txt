@@ -1,4 +1,4 @@
-project(stats C CXX Fortran)
+project(Melissa C CXX Fortran)
 
 cmake_minimum_required(VERSION 3.0)
 include(CTest)
@@ -43,34 +43,51 @@ find_package(PythonLibs)
 
 option(BUILD_EXAMPLES "Build examples" ON)
 
-option(BUILD_WITH_ZMQ "Build with ZeroMQ" ON)
+#option(BUILD_WITH_ZMQ "Build with ZeroMQ" ON)
 
-mark_as_advanced(FORCE ZMQ_LIBRARY
-                       ZMQ_INCLUDE_DIR)
-find_path(ZMQ_DIR NAMES include/zmq.h)
-find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
-find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
-set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
-include_directories( ${ZMQ_INCLUDE_DIR} )
-if(ZMQ_LIBRARY)
+#mark_as_advanced(FORCE ZMQ_LIBRARY
+#                       ZMQ_INCLUDE_DIR)
+#find_path(ZMQ_DIR NAMES include/zmq.h)
+#find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
+#find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
+#if(ZMQ_LIBRARY)
+#  set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
+#  include_directories( ${ZMQ_INCLUDE_DIR} )
+#  set(EXTRA_LIBS ${EXTRA_LIBS}
+#                 ${ZMQ_LIBRARY} )
+#  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
+#  pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
+#endif(ZMQ_LIBRARY)
+#if(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
+#  set(ZMQ_FOUND TRUE)
+#  message(STATUS "ZeroMQ Found")
+#  add_definitions( -DBUILD_WITH_ZMQ )
+#else(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
+  # Try to download ZeroMQ if missing dependencies
+#  set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)
+#  message(STATUS "ZeroMQ missing. BUILD_WITH_ZMQ option turned OFF")
+  include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+  ExternalProject_Add(ZeroMQ
+    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+  )
+#  find_path(ZMQ_DIR NAMES include/zmq.h)
+#  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
+  set(ZMQ_DIR ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ)
+  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
+  set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
+  include_directories( ${ZMQ_INCLUDE_DIR} )
+  find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
   set(EXTRA_LIBS ${EXTRA_LIBS}
                  ${ZMQ_LIBRARY} )
   set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
   pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
-endif(ZMQ_LIBRARY)
-if(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
-  set(ZMQ_FOUND TRUE)
-  message(STATUS "ZeroMQ Found")
+  message(STATUS "ZeroMQ dir:" ${ZMQ_DIR})
+  message(STATUS "ZeroMQ lib:" ${ZMQ_LIBRARY})
+  message(STATUS "ZeroMQ inc:" ${ZMQ_INCLUDE_DIR})
   add_definitions( -DBUILD_WITH_ZMQ )
-  option(BUILD_WITH_PY_ZMQ "Build with PyZMQ" ON)
-  if(BUILD_WITH_PY_ZMQ)
-      add_definitions( -DBUILD_WITH_PY_ZMQ )
-  endif(BUILD_WITH_PY_ZMQ)
-else(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
-  # Disable  Option if missing dependencies
-  set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)
-  message(STATUS "ZeroMQ missing. BUILD_WITH_ZMQ option turned OFF")
-endif(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
+#endif(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
 
 option(BUILD_WITH_MPI "Build with MPI" ON)
 
@@ -162,12 +179,11 @@ endif(BUILD_WITH_PROBES)
 
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
-set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c)
+set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c )
 set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
-set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
+set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h )
 set(ALL_INCS ${ALL_INCS} ${UTILS_H})
-set(DOX_SOURCES ${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c
-                               ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h)
+set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h")
 
 include_directories("${PROJECT_SOURCE_DIR}/utils")
 
