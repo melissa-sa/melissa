@@ -6,17 +6,22 @@
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
 extern "C" {
-#include "stats.h"
+#include "server.h"
+#include "melissa_io.h"
+#include "compute_stats.h"
+#include "melissa_options.h"
+#include "melissa_data.h"
+#include "melissa_utils.h"
 }
 
 #ifndef MAX_FIELD_NAME
 #define MAX_FIELD_NAME 128
 #endif
 
-class StatsInputPort : public flowvr::InputPort
+class MelissaInputPort : public flowvr::InputPort
 {
 public:
-  StatsInputPort(const char* name="stats", int size=1)
+  MelissaInputPort(const char* name="Melissa", int size=1)
     : InputPort(name),
       StampT("T",flowvr::TypeInt::create()),
       StampRank("Rank",flowvr::TypeInt::create()),
@@ -36,8 +41,8 @@ public:
 
 int main(int argc, char** argv)
 {
-    stats_data_t     stats_data;
-    stats_options_t  stats_options;
+    melissa_data_t     melissa_data;
+    melissa_options_t  melissa_options;
     int              iteration, nb_iterations;
     int              time_step;
     double          *in_vect;
@@ -47,34 +52,34 @@ int main(int argc, char** argv)
     int              client_rank;
     std::string      field_name;
 
-    stats_get_options (argc, argv, &stats_options);
-    print_options (&stats_options);
+    melissa_get_options (argc, argv, &melissa_options);
+    melissa_print_options (&melissa_options);
     do
     {
         opt = getopt (argc, argv, "p:t:o:e:s:h:n");
         switch (opt) {
         case 'n':
-            stats_data.vect_size = atoi (optarg);
+            melissa_data.vect_size = atoi (optarg);
         default:
             break;
         }
 
     } while (opt != -1);
-    stats_data.vect_size = 17;
-    init_data (&stats_data, &stats_options, stats_data.vect_size);
-    in_vect    = (double*)malloc (stats_data.vect_size * sizeof(double));
-    parameters = (int*)   malloc (stats_options.nb_parameters * sizeof(int));
+    melissa_data.vect_size = 17;
+    init_data (&melissa_data, &melissa_options, melissa_data.vect_size);
+    in_vect    = (double*)malloc (melissa_data.vect_size * sizeof(double));
+    parameters = (int*)   malloc (melissa_options.nb_parameters * sizeof(int));
 
-    nb_iterations = stats_options.nb_time_steps * stats_options.nb_simu ;
+    nb_iterations = melissa_options.nb_time_steps * melissa_options.nb_simu ;
 
-//    StatsInputPort port_vector("in_vect",stats_data.nb_parameters);
+//    MelissaInputPort port_vector("in_vect",melissa_data.nb_parameters);
 //    flowvr::InputPort port_vector("in_vect");
 //    flowvr::StampInfo StampT("T",flowvr::TypeInt::create());
-//    flowvr::StampInfo StampParam("Param",flowvr::TypeArray::create(stats_data.nb_parameters,flowvr::TypeInt::create()));
+//    flowvr::StampInfo StampParam("Param",flowvr::TypeArray::create(melissa_data.nb_parameters,flowvr::TypeInt::create()));
 //    port_vector.stamps->add(&StampT);
 //    port_vector.stamps->add(&StampParam);
 
-    StatsInputPort port_vector("in_vect", stats_options.nb_parameters);
+    MelissaInputPort port_vector("in_vect", melissa_options.nb_parameters);
     std::vector<flowvr::Port*> ports;
     ports.push_back(&port_vector);
 
@@ -94,34 +99,34 @@ int main(int argc, char** argv)
         vect.stamps.isValid(port_vector.StampT);
         vect.stamps.read(port_vector.StampT,time_step);
 //        vect.stamps.read(port_vector.StampRank,client_rank);
-        for (i=0; i<stats_options.nb_parameters; i++)
+        for (i=0; i<melissa_options.nb_parameters; i++)
             vect.stamps.read(port_vector.StampParam[i],parameters[i]);
         vect.stamps.read(port_vector.StampName,field_name);
 
         // Print stamps
         printf("parameters");
-        for (i=0; i<stats_options.nb_parameters; i++)
+        for (i=0; i<melissa_options.nb_parameters; i++)
             printf(" %d", parameters[i]);
         printf("\n");
         printf("t = %d\n", time_step);
 
         // Read data
-        memcpy(in_vect, vect.data.readAccess(), stats_data.vect_size * sizeof(double));
+        memcpy(in_vect, vect.data.readAccess(), melissa_data.vect_size * sizeof(double));
 
         // TODO find an other way to end the loop
-//        if(time_step > stats_options.nb_time_steps)
+//        if(time_step > melissa_options.nb_time_steps)
 //        {
 //            break;
 //        }
 
         printf("t = %d, client rank = %d\n", time_step, client_rank);
         printf(" parameters");
-        for (i=0; i<stats_options.nb_parameters; i++)
+        for (i=0; i<melissa_options.nb_parameters; i++)
             printf(" %d", parameters[i]);
         printf("\n");
 
         // Compute stats
-        compute_stats (&stats_data, time_step-1, 1, &in_vect);
+        compute_stats (&melissa_data, time_step-1, 1, &in_vect);
         iteration++;
         if (iteration >= nb_iterations)
         {
@@ -129,9 +134,9 @@ int main(int argc, char** argv)
         }
     }
 
-    finalize_stats (&stats_data);
+    finalize_stats (&melissa_data);
 
-    free_data (&stats_data);
+    free_data (&melissa_data);
     free (in_vect);
     free (parameters);
 

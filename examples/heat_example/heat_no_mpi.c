@@ -64,10 +64,10 @@ int main( int argc, char **argv )
   double *f = NULL;
   double a[3];
   double param[5];
-  int sobol_rank = 0;
-  int sobol_group = 0;
-  char *field_name = "heat";
   struct timeb tp;
+  int sample_id = 0;
+  int sobol_rank = 0;
+  char *field_name = "heat";
 
   if (argc < 2)
   {
@@ -76,7 +76,7 @@ int main( int argc, char **argv )
   }
 
   for (n=0; n<5; n++)
-      param[n] = 0;
+    param[n] = strtod(argv[1], NULL);
     if (argc > n+1)
     {
        param[n] = strtod(argv[n+1], NULL);
@@ -88,7 +88,7 @@ int main( int argc, char **argv )
   }
   if (argc > 2)
   {
-    sobol_group = (int)strtol(argv[argc-1], NULL, 10);
+    sample_id = (int)strtol(argv[argc-1], NULL, 10);
   }
 
   ftime(&tp);
@@ -108,7 +108,7 @@ int main( int argc, char **argv )
   init(&u[0], &nb_op, &temp);
   filling_A (&d, &dx, &dy, &dt, &a[0]); /* fill A */
 
-  melissa_init_no_mpi(&nb_op, &sobol_rank, &sobol_group);
+  melissa_init_no_mpi(&nb_op, &sobol_rank, &sample_id);
 
   for(n=1;n<=nmax;n++)
   {
@@ -119,8 +119,8 @@ int main( int argc, char **argv )
 
   n = 1;
 
-  melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sobol_group);
-  finalize (&dx, &dy, &nx, &ny, &nb_op, &u[0], &f[0], &sobol_group);
+  melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sample_id);
+  finalize (&dx, &dy, &nx, &ny, &nb_op, &u[0], &f[0], &sample_id);
 
   melissa_finalize ();
 

@@ -13,13 +13,13 @@
 
 void melissa_init_no_mpi(const int *vect_size,
                          const int *sobol_rank,
-                         const int *sobol_group);
+                         const int *sample_id);
 
 void melissa_send_no_mpi(const int  *time_step,
                          const char *field_name,
                          double     *send_vect,
                          const int  *sobol_rank,
-                         const int  *sobol_group);
+                         const int  *sample_id);
 
 void melissa_finalize();
 

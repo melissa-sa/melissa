@@ -16,9 +16,8 @@ program heat
   real*8,dimension(5) :: param
   character(len=32) :: arg
   integer :: comm
-  integer :: coupling = 1
+  integer :: sample_id = 0, sobol_rank = 0, coupling = 1
   character(len=5) :: name = C_CHAR_"heat"//C_NULL_CHAR
-  integer :: sobol_rank = 0, sobol_group = 0
 
   call mpi_init(statinfo)
 
@@ -42,7 +41,7 @@ program heat
   endif
   if(narg .gt. 2) then
     call getarg(narg, arg)
-    read( arg, * ) sobol_group ! sobol group
+    read( arg, * ) sample_id ! sobol group
   endif
 
   call MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, comm, statinfo);
@@ -73,9 +72,7 @@ program heat
   call init(U, i1, iN, dx, dy, nx, lx, ly, temp)
   call filling_A(d, dx, dy, dt, nx, ny, A) ! fill A
 
-  i = 1
-  n = nx*ny
-  call melissa_init (nb_op, np, me, sobol_rank, sobol_group, comm, coupling)
+  call melissa_init (nb_op, np, me, sobol_rank, sample_id, comm, coupling)
 
   do n=1, nmax
     t = t + dt
@@ -85,8 +82,8 @@ program heat
   end do
 
   n = 1
-  call melissa_send(n, name, u, me, sobol_rank, sobol_group)
-  call finalize(dx, dy, nx, ny, i1, in, u, f, me, sobol_group)
+  call melissa_send(n, name, u, me, sobol_rank, sample_id)
+  call finalize(dx, dy, nx, ny, i1, in, u, f, me, sample_id)
 
   call melissa_finalize ()
   

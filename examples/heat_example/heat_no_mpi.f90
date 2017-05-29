@@ -14,8 +14,8 @@ program heat_no_mpi
   real*8,dimension(3) :: A
   real*8,dimension(5) :: param
   character(len=32) :: arg
+  integer ::  sample_id = 0, sobol_rank = 0
   character(len=5) :: name = C_CHAR_"heat"//C_NULL_CHAR
-  integer :: sobol_rank = 0, sobol_group = 0
 
   narg = iargc()
   param(:) = 0
@@ -37,7 +37,7 @@ program heat_no_mpi
   endif
   if(narg .gt. 2) then
     call getarg(narg, arg)
-    read( arg, * ) sobol_group ! sobol group
+    read( arg, * ) sample_id ! sobol group
   endif
 
   call cpu_time(t1)
@@ -56,7 +56,7 @@ program heat_no_mpi
   call init(U, nb_op, temp)
   call filling_A(d, dx, dy, dt, A) ! fill A
 
-  call melissa_init_no_mpi(nb_op, sobol_rank, sobol_group)
+  call melissa_init_no_mpi(nb_op, sobol_rank, sample_id)
 
   do n=1, nmax
     t = t + dt
@@ -66,8 +66,8 @@ program heat_no_mpi
   end do
 
   n = 1
-  call melissa_send_no_mpi(n, name, u, sobol_rank, sobol_group)
-  call finalize(dx, dy, nx, ny, nb_op, u, f, sobol_group)
+  call melissa_send_no_mpi(n, name, u, sobol_rank, sample_id)
+  call finalize(dx, dy, nx, ny, nb_op, u, f, sample_id)
 
   call melissa_finalize()
   

@@ -292,8 +292,8 @@ static inline void comm_n_to_m_init (zmq_data_t *data,
  * @param[in] *sobol_rank
  * Sobol indice rank in Sobol group
  *
- * @param[in] *sobol_group
- * Sobol group
+ * @param[in] *sample_id
+ * ID of the parameter set defining the simulation
  *
  * @param[in] *comm
  * MPI communicator
@@ -307,7 +307,7 @@ void melissa_init (const int *local_vect_size,
                    const int *comm_size,
                    const int *rank,
                    const int *sobol_rank,
-                   const int *sobol_group,
+                   const int *sample_id,
                    MPI_Comm  *comm,
                    const int *coupling)
 {
@@ -354,7 +354,7 @@ void melissa_init (const int *local_vect_size,
         }
 
         zmq_data.sinit_tab[0] = *comm_size;
-        zmq_data.sinit_tab[1] = *sobol_group;
+        zmq_data.sinit_tab[1] = *sample_id;
         zmq_data.rinit_tab[0] = 0;
         zmq_data.rinit_tab[1] = 1;
 
@@ -472,7 +472,7 @@ void melissa_init (const int *local_vect_size,
                 strcpy (master_node_name, "localhost");
                 if (*sobol_rank == 0 && *rank == 0)
                 {
-                    fprintf(stdout,"WARNING: Group %d master name set to \"localhost\"\n", *sobol_group);
+                    fprintf(stdout,"WARNING: Group %d master name set to \"localhost\"\n", *sample_id);
                 }
             }
             if (*sobol_rank == 0)
@@ -482,7 +482,7 @@ void melissa_init (const int *local_vect_size,
                     master_requester = zmq_socket (zmq_data.context, ZMQ_REP);
                     if (0 == strcmp(master_node_name, "localhost"))
                     {
-                        sprintf (port_name, "tcp://*:%d", 3004+*sobol_group);
+                        sprintf (port_name, "tcp://*:%d", 3004+*sample_id);
                     }
                     else
                     {
@@ -496,7 +496,7 @@ void melissa_init (const int *local_vect_size,
                 master_requester = zmq_socket (zmq_data.context, ZMQ_REQ);
                 if (0 == strcmp(master_node_name, "localhost"))
                 {
-                    sprintf (port_name, "tcp://%s:%d", master_node_name, 3004+*sobol_group);
+                    sprintf (port_name, "tcp://%s:%d", master_node_name, 3004+*sample_id);
                 }
                 else
                 {
@@ -525,7 +525,7 @@ void melissa_init (const int *local_vect_size,
                 port_no = 100 + zmq_data.pull_rank[i];
                 sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
                 melissa_connect (zmq_data.data_pusher[j], port_name);
-                fprintf (stdout, "simu %d:%d rank %d connected to %s\n", *sobol_group, *sobol_rank, *rank, port_name);
+                fprintf (stdout, "simu %d:%d rank %d connected to %s\n", *sample_id, *sobol_rank, *rank, port_name);
                 j += 1;
             }
         }
@@ -564,7 +564,7 @@ void melissa_init (const int *local_vect_size,
                     zmq_data.sobol_requester[i] = zmq_socket (zmq_data.context, ZMQ_REP);
                     if (0 == strcmp(master_node_name, "localhost"))
                     {
-                        sprintf (port_name, "tcp://*:4%d", 100 + (*sobol_group * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + i));
+                        sprintf (port_name, "tcp://*:4%d", 100 + (*sample_id * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + i));
                     }
                     else
                     {
@@ -590,7 +590,7 @@ void melissa_init (const int *local_vect_size,
             zmq_data.sobol_requester[0] = zmq_socket (zmq_data.context, ZMQ_REQ);
             if (0 == strcmp(master_node_name, "localhost"))
             {
-                sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + (*sobol_group * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + *sobol_rank - 1));
+                sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + (*sample_id * *comm_size * (zmq_data.nb_parameters+1) + *rank * (zmq_data.nb_parameters+1) + *sobol_rank - 1));
             }
             else
             {
@@ -647,8 +647,8 @@ void melissa_init (const int *local_vect_size,
  * @param[in] *sobol_rank
  * Sobol indice rank in Sobol group
  *
- * @param[in] *sobol_group
- * Sobol group
+ * @param[in] *sample_id
+ * ID of the parameter set defining the simulation
  *
  * @param[in] *comm_fortran
  * Fortran MPI communicator
@@ -662,12 +662,12 @@ void melissa_init_f (int       *local_vect_size,
                      int       *comm_size,
                      int       *rank,
                      const int *sobol_rank,
-                     const int *sobol_group,
+                     const int *sample_id,
                      MPI_Fint  *comm_fortran,
                      int       *coupling)
 {
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
-    melissa_init(local_vect_size, comm_size, rank, sobol_rank, sobol_group, &comm, coupling);
+    melissa_init(local_vect_size, comm_size, rank, sobol_rank, sample_id, &comm, coupling);
 }
 #endif // BUILD_WITH_MPI
 
@@ -682,18 +682,18 @@ void melissa_init_f (int       *local_vect_size,
  *
  * @param[in] *vect_size
  * sise of the data vector to send to the library
- * MPI rank
  *
  * @param[in] *sobol_rank
  * Sobol indice rank in Sobol group
  *
- * @param[in] *sobol_group
+ * @param[in] *sample_id
+ * ID of the parameter set defining the simulation
  *
  *******************************************************************************/
 
 void melissa_init_no_mpi (const int *vect_size,
                           const int *sobol_rank,
-                          const int *sobol_group)
+                          const int *sample_id)
 {
     int rank = 0;
     int comm_size = 1;
@@ -703,7 +703,7 @@ void melissa_init_no_mpi (const int *vect_size,
                   &comm_size,
                   &rank,
                   sobol_rank,
-                  sobol_group,
+                  sample_id,
                   &comm,
                   &coupling);
 }
@@ -732,8 +732,8 @@ void melissa_init_no_mpi (const int *vect_size,
  * @param[in] *sobol_rank
  * Sobol indice rank in Sobol group
  *
- * @param[in] *sobol_group
- * Sobol group
+ * @param[in] *sample_id
+ * ID of the parameter set defining the simulation
  *
  *******************************************************************************/
 
@@ -742,7 +742,7 @@ void melissa_send (const int  *time_step,
                    double     *send_vect,
                    const int  *rank,
                    const int  *sobol_rank,
-                   const int  *sobol_group)
+                   const int  *sample_id)
 {
     int   i=0, j, k, ret;
     int   buff_size;
@@ -833,7 +833,7 @@ void melissa_send (const int  *time_step,
                 buff_ptr += sizeof(int);
                 memcpy(buff_ptr, sobol_rank, sizeof(int));
                 buff_ptr += sizeof(int);
-                memcpy(buff_ptr, sobol_group, sizeof(int));
+                memcpy(buff_ptr, sample_id, sizeof(int));
                 buff_ptr += sizeof(int);
                 memcpy(buff_ptr, rank, sizeof(int));
                 buff_ptr += sizeof(int);
@@ -869,7 +869,7 @@ void melissa_send (const int  *time_step,
         buff_ptr += sizeof(int);
         memcpy(buff_ptr, sobol_rank, sizeof(int));
         buff_ptr += sizeof(int);
-        memcpy(buff_ptr, sobol_group, sizeof(int));
+        memcpy(buff_ptr, sample_id, sizeof(int));
         buff_ptr += sizeof(int);
         memcpy(buff_ptr, rank, sizeof(int));
         buff_ptr += sizeof(int);
@@ -931,8 +931,8 @@ void melissa_send (const int  *time_step,
  * @param[in] *sobol_rank
  * Sobol indice rank in Sobol group
  *
- * @param[in] *sobol_group
- * Sobol group
+ * @param[in] *sample_id
+ * ID of the parameter set defining the simulation
  *
  *******************************************************************************/
 
@@ -940,7 +940,7 @@ void melissa_send_no_mpi (const int  *time_step,
                           const char *field_name,
                           double     *send_vect,
                           const int  *sobol_rank,
-                          const int  *sobol_group)
+                          const int  *sample_id)
 {
     int rank = 0;
     melissa_send (time_step,
@@ -948,7 +948,7 @@ void melissa_send_no_mpi (const int  *time_step,
                   send_vect,
                   &rank,
                   sobol_rank,
-                  sobol_group);
+                  sample_id);
 }
 
 /**

@@ -3,6 +3,8 @@ configure_file(data.txt data.txt COPYONLY)
 configure_file(options.py options.py COPYONLY)
 configure_file(master.py master.py @ONLY)
 configure_file(crash_server.py crash_server.py @ONLY)
+configure_file(heat_base.c heat_base.c COPYONLY)
+configure_file(heat_base.f90 heat_base.f90 COPYONLY)
 
 if(BUILD_WITH_MPI)
   add_library(heat_utils heat_utils.f90)

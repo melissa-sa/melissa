@@ -4,10 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/timeb.h>
-#include <zmq.h>
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
+#include <zmq.h>
 #include <melissa_api.h>
 
 void read_file(int*   ,
@@ -89,13 +87,13 @@ int main( int argc, char **argv )
   double *f = NULL;
   double a[3];
   double param[5];
-  int sobol_rank = 0;
-  int sobol_group = 0;
   MPI_Comm comm;
-  int coupling = 1;
   int fcomm;
-  char *field_name = "heat";
   struct timeb tp;
+  int coupling = 1;
+  int sample_id = 0;
+  int sobol_rank = 0;
+  char *field_name = "heat";
 
   MPI_Init(&argc, &argv);
 
@@ -106,7 +104,7 @@ int main( int argc, char **argv )
   }
 
   for (n=0; n<5; n++)
-      param[n] = 0;
+    param[n] = strtod(argv[1], NULL);
     if (argc > n+1)
     {
        param[n] = strtod(argv[n+1], NULL);
@@ -118,7 +116,7 @@ int main( int argc, char **argv )
   }
   if (argc > 2)
   {
-    sobol_group = (int)strtol(argv[argc-1], NULL, 10);
+    sample_id = (int)strtol(argv[argc-1], NULL, 10);
   }
 
   MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, &comm);
@@ -153,7 +151,7 @@ int main( int argc, char **argv )
   init(&u[0], &i1, &in, &dx, &dy, &nx, &lx, &ly, &temp);
   filling_A (&d, &dx, &dy, &dt, &nx, &ny, &a[0]); /* fill A */
 
-  melissa_init (&nb_op, &np, &me, &sobol_rank, &sobol_group, &comm, &coupling);
+  melissa_init (&nb_op, &np, &me, &sobol_rank, &sample_id, &comm, &coupling);
 
   for(n=1; n<=nmax; n++)
   {
@@ -163,8 +161,8 @@ int main( int argc, char **argv )
   }
 
   n = 1;
-  melissa_send (&n, field_name, u, &me, &sobol_rank, &sobol_group);
-  finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &sobol_group);
+  melissa_send (&n, field_name, u, &me, &sobol_rank, &sample_id);
+  finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &sample_id);
 
   melissa_finalize ();
 
