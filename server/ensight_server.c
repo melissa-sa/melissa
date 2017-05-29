@@ -6,9 +6,6 @@
 #include <signal.h>
 #include <errno.h>
 #include <math.h>
-#ifdef BUILD_WITH_ZMQ
-#include <zmq.h>
-#endif // BUILD_WITH_ZMQ
 #include "server.h"
 #include "melissa_io.h"
 #include "compute_stats.h"

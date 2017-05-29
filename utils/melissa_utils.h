@@ -15,11 +15,11 @@
 #include <stdio.h>
 
 #ifndef MPI_MAX_PROCESSOR_NAME
-#define MPI_MAX_PROCESSOR_NAME 256
+#define MPI_MAX_PROCESSOR_NAME 256 /**< Define the macro if mpi.h not present */
 #endif
 
 #ifndef MAX_FIELD_NAME
-#define MAX_FIELD_NAME 128
+#define MAX_FIELD_NAME 128 /**< Define name size if not defined */
 #endif
 
 void melissa_logo ();

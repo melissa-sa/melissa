@@ -1,6 +1,8 @@
 
 add_library(melissa_utils OBJECT ${UTILS_C} ${UTILS_H})
-add_dependencies(melissa_utils ZeroMQ)
+if(INSTALL_ZMQ)
+  add_dependencies(melissa_utils ZeroMQ)
+endif(INSTALL_ZMQ)
 target_compile_options(melissa_utils BEFORE PUBLIC -fPIC)
 #install(TARGETS melissa_utils DESTINATION bin)
 install(FILES ${UTILS_H} DESTINATION include)

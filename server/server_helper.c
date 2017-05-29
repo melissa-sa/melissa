@@ -5,9 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
-#ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
-#endif // BUILD_WITH_ZMQ
 #include "compute_stats.h"
 #include "melissa_options.h"
 #include "melissa_data.h"

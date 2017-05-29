@@ -6,9 +6,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <math.h>
-#ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
-#endif // BUILD_WITH_ZMQ
 #include "server.h"
 #include "melissa_io.h"
 #include "compute_stats.h"
@@ -16,7 +14,7 @@
 #include "melissa_data.h"
 #include "melissa_utils.h"
 
-#define ZEROCOPY
+#define ZEROCOPY /**< Use ZMQ zero copy messages */
 
 static volatile int end_signal = 0;
 
@@ -45,11 +43,7 @@ int main (int argc, char **argv)
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
-#ifdef BUILD_WITH_ZMQ
     void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
-#else // BUILD_WITH_ZMQ
-    void               *python_pusher = NULL;
-#endif // BUILD_WITH_ZMQ
     int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
@@ -141,10 +135,11 @@ int main (int argc, char **argv)
     sprintf (txt_buffer, "tcp://*:11%d", port_no);
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     melissa_bind (data_puller, txt_buffer);
-#ifdef BUILD_WITH_ZMQ
+
+    // === Open master port === //
+
     sprintf (txt_buffer, "tcp://%s:5555", melissa_options.launcher_name);
     melissa_connect (python_pusher, txt_buffer);
-#endif // BUILD_WITH_ZMQ
 
     if (comm_data.rank == 0)
     {
@@ -190,7 +185,6 @@ int main (int argc, char **argv)
                 nb_finished_simulations += 1;
             }
         }
-#ifdef BUILD_WITH_ZMQ
         if (comm_data.rank == 0)
         {
             for (i=0; i<melissa_options.sampling_size; i++)
@@ -206,7 +200,6 @@ int main (int argc, char **argv)
                 simu_state[i] = 0;
             }
         }
-#endif // BUILD_WITH_ZMQ
         fprintf (stdout, " ok \n");
     }
 
@@ -469,14 +462,12 @@ int main (int argc, char **argv)
                 nb_finished_simulations += 1;
                 fprintf(stderr, "nb_finished_simulations: %d\n", nb_finished_simulations);
             }
-#ifdef BUILD_WITH_ZMQ
             // === Send a message to the Python master in case of simulation status update === //
             if (old_simu_state != simu_state[group_id] && comm_data.rank == 0)
             {
                 sprintf (txt_buffer, "simu_state %d %d", group_id, simu_state[group_id]);
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
-#endif // BUILD_WITH_ZMQ
 
             if (comm_data.rank==0 && ((iteration % 10) == 0 || iteration < 10) )
             {
@@ -492,7 +483,6 @@ int main (int argc, char **argv)
 #endif // ZEROCOPY
         }
 
-#ifdef BUILD_WITH_ZMQ
         // === Send a message to the Python master in case of Sobol indices convergence === //
 //        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
 //        {
@@ -503,7 +493,6 @@ int main (int argc, char **argv)
 //                break;
 //            }
 //        }
-#endif // BUILD_WITH_ZMQ
 
 //        if (iteration % 100 == 0)
         if (last_checkpoint_time  + 5000 < melissa_get_time())
@@ -554,16 +543,8 @@ int main (int argc, char **argv)
             break;
         }
 
-//#ifdef BUILD_WITH_ZMQ
-//        if (nb_fields > 0 && melissa_options.sobol_op == 0)
-//#else  // BUILD_WITH_ZMQ
         if (nb_fields > 0)
-//#endif // BUILD_WITH_ZMQ
         {
-//            if (iteration >= nb_iterations*nb_fields)
-//            {
-//                break;
-//            }
             if (nb_finished_simulations >= melissa_options.sampling_size)
             {
                 break;
@@ -644,14 +625,13 @@ int main (int argc, char **argv)
     zmq_close (connexion_responder);
     zmq_close (init_responder);
     zmq_close (data_puller);
-#ifdef BUILD_WITH_ZMQ
+
     if (comm_data.rank == 0 && end_signal == 0)
     {
         sprintf (txt_buffer, "stop");
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
     }
     zmq_close (python_pusher);
-#endif // BUILD_WITH_ZMQ
     zmq_ctx_term (context);
 
 #ifdef BUILD_WITH_MPI

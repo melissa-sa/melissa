@@ -22,9 +22,7 @@
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
-#ifdef BUILD_WITH_ZMQ
 #include <zmq.h>
-#endif // BUILD_WITH_ZMQ
 #include "melissa_utils.h"
 
 static void print_zmq_error(int         ret,

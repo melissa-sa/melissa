@@ -43,51 +43,50 @@ find_package(PythonLibs)
 
 option(BUILD_EXAMPLES "Build examples" ON)
 
-#option(BUILD_WITH_ZMQ "Build with ZeroMQ" ON)
+# ZeroMQ #
 
-#mark_as_advanced(FORCE ZMQ_LIBRARY
-#                       ZMQ_INCLUDE_DIR)
-#find_path(ZMQ_DIR NAMES include/zmq.h)
-#find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
-#find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
-#if(ZMQ_LIBRARY)
-#  set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
-#  include_directories( ${ZMQ_INCLUDE_DIR} )
-#  set(EXTRA_LIBS ${EXTRA_LIBS}
-#                 ${ZMQ_LIBRARY} )
-#  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
-#  pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
-#endif(ZMQ_LIBRARY)
-#if(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
-#  set(ZMQ_FOUND TRUE)
-#  message(STATUS "ZeroMQ Found")
-#  add_definitions( -DBUILD_WITH_ZMQ )
-#else(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
-  # Try to download ZeroMQ if missing dependencies
-#  set(BUILD_WITH_ZMQ FALSE CACHE BOOL "Build with ZeroMQ" FORCE)
-#  message(STATUS "ZeroMQ missing. BUILD_WITH_ZMQ option turned OFF")
+if(NOT ZMQ_DIR)
+  message(STATUS "ZeroMQ dir not found:" ${ZMQ_DIR})
+else()
+  message(STATUS "ZeroMQ directory:" ${ZMQ_DIR})
+endif()
+
+if(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
+  set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
+  message(STATUS "ZeroMQ found at " ${ZMQ_DIR})
+else(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
+  option(INSTALL_ZMQ "Download and install ZeroMQ" ON)
+  message(STATUS "ZeroMQ not found")
+endif(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
+
+if(INSTALL_ZMQ)
   include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
   ExternalProject_Add(ZeroMQ
     URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
   )
-#  find_path(ZMQ_DIR NAMES include/zmq.h)
-#  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
-  set(ZMQ_DIR ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ)
-  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include)
-  set(ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
+  set(ZMQ_DIR ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ CACHE FORCE " ")
+  mark_as_advanced(FORCE ZMQ_DIR)
+  set(ZMQ_LIBRARY ${ZMQ_DIR}/lib/libzmq.so CACHE INTERNAL " ")
+  set(ZMQ_INCLUDE_DIR ${ZMQ_DIR}/include CACHE INTERNAL " ")
   include_directories( ${ZMQ_INCLUDE_DIR} )
-  find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib)
+  set(EXTRA_LIBS ${EXTRA_LIBS}
+                 ${ZMQ_LIBRARY} )
+  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
+else(INSTALL_ZMQ)
+  find_path(ZMQ_DIR NAMES include/zmq.h)
+  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include CACHE INTERNAL " ")
+  find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib CACHE INTERNAL " ")
+  include_directories( ${ZMQ_INCLUDE_DIR} )
   set(EXTRA_LIBS ${EXTRA_LIBS}
                  ${ZMQ_LIBRARY} )
   set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
   pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
-  message(STATUS "ZeroMQ dir:" ${ZMQ_DIR})
-  message(STATUS "ZeroMQ lib:" ${ZMQ_LIBRARY})
-  message(STATUS "ZeroMQ inc:" ${ZMQ_INCLUDE_DIR})
-  add_definitions( -DBUILD_WITH_ZMQ )
-#endif(ZMQ_LIBRARY AND ZMQ_INCLUDE_DIRS)
+endif(INSTALL_ZMQ)
+message(STATUS "ZeroMQ dir:" ${ZMQ_DIR})
+message(STATUS "ZeroMQ lib:" ${ZMQ_LIBRARY})
+message(STATUS "ZeroMQ inc:" ${ZMQ_INCLUDE_DIR})
 
 option(BUILD_WITH_MPI "Build with MPI" ON)
 
