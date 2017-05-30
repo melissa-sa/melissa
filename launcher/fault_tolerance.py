@@ -46,7 +46,8 @@ def reboot_simu(simu_id,
                 batch_scheduler,
                 workdir,
                 output,
-                operations):
+                operations,
+                simu_crash):
     if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
         call_bash("scancel "+simu_job_id[simu_id])
     elif (batch_scheduler == "OAR"):

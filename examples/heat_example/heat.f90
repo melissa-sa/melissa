@@ -32,8 +32,8 @@ program heat
   call getarg(2, arg)
   read( arg, * ) sample_id ! sobol group
   call getarg(3, arg)
-  read( arg, * ) param(0) ! initial temperature
-  param(:) = param(0)
+  read( arg, * ) param(1) ! initial temperature
+  param(:) = param(1)
 
   do n=5, 8
     if(narg .ge. n) then

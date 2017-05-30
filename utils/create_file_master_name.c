@@ -32,9 +32,8 @@ int main (int argc, char **argv)
                     break;
                 }
             }
-            fputs(node_name ,file);
         }
-
+        fputs(node_name ,file);
         fclose(file);
     }
     else

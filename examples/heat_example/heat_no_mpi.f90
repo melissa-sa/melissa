@@ -30,9 +30,9 @@ program heat_no_mpi
   read( arg, * ) sample_id ! sobol group
   print*, arg
   call getarg(3, arg)
-  read( arg, * ) param(0) ! initial temperature
+  read( arg, * ) param(1) ! initial temperature
   print*, arg
-  param(:) = param(0)
+  param(:) = param(1)
 
   do n=5, 8
     if(narg .ge. n) then

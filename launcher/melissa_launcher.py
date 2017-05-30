@@ -21,7 +21,7 @@ from ctypes import cdll, create_string_buffer
 
 global_options = options()
 timeout_server = 600
-sys.path.append(global_options.home_path+"/../master")
+sys.path.append(global_options.home_path+"/../launcher")
 server_state   = ""
 melissa_job_id = ""
 simu_job_id    = []
@@ -34,7 +34,7 @@ output         = ""
 #               Threads               #
 #=====================================#
 
-get_message = cdll.LoadLibrary(global_options.server_path+'../master/libget_message.so')
+get_message = cdll.LoadLibrary(global_options.server_path+'/../master/libget_message.so')
 
 lock_job_state = RLock()
 lock_simu_state = RLock()
@@ -280,13 +280,13 @@ def launch_study():
                 output += "error creating simulation "+str(k)+" of group "+str(i)+"\n"
     os.chdir(global_options.workdir+"/STATS")
     if (global_options.batch_scheduler == "Slurm"):
-        melissa_job_id += call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
+        melissa_job_id = call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
     elif (global_options.batch_scheduler == "CCC"):
-        melissa_job_id += call_bash('ccc_msub -r Melissa "./run_study.sh"')['out'].split()[-1]
+        melissa_job_id = call_bash('ccc_msub -r Melissa "./run_study.sh"')['out'].split()[-1]
     elif (global_options.batch_scheduler == "OAR"):
-        melissa_job_id += call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
+        melissa_job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     elif (global_options.batch_scheduler == "local"):
-        melissa_job_id += call_bash('./run_study.sh & echo $!')['out']
+        melissa_job_id = call_bash('./run_study.sh & echo $!')['out']
     melissa_first_job_id = melissa_job_id
     print "Melissa job id: "+melissa_job_id
 
@@ -294,14 +294,16 @@ def launch_study():
         while (not "RUNNING" in call_bash("squeue --job="+melissa_job_id+" -l")['out']):
             if (not "Melissa" in call_bash("squeue --job="+melissa_job_id+" -l")['out']):
                 if (global_options.batch_scheduler == "Slurm"):
-                    melissa_job_id += call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
+                    melissa_job_id = call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
                 elif (global_options.batch_scheduler == "CCC"):
-                    melissa_job_id += call_bash('ccc_msub -r Melissa "./run_study.sh"')['out'].split()[-1]
+                    melissa_job_id = call_bash('ccc_msub -r Melissa "./run_study.sh"')['out'].split()[-1]
+                print "Melissa new job id: "+melissa_job_id
             time.sleep(20)
     if (global_options.batch_scheduler == "OAR"):
         while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
             if (not "Melissa" in call_bash("oarstat -u")['out']):
-                melissa_job_id += call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
+                melissa_job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
+                print "Melissa new job id: "+melissa_job_id
             time.sleep(20)
     time.sleep(5) # to give time to retrieve the name of the main server node
     os.chdir(global_options.workdir)
