@@ -426,9 +426,7 @@ void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char
     if (detected_timeouts < 1)
     {
         sprintf(txt_buffer, "timeout -1");
-#ifdef BUILD_WITH_PY_ZMQ
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-#endif // BUILD_WITH_PY_ZMQ
     }
     else
     {
@@ -437,9 +435,7 @@ void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char
             if (simu_timeouts[i] == 1)
             {
                 sprintf(txt_buffer, "timeout %d", i);
-    #ifdef BUILD_WITH_PY_ZMQ
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-    #endif // BUILD_WITH_PY_ZMQ
             }
         }
     }
