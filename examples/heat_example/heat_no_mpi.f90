@@ -18,27 +18,28 @@ program heat_no_mpi
   character(len=5) :: name = C_CHAR_"heat"//C_NULL_CHAR
 
   narg = iargc()
-  param(:) = 0
-  if (narg .lt. 2) then
+  if (narg .lt. 4) then
     print*,"Missing parameter"
     return
   endif
-  do n=2, 6
+
+  call getarg(1, arg)
+  print*, arg
+  read( arg, * ) sobol_rank ! sobol rank
+  call getarg(2, arg)
+  read( arg, * ) sample_id ! sobol group
+  print*, arg
+  call getarg(3, arg)
+  read( arg, * ) param(0) ! initial temperature
+  print*, arg
+  param(:) = param(0)
+
+  do n=5, 8
     if(narg .ge. n) then
-      call getarg(n, arg)
-      read( arg, * ) param(n-1)
+      call getarg(n-1, arg)
+      read( arg, * ) param(n-3)
     endif
   enddo
-  ! initial temperature
-  temp = param(1)
-  if(narg .gt. 3) then
-    call getarg(narg - 1, arg)
-    read( arg, * ) sobol_rank ! sobol rank
-  endif
-  if(narg .gt. 2) then
-    call getarg(narg, arg)
-    read( arg, * ) sample_id ! sobol group
-  endif
 
   call cpu_time(t1)
 

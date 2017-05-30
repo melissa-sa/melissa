@@ -96,9 +96,10 @@ int main( int argc, char **argv )
       fprintf (stderr, "Missing parameter");
       return -1;
   }
+  param[0] = strtod(argv[1], NULL);
 
   for (n=0; n<5; n++)
-      param[n] = 0;
+    param[n+1] = param[0];
     if (argc > n+1)
     {
        param[n] = strtod(argv[n+1], NULL);

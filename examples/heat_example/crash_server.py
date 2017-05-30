@@ -51,10 +51,10 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
 #  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
   os.system("export OMP_NUM_THREADS=2")
   parameters = ""
-  for i in Ai:
-      parameters += str(i) + " "
   parameters += str(sobol_rank) + " "
   parameters += str(sobol_group)
+  for i in Ai:
+      parameters += " " + str(i)
   if build_examples_with_mpi == "ON":
     print "mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &"
     return os.system("mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &")
@@ -67,24 +67,24 @@ def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
   os.system("export OMP_NUM_THREADS=2")
   command = "mpirun"
   parameters = ""
-  for j in Ai:
-      parameters += str(j) + " "
   parameters += str(0) + " "
   parameters += str(sobol_group)
+  for j in Ai:
+      parameters += " " + str(j)
   command += " -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters
   parameters = ""
-  for j in Bi:
-      parameters += str(j) + " "
   parameters += str(1) + " "
   parameters += str(sobol_group)
+  for j in Bi:
+      parameters += " " + str(j)
   command += " :"
   command += " -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters
   for j in range(nb_parameters):
       parameters = ""
-      for i in C[j][sobol_group,:]:
-          parameters += str(i) + " "
       parameters += str(j+2) + " "
       parameters += str(sobol_group)
+      for i in C[j][sobol_group,:]:
+          parameters += " " + str(i)
       command += " :"
       command += " -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters
   print command

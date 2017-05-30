@@ -69,26 +69,22 @@ int main( int argc, char **argv )
   int sobol_rank = 0;
   char *field_name = "heat";
 
-  if (argc < 2)
+  if (argc < 4)
   {
-    fprintf (stderr, "Missing parameter\n");
-    return -1;
+      fprintf (stderr, "Missing parameter");
+      return -1;
   }
+  sobol_rank = (int)strtol(argv[1], NULL, 10);
+  sample_id = (int)strtol(argv[2], NULL, 10);
+  param[0] = strtod(argv[3], NULL);
 
-  for (n=0; n<5; n++)
-    param[n] = strtod(argv[1], NULL);
-    if (argc > n+1)
+  for (n=0; n<4; n++)
+  {
+    param[n+1] = param[0];
+    if (argc > n+4)
     {
-       param[n] = strtod(argv[n+1], NULL);
+       param[n+1] = strtod(argv[n+4], NULL);
     }
-  temp = param[0];
-  if (argc > 3)
-  {
-    sobol_rank  = (int)strtol(argv[argc-2], NULL, 10);
-  }
-  if (argc > 2)
-  {
-    sample_id = (int)strtol(argv[argc-1], NULL, 10);
   }
 
   ftime(&tp);

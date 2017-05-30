@@ -10,7 +10,7 @@ program heat
 
   integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, nb_op, next, previous, narg
   integer, dimension(mpi_status_size) :: status
-  real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2, temp
+  real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2
   real*8, dimension(:), pointer :: U => null(), F => null()
   real*8, dimension(3) :: A
   real*8,dimension(5) :: param
@@ -22,27 +22,25 @@ program heat
   call mpi_init(statinfo)
 
   narg = iargc()
-  param(:) = 0
-  if (narg .lt. 2) then
+  if (narg .lt. 4) then
     print*,"Missing parameter"
     return
   endif
-  do n=2, 6
+
+  call getarg(1, arg)
+  read( arg, * ) sobol_rank ! sobol rank
+  call getarg(2, arg)
+  read( arg, * ) sample_id ! sobol group
+  call getarg(3, arg)
+  read( arg, * ) param(0) ! initial temperature
+  param(:) = param(0)
+
+  do n=5, 8
     if(narg .ge. n) then
-      call getarg(n, arg)
-      read( arg, * ) param(n-1)
+      call getarg(n-1, arg)
+      read( arg, * ) param(n-3)
     endif
   enddo
-  ! initial temperature
-  temp = param(1)
-  if(narg .gt. 3) then
-    call getarg(narg - 1, arg)
-    read( arg, * ) sobol_rank ! sobol rank
-  endif
-  if(narg .gt. 2) then
-    call getarg(narg, arg)
-    read( arg, * ) sample_id ! sobol group
-  endif
 
   call MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, comm, statinfo);
   call mpi_comm_rank(comm, me, statinfo)
@@ -69,7 +67,7 @@ program heat
 
   allocate(U(in-i1+1))
   allocate(F(in-i1+1))
-  call init(U, i1, iN, dx, dy, nx, lx, ly, temp)
+  call init(U, i1, iN, dx, dy, nx, lx, ly, param(1))
   call filling_A(d, dx, dy, dt, nx, ny, A) ! fill A
 
   call melissa_init (nb_op, np, me, sobol_rank, sample_id, comm, coupling)

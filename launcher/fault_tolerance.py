@@ -76,6 +76,7 @@ def reboot_simu(simu_id,
         elif (batch_scheduler == "local"):
             simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
     job_states[simu_id] = 1
+    simu_crash[simu_id] += 1
     os.chdir(workdir)
     return output
 

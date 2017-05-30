@@ -92,14 +92,14 @@ class message_reciever(Thread):
                 if message[1] != "-1":
                     simu_id = int(message[1])
                     with lock_job_state:
-                        simu_crash[simu_id] += 1
                         output += reboot_simu(simu_id,
                                               simu_job_id,
                                               job_states,
                                               global_options.batch_scheduler,
                                               global_options.workdir,
                                               output,
-                                              global_options.operations)
+                                              global_options.operations,
+                                              simu_crash)
                         job_states[simu_id] = 1 # pennding or runnning
                 last_recieved_from_master = time.time()
             if (message[0] == "simu_state"):
@@ -465,25 +465,25 @@ def launch_study():
                     print "check simulation "+str(i)+": state: "+str(simu_states[i])+", job: "+str(job_states[i]-1)
                     if (simu_states[i] != job_states[i]-1):
                         if (simu_states[i] <= 1 and job_states[i] == 3):
-                            simu_crash[i] += 1
                             output += reboot_simu(i,
                                                   simu_job_id,
                                                   job_states,
                                                   global_options.batch_scheduler,
                                                   global_options.workdir,
                                                   output,
-                                                  global_options.operations)
+                                                  global_options.operations,
+                                                  simu_crash)
                         if (simu_states[i] == 0 and job_states[i] == 2):
                             out=check_timeout(i, simu_job_id, output, global_options.batch_scheduler)
                             if (out == True):
-                                simu_crash[i] += 1
                                 output += reboot_simu(i,
                                                       simu_job_id,
                                                       job_states,
                                                       global_options.batch_scheduler,
                                                       global_options.workdir,
                                                       output,
-                                                      global_options.operations)
+                                                      global_options.operations,
+                                                      simu_crash)
 
         time.sleep(30)
 
