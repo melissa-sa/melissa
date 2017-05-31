@@ -77,7 +77,7 @@ int main (int argc, char **argv)
     double              last_timeout_check = 0;
     int                 detected_timeouts;
     int                 nb_finished_simulations = 0;
-    double              last_checkpoint_time;
+    double              last_checkpoint_time = 0.0;
 
 #ifdef BUILD_WITH_MPI
     // === init MPI === //
@@ -127,7 +127,6 @@ int main (int argc, char **argv)
     last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
     simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
     simu_timeout      = melissa_calloc (melissa_options.sampling_size, sizeof(int));
-    last_checkpoint_time = melissa_get_time();
 
     // === Open data puller port === //
 
@@ -400,6 +399,7 @@ int main (int argc, char **argv)
                 add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.sampling_size);
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 nb_fields += 1;
+                last_checkpoint_time = melissa_get_time();
             }
             else
             {
@@ -419,6 +419,7 @@ int main (int argc, char **argv)
                     fprintf (stdout, "reading checkpoint files...");
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
                     fprintf (stdout, " ok\n");
+                    last_checkpoint_time = melissa_get_time();
                 }
             }
             last_message_simu[group_id] = melissa_get_time();
@@ -501,7 +502,7 @@ int main (int argc, char **argv)
 //        }
 
 //        if (iteration % 100 == 0)
-        if (last_checkpoint_time  + 5000 < melissa_get_time())
+        if (last_checkpoint_time  + 600 < melissa_get_time() && last_checkpoint_time > 0.1)
         {
             field_ptr fptr = field;
             while (fptr != NULL)

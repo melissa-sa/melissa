@@ -34,7 +34,7 @@ output         = ""
 #               Threads               #
 #=====================================#
 
-get_message = cdll.LoadLibrary(global_options.server_path+'/../master/libget_message.so')
+get_message = cdll.LoadLibrary(global_options.server_path+'/../launcher/libget_message.so')
 
 lock_job_state = RLock()
 lock_simu_state = RLock()
@@ -408,7 +408,7 @@ def launch_study():
                                 call_bash("scancel "+simu_job_id[i])
                             elif (global_options.batch_scheduler == "OAR"):
                                 call_bash("oardel "+simu_job_id[i])
-                            elif (global_options.batch_scheduler == "OAR"):
+                            elif (global_options.batch_scheduler == "local"):
                                 call_bash("kill "+simu_job_id[i])
 
                     melissa_job_id = reboot_server(global_options.workdir,
