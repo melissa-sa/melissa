@@ -109,6 +109,8 @@ class message_reciever(Thread):
                 simu_states[simu_id] = simu_state
                 last_recieved_from_master = time.time()
             elif (message[0] == "server_started"):
+                with lock_server_state:
+                    server_state = "running"
                 print "server started"
                 last_recieved_from_master = time.time()
             if last_recieved_from_master > 0:
@@ -293,32 +295,28 @@ def launch_study():
     melissa_first_job_id = melissa_job_id
     print "Melissa job id: "+melissa_job_id
 
-    if (global_options.batch_scheduler == "Slurm") or (global_options.batch_scheduler == "CCC"):
-        while (not "RUNNING" in call_bash("squeue --job="+melissa_job_id+" -l")['out']):
+    get_message.init_message()
+    thread1 = message_reciever()
+    thread1.start()
+
+    while (not server_state == "running"):
+        if (global_options.batch_scheduler == "Slurm") or (global_options.batch_scheduler == "CCC"):
             if (not "Melissa" in call_bash("squeue --job="+melissa_job_id+" -l")['out']):
                 if (global_options.batch_scheduler == "Slurm"):
                     melissa_job_id = call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
                 elif (global_options.batch_scheduler == "CCC"):
                     melissa_job_id = call_bash('ccc_msub -r Melissa "./run_study.sh"')['out'].split()[-1]
                 print "Melissa new job id: "+melissa_job_id
-            time.sleep(20)
-    if (global_options.batch_scheduler == "OAR"):
-        while (not "Melissa" in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
+        if (global_options.batch_scheduler == "OAR"):
             if (not "Melissa" in call_bash("oarstat -u")['out']):
                 melissa_job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
                 print "Melissa new job id: "+melissa_job_id
-            time.sleep(20)
+        time.sleep(20)
     time.sleep(5) # to give time to retrieve the name of the main server node
     os.chdir(global_options.workdir)
 
-    server_state = "running"
 
-    get_message.init_message()
-
-    thread1 = state_checker()
-    thread2 = message_reciever()
-
-    thread1.start()
+    thread2 = state_checker()
     thread2.start()
 
     for i in range(nb_groups):
