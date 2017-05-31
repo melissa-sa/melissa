@@ -312,7 +312,7 @@ def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_thread
         contenu += "#MSUB -c "+str(openmp_threads)+"                                                      \n"
         contenu += "#MSUB -o saturne.%I.log                                                               \n"
         contenu += "#MSUB -e saturne.%I.err                                                               \n"
-        contenu += "#MSUB -T "+walltime_container+"                                                       \n"
+        contenu += "#MSUB -T "+walltime_saturne+"                                                       \n"
         contenu += "#MSUB -A gen10064                                                                     \n"
         contenu += "#MSUB -q standard                                                                     \n"
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"

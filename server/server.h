@@ -47,11 +47,11 @@ void increment_step_simu(field_ptr field,
                          char*     field_name,
                          int       group_id);
 
-int check_simu_state(field_ptr field,
-                     int       simu_state,
-                     int       group_id,
-                     int       nb_time_steps,
-                     int       client_comm_size);
+int check_simu_state(field_ptr    field,
+                     int          simu_state,
+                     int          group_id,
+                     int          nb_time_steps,
+                     comm_data_t *comm_data);
 
 void finalize_field_data (field_ptr          field,
                           comm_data_t       *comm_data,

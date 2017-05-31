@@ -455,7 +455,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
 //            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
             old_simu_state = simu_state[group_id];
-            simu_state[group_id] = check_simu_state(field, 2, group_id, melissa_options.nb_time_steps, comm_data.client_comm_size);
+            simu_state[group_id] = check_simu_state(field, 2, group_id, melissa_options.nb_time_steps, &comm_data);
 
             if (simu_state[group_id] == 2)
             {

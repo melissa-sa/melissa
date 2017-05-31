@@ -11,7 +11,7 @@ from threading import Thread, RLock
 from ctypes import cdll, create_string_buffer
 imp.load_source("options", "./options.py")
 from options import *
-get_message = cdll.LoadLibrary(server_path+"/../master/libget_message.so")
+get_message = cdll.LoadLibrary(server_path+"/../launcher/libget_message.so")
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 executable = "heatc"

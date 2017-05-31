@@ -149,7 +149,7 @@ void add_field (field_ptr *field, char* field_name, int data_size, int nb_simu)
         (*field)->stats_data = melissa_malloc (data_size * sizeof(melissa_data_t));
         for (i=0; i<data_size; i++)
         {
-            (*field)->stats_data[i].is_valid=0;
+            (*field)->stats_data[i].is_valid = 0;
         }
         strncpy((*field)->name, field_name, MAX_FIELD_NAME);
         (*field)->next = NULL;
@@ -193,7 +193,7 @@ melissa_data_t* get_data_ptr (field_ptr field, char* field_name)
 //    }
 //}
 
-int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_steps, int client_comm_size)
+int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_steps, comm_data_t *comm_data)
 {
     int i;
 
@@ -203,25 +203,28 @@ int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_
     }
     else
     {
-        for (i=0; i<client_comm_size; i++)
+        for (i=0; i<comm_data->client_comm_size; i++)
         {
-            if (field->stats_data[i].is_valid == 1)
+            if (comm_data->rcounts[i] > 0)
             {
-                if (field->stats_data[i].step_simu[group_id] > nb_time_steps)
+                if (field->stats_data[i].is_valid == 1)
                 {
-                    fprintf (stderr, "problem !!!!! (%d)\n", field->stats_data[i].step_simu[group_id]);
+                    if (field->stats_data[i].step_simu[group_id] > nb_time_steps)
+                    {
+                        fprintf (stderr, "problem !!!!! (%d)\n", field->stats_data[i].step_simu[group_id]);
+                    }
+                    if (field->stats_data[i].step_simu[group_id] < nb_time_steps)
+                    {
+                        return 1;
+                    }
                 }
-                if (field->stats_data[i].step_simu[group_id] < nb_time_steps)
+                else
                 {
                     return 1;
                 }
             }
-            else
-            {
-                return 1;
-            }
         }
-        return check_simu_state(field->next, simu_state, group_id, nb_time_steps, client_comm_size);
+        return check_simu_state(field->next, simu_state, group_id, nb_time_steps, comm_data);
     }
 }
 
