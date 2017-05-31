@@ -102,11 +102,14 @@ class message_reciever(Thread):
                                               simu_crash)
                         job_states[simu_id] = 1 # pennding or runnning
                 last_recieved_from_master = time.time()
-            if (message[0] == "simu_state"):
+            elif (message[0] == "simu_state"):
                 print "message: "+message[0]+" "+message[1]+" "+message[2]
                 simu_id = int(message[1])
                 simu_state = int(message[2])
                 simu_states[simu_id] = simu_state
+                last_recieved_from_master = time.time()
+            elif (message[0] == "server_started"):
+                print "server started"
                 last_recieved_from_master = time.time()
             if last_recieved_from_master > 0:
                 if (time.time() - last_recieved_from_master) > timeout_server:
@@ -395,7 +398,7 @@ def launch_study():
             if (server_state != "running"):
                 sleep = True
         if sleep == True:
-            time.sleep(30)
+            time.sleep(10)
             sleep = False
 
         with lock_server_state:
@@ -433,11 +436,10 @@ def launch_study():
                     for i in range(len(simu_job_id)):
                         if (simu_states[i] < 2): # not terminated
                             os.chdir(global_options.workdir+"/group"+str(i))
-                            for j in range(global_options.nb_parameters+2):
-                                casedir = global_options.workdir+"/group"+str(i)+"/rank"+str(j)
-                                os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
-                            os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
                             if ("sobol" in global_options.operations) or ("sobol_indices" in global_options.operations):
+                                for j in range(global_options.nb_parameters+2):
+                                    casedir = global_options.workdir+"/group"+str(i)+"/rank"+str(j)
+                                    os.system("cp "+global_options.workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
                                 if (global_options.batch_scheduler == "Slurm"):
                                     simu_job_id[i] = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(i))['out'].split()[-1]
                                 elif (global_options.batch_scheduler == "CCC"):

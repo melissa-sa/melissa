@@ -15,6 +15,7 @@
 #include <string.h>
 #include "melissa_data.h"
 #include "melissa_utils.h"
+#include "sobol.h"
 
 static void melissa_alloc_data (melissa_data_t *data)
 {
@@ -108,6 +109,7 @@ void melissa_init_data (melissa_data_t    *data,
     data->variances       = NULL;
     data->min_max         = NULL;
     data->thresholds      = NULL;
+    data->quantiles       = NULL;
 //    data->cond_means      = NULL;
     data->sobol_indices   = NULL;
     data->step_simu       = NULL;

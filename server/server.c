@@ -203,6 +203,12 @@ int main (int argc, char **argv)
         fprintf (stdout, " ok \n");
     }
 
+    if (comm_data.rank == 0)
+    {
+        sprintf (txt_buffer, "server_started");
+        zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+    }
+
     // === Gather node names on node 0 === //
 
 #ifdef BUILD_WITH_MPI

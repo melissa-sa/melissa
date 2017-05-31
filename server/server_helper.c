@@ -211,7 +211,7 @@ int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_
                 {
                     if (field->stats_data[i].step_simu[group_id] > nb_time_steps)
                     {
-                        fprintf (stderr, "problem !!!!! (%d)\n", field->stats_data[i].step_simu[group_id]);
+                        fprintf (stderr, "problem !!!!! (%d %d %d)\n", i, group_id, field->stats_data[i].step_simu[group_id]);
                     }
                     if (field->stats_data[i].step_simu[group_id] < nb_time_steps)
                     {

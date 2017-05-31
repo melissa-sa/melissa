@@ -52,6 +52,7 @@ void init_sobol_jansen (sobol_array_t *sobol_array,
         sobol_array->sobol_jansen[j].first_order_values = melissa_calloc (vect_size, sizeof(double));
         sobol_array->sobol_jansen[j].total_order_values = melissa_calloc (vect_size, sizeof(double));
     }
+    sobol_array->iteration = 0;
 }
 
 /**
@@ -94,6 +95,7 @@ void init_sobol_martinez (sobol_array_t *sobol_array,
         sobol_array->sobol_martinez[j].confidence_interval[0] = 1;
         sobol_array->sobol_martinez[j].confidence_interval[1] = 1;
     }
+    sobol_array->iteration = 0;
 }
 
 /**
@@ -460,8 +462,9 @@ void save_sobol_martinez(sobol_array_t *sobol_array,
             fwrite(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
             fwrite(sobol_array[i].sobol_martinez[j].confidence_interval, sizeof(double), 2,f);
         }
-        save_variance(&sobol_array[i].variance_a, vect_size, 1, f);
-        save_variance(&sobol_array[i].variance_b, vect_size, 1, f);
+        save_variance (&sobol_array[i].variance_a, vect_size, 1, f);
+        save_variance (&sobol_array[i].variance_b, vect_size, 1, f);
+        fprintf (stderr, "        sobol %d, iteration %d\n",i, sobol_array[i].iteration);
         fwrite(&sobol_array[i].iteration, sizeof(int), 1, f);
     }
 }
@@ -557,9 +560,10 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
             fread(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
             fread(sobol_array[i].sobol_martinez[j].confidence_interval, sizeof(double), 2,f);
         }
-        read_variance(&sobol_array[i].variance_a, vect_size, 1, f);
-        read_variance(&sobol_array[i].variance_b, vect_size, 1, f);
-        fread(&sobol_array[i].iteration, sizeof(int), 1,f);
+        read_variance (&sobol_array[i].variance_a, vect_size, 1, f);
+        read_variance (&sobol_array[i].variance_b, vect_size, 1, f);
+        fread(&sobol_array[i].iteration, sizeof(int), 1, f);
+        fprintf (stderr, "        sobol %d, iteration %d\n",i, sobol_array[i].iteration);
     }
 }
 

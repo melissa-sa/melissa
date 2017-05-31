@@ -168,7 +168,7 @@ def launch_heat(nb_parameters,
         if (ret[0] != 0):
           print "error launching simulation "+str(i)
       time.sleep(2)
-    time.sleep(3)
+    time.sleep(10)
     os.system("killall -s USR1 mpirun")
     time.sleep(5)
     print "server killed"
@@ -205,6 +205,7 @@ def launch_heat(nb_parameters,
 #       kill all simulations here
     thread.join()
     get_message.close_message()
+    time.sleep(2)
     os.system("killall "+executable)
     print "end !"
     return 0

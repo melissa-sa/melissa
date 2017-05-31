@@ -99,10 +99,10 @@ void compute_stats (melissa_data_t  *data,
             fprintf (stderr, "ERROR: invalid vector number (compute_stats)\n");
             exit (1);
         }
-        increment_sobol_martinez (&(data->sobol_indices[time_step]),
-                                  data->options->nb_parameters,
-                                  in_vect_tab,
-                                  data->vect_size);
+        data->increment_sobol (&(data->sobol_indices[time_step]),
+                               data->options->nb_parameters,
+                               in_vect_tab,
+                               data->vect_size);
 
         if (data->options->mean_op == 1 && data->options->variance_op == 0)
         {
