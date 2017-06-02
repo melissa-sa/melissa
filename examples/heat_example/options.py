@@ -17,6 +17,6 @@ server_path = "../../server"
 range_min = np.zeros(nb_parameters)
 range_max = np.zeros(nb_parameters)
 for i in range(nb_parameters):
-  range_min[i] = i + 0
-  range_max[i] = i + 1
+  range_min[i] =  0
+  range_max[i] =  1
 coupling = 1

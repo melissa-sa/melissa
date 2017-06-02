@@ -9,7 +9,7 @@ program heat_no_mpi
   include "melissa_api.f90"
 
   integer :: nx, ny, n, nmax, nb_op, narg
-  real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2, temp = 0
+  real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2
   real*8,dimension(:),pointer :: U => null(), F => null()
   real*8,dimension(3) :: A
   real*8,dimension(5) :: param
@@ -54,7 +54,7 @@ program heat_no_mpi
 
   allocate(U(nb_op))
   allocate(F(nb_op))
-  call init(U, nb_op, temp)
+  call init(U, nb_op, param(1))
   call filling_A(d, dx, dy, dt, A) ! fill A
 
   call melissa_init_no_mpi(nb_op, sobol_rank, sample_id)

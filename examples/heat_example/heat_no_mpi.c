@@ -59,7 +59,7 @@ int main( int argc, char **argv )
 {
 
   int    nx, ny, n, nmax, nb_op;
-  double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2, temp = 0;
+  double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2;
   double *u = NULL;
   double *f = NULL;
   double a[3];
@@ -101,7 +101,7 @@ int main( int argc, char **argv )
 
   u = malloc(nb_op * sizeof(double));
   f = malloc(nb_op * sizeof(double));
-  init(&u[0], &nb_op, &temp);
+  init(&u[0], &nb_op, &param[0]);
   filling_A (&d, &dx, &dy, &dt, &a[0]); /* fill A */
 
   melissa_init_no_mpi(&nb_op, &sobol_rank, &sample_id);

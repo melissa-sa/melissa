@@ -16,6 +16,9 @@ if(BUILD_WITH_MPI)
 
   add_executable(heatc heat.c)
   target_link_libraries(heatc ${EXAMPLES_LIBS} melissa_api heat_utils)
+
+  add_executable(heatc_base heat_base.c)
+  target_link_libraries(heatc_base ${EXAMPLES_LIBS} heat_utils)
 endif(BUILD_WITH_MPI)
 
 add_library(heat_utils_no_mpi heat_utils_no_mpi.f90)
