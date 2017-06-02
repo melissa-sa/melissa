@@ -176,26 +176,9 @@ melissa_data_t* get_data_ptr (field_ptr field, char* field_name)
     return NULL;
 }
 
-//void increment_step_simu(field_ptr field, char* field_name, int group_id)
-//{
-//    if (field == NULL)
-//    {
-//        return;
-//    }
-//    if (strcmp(field->name, field_name) == 0)
-//    {
-//        field->step_simu[group_id] += 1;
-//        return;
-//    }
-//    else
-//    {
-//        increment_step_simu(field->next, field_name, group_id);
-//    }
-//}
-
 int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_steps, comm_data_t *comm_data)
 {
-    int i;
+    int i, t;
 
     if (field == NULL)
     {
@@ -209,13 +192,12 @@ int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_
             {
                 if (field->stats_data[i].is_valid == 1)
                 {
-                    if (field->stats_data[i].step_simu[group_id] > nb_time_steps)
+                    for (t=0; t<nb_time_steps; t++)
                     {
-                        fprintf (stderr, "problem !!!!! (%d %d %d)\n", i, group_id, field->stats_data[i].step_simu[group_id]);
-                    }
-                    if (field->stats_data[i].step_simu[group_id] < nb_time_steps)
-                    {
-                        return 1;
+                        if (test_bit (field->stats_data[i].step_simu[group_id], t) == 0)
+                        {
+                            return 1;
+                        }
                     }
                 }
                 else

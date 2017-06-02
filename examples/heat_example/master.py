@@ -35,6 +35,18 @@ class message_reciever(Thread):
 
 # ------------- functions ------------- #
 
+def write_matrix(A, sample_size, nb_parameters, file_name):
+    contenu = ""
+    fichier=open(file_name, "w")
+    for i in range(sample_size):
+        for j in A[i,:]:
+            contenu += str(j) + " "
+        contenu += "\n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 " + file_name)
+
+
 def create_matrix(nb_parameters, nb_groups, range_min, range_max):
   A = np.zeros((nb_groups, nb_parameters))
   for i in range(nb_parameters):
@@ -116,13 +128,16 @@ def launch_heat(nb_parameters,
         nb_simu = nb_groups * (nb_parameters + 2)
     A = create_matrix(nb_parameters, nb_groups, range_min, range_max)
     np.save("Amatrix", A)
+    write_matrix(A, nb_groups, nb_parameters, "Amatrix.txt")
     if ("sobol" in operations) or ("sobol_indices" in operations):
       B = create_matrix(nb_parameters, nb_groups, range_min, range_max)
       C = [create_matrix_k(A, B, i) for i in range(nb_parameters)]
 
       np.save("Bmatrix", B)
+      write_matrix(B, nb_groups, nb_parameters, "Bmatrix.txt")
       for i in range(nb_parameters):
         np.save("C"+str(i)+"matrix", C[i])
+        write_matrix(C[i], nb_groups, nb_parameters, "C"+str(i)+"matrix.txt")
 
 
     op_str=""
@@ -140,11 +155,11 @@ def launch_heat(nb_parameters,
             + " -n " + str(socket.gethostname())
     if build_with_mpi == "ON":
         print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-        if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
+        if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server_sofiia"+options+"&") != 0):
             print "error launching Melissa"
     else:
         print server_path+"/server"+options
-        if (launch_melissa(server_path+"/server"+options+"&") != 0):
+        if (launch_melissa(server_path+"/server_sofiia"+options+"&") != 0):
             print "error launching Melissa"
 #    launch_melissa("valgrind --leak-check=full mpirun -n 3 "+server_path+"/server"+options+" &")
 

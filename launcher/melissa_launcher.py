@@ -108,10 +108,10 @@ class message_reciever(Thread):
                 simu_state = int(message[2])
                 simu_states[simu_id] = simu_state
                 last_recieved_from_master = time.time()
-            elif (message[0] == "server_started"):
+            elif (message[0] == "server"):
                 with lock_server_state:
                     server_state = "running"
-                print "server started"
+                print "server node name:"+message[1]
                 last_recieved_from_master = time.time()
             if last_recieved_from_master > 0:
                 if (time.time() - last_recieved_from_master) > timeout_server:
@@ -487,7 +487,7 @@ def launch_study():
                                                       global_options.operations,
                                                       simu_crash)
 
-        time.sleep(30)
+        time.sleep(10)
 
 
     thread1.running_master = False

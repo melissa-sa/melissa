@@ -52,17 +52,11 @@ void compute_stats (melissa_data_t  *data,
         exit (1);
     }
 
-    if (data->step_simu[group_id] > time_step)
+    if (test_bit (data->step_simu[group_id], time_step) != 0)
     {
         // Time step already computed, message ignored.
         fprintf (stderr, "Warning: allready computed time step (simulation %d, time step %d)\n", group_id, time_step);
         return;
-    }
-
-    if (data->step_simu[group_id] < time_step)
-    {
-        // probably missing message
-        fprintf (stderr, "Warning: message may be missing (simulation %d, time step %d)\n", group_id, time_step);
     }
 
     if (data->options->min_and_max_op == 1)
@@ -135,7 +129,7 @@ void compute_stats (melissa_data_t  *data,
             increment_quantile (&(data->quantiles[time_step]), data->options->sampling_size, in_vect_tab[1], data->vect_size);
         }
     }
-    data->step_simu[group_id] += 1;
+    set_bit(data->step_simu[group_id], time_step);
 }
 
 /**

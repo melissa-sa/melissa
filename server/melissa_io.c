@@ -126,7 +126,7 @@ void save_stats (melissa_data_t *data,
                  char           *field_name)
 {
     char       file_name[256];
-    int        i;
+    int        i, j;
     FILE*      f = NULL;
 
     for (i=0; i<comm_data->client_comm_size; i++)
@@ -165,7 +165,10 @@ void save_stats (melissa_data_t *data,
             {
                 data[i].save_sobol(data[i].sobol_indices, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
-            fwrite(data[i].step_simu, sizeof(int), data[i].options->sampling_size, f);
+            for (j=0; j<data->options->sampling_size; j++)
+            {
+                fwrite(data[i].step_simu[j], sizeof(int32_t), (data->options->nb_time_steps+31)/32, f);
+            }
             fclose(f);
         }
     }
@@ -200,6 +203,7 @@ void read_saved_stats (melissa_data_t *data,
                        int             client_rank)
 {
     char       file_name[256];
+    int        j;
     FILE*      f = NULL;
 
         if (comm_data->rcounts[client_rank] > 0)
@@ -236,7 +240,10 @@ void read_saved_stats (melissa_data_t *data,
             {
                 data[client_rank].read_sobol(data[client_rank].sobol_indices, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
             }
-            fread(data[client_rank].step_simu, sizeof(int), data[client_rank].options->sampling_size, f);
+            for (j=0; j<data[client_rank].options->sampling_size; j++)
+            {
+                fread(data[client_rank].step_simu[j], sizeof(int32_t), (data->options->nb_time_steps+31)/32, f);
+            }
             fclose(f);
         }
 }

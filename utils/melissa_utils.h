@@ -41,4 +41,10 @@ double melissa_get_time ();
 
 void melissa_get_node_name (char *node_name);
 
+void set_bit (int32_t *vect, int pos);
+
+void clear_bit (int32_t *vect, int pos);
+
+int test_bit (int32_t *vect, int pos);
+
 #endif // MELISSA_UTILS_H

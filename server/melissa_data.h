@@ -9,6 +9,7 @@
 #ifndef MELISSA_DATA_H
 #define MELISSA_DATA_H
 
+#include <stdint.h>
 #include "melissa_options.h"
 #include "mean.h"
 #include "variance.h"
@@ -66,7 +67,7 @@ struct melissa_data_s
     void (*save_sobol)(sobol_array_t*, int, int, int, FILE*);    /**< pointer to Sobol save function                            */
     void (*increment_sobol)(sobol_array_t*, int, double**, int); /**< pointer to Sobol increment function                       */
     void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                            */
-    int                 *step_simu;                              /**< iterations counter, size nb_groups                        */
+    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                            */
 };
 
 typedef struct melissa_data_s melissa_data_t; /**< type corresponding to melissa_data_s */

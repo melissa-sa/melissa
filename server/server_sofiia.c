@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <math.h>
 #include <zmq.h>
+#include <tensorflow/c/c_api.h>
 #include "server.h"
 #include "melissa_io.h"
 #include "compute_stats.h"
@@ -30,7 +31,8 @@ int main (int argc, char **argv)
     field_ptr           field = NULL;
     comm_data_t         comm_data;
     int                 time_step;
-    int                 recv_buff_size, i, client_rank;
+    int                 recv_buff_size, client_rank;
+    int                 i, j;
     char               *buffer = NULL, *buf_ptr = NULL;
     double            **buff_tab_ptr;
     int                 iteration = 0, nb_iterations = 0;
@@ -78,6 +80,7 @@ int main (int argc, char **argv)
     int                 detected_timeouts;
     int                 nb_finished_simulations = 0;
     double              last_checkpoint_time = 0.0;
+    double             *parameter_sets;
 
 #ifdef BUILD_WITH_MPI
     // === init MPI === //
@@ -128,6 +131,25 @@ int main (int argc, char **argv)
     last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
     simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
     simu_timeout      = melissa_calloc (melissa_options.sampling_size, sizeof(int));
+
+    parameter_sets = melissa_malloc (melissa_options.sampling_size * melissa_options.nb_parameters * sizeof(double));
+
+    FILE* f = fopen("Amatrix.txt", "r");
+    fprintf(stdout, "parameters: \n");
+    const char  s[2] = " ";
+    char       *temp_char;
+    for (i=0; i<melissa_options.sampling_size; i++)
+    {
+        fgets (txt_buffer, MPI_MAX_PROCESSOR_NAME, f);
+        temp_char = strtok (txt_buffer, s);
+        for (j=0; j<melissa_options.nb_parameters; j++)
+        {
+            parameter_sets[melissa_options.nb_parameters * i + j] = strtod (temp_char, NULL);
+            temp_char = strtok (NULL, s);
+        }
+
+
+    }
 
     // === Open data puller port === //
 
@@ -459,6 +481,23 @@ int main (int argc, char **argv)
 //                                                                        melissa_options.nb_time_steps,
 //                                                                        melissa_options.nb_parameters);
             }
+
+
+            //
+            //  Learning here.
+            //  data stored in buff_ptr
+            //  x = floor((pos-1)/100.0)+1
+            //  y = pos % x
+            printf("simulation parameters:");
+            for (i=0; i<melissa_options.nb_parameters; i++)
+            {
+                printf(" %g", parameter_sets[group_id*melissa_options.nb_parameters + i]);
+            }
+            printf("\n");
+            //
+            //
+
+
 #ifdef BUILD_WITH_PROBES
             end_computation_time = melissa_get_time();
             total_computation_time += end_computation_time - start_computation_time;

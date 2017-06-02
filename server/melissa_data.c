@@ -75,7 +75,11 @@ static void melissa_alloc_data (melissa_data_t *data)
             data->init_sobol (&data->sobol_indices[i], data->options->nb_parameters, data->vect_size);
         }
     }
-    data->step_simu = melissa_calloc (data->options->sampling_size, sizeof(int));
+    data->step_simu = melissa_malloc (data->options->sampling_size * sizeof(int32_t*));
+    for (i=0; i<data->options->sampling_size; i++)
+    {
+        data->step_simu[i] = melissa_calloc ((data->options->nb_time_steps+31)/32, sizeof(int32_t*));
+    }
 }
 
 /**
@@ -209,6 +213,10 @@ void melissa_free_data (melissa_data_t *data)
         melissa_free (data->sobol_indices);
     }
 
+    for (i=0; i<data->options->sampling_size; i++)
+    {
+        melissa_free (data->step_simu[i]);
+    }
     melissa_free (data->step_simu);
 
     data->options = NULL;

@@ -7,6 +7,9 @@ endif(BUILD_WITH_FLOWVR)
 add_executable(server ${SERVER_SRC} ${SERVER_H} server.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(server ${EXTRA_LIBS} melissa_stats)
 
+add_executable(server_sofiia ${SERVER_SRC} ${SERVER_H} server_sofiia.c $<TARGET_OBJECTS:melissa_utils>)
+target_link_libraries(server_sofiia ${EXTRA_LIBS} melissa_stats)
+
 add_executable(ensight_server ${SERVER_SRC} ${SERVER_H} ensight_server.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(ensight_server ${EXTRA_LIBS} melissa_stats)
 

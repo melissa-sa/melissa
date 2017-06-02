@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <stdint.h>
 #include <time.h>
 #include <sys/timeb.h>
 #include <arpa/inet.h>
@@ -331,5 +332,78 @@ void melissa_get_node_name (char *node_name)
 //#else
         gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
 //#endif // BUILD_WITH_MPI
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * Sets a bit to 1 in an array of bits
+ *
+ *******************************************************************************
+ *
+ * @param[out] *vect
+ * pointer to the array of bits
+ *
+ * @param[in] *pos
+ * position in the array of bits to set to 1
+ *
+ *******************************************************************************/
+
+void set_bit (int32_t *vect, int pos)
+{
+    vect[pos/32] |= 1 << (pos%32);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * Sets a bit to 0 in an array of bits
+ *
+ *******************************************************************************
+ *
+ * @param[out] *vect
+ * pointer to the array of bits
+ *
+ * @param[in] *pos
+ * position in the array of bits to set to 0
+ *
+ *******************************************************************************/
+
+void clear_bit (int32_t *vect, int pos)
+{
+    vect[pos/32] &= ~(1 << (pos%32));
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * Tests a value in an array of bits
+ *
+ *******************************************************************************
+ *
+ * @param[out] *vect
+ * pointer to the array of bits
+ *
+ * @param[in] *pos
+ * position to test in the array of bits
+ *
+ *******************************************************************************/
+
+int test_bit (int32_t *vect, int pos)
+{
+    if ( (vect[pos/32] & (1 << (pos%32) )) != 0 )
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
     }
 }
