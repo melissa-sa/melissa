@@ -1446,3 +1446,414 @@ void read_ensight (melissa_options_t  *options,
     melissa_free (r_buffer);
 #endif // BUILD_WITH_MPI
 }
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_io
+ *
+ * This function writes the computed statistics on files
+ *
+ *******************************************************************************
+ *
+ * @param[in] **data
+ * pointer to the array of structures containing statistics data
+ *
+ * @param[in] *options
+ * Melissa option structure
+ *
+ * @param[in] comm_data
+ * structure containing communications parameters
+ *
+ * @param[in] *local_vect_sizes
+ * all local vector sises
+ *
+ * @param[in] *field
+ * name of the field on which are computed the statistics
+ *
+ *******************************************************************************/
+
+void write_stats_txt (melissa_data_t    **data,
+                      melissa_options_t  *options,
+                      comm_data_t        *comm_data,
+                      int                *local_vect_sizes,
+                      char               *field)
+{
+#ifdef BUILD_WITH_MPI
+    long int    temp_offset=0;
+    MPI_Status  status;
+#endif // BUILD_WITH_MPI
+    long int    i, j, offset=0;
+    int         t, p;
+    FILE*       f;
+    char        file_name[256];
+    int         max_size_time;
+    int        *i_buffer;
+    double     *d_buffer;
+//    double temp1, temp2;
+
+    max_size_time=floor(log10(options->nb_time_steps))+1;
+
+    for (i=0; i<comm_data->rank; i++)
+    {
+        offset += local_vect_sizes[i];
+    }
+
+    d_buffer = melissa_malloc (options->global_vect_size * sizeof(double));
+
+#ifdef BUILD_WITH_MPI
+    MPI_Barrier(comm_data->comm);
+#endif // BUILD_WITH_MPI
+
+    if (options->mean_op == 1 && options->variance_op == 0)
+    {
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (comm_data->rcounts[i] > 0)
+                {
+                    memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].means[t].mean, comm_data->rcounts[i]*sizeof(double));
+                }
+            }
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                temp_offset = 0;
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j];
+                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                }
+            }
+            else
+            {
+                MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<options->global_vect_size; i++)
+                {
+                    fprintf (f, "%g\n", d_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+    }
+
+    if (options->variance_op == 1)
+    {
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_variance.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (comm_data->rcounts[i] > 0)
+                {
+                    memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].variances[t].variance, comm_data->rcounts[i]*sizeof(double));
+                }
+            }
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                temp_offset = 0;
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j];
+                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                }
+            }
+            else
+            {
+                MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<options->global_vect_size; i++)
+                {
+                    fprintf (f, "%g\n", d_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+
+        if (options->mean_op == 1)
+        {
+            for (t=0; t<options->nb_time_steps; t++)
+            {
+                sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, (int)t+1);
+                for (i=0; i<comm_data->client_comm_size; i++)
+                {
+                    if (comm_data->rcounts[i] > 0)
+                    {
+                        memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].variances[t].mean_structure.mean, comm_data->rcounts[i]*sizeof(double));
+                    }
+                }
+    #ifdef BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    temp_offset = 0;
+                    for (j=1; j<comm_data->comm_size; j++)
+                    {
+                        temp_offset += local_vect_sizes[j];
+                        MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                    }
+                }
+                else
+                {
+                    MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+                }
+    #endif // BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    f = fopen(file_name, "w");
+                    for (i=0; i<options->global_vect_size; i++)
+                    {
+                        fprintf (f, "%g\n", d_buffer[i]);
+                    }
+                    fclose(f);
+                }
+            }
+        }
+    }
+
+    if (options->min_and_max_op == 1)
+    {
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_min.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (comm_data->rcounts[i] > 0)
+                {
+                    memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].min_max[t].min, comm_data->rcounts[i]*sizeof(double));
+                }
+            }
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                temp_offset = 0;
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j];
+                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                }
+            }
+            else
+            {
+                MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<options->global_vect_size; i++)
+                {
+                    fprintf (f, "%g\n", d_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_max.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (comm_data->rcounts[i] > 0)
+                {
+                    memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].min_max[t].max, comm_data->rcounts[i]*sizeof(double));
+                }
+            }
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                temp_offset = 0;
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j];
+                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                }
+            }
+            else
+            {
+                MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<options->global_vect_size; i++)
+                {
+                    fprintf (f, "%g\n", d_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+    }
+
+    if (options->threshold_op == 1)
+    {
+        i_buffer = (int*)d_buffer;
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_threshold.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (comm_data->rcounts[i] > 0)
+                {
+                    memcpy(&i_buffer[offset + comm_data->rdispls[i]], (*data)[i].thresholds[t], comm_data->rcounts[i]*sizeof(int));
+                }
+            }
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                temp_offset = 0;
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j];
+                    MPI_Recv (&i_buffer[temp_offset], local_vect_sizes[j], MPI_INT, j, j+121, comm_data->comm, &status);
+                }
+            }
+            else
+            {
+                MPI_Send(&i_buffer[offset], local_vect_sizes[comm_data->rank], MPI_INT, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<options->global_vect_size; i++)
+                {
+                    fprintf (f, "%d\n", i_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+    }
+
+    if (options->quantile_op == 1)
+    {
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_quantile.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (comm_data->rcounts[i] > 0)
+                {
+                    memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].quantiles[t].quantile, comm_data->rcounts[i]*sizeof(double));
+                }
+            }
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                temp_offset = 0;
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j];
+                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                }
+            }
+            else
+            {
+                MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<options->global_vect_size; i++)
+                {
+                    fprintf (f, "%g\n", d_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+    }
+
+    if (options->sobol_op == 1)
+    {
+        for (p=0; p<options->nb_parameters; p++)
+        {
+            for (t=0; t<options->nb_time_steps; t++)
+            {
+                sprintf(file_name, "results.%s_sobol%d.%.*d", field, p, max_size_time, (int)(t+1));
+                for (i=0; i<comm_data->client_comm_size; i++)
+                {
+                    if (comm_data->rcounts[i] > 0)
+                    {
+                        memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, comm_data->rcounts[i]*sizeof(double));
+                    }
+                }
+#ifdef BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    temp_offset = 0;
+                    for (j=1; j<comm_data->comm_size; j++)
+                    {
+                        temp_offset += local_vect_sizes[j];
+                        MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                    }
+                }
+                else
+                {
+                    MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+                }
+#endif // BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    f = fopen(file_name, "w");
+                    for (i=0; i<options->global_vect_size; i++)
+                    {
+                        fprintf (f, "%g\n", d_buffer[i]);
+                    }
+                    fclose(f);
+                }
+            }
+        }
+        for (p=0; p<options->nb_parameters; p++)
+        {
+            for (t=0; t<options->nb_time_steps; t++)
+            {
+                sprintf(file_name, "results.%s_sobol_tot%d.%.*d", field, p, max_size_time, (int)(t+1));
+                for (i=0; i<comm_data->client_comm_size; i++)
+                {
+                    if (comm_data->rcounts[i] > 0)
+                    {
+                        memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, comm_data->rcounts[i]*sizeof(double));
+                    }
+                }
+#ifdef BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    temp_offset = 0;
+                    for (j=1; j<comm_data->comm_size; j++)
+                    {
+                        temp_offset += local_vect_sizes[j];
+                        MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                    }
+                }
+                else
+                {
+                    MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+                }
+#endif // BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    f = fopen(file_name, "w");
+                    for (i=0; i<options->global_vect_size; i++)
+                    {
+                        fprintf (f, "%g\n",d_buffer[i]);
+                    }
+                    fclose(f);
+                }
+            }
+        }
+    }
+    melissa_free (d_buffer);
+}

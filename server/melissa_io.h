@@ -17,6 +17,12 @@ void write_stats(melissa_data_t    **data,
                  int                *local_vect_sizes,
                  char               *field);
 
+void write_stats_txt(melissa_data_t    **data,
+                     melissa_options_t  *options,
+                     comm_data_t        *comm_data,
+                     int                *local_vect_sizes,
+                     char               *field);
+
 void write_stats_ensight(melissa_data_t    **data,
                          melissa_options_t  *options,
                          comm_data_t        *comm_data,

@@ -37,6 +37,7 @@ static inline void stats_usage ()
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
             " -n <char*>     : Melissa launcher node name (default: localhost)\n"
+            " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
             " -h             : Print this message\n"
             "\n"
@@ -210,7 +211,7 @@ void melissa_get_options (int argc, char    **argv,
 
     do
     {
-        opt = getopt (argc, argv, "p:t:o:e:s:g:n:hr:");
+        opt = getopt (argc, argv, "p:t:o:e:s:g:n:lhr:");
 
         switch (opt) {
         case 'r':
@@ -243,6 +244,9 @@ void melissa_get_options (int argc, char    **argv,
             break;
         case 's':
             options->sampling_size = atoi (optarg);
+            break;
+        case 'l':
+            // learning
             break;
         case 'n':
             sprintf (options->launcher_name, optarg);

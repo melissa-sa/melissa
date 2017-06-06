@@ -9,6 +9,8 @@ import socket
 import imp
 from threading import Thread, RLock
 from ctypes import cdll, create_string_buffer
+from matplotlib import pyplot as plt
+from matplotlib import cm
 imp.load_source("options", "./options.py")
 from options import *
 get_message = cdll.LoadLibrary("@CMAKE_BINARY_DIR@/launcher/libget_message.so")
@@ -100,7 +102,7 @@ def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
       command += " :"
       command += " -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters
   print command
-  return os.system(command+" &")
+  return os.system(command+" ")
 
 def launch_melissa (command_line):
 #  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
@@ -155,11 +157,11 @@ def launch_heat(nb_parameters,
             + " -n " + str(socket.gethostname())
     if build_with_mpi == "ON":
         print "mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options
-        if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server_sofiia"+options+"&") != 0):
+        if (launch_melissa("mpirun "+mpi_options+" -n "+str(nb_proc_server)+" "+server_path+"/server"+options+"&") != 0):
             print "error launching Melissa"
     else:
         print server_path+"/server"+options
-        if (launch_melissa(server_path+"/server_sofiia"+options+"&") != 0):
+        if (launch_melissa(server_path+"/server"+options+"&") != 0):
             print "error launching Melissa"
 #    launch_melissa("valgrind --leak-check=full mpirun -n 3 "+server_path+"/server"+options+" &")
 
@@ -186,7 +188,7 @@ def launch_heat(nb_parameters,
           print "error launching simulation "+str(i)
           os.system("killall "+executable)
           return 1
-        time.sleep(1)
+    time.sleep(1)
 
 #       kill all simulations here
     print "wait thread..."
@@ -195,6 +197,24 @@ def launch_heat(nb_parameters,
     time.sleep(1)
     os.system("killall "+executable)
     print "end !"
+
+    fig = list()
+    for param in range(nb_parameters):
+        fig.append(plt.figure(param))
+        file_name = "results.heat_sobol"+str(param)+".1"
+        matrix = np.zeros((100,100))
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+            value += 1
+        print "toto"
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Sobol\'s index '+str(param))
+        fig[param].show()
+
+    raw_input()
+
     return 0
 
 # ------------- main ------------- #
@@ -213,4 +233,5 @@ if __name__ == '__main__':
                 range_min,
                 range_max,
                 coupling)
+
 

@@ -148,5 +148,5 @@ void compute_stats (melissa_data_t  *data,
 
 void finalize_stats (melissa_data_t *data)
 {
-
+    // delete backup files here
 }
