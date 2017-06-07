@@ -199,19 +199,48 @@ def launch_heat(nb_parameters,
     print "end !"
 
     fig = list()
-    for param in range(nb_parameters):
-        fig.append(plt.figure(param))
-        file_name = "results.heat_sobol"+str(param)+".1"
+    if ("sobol" in operations) or ("sobol_indices" in operations):
+        for param in range(nb_parameters):
+            fig.append(plt.figure(len(fig)))
+            file_name = "results.heat_sobol"+str(param)+".1"
+            matrix = np.zeros((100,100))
+            file=open(file_name)
+            value = 0
+            for line in file:
+                matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+                value += 1
+            plt.pcolor(matrix,cmap=cm.coolwarm)
+            plt.colorbar().set_label('Sobol\'s indices '+str(param))
+            fig[len(fig)-1].show()
+            file.close()
+        for param in range(nb_parameters):
+            fig.append(plt.figure(len(fig)))
+            file_name = "results.heat_sobol_tot"+str(param)+".1"
+            matrix = np.zeros((100,100))
+            file=open(file_name)
+            value = 0
+            for line in file:
+                matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+                value += 1
+            plt.pcolor(matrix,cmap=cm.coolwarm)
+            plt.colorbar().set_label('Total order Sobol\'s indices '+str(param))
+            fig[len(fig)-1].show()
+            file.close()
+
+
+    if ("variance" in operations):
+        fig.append(plt.figure(len(fig)))
+        file_name = "results.heat_variance.1"
         matrix = np.zeros((100,100))
         file=open(file_name)
         value = 0
         for line in file:
             matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
             value += 1
-        print "toto"
         plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Sobol\'s index '+str(param))
-        fig[param].show()
+        plt.colorbar().set_label('Variances')
+        fig[len(fig)-1].show()
+        file.close()
 
     raw_input()
 
