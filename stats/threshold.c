@@ -35,7 +35,7 @@
  *******************************************************************************/
 
 void update_threshold_exceedance (int       threshold_exceedance[],
-                                  int       threshold,
+                                  double    threshold,
                                   double    in_vect[],
                                   const int vect_size)
 {
@@ -47,7 +47,9 @@ void update_threshold_exceedance (int       threshold_exceedance[],
     for (i=0; i<vect_size; i++)
     {
         if (in_vect[i] > threshold)
+        {
             threshold_exceedance[i] += 1;
+        }
     }
 }
 
@@ -60,7 +62,7 @@ void update_threshold_exceedance (int       threshold_exceedance[],
  *
  *******************************************************************************
  *
- * @param[in] **threshold
+ * @param[in] **threshold_exceedance
  * threshold exceedance array of vectors to save, size nb_time_steps
  *
  * @param[in] vect_size
@@ -74,7 +76,7 @@ void update_threshold_exceedance (int       threshold_exceedance[],
  *
  *******************************************************************************/
 
-void save_threshold(int  **threshold,
+void save_threshold(int  **threshold_exceedance,
                     int    vect_size,
                     int    nb_time_steps,
                     FILE*  f)
@@ -82,7 +84,7 @@ void save_threshold(int  **threshold,
     int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        fwrite(threshold[i], sizeof(int), vect_size, f);
+        fwrite(threshold_exceedance[i], sizeof(int), vect_size, f);
     }
 }
 
@@ -95,7 +97,7 @@ void save_threshold(int  **threshold,
  *
  *******************************************************************************
  *
- * @param[in] **threshold
+ * @param[in] **threshold_exceedance
  * threshold exceedance array of vectors to read, size nb_time_steps
  *
  * @param[in] vect_size
@@ -109,7 +111,7 @@ void save_threshold(int  **threshold,
  *
  *******************************************************************************/
 
-void read_threshold(int  **threshold,
+void read_threshold(int  **threshold_exceedance,
                     int    vect_size,
                     int    nb_time_steps,
                     FILE*  f)
@@ -117,6 +119,6 @@ void read_threshold(int  **threshold,
     int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        fread(threshold[i], sizeof(int), vect_size, f);
+        fread(threshold_exceedance[i], sizeof(int), vect_size, f);
     }
 }

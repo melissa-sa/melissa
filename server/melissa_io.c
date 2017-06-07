@@ -362,12 +362,12 @@ void read_simu_states(int               *simu_states,
  *
  *******************************************************************************/
 
-void write_stats (melissa_data_t    **data,
-                  melissa_options_t  *options,
-                  comm_data_t        *comm_data,
-                  int                *local_vect_sizes,
-                  char               *field
-                  )
+void write_stats_bin (melissa_data_t    **data,
+                      melissa_options_t  *options,
+                      comm_data_t        *comm_data,
+                      int                *local_vect_sizes,
+                      char               *field
+                      )
 {
     long long int        i, offset = 0;
     int                  t;
@@ -376,7 +376,6 @@ void write_stats (melissa_data_t    **data,
     MPI_Status status;
 #else // BUILD_WITH_MPI
     FILE* f;
-    int j;
 #endif // BUILD_WITH_MPI
     char       file_name[256];
     int        max_size_time;
@@ -396,7 +395,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
@@ -405,10 +404,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                     MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].means[t].mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                    for (j=0; j<comm_data->rcounts[i]; j++)
-                    {
-                        fprintf(f, "%g\n", (*data)[i].means[t].mean[j]);
-                    }
+                    fwrite((*data)[i].means[t].mean, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -428,7 +424,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
@@ -437,10 +433,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                     MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].variance, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                    for (j=0; j<comm_data->rcounts[i]; j++)
-                    {
-                        fprintf(f, "%g\n", (*data)[i].variances[t].variance[j]);
-                    }
+                    fwrite((*data)[i].variances[t].variance, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -459,7 +452,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-                f = fopen(file_name, "w");
+                f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
@@ -468,10 +461,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                         MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].mean_structure.mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                        for (j=0; j<comm_data->rcounts[i]; j++)
-                        {
-                            fprintf(f, "%g\n", (*data)[i].variances[t].mean_structure.mean[j]);
-                        }
+                        fwrite((*data)[i].variances[t].mean_structure.mean, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                     }
                 }
@@ -492,7 +482,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
@@ -501,10 +491,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                     MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].min, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                    for (j=0; j<comm_data->rcounts[i]; j++)
-                    {
-                        fprintf(f, "%g\n", (*data)[i].min_max[t].min[j]);
-                    }
+                    fwrite((*data)[i].min_max[t].min, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -521,7 +508,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
@@ -530,10 +517,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                     MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].max, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                    for (j=0; j<comm_data->rcounts[i]; j++)
-                    {
-                        fprintf(f, "%g\n", (*data)[i].min_max[t].max[j]);
-                    }
+                    fwrite((*data)[i].min_max[t].max, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -553,7 +537,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
@@ -562,10 +546,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                     MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].thresholds[t], comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
-                    for (j=0; j<comm_data->rcounts[i]; j++)
-                    {
-                        fprintf(f, "%d\n", (*data)[i].thresholds[t][j]);
-                    }
+                    fwrite((*data)[i].thresholds[t], sizeof(int), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -585,7 +566,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-            f = fopen(file_name, "w");
+            f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
             for (i=0; i<comm_data->client_comm_size; i++)
             {
@@ -594,10 +575,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                     MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].quantiles[t].quantile, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
-                    for (j=0; j<comm_data->rcounts[i]; j++)
-                    {
-                        fprintf(f, "%g\n", (*data)[i].quantiles[t].quantile[j]);
-                    }
+                    fwrite((*data)[i].quantiles[t].quantile, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                 }
             }
@@ -620,7 +598,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-                f = fopen(file_name, "w");
+                f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
@@ -629,10 +607,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                         MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
-                        for (j=0; j<comm_data->rcounts[i]; j++)
-                        {
-                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values[j]);
-                        }
+                        fwrite((*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                     }
                 }
@@ -652,7 +627,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
-                f = fopen(file_name, "w");
+                f = fopen(file_name, "wb");
 #endif // BUILD_WITH_MPI
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
@@ -661,10 +636,7 @@ void write_stats (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
                         MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
-                        for (j=0; j<comm_data->rcounts[i]; j++)
-                        {
-                            fprintf(f, "%g\n", (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values[j]);
-                        }
+                        fwrite((*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
                     }
                 }
@@ -761,7 +733,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -823,7 +795,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -884,7 +856,7 @@ void write_stats_ensight (melissa_data_t    **data,
                     temp_offset = 0;
                     for (j=1; j<comm_data->comm_size; j++)
                     {
-                        temp_offset += local_vect_sizes[j];
+                        temp_offset += local_vect_sizes[j-1];
                         MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                     }
                 }
@@ -947,7 +919,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1006,7 +978,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1068,7 +1040,7 @@ void write_stats_ensight (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1132,7 +1104,7 @@ void write_stats_ensight (melissa_data_t    **data,
                     temp_offset = 0;
                     for (j=1; j<comm_data->comm_size; j++)
                     {
-                        temp_offset += local_vect_sizes[j];
+                        temp_offset += local_vect_sizes[j-1];
                         MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                     }
                 }
@@ -1193,7 +1165,7 @@ void write_stats_ensight (melissa_data_t    **data,
                     temp_offset = 0;
                     for (j=1; j<comm_data->comm_size; j++)
                     {
-                        temp_offset += local_vect_sizes[j];
+                        temp_offset += local_vect_sizes[j-1];
                         MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
                     }
                 }
@@ -1259,7 +1231,7 @@ void write_stats_ensight (melissa_data_t    **data,
 //                    temp_offset = 0;
 //                    for (j=1; j<comm_data->comm_size; j++)
 //                    {
-//                        temp_offset += local_vect_sizes[j];
+//                        temp_offset += local_vect_sizes[j-1];
 //                        MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
 //                    }
 //                }
@@ -1321,7 +1293,7 @@ void write_stats_ensight (melissa_data_t    **data,
 //                    temp_offset = 0;
 //                    for (j=1; j<comm_data->comm_size; j++)
 //                    {
-//                        temp_offset += local_vect_sizes[j];
+//                        temp_offset += local_vect_sizes[j-1];
 //                        MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
 //                    }
 //                }
@@ -1514,22 +1486,22 @@ void write_stats_txt (melissa_data_t    **data,
             {
                 if (comm_data->rcounts[i] > 0)
                 {
-                    memcpy(&d_buffer[offset + comm_data->rdispls[i]], (*data)[i].means[t].mean, comm_data->rcounts[i]*sizeof(double));
+                    memcpy(&d_buffer[comm_data->rdispls[i]], (*data)[i].means[t].mean, comm_data->rcounts[i]*sizeof(double));
                 }
             }
 #ifdef BUILD_WITH_MPI
             if (comm_data->rank == 0)
             {
-                temp_offset = 0;
+                temp_offset += local_vect_sizes[j-1];
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
-                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                    temp_offset += local_vect_sizes[j-1];
+                    MPI_Recv (&(d_buffer[temp_offset]), local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                 }
             }
             else
             {
-                MPI_Send(&d_buffer[offset], local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
             }
 #endif // BUILD_WITH_MPI
             if (comm_data->rank == 0)
@@ -1562,7 +1534,7 @@ void write_stats_txt (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1600,7 +1572,7 @@ void write_stats_txt (melissa_data_t    **data,
                     temp_offset = 0;
                     for (j=1; j<comm_data->comm_size; j++)
                     {
-                        temp_offset += local_vect_sizes[j];
+                        temp_offset += local_vect_sizes[j-1];
                         MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                     }
                 }
@@ -1640,7 +1612,7 @@ void write_stats_txt (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1676,7 +1648,7 @@ void write_stats_txt (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1716,7 +1688,7 @@ void write_stats_txt (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&i_buffer[temp_offset], local_vect_sizes[j], MPI_INT, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1755,7 +1727,7 @@ void write_stats_txt (melissa_data_t    **data,
                 temp_offset = 0;
                 for (j=1; j<comm_data->comm_size; j++)
                 {
-                    temp_offset += local_vect_sizes[j];
+                    temp_offset += local_vect_sizes[j-1];
                     MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                 }
             }
@@ -1796,7 +1768,7 @@ void write_stats_txt (melissa_data_t    **data,
                     temp_offset = 0;
                     for (j=1; j<comm_data->comm_size; j++)
                     {
-                        temp_offset += local_vect_sizes[j];
+                        temp_offset += local_vect_sizes[j-1];
                         MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                     }
                 }
@@ -1834,7 +1806,7 @@ void write_stats_txt (melissa_data_t    **data,
                     temp_offset = 0;
                     for (j=1; j<comm_data->comm_size; j++)
                     {
-                        temp_offset += local_vect_sizes[j];
+                        temp_offset += local_vect_sizes[j-1];
                         MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
                     }
                 }

@@ -10,16 +10,16 @@
 #define THRESHOLD_H
 
 void update_threshold_exceedance (int       threshold_exceedance[],
-                                  int       threshold,
+                                  double    threshold,
                                   double    in_vect[],
                                   const int vect_size);
 
-void save_threshold(int  **threshold,
+void save_threshold(int  **threshold_exceedance,
                     int    vect_size,
                     int    nb_time_steps,
                     FILE*  f);
 
-void read_threshold(int  **threshold,
+void read_threshold(int  **threshold_exceedance,
                     int    vect_size,
                     int    nb_time_steps,
                     FILE*  f);

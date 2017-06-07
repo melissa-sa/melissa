@@ -244,11 +244,11 @@ void finalize_field_data (field_ptr         field,
 #ifdef BUILD_WITH_PROBES
         start_write_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-//        write_stats (&(field->stats_data),
-//                     options,
-//                     comm_data,
-//                     local_vect_sizes,
-//                     field->name);
+//        write_stats_bin (&(field->stats_data),
+//                         options,
+//                         comm_data,
+//                         local_vect_sizes,
+//                         field->name);
         write_stats_txt (&(field->stats_data),
                          options,
                          comm_data,

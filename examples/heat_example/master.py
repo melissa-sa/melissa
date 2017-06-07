@@ -70,11 +70,17 @@ def launch_simu (Ai, sobol_rank, sobol_group, nb_proc_simu, nb_parameters):
   for i in Ai:
       parameters += " " + str(i)
   if build_examples_with_mpi == "ON":
-    print "mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &"
-    return os.system("mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &")
+    print "mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" "
+    if ((("sobol" in operations) or ("sobol_indices" in operations)) and sobol_rank < nb_parameters+1):
+        return os.system("mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" &")
+    else:
+        return os.system("mpirun -n "+str(nb_proc_simu)+" ./"+executable+" "+parameters+" ")
   else:
-    print "./"+executable+" "+parameters+" &"
-    return os.system("./"+executable+" "+parameters+" &")
+    print "./"+executable+" "+parameters+" "
+    if ((("sobol" in operations) or ("sobol_indices" in operations)) and sobol_rank < nb_parameters+1):
+        return os.system("./"+executable+" "+parameters+" &")
+    else:
+        return os.system("./"+executable+" "+parameters+" ")
 
 def launch_coupled_simu (Ai, Bi, C, sobol_group, nb_proc_simu, nb_parameters):
 #  os.system("cd /home/tterraz/avido/source/Melissa/build/examples/heat_example")
@@ -179,7 +185,7 @@ def launch_heat(nb_parameters,
             ret[j+2] = launch_simu(C[j][i,:], j+2, i, nb_proc_simu, nb_parameters)
           for k in range(len(ret)):
             if (ret[k] != 0):
-              print "error launching simulation "+str(i)+" of group "+str(k)
+              print "error launching simulation "+str(k)+" of group "+str(i)
         else:
           launch_coupled_simu(A[i,:], B[i,:], C, i, nb_proc_simu, nb_parameters)
       else:
@@ -199,11 +205,88 @@ def launch_heat(nb_parameters,
     print "end !"
 
     fig = list()
+    matrix = np.zeros((100,100))
+
+    if ("mean" in operations):
+        fig.append(plt.figure(len(fig)))
+        file_name = "results.heat_mean."+str(nb_time_steps)
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Means')
+        fig[len(fig)-1].show()
+        file.close()
+
+    if ("variance" in operations):
+        fig.append(plt.figure(len(fig)))
+        file_name = "results.heat_variance."+str(nb_time_steps)
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Variances')
+        fig[len(fig)-1].show()
+        file.close()
+
+    if ("min" in operations or "max" in operations):
+        fig.append(plt.figure(len(fig)))
+        file_name = "results.heat_min."+str(nb_time_steps)
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Minimum')
+        fig[len(fig)-1].show()
+        file.close()
+        fig.append(plt.figure(len(fig)))
+        file_name = "results.heat_max."+str(nb_time_steps)
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Maximum')
+        fig[len(fig)-1].show()
+        file.close()
+
+    if ("threshold" in operations):
+        fig.append(plt.figure(len(fig)))
+        file_name = "results.heat_threshold."+str(nb_time_steps)
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix [int(value)/100, int(value)%100] = int(line.split("\n")[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Threshold exceedance')
+        fig[len(fig)-1].show()
+        file.close()
+
+    if ("quantile" in operations or "quantiles" in operations):
+        fig.append(plt.figure(len(fig)))
+        file_name = "results.heat_quantile."+str(nb_time_steps)
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Quantiles')
+        fig[len(fig)-1].show()
+        file.close()
+
     if ("sobol" in operations) or ("sobol_indices" in operations):
         for param in range(nb_parameters):
             fig.append(plt.figure(len(fig)))
-            file_name = "results.heat_sobol"+str(param)+".1"
-            matrix = np.zeros((100,100))
+            file_name = "results.heat_sobol"+str(param)+"."+str(nb_time_steps)
             file=open(file_name)
             value = 0
             for line in file:
@@ -215,8 +298,7 @@ def launch_heat(nb_parameters,
             file.close()
         for param in range(nb_parameters):
             fig.append(plt.figure(len(fig)))
-            file_name = "results.heat_sobol_tot"+str(param)+".1"
-            matrix = np.zeros((100,100))
+            file_name = "results.heat_sobol_tot"+str(param)+"."+str(nb_time_steps)
             file=open(file_name)
             value = 0
             for line in file:
@@ -226,21 +308,6 @@ def launch_heat(nb_parameters,
             plt.colorbar().set_label('Total order Sobol\'s indices '+str(param))
             fig[len(fig)-1].show()
             file.close()
-
-
-    if ("variance" in operations):
-        fig.append(plt.figure(len(fig)))
-        file_name = "results.heat_variance.1"
-        matrix = np.zeros((100,100))
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix [int(value)/100, int(value)%100] = float(line.split("\n")[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Variances')
-        fig[len(fig)-1].show()
-        file.close()
 
     raw_input()
 
