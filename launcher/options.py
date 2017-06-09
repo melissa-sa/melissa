@@ -6,8 +6,15 @@ class options():
         self.nb_parameters         = 6
         self.sampling_size         = 1000
         self.nb_time_steps         = 100
-        self.operations            = ["mean","variance","min","max","threshold","sobol"]
+        self.mean                  = True
+        self.variance              = True
+        self.min                   = True
+        self.max                   = True
+        self.threshold_exceedance  = True
         self.threshold             = 0.7
+        self.quantile              = True
+        self.sobol_indices         = True
+        self.operations            = ["mean","variance","min","max","threshold","sobol"]
         self.mpi_OAR_options       = "--mca orte_rsh_agent \"oarsh\" --mca btl openib,sm,self --mca pml ^cm --machinefile $OAR_NODE_FILE"
         self.mpi_Slurm_options     = ""
         self.mpi_CCC_options       = ""
