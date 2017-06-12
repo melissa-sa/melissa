@@ -106,6 +106,7 @@ static void print_zmq_error(int         ret,
 
 void melissa_logo ()
 {
+    fprintf (stdout, "\n");
     fprintf (stdout, "  _    _   ____   _      _    ____   ____   ___    \n");
     fprintf (stdout, " | \\  / | |  __| | |    | |  / ___| / ___| |   \\   \n");
     fprintf (stdout, " |  \\/  | | |_   | |    | | ( (__  ( (__   | |\\ \\  \n");
