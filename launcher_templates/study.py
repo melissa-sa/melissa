@@ -2,11 +2,23 @@
 import os
 from ctypes import cdll, create_string_buffer
 import socket
-
+from threading import Thread, RLock
 from options import *
 from utils import *
 from simulation import *
+
 get_message = cdll.LoadLibrary("@CMAKE_BINARY_DIR@/launcher/libget_message.so")
+
+class message_reciever(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+    def run(self):
+        while True:
+            message = create_string_buffer('\000' * 256)
+            get_message.wait_message(message)
+            print "message: "+message.value
+            if message.value == "stop":
+                return 0
 
 class Study:
     def __init__(self):
@@ -16,6 +28,7 @@ class Study:
         self.server_options = ""
         self.mpi_options = ""
         self.server_job_id = ""
+        self.server_first_job_id = ""
         if (self.options.sobol_indices):
             self.nb_groups = self.options.sampling_size
             self.nb_simu = self.nb_groups*(self.options.nb_parameters+2)
@@ -24,18 +37,22 @@ class Study:
             self.sobol = False
             self.nb_groups = self.options.sampling_size
             self.nb_simu = self.nb_groups
+        self.thread_message_reciever = message_reciever()
 
         self.check_options()
         for i in range(self.options.sampling_size):
             self.simulations.append(Simulation(parameter_set=self.draw_parameter_set(),options=self.options, sobol_id=0))
         self.create_study()
         self.create_server_options()
-
         self.launch_server()
         self.wait_server_start()
+        get_message.init_message()
+        self.thread_message_reciever.start()
         for simu in self.simulations:
             self.launch_simulation(simu)
         self.stats_visu()
+        self.thread_message_reciever.join()
+        get_message.close_message()
         self.finalize()
 
     def check_options(self):
@@ -106,9 +123,7 @@ class Study:
             self.server_job_id = self.options.launch_server()
         else:
             os.system("mpirun "+self.options.mpi_options+" -n "+str(self.options.nb_proc_server)+" "+self.options.server_path+"/server "+self.server_options+" &")
-#            call_bash("mpirun "+self.options.mpi_options+" -n "+str(self.options.nb_proc_server)+" "+self.options.server_path+"/server "+self.server_options+" &")
-            self.server_job_id = call_bash("pidof "+self.options.server_path+"/server")["out"].split()[0]
-        self.output += "Melissa Server job id: "+self.server_job_id
+
 
     def wait_server_start(self):
         if self.options.wait_server_start != None:
@@ -125,6 +140,8 @@ class Study:
                     return 0
                 if message[0] == "server":
                     print "server node name:"+message[1]
+                    self.server_job_id = call_bash("pidof "+self.options.server_path+"/server")["out"].split()[0]
+                    self.output += "Melissa Server job id: "+self.server_job_id
                     get_message.close_message()
                     return 0
 
@@ -148,7 +165,7 @@ class Study:
             pass
 
     def finalize(self, file_name = "melissa_master.out"):
-        if self.options.stats_visu != None:
+        if self.options.finalize != None:
             return self.options.finalize()
         else:
             pass
