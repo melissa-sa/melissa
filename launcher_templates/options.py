@@ -9,6 +9,7 @@ class Options:
         # user #
         self.home_path                = "/home/toto"
         self.user_name                = "toto"
+        self.working_directory        = "./"
         # parameter sets #
         self.nb_parameters            = 5
         self.range_min_param          = np.zeros(self.nb_parameters,float)
@@ -33,11 +34,13 @@ class Options:
         self.simulation_executable    = "heatc"
         self.nb_proc_simulation       = 2
         self.coupling                 = 1
+        self.max_additional_samples   = self.sampling_size
         # functions #
         self.create_study             = None
         self.draw_parameter           = np.random.uniform
         self.create_simulation        = None
         self.launch_simulation        = None
+        self.launch_simulation_group  = None
         self.launch_server            = None
         self.wait_server_start        = None
         self.reboot_simulation        = None

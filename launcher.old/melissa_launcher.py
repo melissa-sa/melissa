@@ -34,7 +34,7 @@ output         = ""
 #               Threads               #
 #=====================================#
 
-get_message = cdll.LoadLibrary(global_options.server_path+'/../launcher/libget_message.so')
+get_message = cdll.LoadLibrary(global_options.server_path+'/../utils/libget_message.so')
 
 lock_job_state = RLock()
 lock_simu_state = RLock()
@@ -81,7 +81,7 @@ class message_reciever(Thread):
         global job_states
         global server_state
         global output
-        last_recieved_from_master = 0
+        last_recieved_from_server = 0
         while self.running_master == True:
 
             c_msg = create_string_buffer('\000' * 256)
@@ -101,20 +101,20 @@ class message_reciever(Thread):
                                               global_options.operations,
                                               simu_crash)
                         job_states[simu_id] = 1 # pennding or runnning
-                last_recieved_from_master = time.time()
+                last_recieved_from_server = time.time()
             elif (message[0] == "simu_state"):
                 print "message: "+message[0]+" "+message[1]+" "+message[2]
                 simu_id = int(message[1])
                 simu_state = int(message[2])
                 simu_states[simu_id] = simu_state
-                last_recieved_from_master = time.time()
+                last_recieved_from_server = time.time()
             elif (message[0] == "server"):
                 with lock_server_state:
                     server_state = "running"
                 print "server node name:"+message[1]
-                last_recieved_from_master = time.time()
-            if last_recieved_from_master > 0:
-                if (time.time() - last_recieved_from_master) > timeout_server:
+                last_recieved_from_server = time.time()
+            if last_recieved_from_server > 0:
+                if (time.time() - last_recieved_from_server) > timeout_server:
                     with lock_server_state:
                         server_state = "timeout"
         print "closing messenger thread"
@@ -360,7 +360,7 @@ def launch_study():
                             call_bash("scancel "+simu_job_id[i])
                         elif (global_options.batch_scheduler == "OAR"):
                             call_bash("oardel "+simu_job_id[i])
-                        elif (global_options.batch_scheduler == "OAR"):
+                        elif (global_options.batch_scheduler == "local"):
                             call_bash("kill "+simu_job_id[i])
 
                 melissa_job_id = reboot_server(global_options.workdir,

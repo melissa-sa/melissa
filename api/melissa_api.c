@@ -525,7 +525,6 @@ void melissa_init (const int *local_vect_size,
                 port_no = 100 + zmq_data.pull_rank[i];
                 sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * zmq_data.pull_rank[i]], port_no);
                 melissa_connect (zmq_data.data_pusher[j], port_name);
-                fprintf (stdout, "simu %d:%d rank %d connected to %s\n", *sample_id, *sobol_rank, *rank, port_name);
                 j += 1;
             }
         }

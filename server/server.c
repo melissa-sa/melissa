@@ -470,7 +470,6 @@ int main (int argc, char **argv)
             if (simu_state[group_id] == 2)
             {
                 nb_finished_simulations += 1;
-                fprintf(stderr, "nb_finished_simulations: %d\n", nb_finished_simulations);
             }
             // === Send a message to the Python master in case of simulation status update === //
             if (old_simu_state != simu_state[group_id] && comm_data.rank == 0)
