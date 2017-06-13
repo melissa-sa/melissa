@@ -12,6 +12,7 @@ get_message = cdll.LoadLibrary("@CMAKE_BINARY_DIR@/launcher/libget_message.so")
 class message_reciever(Thread):
     def __init__(self):
         Thread.__init__(self)
+
     def run(self):
         while True:
             message = create_string_buffer('\000' * 256)
@@ -29,6 +30,7 @@ class Study:
         self.mpi_options = ""
         self.server_job_id = ""
         self.server_first_job_id = ""
+        self.server_node_name = ""
         if (self.options.sobol_indices):
             self.nb_groups = self.options.sampling_size
             self.nb_simu = self.nb_groups*(self.options.nb_parameters+2)
@@ -50,6 +52,9 @@ class Study:
         self.thread_message_reciever.start()
         for simu in self.simulations:
             self.launch_simulation(simu)
+            self.check_server_state()
+            self.options.check_scheduler_load()
+
         self.stats_visu()
         self.thread_message_reciever.join()
         get_message.close_message()
@@ -124,7 +129,6 @@ class Study:
         else:
             os.system("mpirun "+self.options.mpi_options+" -n "+str(self.options.nb_proc_server)+" "+self.options.server_path+"/server "+self.server_options+" &")
 
-
     def wait_server_start(self):
         if self.options.wait_server_start != None:
             return self.options.wait_server_start()
@@ -145,6 +149,14 @@ class Study:
                     get_message.close_message()
                     return 0
 
+    def check_server_state(self):
+        pass
+
+    def check_scheduler_load(self):
+        if self.options.check_scheduler_load != None:
+            return self.options.check_scheduler_load()
+        else:
+            pass
 
     def check_server_job(self):
         if self.options.check_server_job != None:

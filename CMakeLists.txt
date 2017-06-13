@@ -53,7 +53,7 @@ endif()
 
 if(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
   set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
-  message(STATUS "ZeroMQ found at " ${ZMQ_DIR})
+  message(STATUS "ZeroMQ Found")
 else(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
   option(INSTALL_ZMQ "Download and install ZeroMQ" ON)
   message(STATUS "ZeroMQ not found")
@@ -84,9 +84,6 @@ else(INSTALL_ZMQ)
   set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
   pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
 endif(INSTALL_ZMQ)
-message(STATUS "ZeroMQ dir:" ${ZMQ_DIR})
-message(STATUS "ZeroMQ lib:" ${ZMQ_LIBRARY})
-message(STATUS "ZeroMQ inc:" ${ZMQ_INCLUDE_DIR})
 
 option(BUILD_WITH_MPI "Build with MPI" ON)
 
@@ -232,7 +229,7 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
-add_subdirectory(launcher)
+add_subdirectory(launcher.old)
 
 add_subdirectory(launcher_templates)
 
