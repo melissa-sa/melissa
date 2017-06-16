@@ -1,8 +1,18 @@
 
 import subprocess
 
-def call_bash(s):
-    proc = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
+def call_bash(string):
+    proc = subprocess.Popen(string,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
     (out, err) = proc.communicate()
-    return {'out':str(out[:len(out)-int(out[-1]=="\n")]) if len(out)>0 else "", 'err':str(err[:len(err)-int(err[-1]=="\n")]) if len(err)>0 else ""}
+    return{'out':remove_end_of_line(out),
+           'err':remove_end_of_line(err)}
 
+def remove_end_of_line(string):
+    if len(string) > 0:
+        return str(string[:len(string)-int(string[-1] == "\n")])
+    else:
+        return ""

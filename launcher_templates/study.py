@@ -1,304 +1,341 @@
 
+from threading import Thread
 import os
 import time
 from ctypes import cdll, create_string_buffer
 import socket
-from multiprocessing import Process, Value, Array
+import subprocess
 from options import *
-from utils import *
 from simulation import *
 
-get_message = cdll.LoadLibrary("@CMAKE_BINARY_DIR@/utils/libget_message.so")
+get_message = cdll.LoadLibrary('@CMAKE_BINARY_DIR@/utils/libget_message.so')
 
-def message_reciever(simu_states, server_state, running_study, server_timeout):
-    get_message.init_message()
-    while running_study.value == 1:
-        buffer = create_string_buffer('\000' * 256)
-        get_message.wait_message(buffer)
-        print "message: "+buffer.value
-        last_recieved_from_server = time.time()
-        message = buffer.value.split()
-        if message[0] == "stop":
-            with server_state.get_lock():
-                server_state = 3 # finished
-        elif message[0] == "timeout":
-            if message[1] != "-1":
-                simu_id = int(message[1])
-                # TODO call reboot simu (timeout)
-        elif (message[0] == "simu_state"):
-            with simu_states.get_lock():
-                simu_states[int(message[1])] = int(message[2])
+# Jobs and executions status
+PENDING = 0
+WAITING = 0
+RUNNING = 1
+FINISHED = 2
+TIMEOUT = 4
 
-        if last_recieved_from_server > 0:
-            if (time.time() - last_recieved_from_server) > server_timeout:
-                with server_state.get_lock():
-                    server_state.value = -1 # timeout
+simulations = list()
+server = Server(GLOBAL_OPTIONS['working_directory'],
+                SERVER_OPTIONS['mpi_options'],
+                SERVER_OPTIONS['nb_proc'])
+output = ''
 
-    get_message.close_message()
-    print "closing messenger process"
 
-#def state_checker(simu_job_states, server_job_state, running_study):
-#    while running_study.value == 1:
-#        time.sleep(10)
-#        with server_state.get_lock():
-#            print "check server state..."
-#            server_state = check_server_job()
-#            print "server "+server_state
-#        for i in range(len(simu_job_id)):
-#            if job_states[i] < 3 and job_states[i] > 0:
-#                print "check simu "+str(i)+" state..."
-#                state = check_simulation_job(global_options.batch_scheduler, global_options.username, simu_job_id[i])
-#                if ("running" == state):
-#                    with simu_job_states.get_lock():
-#                        simu_job_states[i] = 2 # running
-#                    print "Simulation "+str(i)+" running"
-#                if ("terminated" == state):
-#                    with simu_job_states.get_lock():
-#                        simu_job_states[i] = 3 # terminated
-#                    print "Simulation "+str(i)+" terminated"
-#        pass
-#    print "closing state checker process"
+def check_server_job(job_id):
+    if USER_FUNCTIONS['check_server_job']:
+        return USER_FUNCTIONS['check_server_job'](job_id)
+    else:
+        pass
+
+def check_simu_job(job_id):
+    if USER_FUNCTIONS['check_simulation_job']:
+        return USER_FUNCTIONS['check_simulation_job'](job_id)
+    else:
+        pass
+
+
+class Messenger(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.running_study = True
+
+    def run(self):
+        global simulations
+        global server
+        global output
+        last_server = 0
+        get_message.init_message()
+        while self.running_study:
+            buff = create_string_buffer('\000' * 256)
+            get_message.wait_message(buff)
+            print 'message: '+buff.value
+            last_server = time.time()
+            message = buff.value.split()
+            if message[0] == 'stop':
+                with server.lock:
+                    server.status = FINISHED # finished
+            elif message[0] == 'timeout':
+                if message[1] != '-1':
+                    simu_id = int(message[1])
+                    output += 'Simulation ' + simu_id + 'timeout\n'
+                    with simulations[simu_id].lock:
+                        pass
+                    # TODO call reboot simu (timeout)
+            elif message[0] == 'simu_state':
+                with simulations[int(message[1])].lock:
+                    simulations[int(message[1])].status = int(message[2])
+
+            if last_server > 0:
+                if (time.time() - last_server) > SERVER_OPTIONS['timeout']:
+                    output += 'Server ' + simu_id + 'timeout\n'
+                    with server.lock:
+                        server.status = TIMEOUT
+
+        get_message.close_message()
+        print 'closing messenger thread'
+
+class StateChecker(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.running_study = True
+
+    def run(self):
+        global simulations
+        global server
+        while self.running_study:
+            time.sleep(1)
+            with server.lock:
+                print 'check server state (pid = '+str(server.job_id)+')'
+                server.job_status = check_server_job(server.job_id)
+                print 'server ' + str(server.job_status)
+            for simu in simulations:
+                if simu.job_status < 2:
+                    print 'check simu '+str(simu.rank)+' state...'
+                    with simu.lock:
+                        simu.job_status = check_simu_job(simu.job_id)
+                        print 'simu ' + str(simu.rank) + \
+                                ' state ' + str(server.job_status)
+        print 'closing state checker process'
+
 
 class Study:
     def __init__(self):
-        self.options = Options()
-        self.simulations = list()
+        global simulations
+        global server
+        global output
         self.groups = list()
-        self.output = ""
-        self.server_options = ""
-        self.mpi_options = ""
-        self.server_node_name = ""
-        self.server_job_id = ""
-        self.server_first_job_id = ""
-        self.server_node_name = ""
-        if (self.options.sobol_indices):
+        self.simulations = simulations
+        self.output = output
+        self.server = server
+        self.nb_groups = STUDY_OPTIONS['sampling_size']
+        if MELISSA_STATS['sobol_indices']:
             self.sobol = True
-            self.nb_groups = self.options.sampling_size
-            self.nb_simu = self.nb_groups*(self.options.nb_parameters+2)
-            if self.options.coupling == 1:
-                self.simu_states_size = self.options.sampling_size + self.options.max_additional_samples
-            else:
-                self.simu_states_size = self.options.sampling_size + self.options.max_additional_samples*(self.options.nb_parameters+2)
+            self.nb_simu = self.nb_groups*(STUDY_OPTIONS['nb_parameters']+2)
         else:
             self.sobol = False
-            self.nb_groups = self.options.sampling_size
             self.nb_simu = self.nb_groups
-            self.simu_states_size = self.options.sampling_size + self.options.max_additional_samples
-        self.simu_job_states = Array('i', self.simu_states_size, lock = True) # simu as seen by the batch scheduler
-        self.simu_states = Array('i', self.simu_states_size, lock = True) # simu as seen by the Server
-        self.server_job_state = Value('i', lock = True)
-        self.server_job_state.value = 0
-        self.server_state = Value('i', lock = True)
-        self.server_state.value = 0
-        self.running_study = Value('i', lock = True)
-        self.running_study.value = 1
-        self.message_reciever = Process(target=message_reciever, args=(self.simu_states,
-                                                                       self.server_state,
-                                                                       self.running_study,
-                                                                       self.options.server_timeout))
-#        self.state_checker = Process(target=state_checker, args=(self.simu_job_states,
-#                                                                 self.server_job_state,
-#                                                                 self.running_study))
+        self.messenger = Messenger()
+        self.state_checker = StateChecker()
 
+
+    def run(self):
         self.check_options()
-        for i in range(self.options.sampling_size):
-            if self.sobol:
-                self.groups.append(Sobol_group(parameter_set_A=self.draw_parameter_set(),
-                                               parameter_set_B=self.draw_parameter_set(),
-                                               options=self.options))
-            else:
-                self.simulations.append(Simulation(parameter_set=self.draw_parameter_set(),
-                                                   options=self.options,
-                                                   sobol_id=0))
+        self.create_job_lists()
         self.create_study()
-        self.create_server_options()
+        self.server.command_line_options = self.create_server_options()
         self.launch_server()
-        self.server_job_state.value = 1
         self.wait_server_start()
-        self.server_state.value = 1
-        self.message_reciever.start()
-#        self.state_checker.start()
-        if self.sobol:
-            for group in self.groups:
-                self.launch_simulation_group(group)
-                self.check_server_state()
-#                self.check_simulation_states()
-                self.check_scheduler_load()
-        else:
-            for simu in self.simulations:
+        self.server.status = 1
+        self.server.job_status = 1
+        self.messenger.start()
+        self.state_checker.start()
+        for simu in self.simulations:
+            self.check_server_state()
+            self.check_scheduler_load()
+            if self.sobol:
+                self.launch_group(simu)
+            else:
                 self.launch_simulation(simu)
-                self.check_server_state()
-#                self.check_simulation_states()
-                self.check_scheduler_load()
-
         self.fault_tolerance()
-        with self.running_study.get_lock():
-            self.running_study.value = 0
-        self.stats_visu()
-        self.message_reciever.join()
-#        self.state_checker.join()
+        self.messenger.running_study = False
+        self.state_checker.running_study = False
+        self.messenger.join()
+        self.state_checker.join()
+        self.postprocessing()
         self.finalize()
 
     def check_options(self):
         errors = 0
-        if not os.path.isdir(self.options.home_path):
-            print "error bad option: home_path: no such directory"
+        nb_parameters = STUDY_OPTIONS['nb_parameters']
+        if not os.path.isdir(GLOBAL_OPTIONS['home_path']):
+            print 'error bad option: home_path: no such directory'
             errors += 1
-        if self.options.nb_parameters < 1 or (self.sobol and self.options.nb_parameters < 2):
-            print "error bad option: nb_parameters too small"
+        if not self.sobol and nb_parameters < 1:
+            print 'error bad option: nb_parameters too small'
             errors += 1
-        if (len(self.options.range_min_param) != self.options.nb_parameters) or (len(self.options.range_max_param) != self.options.nb_parameters):
-            print "error bad option: wrong dimension for range_min_param or range_max_param"
+        if self.sobol and nb_parameters < 2:
+            print 'error bad option: nb_parameters too small'
             errors += 1
-        if self.options.sampling_size < 2:
-            print "error bad option: sample_size not big enough"
+        if len(STUDY_OPTIONS['range_min_param']) != nb_parameters:
+            print 'error bad option: wrong dimension for range_min_param'
             errors += 1
-        if not os.path.isdir(self.options.server_path):
-            print "error bad option: server_path: no such directory"
+        if len(STUDY_OPTIONS['range_max_param']) != nb_parameters:
+            print 'error bad option: wrong dimension for range_max_param'
             errors += 1
-        elif not os.path.isfile(self.options.server_path+"/server"):
-            print "error bad option: server_path: wrong directory"
+        if STUDY_OPTIONS['sampling_size'] < 2:
+            print 'error bad option: sample_size not big enough'
+            errors += 1
+        if not os.path.isdir(SERVER_OPTIONS['path']):
+            print 'error bad option: server_path: no such directory'
+            errors += 1
+        elif not os.path.isfile(SERVER_OPTIONS['path']+'/server'):
+            print 'error bad option: server_path: wrong directory'
             errors += 1
         return errors
 
+    def create_job_lists(self):
+        for i in range(STUDY_OPTIONS['sampling_size']):
+            if self.sobol and SIMULATIONS_OPTIONS['coupling']:
+                self.groups.append(SobolCoupledGroup(
+                    self.draw_parameter_set(),
+                    self.draw_parameter_set(),
+                    SIMULATIONS_OPTIONS['executable']))
+            elif self.sobol:
+                self.groups.append(SobolMultiJobsGroup(
+                    self.draw_parameter_set(),
+                    self.draw_parameter_set(),
+                    SIMULATIONS_OPTIONS['executable']))
+                for simu in self.group[-1].simulations:
+                    self.simulations.append(simu)
+            else:
+                self.simulations.append(Simulation(
+                    self.draw_parameter_set(),
+                    SIMULATIONS_OPTIONS['executable'],
+                    0))
+        if self.sobol and SIMULATIONS_OPTIONS['coupling']:
+            self.simulations = self.groups
 
     def create_study(self):
-        if self.options.create_study != None:
-            return self.options.create_study()
+        if USER_FUNCTIONS['create_study']:
+            return USER_FUNCTIONS['create_study']()
         else:
             pass
 
     def draw_parameter_set(self):
-        param_set = np.zeros(self.options.nb_parameters)
-        if self.options.draw_parameter == None:
-            self.options.draw_parameter = np.random.uniform
-        else:
-            for i in range(self.options.nb_parameters):
-                param_set[i] = self.options.draw_parameter(self.options.range_min_param[i], self.options.range_max_param[i])
+        param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
+        draw_param = np.random.uniform
+        if USER_FUNCTIONS['draw_parameter']:
+            dram_param = USER_FUNCTIONS['draw_parameter']
+        for i in range(STUDY_OPTIONS['nb_parameters']):
+            param_set[i] = draw_param(STUDY_OPTIONS['range_min_param'][i],
+                                      STUDY_OPTIONS['range_max_param'][i])
         return param_set
 
     def create_server_options(self):
-        op_str = ""
-        if self.options.mean == True:
-            op_str += "mean:"
-        if self.options.variance == True:
-            op_str += "variance:"
-        if self.options.min == True or self.options.max == True:
-            op_str += "min:max:"
-        if self.options.threshold_exceedance == True:
-            op_str += "threshold:"
-        if self.options.quantile == True:
-            op_str += "quantile:"
-        if self.options.sobol_indices == True:
-            op_str += "sobol:"
-        op_str = op_str[:-1]
-        self.server_options = " -p " + str(self.options.nb_parameters)\
-                            + " -s " + str(self.options.sampling_size)\
-                            + " -t " + str(self.options.nb_time_steps)\
-                            + " -o " + op_str\
-                            + " -e " + str(self.options.threshold)\
-                            + " -n " + str(socket.gethostname())
+        op_str = ':'.join([x for x in MELISSA_STATS if MELISSA_STATS[x]])
+        if op_str == '':
+            print 'error bad option: no operation given'
+            return
+        return ' '.join(('-o', op_str,
+                         '-p', str(STUDY_OPTIONS['nb_parameters']),
+                         '-s', str(STUDY_OPTIONS['sampling_size']),
+                         '-t', str(STUDY_OPTIONS['nb_time_steps']),
+                         '-e', str(STUDY_OPTIONS['threshold_value']),
+                         '-n', str(socket.gethostname())))
 
     # server #
 
     def launch_server(self):
-        self.create_server_options()
-        os.chdir(self.options.working_directory)
-        if self.options.launch_server != None:
-            self.server_job_id = self.options.launch_server()
+#        self.server.command_line_options = self.create_server_options()
+        os.chdir(self.server.directory)
+        if  USER_FUNCTIONS['launch_server']:
+            print 'pas cool'
+            return USER_FUNCTIONS['launch_server'](self.server)
         else:
-            os.system("mpirun "+self.options.mpi_options+" -n "+str(self.options.nb_proc_server)+" "+self.options.server_path+"/server "+self.server_options+" &")
+            print 'launch server : '+'mpirun '+self.server.mpi_options + \
+                    ' -n '+str(self.server.nproc) + \
+                    ' ' + SERVER_OPTIONS['path'] + \
+                    '/server ' + \
+                    self.server.command_line_options + ' &'
+            self.server.job_id = subprocess.Popen(
+                ('mpirun '+self.server.mpi_options +
+                 ' -n '+str(self.server.nproc) +
+                 ' ' + SERVER_OPTIONS['path'] +
+                 '/server ' +
+                 self.server.command_line_options +
+                 ' &').split()).pid
+            self.server.first_job_id = self.server.job_id
+
+    def restart_server(self):
+        self.server.command_line_options += ' -r '+self.server.directory
+        os.chdir(self.server.directory)
+        if USER_FUNCTIONS['restart_server']:
+            return USER_FUNCTIONS['restart_server'](self.server)
+        else:
+            self.server.job_id = subprocess.Popen(
+                ('mpirun ' + self.server.mpi_options +
+                 ' -n ' + str(self.server.nproc) + ' ' +
+                 SERVER_OPTIONS['path'] + '/server ' +
+                 self.server.command_line_options +
+                 ' &').split()).pid
 
     def wait_server_start(self):
-        if self.options.wait_server_start != None:
-            return self.options.wait_server_start()
+        if  USER_FUNCTIONS['wait_server_start']:
+            return USER_FUNCTIONS['wait_server_start']()
         else:
             get_message.init_message()
-            buffer = create_string_buffer('\000' * 256)
-            message = "nothing".split()
-            while message[0] != "server":
-                get_message.wait_message(buffer)
-                message = buffer.value.split()
-                print "message: "+buffer.value
-                if message[0] == "stop":
+            buff = create_string_buffer('\000' * 256)
+            message = 'nothing'.split()
+            while message[0] != 'server':
+                get_message.wait_message(buff)
+                message = buff.value.split()
+                print 'message: '+buff.value
+                if message[0] == 'stop':
                     return 0
-                if message[0] == "server":
-                    print "server node name:"+message[1]
-                    self.server_node_name = message[1]
-                    self.server_job_id = call_bash("pidof "+self.options.server_path+"/server")["out"].split()[0]
-                    self.output += "Melissa Server job id: "+self.server_job_id
-                    get_message.close_message()
-                    return 0
+            print 'server node name: '+message[1]
+            print 'server job id: '+str(self.server.job_id)
+            self.server.node_name = message[1]
+            self.output += 'Melissa Server node name: ' + \
+                           str(self.server.node_name) + '\n' +\
+                           'Melissa Server job id: ' + \
+                           str(self.server.job_id) + '\n'
+            get_message.close_message()
+            return 0
 
     def check_server_state(self):
-        pass
+        if self.server.status != RUNNING:
+            for simu in self.simulations:
+                if simu.job_status < FINISHED:
+                    self.cancel_job(simu.job_id)
+                    simu.job_status = 0
+            print " =============== server status: "+str(self.server.status)
+            self.restart_server()
 
     def check_scheduler_load(self):
-        if self.options.check_scheduler_load != None:
-            return self.options.check_scheduler_load()
+        if USER_FUNCTIONS['check_scheduler_load']:
+            return USER_FUNCTIONS['check_scheduler_load']()
         else:
             pass
 
-    def check_server_job(self):
-        if self.options.check_server_job != None:
-            return self.options.check_server_job()
+    def cancel_job(self, job_id):
+        if USER_FUNCTIONS['cancel_job']:
+            return USER_FUNCTIONS['cancel_job'](job_id)
         else:
             pass
 
     def check_server_timeout(self):
-        if self.options.check_server_timeout != None:
-            return self.options.check_server_timeout()
+        if USER_FUNCTIONS['check_server_timeout']:
+            return USER_FUNCTIONS['check_server_timeout']()
         else:
             pass
-
-    def stats_visu(self):
-        if self.options.stats_visu != None:
-            return self.options.stats_visu(self.options)
-        else:
-            pass
-
-    def finalize(self, file_name = "melissa_master.out"):
-        if self.options.finalize != None:
-            return self.options.finalize()
-        else:
-            pass
-        fichier=open(file_name, "w")
-        fichier.write(self.output)
-        fichier.close()
 
     # simulations #
 
     def create_simulation(self, simulation):
-        if self.options.create_simulation != None:
-            return self.options.create_simulation(simulation)
+        if USER_FUNCTIONS['create_simulation']:
+            return USER_FUNCTIONS['create_simulation'](simulation)
         else:
             pass
 
-    def create_simulation_group(self, simulation):
+    def create_group(self, simulation):
         if self.sobol:
-            if self.options.create_simulation != None:
-                return self.options.create_simulation_group(simulation)
+            if USER_FUNCTIONS['create_group']:
+                return USER_FUNCTIONS['create_group'](simulation)
             else:
                 pass
 
     def launch_simulation(self, simulation):
-        self.output += "launch simulation "+str(simulation.id)
-        if self.options.launch_simulation != None:
-            return self.options.launch_simulation(simulation)
+        if USER_FUNCTIONS['launch_simulation']:
+            return USER_FUNCTIONS['launch_simulation'](simulation)
         else:
             pass
 
-    def launch_simulation_group(self, group):
-        self.output += "launch simulation "+str(group.id)
-        if self.options.launch_simulation_group != None:
-            return self.options.launch_simulation_group(group)
-        else:
-            pass
-
-    def launch_simulation(self, simulation):
-        self.output += "launch simulation "+str(simulation.id)
-        if self.options.launch_simulation != None:
-            return self.options.launch_simulation(simulation)
+    def launch_group(self, group):
+        if USER_FUNCTIONS['launch_group']:
+            return USER_FUNCTIONS['launch_group'](group)
         else:
             pass
 
@@ -306,20 +343,45 @@ class Study:
         for simu in self.simulations:
             pass
 
-    def check_simulation_job(self, simulation):
-        if self.options.check_simulation_job != None:
-            return self.options.check_simulation_job(simulation)
-        else:
-            pass
-
     def check_simulation_timeout(self, simulation):
-        if self.options.check_simulation_timeout != None:
-            return self.options.check_simulation_timeout(simulation)
+        if USER_FUNCTIONS['check_simulation_timeout']:
+            return USER_FUNCTIONS['check_simulation_timeout'](simulation)
         else:
             pass
 
     # fault tolerance #
 
     def fault_tolerance(self):
-        pass
+        while (not self.server.status == FINISHED
+               and not all([i.status == FINISHED for i in self.simulations])):
+            time.sleep(1)
+#        while not(all(i == 2 for i in self.simu_states[0:self.nb_jobs])
+#                and (self.server_state.value == 2)):
+#            with self.server_state.get_lock():
+#                print 'check server state'
+#                self.server_state.value = check_server_job()
+#            for i in range(self.nb_jobs):
+#                if self.job_states[i] < 3 and self.job_states[i] > 0:
+#                    print 'check simu '+str(i)+' state'
+#                    state = self.check_simulation_job(self.simulation[i])
+#                    with self.job_states.get_lock():
+#                        self.job_states[i] = state
+
+
+    # end #
+
+    def postprocessing(self):
+        if USER_FUNCTIONS['postprocessing']:
+            return USER_FUNCTIONS['postprocessing']()
+        else:
+            pass
+
+    def finalize(self, file_name='melissa_launcher.out'):
+        if USER_FUNCTIONS['finalize']:
+            return USER_FUNCTIONS['finalize']()
+        else:
+            pass
+        fichier = open(file_name, 'w')
+        fichier.write(self.output)
+        fichier.close()
 
