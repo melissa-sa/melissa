@@ -225,7 +225,6 @@ USER_FUNCTIONS['launch_simulation'] = launch_simu
 USER_FUNCTIONS['create_group'] = None
 USER_FUNCTIONS['launch_group'] = launch_coupled_group
 USER_FUNCTIONS['launch_server'] = None
-USER_FUNCTIONS['wait_server_start'] = None
 USER_FUNCTIONS['restart_server'] = None
 USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_server_timeout'] = None

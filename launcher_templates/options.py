@@ -46,7 +46,6 @@ USER_FUNCTIONS['create_simulation'] = None
 USER_FUNCTIONS['launch_simulation'] = None
 USER_FUNCTIONS['launch_group'] = None
 USER_FUNCTIONS['launch_server'] = None
-USER_FUNCTIONS['wait_server_start'] = None
 USER_FUNCTIONS['check_server_job'] = None
 USER_FUNCTIONS['check_server_timeout'] = None
 USER_FUNCTIONS['restart_server'] = None
