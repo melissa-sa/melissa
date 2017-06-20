@@ -48,11 +48,11 @@ def launch_sobol_group(group):
     for simulation in group.simulations:
         launch_simu(simulation)
 
-def check_job(job_id):
-    if os.system('ps -p ' + str(job_id) + ' > /dev/null') == 0:
-        return 1
+def check_job(job):
+    if os.system('ps -p ' + str(job.job_id) + ' > /dev/null') == 0:
+        job.job_status = 1
     else:
-        return 2
+        job.job_status =  2
 
 def heat_visu():
     os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example')
@@ -152,7 +152,7 @@ def heat_visu():
         file.close()
 
     if (MELISSA_STATS['sobol_indices']):
-        for param in range(nb_parameters):
+        for param in range(STUDY_OPTIONS['nb_parameters']):
             fig.append(plt.figure(len(fig)))
             file_name = 'results.heat_sobol'+str(param)+'.'+nb_time_steps
             file=open(file_name)
@@ -164,7 +164,7 @@ def heat_visu():
             plt.colorbar().set_label('Sobol\'s indices '+str(param))
             fig[len(fig)-1].show()
             file.close()
-        for param in range(nb_parameters):
+        for param in range(STUDY_OPTIONS['nb_parameters']):
             fig.append(plt.figure(len(fig)))
             file_name = 'results.heat_sobol_tot'+str(param)+'.'+nb_time_steps
             file=open(file_name)
@@ -215,7 +215,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = True
 MELISSA_STATS['quantile'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

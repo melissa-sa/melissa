@@ -23,20 +23,6 @@ server = Server(GLOBAL_OPTIONS['working_directory'],
                 SERVER_OPTIONS['nb_proc'])
 output = ''
 
-
-def check_server_job(job_id):
-    if USER_FUNCTIONS['check_server_job']:
-        return USER_FUNCTIONS['check_server_job'](job_id)
-    else:
-        pass
-
-def check_simu_job(job_id):
-    if USER_FUNCTIONS['check_simulation_job']:
-        return USER_FUNCTIONS['check_simulation_job'](job_id)
-    else:
-        pass
-
-
 class Messenger(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -100,15 +86,15 @@ class StateChecker(Thread):
             time.sleep(1)
             with server.lock:
                 print 'check server state (pid = '+str(server.job_id)+')'
-                server.job_status = check_server_job(server.job_id)
+                server.check_job()
                 print 'server ' + str(server.job_status)
             for simu in simulations:
                 if simu.job_status < 2:
                     print 'check simu '+str(simu.rank)+' state...'
                     with simu.lock:
-                        simu.job_status = check_simu_job(simu.job_id)
+                        simu.check_job()
                         print 'simu ' + str(simu.rank) + \
-                                ' state ' + str(server.job_status)
+                                ' state ' + str(simu.job_status)
         print 'closing state checker process'
 
 
@@ -124,10 +110,10 @@ class Study:
         self.nb_groups = STUDY_OPTIONS['sampling_size']
         if MELISSA_STATS['sobol_indices']:
             self.sobol = True
-            self.nb_simu = self.nb_groups*(STUDY_OPTIONS['nb_parameters']+2)
+#            self.nb_simu = self.nb_groups*(STUDY_OPTIONS['nb_parameters']+2)
         else:
             self.sobol = False
-            self.nb_simu = self.nb_groups
+#            self.nb_simu = self.nb_groups
         self.messenger = Messenger()
         self.state_checker = StateChecker()
 
@@ -156,6 +142,7 @@ class Study:
         finalize()
 
     def create_job_lists(self):
+        global simulations
         for i in range(STUDY_OPTIONS['sampling_size']):
             if self.sobol and SIMULATIONS_OPTIONS['coupling']:
                 self.groups.append(SobolCoupledGroup(
@@ -176,6 +163,7 @@ class Study:
                     0))
         if self.sobol and SIMULATIONS_OPTIONS['coupling']:
             self.simulations = self.groups
+            simulations = self.simulations
 
     # fault tolerance #
 
@@ -186,16 +174,17 @@ class Study:
     def check_server_state(self):
         if self.server.status != RUNNING:
             for simu in self.simulations:
-                if simu.job_status < FINISHED:
-                    self.cancel_job(simu.job_id)
-                    simu.job_status = 0
+                with simu.lock:
+                    if simu.job_status < FINISHED:
+                        self.cancel_job(simu.job_id)
+                        simu.job_status = 0
             self.server.restart()
             for simu in simulations:
                 simu.restart()
 
     def check_simulation_timeout(simulation):
         if USER_FUNCTIONS['check_simulation_timeout']:
-            return USER_FUNCTIONS['check_simulation_timeout'](simulation)
+            USER_FUNCTIONS['check_simulation_timeout'](simulation)
         else:
             pass
 
@@ -248,7 +237,7 @@ def check_options():
 
 def create_study():
     if USER_FUNCTIONS['create_study']:
-        return USER_FUNCTIONS['create_study']()
+        USER_FUNCTIONS['create_study']()
     else:
         pass
 
@@ -265,13 +254,13 @@ def draw_parameter_set():
 
 def check_scheduler_load():
     if USER_FUNCTIONS['check_scheduler_load']:
-        return USER_FUNCTIONS['check_scheduler_load']()
+        USER_FUNCTIONS['check_scheduler_load']()
     else:
         pass
 
 def check_server_timeout():
     if USER_FUNCTIONS['check_server_timeout']:
-        return USER_FUNCTIONS['check_server_timeout']()
+        USER_FUNCTIONS['check_server_timeout']()
     else:
         pass
 
@@ -279,16 +268,14 @@ def check_server_timeout():
 
 def postprocessing():
     if USER_FUNCTIONS['postprocessing']:
-        return USER_FUNCTIONS['postprocessing']()
+        USER_FUNCTIONS['postprocessing']()
     else:
         pass
 
 def finalize(file_name='melissa_launcher.out'):
     global output
     if USER_FUNCTIONS['finalize']:
-        return USER_FUNCTIONS['finalize']()
-    else:
-        pass
+        USER_FUNCTIONS['finalize']()
     fichier = open(file_name, 'w')
     fichier.write(output)
     fichier.close()

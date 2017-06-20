@@ -49,13 +49,25 @@ class Simulation(Job):
 
     def create(self):
         if USER_FUNCTIONS['create_simulation']:
-            return USER_FUNCTIONS['create_simulation'](self)
+            USER_FUNCTIONS['create_simulation'](self)
         else:
             pass
 
     def launch(self):
         if USER_FUNCTIONS['launch_simulation']:
-            return USER_FUNCTIONS['launch_simulation'](self)
+            USER_FUNCTIONS['launch_simulation'](self)
+        else:
+            pass
+
+    def restart(self):
+        if USER_FUNCTIONS['restart_simulation']:
+            USER_FUNCTIONS['restart_simulation'](self)
+        else:
+            pass
+
+    def check_job(self):
+        if USER_FUNCTIONS['check_simulation_job']:
+            USER_FUNCTIONS['check_simulation_job'](self)
         else:
             pass
 
@@ -77,13 +89,25 @@ class SobolCoupledGroup(Job):
 
     def create(self):
         if USER_FUNCTIONS['create_group']:
-            return USER_FUNCTIONS['create_group'](self)
+            USER_FUNCTIONS['create_group'](self)
         else:
             pass
 
     def launch(self):
         if USER_FUNCTIONS['launch_group']:
             return USER_FUNCTIONS['launch_group'](self)
+        else:
+            pass
+
+    def restart(self):
+        if USER_FUNCTIONS['restart_simulation']:
+            USER_FUNCTIONS['restart_simulation'](self)
+        else:
+            pass
+
+    def check_job(self):
+        if USER_FUNCTIONS['check_simulation_job']:
+            USER_FUNCTIONS['check_simulation_job'](self)
         else:
             pass
 
@@ -142,8 +166,8 @@ class Server(Job):
 
     def launch(self):
         os.chdir(self.directory)
-        if  USER_FUNCTIONS['launch_server']:
-            return USER_FUNCTIONS['launch_server'](self)
+        if USER_FUNCTIONS['launch_server']:
+           USER_FUNCTIONS['launch_server'](self)
         else:
             print 'launch server : '+'mpirun '+self.mpi_options + \
                     ' -n '+str(self.nproc) + \
@@ -175,7 +199,7 @@ class Server(Job):
         self.cmd_opt += ' -r ' + self.directory
         os.chdir(self.directory)
         if USER_FUNCTIONS['restart_server']:
-            return USER_FUNCTIONS['restart_server'](self)
+            USER_FUNCTIONS['restart_server'](self)
         else:
             self.job_id = subprocess.Popen(
                 ('mpirun ' + self.mpi_options +
@@ -187,3 +211,9 @@ class Server(Job):
                 self.status = 0
                 self.job_status = 0
         self.wait_start()
+
+    def check_job(self):
+        if USER_FUNCTIONS['check_server_job']:
+            USER_FUNCTIONS['check_server_job'](self)
+        else:
+            pass
