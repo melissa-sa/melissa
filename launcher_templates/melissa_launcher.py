@@ -2,6 +2,7 @@
 
 """
     Main module of Melissa Launcher.
+
     usage:
     pyton melissa_launcher.py path/to/options.py
 """

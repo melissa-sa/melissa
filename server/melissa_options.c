@@ -36,7 +36,7 @@ static inline void stats_usage ()
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
-            " -n <char*>     : Melissa launcher node name (default: localhost)\n"
+            " -n <char*>     : Melissa Launcher node name (default: localhost)\n"
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
             " -h             : Print this message\n"

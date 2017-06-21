@@ -99,8 +99,6 @@ int main (int argc, char **argv)
 
     // === Get the node adress === //
 
-    // Mettre un REGISTER ici !!!
-
     melissa_get_node_name (node_name);
 
 #ifdef BUILD_WITH_PROBES
@@ -454,10 +452,10 @@ int main (int argc, char **argv)
                 compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
                 iteration++;
                 confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
-//                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
-//                                                                        0.01,
-//                                                                        melissa_options.nb_time_steps,
-//                                                                        melissa_options.nb_parameters);
+                nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
+                                                                        0.01,
+                                                                        melissa_options.nb_time_steps,
+                                                                        melissa_options.nb_parameters);
             }
 #ifdef BUILD_WITH_PROBES
             end_computation_time = melissa_get_time();
@@ -491,17 +489,6 @@ int main (int argc, char **argv)
             zmq_msg_close (&msg);
 #endif // ZEROCOPY
         }
-
-        // === Send a message to the Python master in case of Sobol indices convergence === //
-//        if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
-//        {
-//            sprintf (txt_buffer, "converged %d", comm_data.rank);
-//            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-//            if (strcmp ("stop", txt_buffer))
-//            {
-//                break;
-//            }
-//        }
 
 //        if (iteration % 100 == 0)
         if (last_checkpoint_time  + 300 < melissa_get_time() && last_checkpoint_time > 0.1)
@@ -554,6 +541,17 @@ int main (int argc, char **argv)
 
         if (nb_fields > 0)
         {
+            // === Send a message to the Python Launcher in case of Sobol indices convergence === //
+            if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
+            {
+                sprintf (txt_buffer, "converged %d", comm_data.rank);
+                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+//                if (strcmp ("stop", txt_buffer))
+//                {
+                    break;
+//                }
+            }
+
             if (nb_finished_simulations >= melissa_options.sampling_size)
             {
                 break;

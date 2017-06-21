@@ -23,7 +23,7 @@ cmessage_t message;
 
 void init_message()
 {
-    int rcv_timeout = 10000; // miliseconds
+    int rcv_timeout = 1000; // miliseconds
     message.context = zmq_ctx_new ();
     message.message_puller = zmq_socket (message.context, ZMQ_PULL);
     zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));

@@ -1,4 +1,8 @@
 
+"""
+    user defined options
+"""
+
 import numpy as np
 
 GLOBAL_OPTIONS = {}
@@ -29,6 +33,7 @@ SIMULATIONS_OPTIONS['executable'] = "simu"
 SIMULATIONS_OPTIONS['nb_proc'] = 3
 SIMULATIONS_OPTIONS['coupling'] = True
 SIMULATIONS_OPTIONS['mpi_options'] = ""
+SIMULATIONS_OPTIONS['timeout'] = 300
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
@@ -43,15 +48,15 @@ USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
 USER_FUNCTIONS['draw_parameter'] = np.random.uniform
 USER_FUNCTIONS['create_simulation'] = None
+USER_FUNCTIONS['create_group'] = None
 USER_FUNCTIONS['launch_simulation'] = None
 USER_FUNCTIONS['launch_group'] = None
 USER_FUNCTIONS['launch_server'] = None
 USER_FUNCTIONS['check_server_job'] = None
-USER_FUNCTIONS['check_server_timeout'] = None
-USER_FUNCTIONS['restart_server'] = None
 USER_FUNCTIONS['check_simulation_job'] = None
-USER_FUNCTIONS['check_simulation_timeout'] = None
+USER_FUNCTIONS['restart_server'] = None
 USER_FUNCTIONS['restart_simulation'] = None
+USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = None
 USER_FUNCTIONS['cancel_job'] = None
 USER_FUNCTIONS['postprocessing'] = None

@@ -1,15 +1,34 @@
 
+"""
+    Simulations and server jobs module
+"""
+
 import numpy
 import os
 import time
 import subprocess
 from threading import RLock
 from socket import gethostname
-from options import *
+from options import USER_FUNCTIONS as usr_func
+from options import SERVER_OPTIONS as serv_opt
+from options import STUDY_OPTIONS as stdy_opt
+from options import MELISSA_STATS as ml_stats
 
-class Job:
+# Jobs and executions status
+
+NOT_SUBMITTED = -1
+PENDING = 0
+WAITING = 0
+RUNNING = 1
+FINISHED = 2
+TIMEOUT = 4
+
+class Job(object):
+    """
+        Job class
+    """
     def __init__(self):
-        self.job_status = 0
+        self.job_status = NOT_SUBMITTED
         self.nb_restarts = 0
         self.job_id = 0
         self.cmd_opt = ''
@@ -17,30 +36,26 @@ class Job:
         self.executable = ''
         self.mpi_options = ''
         self.lock = RLock()
-
-#    def launch(self):
-#        pass
-
-#    def wait(self):
-#        pass
+        self.start_time = 0.0
 
     def cancel(self):
-        if  USER_FUNCTIONS['cancel_job']:
-            return USER_FUNCTIONS['cancel_job'](self)
+        """
+            Cancels a job (mandatory)
+        """
+        if  usr_func['cancel_job']:
+            return usr_func['cancel_job'](self)
         else:
-            pass
-
-#    def restart(self):
-#        pass
-
-#    def check(self):
-#        pass
+            print 'Error: no \'cancel_job\' function provided'
+            exit()
 
 class Simulation(Job):
+    """
+        Simulation class
+    """
     nb_simu = 0
     def __init__(self, param_set, executable, sobol_id=0):
         Job.__init__(self)
-        self.status = 'waiting'
+        self.status = WAITING
         self.rank = Simulation.nb_simu
         Simulation.nb_simu += 1
         self.param_set = numpy.copy(param_set)
@@ -48,35 +63,53 @@ class Simulation(Job):
         self.executable = executable
 
     def create(self):
-        if USER_FUNCTIONS['create_simulation']:
-            USER_FUNCTIONS['create_simulation'](self)
+        """
+            Creates a simulation environment
+        """
+        if usr_func['create_simulation']:
+            usr_func['create_simulation'](self)
         else:
             pass
 
     def launch(self):
-        if USER_FUNCTIONS['launch_simulation']:
-            USER_FUNCTIONS['launch_simulation'](self)
+        """
+            Launches the simulation (mandatory)
+        """
+        if usr_func['launch_simulation']:
+            usr_func['launch_simulation'](self)
         else:
-            pass
+            print 'Error: no \'launch_simulation\' function provided'
+            exit()
 
     def restart(self):
-        if USER_FUNCTIONS['restart_simulation']:
-            USER_FUNCTIONS['restart_simulation'](self)
+        """
+            Kills and restarts the simulation (mandatory)
+        """
+        if usr_func['restart_simulation']:
+            usr_func['restart_simulation'](self)
         else:
-            pass
+            print 'Error: no \'restart_simulation\' function provided'
+        self.nb_restarts += 1
 
     def check_job(self):
-        if USER_FUNCTIONS['check_simulation_job']:
-            USER_FUNCTIONS['check_simulation_job'](self)
+        """
+            Checks the simulation job status (mandatory)
+        """
+        if usr_func['check_simulation_job']:
+            usr_func['check_simulation_job'](self)
         else:
-            pass
+            print 'Error: no \'check_simulation_job\' function provided'
+            exit()
 
 
 class SobolCoupledGroup(Job):
+    """
+        Sobol coupled group class
+    """
     nb_groups = 0
     def __init__(self, param_set_a, param_set_b, executable):
         Job.__init__(self)
-        self.status = 0
+        self.status = WAITING
         self.rank = SobolCoupledGroup.nb_groups
         SobolCoupledGroup.nb_groups += 1
         self.param_set = list()
@@ -88,30 +121,47 @@ class SobolCoupledGroup(Job):
         self.executable = executable
 
     def create(self):
-        if USER_FUNCTIONS['create_group']:
-            USER_FUNCTIONS['create_group'](self)
+        """
+            Creates a Sobol group environment
+        """
+        if usr_func['create_group']:
+            usr_func['create_group'](self)
         else:
             pass
 
     def launch(self):
-        if USER_FUNCTIONS['launch_group']:
-            return USER_FUNCTIONS['launch_group'](self)
+        """
+            Launches the Sobol group (mandatory)
+        """
+        if usr_func['launch_group']:
+            return usr_func['launch_group'](self)
         else:
-            pass
+            print 'Error: no \'launch_group\' function provided'
+            exit()
 
     def restart(self):
-        if USER_FUNCTIONS['restart_simulation']:
-            USER_FUNCTIONS['restart_simulation'](self)
+        """
+            Ends and restarts the Sobol group (mandatory)
+        """
+        if usr_func['restart_group']:
+            usr_func['restart_group'](self)
         else:
             pass
 
     def check_job(self):
-        if USER_FUNCTIONS['check_simulation_job']:
-            USER_FUNCTIONS['check_simulation_job'](self)
+        """
+            Checks the Sobol group job status (mandatory)
+        """
+        if usr_func['check_simulation_job']:
+            usr_func['check_simulation_job'](self)
         else:
-            pass
+            print 'Error: no \'check_simulation_job\' function provided'
+            exit()
 
-class SobolMultiJobsGroup():
+class SobolMultiJobsGroup(object):
+    """
+        Sobol multi job group class (not coupled)
+    """
     nb_groups = 0
     def __init__(self, param_set_a, param_set_b, executable):
         self.rank = SobolMultiJobsGroup.nb_groups
@@ -133,17 +183,31 @@ class SobolMultiJobsGroup():
                                                sobol_id=i+2))
 
     def create(self):
+        """
+            Creates a Sobol group environment
+        """
+        if usr_func['create_group']:
+            usr_func['create_group'](self)
         for simu in self.simulations:
             simu.create()
 
     def launch(self):
+        """
+            Launches the simulations in the group
+        """
         for simu in self.simulations:
             simu.launch()
 
 class Server(Job):
+    """
+        Server class
+    """
     def __init__(self, work_dir='./', mpi_opt='', nproc=1):
+        """
+            Server constructor
+        """
         Job.__init__(self)
-        self.status = 0
+        self.status = WAITING
         self.node_name = ''
         self.first_job_id = ''
         self.directory = work_dir
@@ -153,67 +217,83 @@ class Server(Job):
         self.create_options()
 
     def create_options(self):
-        op_str = ':'.join([x for x in MELISSA_STATS if MELISSA_STATS[x]])
+        """
+            Melissa Server command line options
+        """
+        op_str = ':'.join([x for x in ml_stats if ml_stats[x]])
         if op_str == '':
             print 'error bad option: no operation given'
             return
         self.cmd_opt = ' '.join(('-o', op_str,
-                                 '-p', str(STUDY_OPTIONS['nb_parameters']),
-                                 '-s', str(STUDY_OPTIONS['sampling_size']),
-                                 '-t', str(STUDY_OPTIONS['nb_time_steps']),
-                                 '-e', str(STUDY_OPTIONS['threshold_value']),
+                                 '-p', str(stdy_opt['nb_parameters']),
+                                 '-s', str(stdy_opt['sampling_size']),
+                                 '-t', str(stdy_opt['nb_time_steps']),
+                                 '-e', str(stdy_opt['threshold_value']),
                                  '-n', str(gethostname())))
 
     def launch(self):
+        """
+            Launches server job
+        """
         os.chdir(self.directory)
-        if USER_FUNCTIONS['launch_server']:
-           USER_FUNCTIONS['launch_server'](self)
+        if usr_func['launch_server']:
+            usr_func['launch_server'](self)
         else:
             print 'launch server : '+'mpirun '+self.mpi_options + \
                     ' -n '+str(self.nproc) + \
-                    ' ' + SERVER_OPTIONS['path'] + \
-                    '/server ' + \
-                    self.cmd_opt + ' &'
+                    ' ' + serv_opt['path'] + \
+                    '/server ' + self.cmd_opt + ' &'
             self.job_id = subprocess.Popen(
                 ('mpirun '+self.mpi_options +
                  ' -n '+str(self.nproc) +
-                 ' ' + SERVER_OPTIONS['path'] +
+                 ' ' + serv_opt['path'] +
                  '/server ' +
                  self.cmd_opt +
                  ' &').split()).pid
             self.first_job_id = self.job_id
+            self.job_status = PENDING
 
     def wait_start(self):
+        """
+            Waits for the server to start
+        """
         with self.lock:
             status = self.status
         while status < 1:
             time.sleep(1)
             with self.lock:
                 status = self.status
-        if status > 1:
+        if status > RUNNING:
             print 'Server crashed'
         else:
             print 'Server running'
 
     def restart(self):
+        """
+            Restarts the server and the running and pennding simulations
+        """
         self.cmd_opt += ' -r ' + self.directory
         os.chdir(self.directory)
-        if USER_FUNCTIONS['restart_server']:
-            USER_FUNCTIONS['restart_server'](self)
+        if usr_func['restart_server']:
+            usr_func['restart_server'](self)
         else:
             self.job_id = subprocess.Popen(
                 ('mpirun ' + self.mpi_options +
                  ' -n ' + str(self.nproc) + ' ' +
-                 SERVER_OPTIONS['path'] + '/server ' +
+                 serv_opt['path'] + '/server ' +
                  self.cmd_opt +
                  ' &').split()).pid
             with self.lock:
-                self.status = 0
-                self.job_status = 0
+                self.status = WAITING
+                self.job_status = PENDING
         self.wait_start()
 
     def check_job(self):
-        if USER_FUNCTIONS['check_server_job']:
-            USER_FUNCTIONS['check_server_job'](self)
+        """
+            Checks server job status
+        """
+        if usr_func['check_server_job']:
+            usr_func['check_server_job'](self)
         else:
-            pass
+            print 'Error: no \'check_server_job\' function provided'
+            exit()
