@@ -77,7 +77,8 @@ class Messenger(Thread):
         while self.running_study:
             buff = create_string_buffer('\000' * 256)
             get_message.wait_message(buff)
-            print 'message: '+buff.value
+            if buff.value != 'nothing':
+                print 'message: '+buff.value
             last_server = time.time()
             message = buff.value.split()
             if message[0] == 'stop':
@@ -133,6 +134,7 @@ class Study(object):
         """
         global server
         global simulations
+        os.chdir(GLOBAL_OPTIONS['working_directory'])
         if check_options() > 0:
             return -1
         self.create_job_lists()
@@ -207,18 +209,23 @@ def fault_tolerance():
         with server.lock:
             server.restart()
         for simu in [x for x in simulations if (x.status < FINISHED and
-                                                x.status > NOT_SUBMITTED)]:
+                                                x.job_status > NOT_SUBMITTED)]:
             with simu.lock:
                 simu.restart()
 
-    for simu in [x for x in simulations if x.status > NOT_SUBMITTED]:
+    for simu in [x for x in simulations if x.job_status > NOT_SUBMITTED]:
         with simu.lock:
             if simu.status <= RUNNING and simu.job_status == FINISHED:
-                time.sleep(1)
-                if simu.status <= RUNNING:
-                    simu.restart()
+                sleep = True
+        if sleep == True:
+        time.sleep(10)
+        with simu.lock:
+            if simu.status <= RUNNING:
+                simu.restart()
+        with simu.lock:
             if simu.status == WAITING and simu.job_status == RUNNING:
                 if time.time() - simu.start_time > simu_opt['timeout']:
+                    print "elapsed time : "+str(time.time() - simu.start_time)
                     simu.restart()
 
 def check_options():

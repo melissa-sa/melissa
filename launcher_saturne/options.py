@@ -5,39 +5,364 @@
 
 import os
 import numpy as np
-import batch_scripts
+import time
+import sys
+import re
+from utils import call_bash
 
-BATCH_SCHEDULER == "CCC"
+BATCH_SCHEDULER = "CCC"
 xml_file_name = "bundle_3x2_f16_param.xml"
+
+def create_coupling_parameters (nb_parameters, n_procs_weight, n_procs_min, n_procs_max):
+    contenu=""
+    fichier=open("coupling_parameters.py", "w")
+    contenu += "# -*- coding: utf-8 -*-                                                          \n"
+    contenu += "                                                                                 \n"
+    contenu += "#=============================================================================== \n"
+    contenu += "# User variable settings to specify a coupling computation environnement.        \n"
+    contenu += "                                                                                 \n"
+    contenu += "# A coupling case is defined by a dictionnary, containing the following:         \n"
+    contenu += "                                                                                 \n"
+    contenu += "# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'Code_Aster')         \n"
+    contenu += "# Domain directory name                                                          \n"
+    contenu += "# Run parameter setting file                                                     \n"
+    contenu += "# Number of processors (or None for automatic setting)                           \n"
+    contenu += "# Optional command line parameters. If not useful = None                         \n"
+    contenu += "#=============================================================================== \n"
+    contenu += "                                                                                 \n"
+    contenu += "# Define coupled domains                                                         \n"
+    contenu += "                                                                                 \n"
+    contenu += "domains = [                                                                      \n"
+    contenu += "                                                                                 \n"
+    contenu += "    {'solver': 'Code_Saturne',                                                   \n"
+    contenu += "     'domain': 'rank"+str(0)+"',                                                 \n"
+    contenu += "     'script': 'runcase',                                                        \n"
+    contenu += "     'n_procs_weight': "+str(n_procs_weight)+",                                  \n"
+    contenu += "     'n_procs_min': "+str(n_procs_min)+",                                        \n"
+    contenu += "     'n_procs_max': "+str(n_procs_max)+"}                                        \n"
+    contenu += "                                                                                 \n"
+    for j in range(nb_parameters+1):
+        contenu += "    ,                                                                            \n"
+        contenu += "    {'solver': 'Code_Saturne',                                                   \n"
+        contenu += "     'domain': 'rank"+str(j+1)+"',                                               \n"
+        contenu += "     'script': 'runcase',                                                        \n"
+        contenu += "     'n_procs_weight': "+str(n_procs_weight)+",                                  \n"
+        contenu += "     'n_procs_min': "+str(n_procs_min)+",                                        \n"
+        contenu += "     'n_procs_max': "+str(n_procs_max)+"}                                        \n"
+        contenu += "                                                                                 \n"
+    contenu += "    ]                                                                            \n"
+    contenu += "                                                                                 \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 coupling_parameters.py")
+
+def create_run_coupling (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, walltime_container, batch_scheduler):
+    contenu=""
+    fichier=open("run_cas_couple.sh", "w")
+    contenu += "#!/bin/bash                                                                     \n"
+    if (batch_scheduler == "Slurm"):
+        contenu += "#SBATCH -N "+str(nodes_saturne*(nb_parameters+2))+"                                    \n"
+        contenu += "#SBATCH --ntasks="+str(proc_per_node_saturne*nodes_saturne*(nb_parameters+2))+"        \n"
+        contenu += "#SBATCH --cpus-per-task="+str(openmp_threads)+"                                        \n"
+        contenu += "#SBATCH --wckey=P11UK:AVIDO                                                            \n"
+        contenu += "#SBATCH --partition=cn                                                                 \n"
+        contenu += "#SBATCH --mem=0                                                                        \n"
+        contenu += "#SBATCH --time="+walltime_container+"                                                  \n"
+        contenu += "#SBATCH -o coupling.%j.log                                                             \n"
+        contenu += "#SBATCH -e coupling.%j.err                                                             \n"
+        contenu += "module load openmpi/2.0.1                                                              \n"
+        contenu += "module load icc/2017                                                                   \n"
+        contenu += "module load ifort/2017                                                                 \n"
+        contenu += "env | grep SLURM                                                                       \n"
+    elif (batch_scheduler == "OAR"):
+        contenu += "#OAR -l nodes="+str(nodes_saturne*(nb_parameters+2))+",walltime="+walltime_container+ "\n"
+        contenu += "#OAR -O coupling.%jobid%.log                                                           \n"
+        contenu += "#OAR -E coupling.%jobid%.err                                                           \n"
+        contenu += "module load openmpi/1.8.5_gcc-4.4.6                                                    \n"
+        contenu += "ulimit -s unlimited                                                                    \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(proc_per_node_saturne*nodes_saturne*(nb_parameters+2))+"                \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                                       \n"
+        contenu += "#MSUB -o coupling.%I.log                                                               \n"
+        contenu += "#MSUB -e coupling.%I.err                                                               \n"
+        contenu += "#MSUB -T "+walltime_container+"                                                        \n"
+        contenu += "#MSUB -A gen10064                                                                      \n"
+        contenu += "#MSUB -q standard                                                                      \n"
+    contenu += "GROUP=$(basename `pwd` | cut -dp -f2)                                           \n"
+    contenu += "cd "+workdir+"/group${GROUP}                                                    \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                                  \n"
+    contenu += "export PATH="+saturne_path+"/:$PATH                                             \n"
+    contenu += "date +\"%d/%m/%y %T\"                                                           \n"
+    contenu += "\code_saturne run --coupling coupling_parameters.py                             \n"
+    contenu += "date +\"%d/%m/%y %T\"                                                           \n"
+    contenu += "exit $?                                                                         \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 run_cas_couple.sh")
+
+def create_run_study (workdir, nodes_melissa, openmp_threads, server_path, walltime_melissa, mpi_options, options, batch_scheduler):
+    # signal handler definition
+    signal_handler="handler() {                            \n"
+    signal_handler+="echo \"### CLEAN-UP TIME !!!\"        \n"
+    signal_handler+="STOP=1                                \n"
+    signal_handler+="sleep 1                               \n"
+    #signal_handler+="killer \n"
+    signal_handler+="killall -USR1 mpirun                  \n"
+    signal_handler+="wait %1                               \n"
+    signal_handler+="}                                     \n"
+    contenu = ""
+    fichier=open("run_study.sh", "w")
+    contenu += "#!/bin/bash                                                        \n"
+    if (batch_scheduler == "Slurm"):
+        contenu += "#SBATCH -N "+str(nodes_melissa)+"                                  \n"
+        contenu += "#SBATCH --ntasks-per-node=14                                        \n"
+        contenu += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
+        contenu += "#SBATCH --partition=bm                                             \n"
+        contenu += "#SBATCH --mem=0                                                    \n"
+        contenu += "#SBATCH --time="+walltime_melissa+"                                \n"
+        contenu += "#SBATCH -o melissa.%j.log                                          \n"
+        contenu += "#SBATCH -e melissa.%j.err                                          \n"
+        contenu += "#SBATCH --job-name=Melissa                                         \n"
+        contenu += "#SBATCH --signal=B:SIGUSR2@300                                       \n"
+        contenu += "module load openmpi/2.0.1                                          \n"
+        contenu += "module load ifort/2017                                             \n"
+    elif (batch_scheduler == "OAR"):
+        contenu += "#OAR -l nodes="+str(nodes_melissa)+",walltime="+walltime_melissa+ "\n"
+        contenu += "#OAR -O melissa.%jobid%.log                                        \n"
+        contenu += "#OAR -E melissa.%jobid%.err                                        \n"
+        contenu += "#OAR -n Melissa                                                    \n"
+        contenu += "#OAR --checkpoint 300                                              \n"
+        contenu += "#OAR --signal=SIGUSR2                                              \n"
+        contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
+        contenu += "ulimit -s unlimited                                                \n"
+        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(nodes_melissa*(16/openmp_threads))+"                 \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
+        contenu += "#MSUB -o melissa.%I.log                                            \n"
+        contenu += "#MSUB -e melissa.%I.err                                            \n"
+        contenu += "#MSUB -T "+walltime_melissa+"                                      \n"
+        contenu += "#MSUB -A gen10064                                                  \n"
+        contenu += "#MSUB -r Melissa                                                   \n"
+        contenu += "#MSUB -q standard                                                  \n"
+        contenu += "#MSUB --signal=B:SIGUSR2@300                                       \n"
+#    contenu += signal handler
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
+    contenu += "STOP=0                                                             \n"
+    contenu += "# generate server name files                                       \n"
+    contenu += "cd "+workdir+"/case1/DATA                                          \n"
+    contenu += server_path+"/../utils/create_file_server_name                   \n"
+    contenu += "# run Melissa                                                      \n"
+    contenu += "echo  \"### Launch Melissa\"                                       \n"
+    contenu += "cd $WORK_DIR                                                       \n"
+    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+        contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
+        contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
+    elif (batch_scheduler == "OAR"):
+        contenu += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
+        contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
+    contenu += "trap handler USR2                                                  \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" &        \n"
+    contenu += "wait %1                                                            \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "cd "+workdir+"                                                     \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 run_study.sh")
+
+def create_reboot_study (workdir,
+                         nodes_melissa,
+                         openmp_threads,
+                         server_path,
+                         walltime_melissa,
+                         mpi_options,
+                         options,
+                         batch_scheduler,
+                         melissa_first_job_id):
+    # signal handler definition
+    signal_handler="handler() {                      \n"
+    signal_handler+="echo \"### CLEAN-UP TIME !!!\"  \n"
+    signal_handler+="STOP=1                          \n"
+    signal_handler+="sleep 1                         \n"
+    #signal_handler+="killer \n"
+    signal_handler+="killall -USR1 mpirun            \n"
+    signal_handler+="wait %1                         \n"
+    signal_handler+="}                               \n"
+    contenu = ""
+    fichier=open("reboot_study.sh", "w")
+    contenu += "#!/bin/bash                                                        \n"
+    if (batch_scheduler == "Slurm"):
+        contenu += "#SBATCH -N "+str(nodes_melissa)+"                                  \n"
+        contenu += "#SBATCH --ntasks-per-node=14                                        \n"
+        contenu += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
+        contenu += "#SBATCH --partition=bm                                             \n"
+        contenu += "#SBATCH --mem=0                                                    \n"
+        contenu += "#SBATCH --time="+walltime_melissa+"                                \n"
+        contenu += "#SBATCH -o melissa.%j.log                                          \n"
+        contenu += "#SBATCH -e melissa.%j.err                                          \n"
+        contenu += "#SBATCH --job-name=Melissa                                         \n"
+        contenu += "#SBATCH --signal=B:SIGUSR2@30                                        \n"
+        contenu += "module load openmpi/2.0.1                                          \n"
+        contenu += "module load ifort/2017                                             \n"
+    elif (batch_scheduler == "OAR"):
+        contenu += "#OAR -l nodes="+str(nodes_melissa)+",walltime="+walltime_melissa+ "\n"
+        contenu += "#OAR -O melissa.%jobid%.log                                        \n"
+        contenu += "#OAR -E melissa.%jobid%.err                                        \n"
+        contenu += "#OAR -n Melissa                                                    \n"
+        contenu += "#OAR --checkpoint 300                                              \n"
+        contenu += "#OAR --signal=SIGUSR2                                              \n"
+        contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
+        contenu += "ulimit -s unlimited                                                \n"
+        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(nodes_melissa*(16/openmp_threads))+"                 \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                   \n"
+        contenu += "#MSUB -o melissa.%I.log                                            \n"
+        contenu += "#MSUB -e melissa.%I.err                                            \n"
+        contenu += "#MSUB -T "+walltime_melissa+"                                      \n"
+        contenu += "#MSUB -A gen10064                                                  \n"
+        contenu += "#MSUB -r Melissa                                                   \n"
+        contenu += "#MSUB -q standard                                                  \n"
+        contenu += "#MSUB --signal=B:SIGUSR2@30                                        \n"
+    contenu += signal_handler
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
+    contenu += "STOP=0                                                             \n"
+    contenu += "# generate server name files                                       \n"
+    contenu += "cd "+workdir+"/case1/DATA                                          \n"
+    contenu += server_path+"/../utils/create_file_server_name                   \n"
+    contenu += "# run Melissa                                                      \n"
+    contenu += "echo  \"### Launch Melissa\"                                       \n"
+    contenu += "cd $WORK_DIR                                                       \n"
+    contenu += "cd stats"+melissa_first_job_id+".resu                              \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
+    contenu += "trap handler USR2                                                  \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "mpirun "+mpi_options+" "+server_path+"/server "+options+" -r . &   \n"
+    contenu += "wait %1                                                            \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "cd "+workdir+"                                                     \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 reboot_study.sh")
+
+def create_runcase_sobol (workdir, nodes_saturne, proc_per_node_saturne, nb_parameters, openmp_threads, saturne_path, xml_file_name, batch_scheduler, coupling = 1):
+    # script to launch simulations
+    contenu=""
+    fichier=open("run_saturne.sh", "w")
+    contenu += "#!/bin/bash                                        \n"
+    contenu += "date +\"%d/%m/%y %T\"                              \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"     \n"
+    contenu += "# Ensure the correct command is found:             \n"
+    contenu += "export PATH="+saturne_path+"/:$PATH                \n"
+    if (coupling != 1):
+        contenu += "# wait master name                                 \n"
+        contenu += "while [ ! -f \"../DATA/master_name.txt\" ]         \n"
+        contenu += "  do                                               \n"
+        contenu += "  sleep 1s                                         \n"
+        contenu += "done                                               \n"
+    contenu += "# Run command:                                     \n"
+    contenu += "\code_saturne run --param "+xml_file_name+"        \n"
+    contenu += "date +\"%d/%m/%y %T\"                              \n"
+    contenu += "exit $?                                            \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 run_saturne.sh")
+    # script to launch master simulation
+    contenu=""
+    fichier=open("run_saturne_master.sh", "w")
+    contenu += "#!/bin/bash                                                \n"
+    contenu += "date +\"%d/%m/%y %T\"                                      \n"
+    contenu += "cd ..                                                      \n"
+    if (coupling != 1):
+        contenu += "# generate master name file                                \n"
+        contenu += "cd ../rank0/DATA                                           \n"
+        contenu += server_path+"/../utils/create_file_master_name           \n"
+        contenu += "cd ..                                                      \n"
+        for j in range(nb_parameters+1):
+            contenu += "cp ./DATA/master_name.txt ../rank"+str(j+1)+"/DATA \n"
+    contenu += "cd ./SCRIPTS                                               \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"             \n"
+    contenu += "# Ensure the correct command is found:                     \n"
+    contenu += "export PATH="+saturne_path+"/:$PATH                        \n"
+    contenu += "# Run command:                                             \n"
+    contenu += "\code_saturne run --param "+xml_file_name+"                \n"
+    contenu += "date +\"%d/%m/%y %T\"                                      \n"
+    contenu += "exit $?                                                    \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 run_saturne_master.sh")
+
+def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_threads, saturne_path, walltime_saturne, xml_file_name, batch_scheduler):
+    contenu=""
+    fichier=open("run_saturne_master.sh", "w")
+    contenu += "#!/bin/bash                                                        \n"
+    if (batch_scheduler == "Slurm"):
+        contenu += "#SBATCH -N "+str(nodes_saturne)+"                                  \n"
+        contenu += "#SBATCH --ntasks="+str(proc_per_node_saturne*nodes_saturne)+"      \n"
+        contenu += "#SBATCH --cpus-per-task="+str(openmp_threads)+"                    \n"
+        contenu += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
+        contenu += "#SBATCH --partition=cn                                             \n"
+        contenu += "#SBATCH --time="+walltime_saturne+"                                \n"
+        contenu += "#SBATCH -o saturne.%j.log                                          \n"
+        contenu += "#SBATCH -e saturne.%j.err                                          \n"
+        contenu += "module load openmpi/2.0.1                                          \n"
+        contenu += "module load ifort/2017                                             \n"
+    elif (batch_scheduler == "OAR"):
+        contenu += "#OAR -l nodes="+str(nodes_saturne)+",walltime="+walltime_saturne+ "\n"
+        contenu += "#OAR -O saturne.%jobid%.log                                        \n"
+        contenu += "#OAR -E saturne.%jobid%.err                                        \n"
+        contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
+        contenu += "ulimit -s unlimited                                                \n"
+    elif (batch_scheduler == "CCC"):
+        contenu += "#MSUB -n "+str(proc_per_node_saturne*nodes_saturne)+"                \n"
+        contenu += "#MSUB -c "+str(openmp_threads)+"                                                      \n"
+        contenu += "#MSUB -o saturne.%I.log                                                               \n"
+        contenu += "#MSUB -e saturne.%I.err                                                               \n"
+        contenu += "#MSUB -T "+walltime_saturne+"                                                       \n"
+        contenu += "#MSUB -A gen10064                                                                     \n"
+        contenu += "#MSUB -q standard                                                                     \n"
+    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
+    contenu += "export PATH="+saturne_path+"/:$PATH                                \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "\code_saturne run --param "+xml_file_name+"                        \n"
+    contenu += "date +\"%d/%m/%y %T\"                                              \n"
+    contenu += "exit $?                                                            \n"
+    fichier.write(contenu)
+    fichier.close()
+    os.system("chmod 744 run_saturne_master.sh")
+
 
 def check_job(job):
     state = 0
     if (BATCH_SCHEDULER == "OAR"):
-        if (not job.job_id in call_bash("oarstat -u --sql \"state = 'Waiting'\"")['out']):
+        if (not str(job.job_id) in call_bash("oarstat -u --sql \"state = 'Waiting'\"")['out']):
             state = 1
-            if (not job.job_id in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
+            if (not str(job.job_id) in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
                 state = 2
     elif (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
-        if (not "PENDING" in call_bash("squeue --job="+job.job_id+" -l")['out']):
+        if (not "PENDING" in call_bash("squeue --job="+str(job.job_id)+" -l")['out']):
             state = 1
-            if (not "RUNNING" in call_bash("squeue --job="+job.job_id+" -l")['out']):
+            if (not "RUNNING" in call_bash("squeue --job="+str(job.job_id)+" -l")['out']):
                 state = 2
     job.job_status = state
 
 def cancel_job(job):
     global output
     output += "cancel job "+str(job.job_id)
-    if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
+    if (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
         call_bash("scancel "+job.job_id)
-    elif (batch_scheduler == "OAR"):
+    elif (BATCH_SCHEDULER == "OAR"):
         call_bash("oardel "+job.job_id)
-    elif (batch_scheduler == "local"):
+    elif (BATCH_SCHEDULER == "local"):
         call_bash("kill "+job.job_id)
 
 def create_group(group):
     os.chdir(GLOBAL_OPTIONS['working_directory'])
     if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(group.rank))):
-        create_case_str = SIMULATIONS_OPTIONS['saturne_path'] + \
+        create_case_str = SIMULATIONS_OPTIONS['path'] + \
                 "/code_saturne create --noref -s group" + \
                 str(group.rank) + \
                 " -c rank0"
@@ -46,12 +371,14 @@ def create_group(group):
                 create_case_str += " -c rank" + str(j+1)
 #        create_case_str
         os.system(create_case_str)
-    for j in range(STUDY_OPTIONS['nb_parameters'] + 2):
-        create_simu(group.simulations[j])
+    for simu in group.simulations:
+        create_simu(simu)
 
 
 def create_simu(simu):
-    work_dir = GLOBAL_OPTIONS['working_directory']
+    workdir = GLOBAL_OPTIONS['working_directory']
+    os.chdir(workdir)
+
     if (simu.sobol_id > 0):
         parameters = str(simu.sobol_id)+":"+str(simu.rank)
         casedir = workdir+"/group"+str(simu.rank)+"/rank"+str(simu.sobol_id)
@@ -71,7 +398,7 @@ def create_simu(simu):
         if not("melissa" in line):
             contenu += line
         else:
-            contenu += re.sub('options=".*"','options="'+parameters+'"',ligne)
+            contenu += re.sub('options=".*"','options="'+parameters+'"',line)
     fichier.close()
     fichier = open(xml_file_name, 'w')
     fichier.write(contenu)
@@ -94,7 +421,7 @@ def create_simu(simu):
         elif ("param_duree_injection_bas=" in line):
             contenu += 'param_duree_injection_bas='+str(simu.param_set[5])+'\n'
         else:
-            contenu += ligne
+            contenu += line
     fichier.close()
     fichier = open('cs_user_boundary_conditions.f90', 'w')
     fichier.write(contenu)
@@ -103,19 +430,6 @@ def create_simu(simu):
     return 0
 
 def create_study():
-    global server
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS")):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
-    options = server.cmd_opt
-    create_run_study (GLOBAL_OPTIONS['working_directory'],
-                      SERVER_OPTIONS['nb_nodes'],
-                      1,
-                      SERVER_OPTIONS['path'],
-                      SERVER_OPTIONS['walltime'],
-                      '',
-                      options,
-                      BATCH_SCHEDULER)
     if MELISSA_STATS['sobol_indices']:
         create_run_coupling (GLOBAL_OPTIONS['working_directory'],
                              SIMULATIONS_OPTIONS['nb_nodes'],
@@ -151,42 +465,55 @@ def launch_simulation(simu):
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
     if MELISSA_STATS['sobol_indices']:
         for j in range(STUDY_OPTIONS['nb_parameters']+2):
-            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(i)+"/rank"+str(j)
+            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank"+str(j)
             os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         create_coupling_parameters (STUDY_OPTIONS['nb_parameters'],
                                     "None",
                                     SIMULATIONS_OPTIONS['nb_nodes'] * SIMULATIONS_OPTIONS['nb_proc'],
                                     "None")
-        if (batch_scheduler == "Slurm"):
+        if (BATCH_SCHEDULER == "Slurm"):
             simu.job_id = int(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.rank))['out'].split()[-1])
-        elif (batch_scheduler == "CCC"):
+        elif (BATCH_SCHEDULER == "CCC"):
             simu.job_id = int(call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "../STATS/run_cas_couple.sh"')['out'].split()[-1])
-        elif (batch_scheduler == "OAR"):
+        elif (BATCH_SCHEDULER == "OAR"):
             simu.job_id = int(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
 
     else:
         casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank0"
         os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         os.chdir("./rank0/SCRIPTS")
-        if (global_options.batch_scheduler == "Slurm"):
+        if (global_options.BATCH_SCHEDULER == "Slurm"):
             simu.job_id = int(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1])
-        elif (global_options.batch_scheduler == "CCC"):
+        elif (global_options.BATCH_SCHEDULER == "CCC"):
             simu.job_id = int(call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "./runcase"')['out'].split()[-1])
-        elif (global_options.batch_scheduler == "OAR"):
+        elif (global_options.BATCH_SCHEDULER == "OAR"):
             simu.job_id = int(call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
 
-    job_states[i] = 1 # pending
+    simu.job_status = 0 # pending
 
-def launc_server(server):
+def launch_server(server):
+    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS")):
+        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
-    if (batch_scheduler == "Slurm"):
+    options = server.cmd_opt
+    create_run_study (GLOBAL_OPTIONS['working_directory'],
+                      SERVER_OPTIONS['nb_nodes'],
+                      1,
+                      SERVER_OPTIONS['path'],
+                      SERVER_OPTIONS['walltime'],
+                      '',
+                      options,
+                      BATCH_SCHEDULER)
+    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
+    if (BATCH_SCHEDULER == "Slurm"):
         server.job_id = call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
-    elif (batch_scheduler == "CCC"):
+    elif (BATCH_SCHEDULER == "CCC"):
         server.job_id = call_bash('ccc_msub -r Melissa "./run_study.sh"')['out'].split()[-1]
-    elif (batch_scheduler == "OAR"):
+    elif (BATCH_SCHEDULER == "OAR"):
         server.job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     os.chdir(GLOBAL_OPTIONS['working_directory'])
     server.first_job_id = server.job_id
+    server.job_status = 0
 
 
 def restart_server(server):
@@ -198,57 +525,57 @@ def restart_server(server):
                         SERVER_OPTIONS['walltime'],
                         server.mpi_options,
                         server.cmd_opt,
-                        batch_scheduler,
+                        BATCH_SCHEDULER,
                         server.first_job_id)
-    if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
+    if (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
         call_bash("scancel "+server.job_id)
-    elif (batch_scheduler == "OAR"):
+    elif (BATCH_SCHEDULER == "OAR"):
         call_bash("oardel "+server.job_id)
-    elif (batch_scheduler == "local"):
+    elif (BATCH_SCHEDULER == "local"):
         call_bash("kill "+server.job_id)
-    if (batch_scheduler == "Slurm"):
+    if (BATCH_SCHEDULER == "Slurm"):
         server.job_id = call_bash('sbatch "./reboot_study.sh"')['out'].split()[-1]
-    elif (batch_scheduler == "CCC"):
+    elif (BATCH_SCHEDULER == "CCC"):
         server.job_id = call_bash('ccc_msub -r Melissa "./reboot_study.sh"')['out'].split()[-1]
-    elif (batch_scheduler == "OAR"):
+    elif (BATCH_SCHEDULER == "OAR"):
         server.job_id = call_bash('oarsub -S "./reboot_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     os.chdir(GLOBAL_OPTIONS['working_directory'])
-    server.nb_restart += 1
+    server.nb_restarts += 1
 
 def restart_simu(simu):
-    if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
-        os.system("scancel "+simu.job_id)
-    elif (batch_scheduler == "OAR"):
-        os.system("oardel "+simu.job_id)
-    elif (batch_scheduler == "OAR"):
-        os.system("kill "+simu.job_id)
+    if (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
+        os.system("scancel "+str(simu.job_id))
+    elif (BATCH_SCHEDULER == "OAR"):
+        os.system("oardel "+str(simu.job_id))
+    elif (BATCH_SCHEDULER == "OAR"):
+        os.system("kill "+str(simu.job_id))
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
-    if ("sobol" in operations) or ("sobol_indices" in operations):
+    if MELISSA_STATS['sobol_indices']:
         output = "Reboot simulation group "+str(simu.rank)+"\n"
-        if (batch_scheduler == "Slurm"):
+        if (BATCH_SCHEDULER == "Slurm"):
             simu.job_id = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.rank))['out'].split()[-1]
-        elif (batch_scheduler == "CCC"):
+        elif (BATCH_SCHEDULER == "CCC"):
             simu.job_id = call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "../STATS/run_cas_couple.sh"')['out'].split()[-1]
-        elif (batch_scheduler == "OAR"):
+        elif (BATCH_SCHEDULER == "OAR"):
             simu.job_id = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
     else:
         output = "Reboot simulation "+str(simu.rank)+"\n"
         os.chdir("./rank0/SCRIPTS")
-        if (batch_scheduler == "Slurm"):
+        if (BATCH_SCHEDULER == "Slurm"):
             simu_job_id[simu_id] = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1]
-        elif (batch_scheduler == "CCC"):
+        elif (BATCH_SCHEDULER == "CCC"):
             simu_job_id[simu_id] = call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "./runcase"')['out'].split()[-1]
-        elif (batch_scheduler == "OAR"):
+        elif (BATCH_SCHEDULER == "OAR"):
             simu_job_id[simu_id] = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
-        elif (batch_scheduler == "local"):
+        elif (BATCH_SCHEDULER == "local"):
             simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
-    simu.job_state = 1
-    simu.nb_restart += 1
+    simu.job_state = 0
+    simu.nb_restarts += 1
     os.chdir(GLOBAL_OPTIONS['working_directory'])
 
 def check_scheduler_load():
 
-    if (batch_scheduler == "Slurm") or (batch_scheduler == "CCC"):
+    if (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
         while (int(call_bash("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l")['out']) >= 250):
             time.sleep(20)
 
@@ -279,7 +606,7 @@ SERVER_OPTIONS = {}
 SERVER_OPTIONS['walltime'] = '3600'
 SERVER_OPTIONS['nb_nodes'] = 32
 SERVER_OPTIONS['nb_proc'] = 16
-SERVER_OPTIONS['path'] = "/home/user/Melissa/build/server"
+SERVER_OPTIONS['path'] = "/ccc/cont003/home/gen10064/terrazth/avido/source/Melissa/build/server"
 SERVER_OPTIONS['mpi_options'] = ""
 SERVER_OPTIONS['timeout'] = 1000
 

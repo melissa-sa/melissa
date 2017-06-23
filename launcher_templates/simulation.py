@@ -112,9 +112,18 @@ class SobolCoupledGroup(Job):
         self.status = WAITING
         self.rank = SobolCoupledGroup.nb_groups
         SobolCoupledGroup.nb_groups += 1
+        self.simulations = list()
         self.param_set = list()
         self.param_set.append(numpy.copy(param_set_a))
+        self.simulations.append(Simulation(param_set=param_set_a,
+                                           executable=None,
+                                           sobol_id=0))
+        self.simulations[-1].rank = self.rank
         self.param_set.append(numpy.copy(param_set_b))
+        self.simulations.append(Simulation(param_set=param_set_b,
+                                           executable=None,
+                                           sobol_id=1))
+        self.simulations[-1].rank = self.rank
         for i in range(len(param_set_b)):
             self.param_set.append(numpy.copy(param_set_a))
             self.param_set[i+2][i] = param_set_b[i]
@@ -125,6 +134,7 @@ class SobolCoupledGroup(Job):
             self.simulations.append(Simulation(param_set=temp_param_set,
                                                executable=None,
                                                sobol_id=i+2))
+            self.simulations[-1].rank = self.rank
 
     def create(self):
         """
