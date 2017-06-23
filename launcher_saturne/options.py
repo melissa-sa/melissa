@@ -24,10 +24,20 @@ def check_job(job):
                 state = 2
     job.job_status = state
 
+def cancel_job(job):
+    global output
+    output += "cancel job "+str(job.job_id)
+    if (batch_scheduler == "Slurm" or batch_scheduler == "CCC"):
+        call_bash("scancel "+job.job_id)
+    elif (batch_scheduler == "OAR"):
+        call_bash("oardel "+job.job_id)
+    elif (batch_scheduler == "local"):
+        call_bash("kill "+job.job_id)
+
 def create_group(group):
     os.chdir(GLOBAL_OPTIONS['working_directory'])
     if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(group.rank))):
-        create_case_str = GLOBAL_OPTIONS['saturne_path'] + \
+        create_case_str = SIMULATIONS_OPTIONS['saturne_path'] + \
                 "/code_saturne create --noref -s group" + \
                 str(group.rank) + \
                 " -c rank0"
@@ -111,7 +121,7 @@ def create_study():
                              SIMULATIONS_OPTIONS['nb_nodes'],
                              SIMULATIONS_OPTIONS['nb_proc'],
                              STUDY_OPTIONS['nb_parameters'],
-                             1,
+                             2,
                              SIMULATIONS_OPTIONS['path'],
                              SIMULATIONS_OPTIONS['walltime'],
                              BATCH_SCHEDULER)
@@ -123,7 +133,7 @@ def create_study():
                               SIMULATIONS_OPTIONS['nb_nodes'],
                               SIMULATIONS_OPTIONS['nb_proc'],
                               STUDY_OPTIONS['nb_parameters'],
-                              1,
+                              2,
                               SIMULATIONS_OPTIONS['path'],
                               xml_file_name,
                               BATCH_SCHEDULER)
@@ -131,7 +141,7 @@ def create_study():
         create_runcase (GLOBAL_OPTIONS['working_directory'],
                         SIMULATIONS_OPTIONS['nb_nodes'],
                         SIMULATIONS_OPTIONS['nb_proc'],
-                        1,
+                        2,
                         SIMULATIONS_OPTIONS['path'],
                         SIMULATIONS_OPTIONS['walltime'],
                         xml_file_name,
@@ -244,10 +254,9 @@ def check_scheduler_load():
 
 
 GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['home_path'] = "/home/user"
-GLOBAL_OPTIONS['user_name'] = "user"
-GLOBAL_OPTIONS['working_directory'] = "/home/user/study"
-GLOBAL_OPTIONS['saturne_path'] = "/home/user/saturne"
+GLOBAL_OPTIONS['home_path'] = "/ccc/cont003/home/gen10064/terrazth"
+GLOBAL_OPTIONS['user_name'] = "terrazth"
+GLOBAL_OPTIONS['working_directory'] = "/ccc/scratch/cont003/gen10064/terrazth/etude_plantage"
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 6
@@ -255,25 +264,31 @@ STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],
                                             float)
 STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'],
                                            float)
+STUDY_OPTIONS['range_max_param'][0:2] = 0.1
+STUDY_OPTIONS['range_max_param'][0:2] = 0.9
+STUDY_OPTIONS['range_max_param'][2:4] = 0.1
+STUDY_OPTIONS['range_max_param'][2:4] = 0.9
+STUDY_OPTIONS['range_max_param'][4:6] = 0.001
+STUDY_OPTIONS['range_max_param'][4:6] = 0.1
 STUDY_OPTIONS['sampling_size'] = 100
 STUDY_OPTIONS['max_additional_samples'] = 20
 STUDY_OPTIONS['nb_time_steps'] = 100
-STUDY_OPTIONS['threshold_value'] = 0.7
+STUDY_OPTIONS['threshold_value'] = 0.4
 
 SERVER_OPTIONS = {}
-SERVER_OPTIONS['walltime'] = '36000'
-SERVER_OPTIONS['nb_nodes'] = 3
+SERVER_OPTIONS['walltime'] = '3600'
+SERVER_OPTIONS['nb_nodes'] = 32
 SERVER_OPTIONS['nb_proc'] = 16
 SERVER_OPTIONS['path'] = "/home/user/Melissa/build/server"
 SERVER_OPTIONS['mpi_options'] = ""
-SERVER_OPTIONS['timeout'] = 600
+SERVER_OPTIONS['timeout'] = 1000
 
 SIMULATIONS_OPTIONS = {}
-SIMULATIONS_OPTIONS['path'] = "/home/user/simu"
-SIMULATIONS_OPTIONS['executable'] = "simu"
+SIMULATIONS_OPTIONS['path'] = "/ccc/cont003/home/gen10064/terrazth/code_saturne/4.3.1/code_saturne-4.3.1/arch/Linux_x86_64/bin"
+SIMULATIONS_OPTIONS['executable'] = "code_saturne"
 SIMULATIONS_OPTIONS['walltime'] = '600'
-SIMULATIONS_OPTIONS['nb_nodes'] = 3
-SIMULATIONS_OPTIONS['nb_proc'] = 16
+SIMULATIONS_OPTIONS['nb_nodes'] = 4
+SIMULATIONS_OPTIONS['nb_proc'] = 8
 SIMULATIONS_OPTIONS['coupling'] = True
 SIMULATIONS_OPTIONS['mpi_options'] = ""
 SIMULATIONS_OPTIONS['timeout'] = 300
@@ -284,7 +299,7 @@ MELISSA_STATS['variance'] = True
 MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = True
-MELISSA_STATS['quantile'] = True
+MELISSA_STATS['quantile'] = False
 MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
