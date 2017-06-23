@@ -3,6 +3,7 @@
     User defined options module
 """
 
+import json
 import os
 import time
 import numpy as np
@@ -189,10 +190,10 @@ def heat_visu():
 
     raw_input()
 
-GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['home_path'] = '/home/tterraz'
-GLOBAL_OPTIONS['user_name'] = 'tterraz'
-GLOBAL_OPTIONS['working_directory'] = '/home/tterraz/avido/source/Melissa/build/examples/heat_example'
+#GLOBAL_OPTIONS = {}
+#GLOBAL_OPTIONS['home_path'] = '/home/tterraz'
+#GLOBAL_OPTIONS['user_name'] = 'tterraz'
+#GLOBAL_OPTIONS['working_directory'] = '/home/tterraz/avido/source/Melissa/build/examples/heat_example'
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
@@ -245,3 +246,12 @@ USER_FUNCTIONS['check_scheduler_load'] = None
 USER_FUNCTIONS['cancel_job'] = None
 USER_FUNCTIONS['postprocessing'] = heat_visu
 USER_FUNCTIONS['finalize'] = None
+
+if os.path.isfile("options.json"):
+    file=open('options.json', 'r')
+    [str1, GLOBAL_OPTIONS,
+     str1, SERVER_OPTIONS,
+     str1, SIMULATIONS_OPTIONS,
+     str1, MELISSA_STATS] = json.load(file)
+#    print json.load(file)
+    file.close()

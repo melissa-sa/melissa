@@ -233,6 +233,8 @@ add_subdirectory(launcher.old)
 
 add_subdirectory(launcher_templates)
 
+add_subdirectory(launcher_saturne)
+
 add_subdirectory(gui)
 
 set(ALL_API melissa_api.c

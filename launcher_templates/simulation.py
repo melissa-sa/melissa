@@ -119,6 +119,12 @@ class SobolCoupledGroup(Job):
             self.param_set.append(numpy.copy(param_set_a))
             self.param_set[i+2][i] = param_set_b[i]
         self.executable = executable
+        for i in range(len(param_set_a)):
+            temp_param_set = numpy.copy(param_set_a)
+            temp_param_set[i] = numpy.copy(param_set_b[i])
+            self.simulations.append(Simulation(param_set=temp_param_set,
+                                               executable=None,
+                                               sobol_id=i+2))
 
     def create(self):
         """

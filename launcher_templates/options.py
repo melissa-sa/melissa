@@ -3,6 +3,7 @@
     user defined options
 """
 
+import json
 import numpy as np
 
 GLOBAL_OPTIONS = {}

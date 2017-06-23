@@ -1,0 +1,35 @@
+[
+    "global options",
+    {
+        "home_path": "/home/tterraz",
+        "user_name": "tterraz",
+        "working_directory": "/home/tterraz/avido/source/Melissa/build/examples/heat_example"
+    },
+    "server options",
+    {
+        "mpi_options": "",
+        "nb_proc": 3,
+        "path": "/home/tterraz/avido/source/Melissa/build/server",
+        "proutprout": null,
+        "timeout": 600
+    },
+    "simulations options",
+    {
+        "coupling": true,
+        "executable": "heatc",
+        "mpi_options": "",
+        "nb_proc": 1,
+        "path": "/home/user/simu",
+        "timeout": 300
+    },
+    "statistical options",
+    {
+        "max": true,
+        "mean": true,
+        "min": true,
+        "quantile": true,
+        "sobol_indices": false,
+        "threshold_exceedance": true,
+        "variance": true
+    }
+]

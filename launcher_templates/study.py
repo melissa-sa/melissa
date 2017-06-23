@@ -304,7 +304,7 @@ def finalize(file_name='melissa_launcher.out'):
     global output
     if usr_func['finalize']:
         usr_func['finalize']()
-    fichier = open(file_name, 'w')
-    fichier.write(output)
-    fichier.close()
+    file = open(file_name, 'w')
+    file.write(output)
+    file.close()
 
