@@ -347,6 +347,7 @@ def check_job(job):
             state = 1
             if (not "RUNNING" in call_bash("squeue --job="+str(job.job_id)+" -l")['out']):
                 state = 2
+                print "job "+str(job.job_id)+" finished"
     job.job_status = state
 
 def cancel_job(job):
@@ -482,11 +483,11 @@ def launch_simulation(simu):
         casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank0"
         os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         os.chdir("./rank0/SCRIPTS")
-        if (global_options.BATCH_SCHEDULER == "Slurm"):
+        if (BATCH_SCHEDULER == "Slurm"):
             simu.job_id = int(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1])
-        elif (global_options.BATCH_SCHEDULER == "CCC"):
-            simu.job_id = int(call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "./runcase"')['out'].split()[-1])
-        elif (global_options.BATCH_SCHEDULER == "OAR"):
+        elif (BATCH_SCHEDULER == "CCC"):
+            simu.job_id = int(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
+        elif (BATCH_SCHEDULER == "OAR"):
             simu.job_id = int(call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
 
     simu.job_status = 0 # pending

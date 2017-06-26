@@ -67,6 +67,12 @@ int main (int argc, char **argv)
     double              total_wait_time = 0;
     double              start_wait_time = 0;
     double              end_wait_time = 0;
+    double              total_save_time = 0;
+    double              start_save_time = 0;
+    double              end_save_time = 0;
+    double              total_read_time = 0;
+    double              start_read_time = 0;
+    double              end_read_time = 0;
     double              total_write_time = 0;
     long int            total_mbytes_recv = 0;
 #endif // BUILD_WITH_PROBES
@@ -417,10 +423,13 @@ int main (int argc, char **argv)
                 melissa_init_data (&data_ptr[client_rank], &melissa_options, comm_data.rcounts[client_rank]);
                 if (melissa_options.restart == 1)
                 {
+                    start_read_time = melissa_get_time();
                     fprintf (stdout, "reading checkpoint files...");
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
                     fprintf (stdout, " ok\n");
                     last_checkpoint_time = melissa_get_time();
+                    end_read_time = melissa_get_time();
+                    total_read_time += end_read_time - start_read_time;
                 }
             }
             last_message_simu[group_id] = melissa_get_time();
@@ -493,6 +502,7 @@ int main (int argc, char **argv)
 //        if (iteration % 100 == 0)
         if (last_checkpoint_time  + 300 < melissa_get_time() && last_checkpoint_time > 0.1)
         {
+            start_save_time = melissa_get_time();
             field_ptr fptr = field;
             while (fptr != NULL)
             {
@@ -507,6 +517,9 @@ int main (int argc, char **argv)
             }
             save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
             last_checkpoint_time = melissa_get_time();
+            end_save_time = melissa_get_time();
+            fprintf (stdout, "chekpoint time: %g\n (proc %d)", end_save_time - start_save_time, comm_data.rank);
+            total_save_time += end_save_time - start_save_time;
         }
 
 
@@ -514,6 +527,7 @@ int main (int argc, char **argv)
 
         if (end_signal == SIGINT || end_signal == SIGUSR1 || end_signal == SIGUSR2)
         {
+            start_save_time = melissa_get_time();
             field_ptr fptr = field;
             if (comm_data.rank == 0)
                 fprintf (stderr, "\nINTERUPTED at iteration %d \n", iteration);
@@ -536,6 +550,9 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
                 return 0;
             }
+            end_save_time = melissa_get_time();
+            fprintf (stdout, "chekpoint time: %g\n (proc %d)", end_save_time - start_save_time, comm_data.rank);
+            total_save_time += end_save_time - start_save_time;
             break;
         }
 
@@ -612,7 +629,9 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Average communication time:      %g s\n", total_comm_time);
         fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
         fprintf (stdout, " --- Waiting time:                    %g s\n", total_wait_time);
+        fprintf (stdout, " --- Reading time:                    %g s\n", total_read_time);
         fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
+        fprintf (stdout, " --- Chekpointing time:               %g s\n", total_save_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
         fprintf (stdout, " --- MB recieved:                     %ld MB\n",total_mbytes_recv);
         fprintf (stdout, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));

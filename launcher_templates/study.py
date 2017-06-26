@@ -134,7 +134,7 @@ class Study(object):
         """
         global server
         global simulations
-        os.chdir(GLOBAL_OPTIONS['working_directory'])
+        os.chdir(glob_opt['working_directory'])
         if check_options() > 0:
             return -1
         self.create_job_lists()
@@ -218,10 +218,11 @@ def fault_tolerance():
             if simu.status <= RUNNING and simu.job_status == FINISHED:
                 sleep = True
         if sleep == True:
-        time.sleep(10)
-        with simu.lock:
-            if simu.status <= RUNNING:
-                simu.restart()
+            time.sleep(10)
+            sleep = False
+            with simu.lock:
+                if simu.status <= RUNNING:
+                   simu.restart()
         with simu.lock:
             if simu.status == WAITING and simu.job_status == RUNNING:
                 if time.time() - simu.start_time > simu_opt['timeout']:

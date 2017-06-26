@@ -275,7 +275,7 @@ class Server(Job):
         """
         with self.lock:
             status = self.status
-        while status < 1:
+        while status < RUNNING:
             time.sleep(1)
             with self.lock:
                 status = self.status
