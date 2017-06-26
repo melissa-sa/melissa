@@ -137,7 +137,7 @@ def create_run_study (workdir, nodes_melissa, openmp_threads, server_path, wallt
         contenu += "#MSUB -r Melissa                                                   \n"
         contenu += "#MSUB -q standard                                                  \n"
         contenu += "#MSUB --signal=B:SIGUSR2@300                                       \n"
-#    contenu += signal handler
+#    contenu += signal_handler
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
     contenu += "STOP=0                                                             \n"

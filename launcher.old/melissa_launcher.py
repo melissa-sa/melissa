@@ -21,7 +21,7 @@ from ctypes import cdll, create_string_buffer
 
 global_options = options()
 timeout_server = 600
-sys.path.append(global_options.home_path+"/../launcher")
+sys.path.append(global_options.home_path+"/../utils")
 server_state   = ""
 melissa_job_id = ""
 simu_job_id    = []
