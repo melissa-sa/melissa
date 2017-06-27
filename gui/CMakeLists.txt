@@ -1,2 +1,2 @@
 
-configure_file(melissa_gui.py melissa_gui.py COPYONLY)
+configure_file(melissa_gui.py melissa_gui.py @ONLY)

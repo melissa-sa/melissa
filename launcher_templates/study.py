@@ -6,6 +6,7 @@
 from threading import Thread
 import os
 import time
+import imp
 import numpy as np
 from ctypes import cdll, create_string_buffer
 from options import GLOBAL_OPTIONS as glob_opt
@@ -14,6 +15,7 @@ from options import STUDY_OPTIONS as stdy_opt
 from options import SIMULATIONS_OPTIONS as simu_opt
 from options import MELISSA_STATS as ml_stats
 from options import USER_FUNCTIONS as usr_func
+imp.load_source("simulation", "./simulation.py")
 from simulation import Simulation
 from simulation import Server
 from simulation import SobolCoupledGroup

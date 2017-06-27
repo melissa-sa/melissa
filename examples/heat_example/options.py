@@ -197,10 +197,8 @@ def heat_visu():
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
-STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],
-                                            float)
-STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'],
-                                           float)
+STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
+STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'], float)
 STUDY_OPTIONS['sampling_size'] = 3
 STUDY_OPTIONS['max_additional_samples'] = 20
 STUDY_OPTIONS['nb_time_steps'] = 1
@@ -244,7 +242,7 @@ USER_FUNCTIONS['restart_simulation'] = None
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = None
 USER_FUNCTIONS['cancel_job'] = None
-USER_FUNCTIONS['postprocessing'] = heat_visu
+USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None
 
 if os.path.isfile("options.json"):

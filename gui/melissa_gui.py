@@ -10,10 +10,12 @@ import imp
 import time
 
 cwd = os.getcwd()
+launcher_path = "@CMAKE_BINARY_DIR@/launcher_templates"
+print launcher_path
 if len(sys.argv) == 2:
-    master_path = sys.argv[1]
+    options_path = sys.argv[1]
 else:
-    master_path = "./"
+    options_path = "./"
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -53,16 +55,16 @@ class melissa_gui(QWidget):
 #        self.plop.exec_()
 
         self.username       = getpass.getuser()
-        self.nb_parameters  = nb_parameters
+        self.nb_parameters  = STUDY_OPTIONS['nb_parameters']
 #        self.nb_parameters  = 0
-        self.sampling_size  = sampling_size
-        self.nb_time_steps  = nb_time_steps
-        self.operations     = operations
-        self.threshold      = threshold
-        self.mpi_options    = mpi_options
-        self.nb_proc_simu   = nb_proc_simu
-        self.nb_proc_server = nb_proc_server
-        self.server_path    = server_path
+        self.sampling_size  = STUDY_OPTIONS['sampling_size']
+        self.nb_time_steps  = STUDY_OPTIONS['nb_time_steps']
+        self.operations     = ""
+        self.threshold      = STUDY_OPTIONS['threshold_value']
+        self.mpi_options    = SERVER_OPTIONS['mpi_options']
+        self.nb_proc_simu   = SIMULATIONS_OPTIONS['nb_proc']
+        self.nb_proc_server = SERVER_OPTIONS['nb_proc']
+        self.server_path    = SERVER_OPTIONS['path']
 #        self.server_path    = "../server"
         self.range_min = []
         self.range_max = []
@@ -71,26 +73,21 @@ class melissa_gui(QWidget):
 #            self.range_max.append = range_max[i]
 #        self.range_min      = range_min
 #        self.range_max      = range_max
-        self.coupling       = coupling
+        self.coupling       = SIMULATIONS_OPTIONS['coupling']
 
         self.QCheckBox_sobol = QCheckBox("Sobol Indices")
-
+        self.mean_op = MELISSA_STATS['mean']
+        self.variance_op = MELISSA_STATS['variance']
+        self.min_op = MELISSA_STATS['min']
+        self.max_op = MELISSA_STATS['max']
+        self.threshold_op = MELISSA_STATS['threshold_exceedance']
+        self.quantile_op = MELISSA_STATS['quantile']
+        self.sobol_op = MELISSA_STATS['sobol_indices']
         self.mean_op = True
         self.variance_op = True
         self.min_max_op = False
         self.threshold_op = False
         self.sobol_op = False
-        if operations != []:
-            if (not "mean" in operations):
-                self.mean_op = False
-            if (not "variance" in operations):
-                self.variance_op = False
-            if ("min" in operations or "max" in operations):
-                self.min_max_op = True
-            if ("threshold" in operations):
-                self.threshold_op = True
-            if ("sobol" in operations):
-                self.sobol_op = True
         self.modified = False
 
         # Username #
@@ -118,9 +115,10 @@ class melissa_gui(QWidget):
         self.QListWidget_param = QListWidget()
 #        self.QListWidget_param.itemDoubleClicked.connect(self.print_plop)
         self.QListWidget_param.itemDoubleClicked.connect(self.show_modif_param_dialog)
-        if nb_parameters > 0:
-            for i in range(nb_parameters):
-                self.add_parameter(range_min[i], range_max[i])
+        if STUDY_OPTIONS['nb_parameters'] > 0:
+            for i in range(STUDY_OPTIONS['nb_parameters']):
+                self.add_parameter(STUDY_OPTIONS['range_min_param'][i],
+                                   STUDY_OPTIONS['range_max_param'][i])
         else:
             self.add_parameter()
         self.fbox.addRow(self.label_param,self.QListWidget_param)
@@ -179,7 +177,7 @@ class melissa_gui(QWidget):
         self.hbox_button.addWidget(self.QPushButton_ok)
         self.hbox_button.addWidget(self.QPushButton_save)
         self.hbox_button.addWidget(self.QPushButton_cancel)
-        self.connect(self.QPushButton_ok,  SIGNAL("clicked()"), self.launch_heat)
+        self.connect(self.QPushButton_ok,  SIGNAL("clicked()"), self.launch_study)
         self.connect(self.QPushButton_save,  SIGNAL("clicked()"), self.save)
         self.connect(self.QPushButton_cancel,  SIGNAL("clicked()"), self.close_gui)
         self.fbox.addItem(self.hbox_button)
@@ -206,23 +204,12 @@ class melissa_gui(QWidget):
             self.close()
 
 
-    def launch_heat(self):
+    def launch_study(self):
         self.setDisabled(True)
         QApplication.processEvents()
-        self.set_operations_string()
         self.set_parameters()
-        launch_heat(self.nb_parameters,
-                     self.sampling_size,
-                     self.nb_time_steps,
-                     self.operations,
-                     self.threshold,
-                     self.mpi_options,
-                     self.nb_proc_simu,
-                     self.nb_proc_server,
-                     self.server_path,
-                     self.range_min,
-                     self.range_max,
-                     self.coupling)
+        melissa_study = study.Study()
+        melissa_study.run()
         self.setEnabled(True)
         QApplication.processEvents()
 
@@ -291,9 +278,9 @@ class melissa_gui(QWidget):
          self.dialog.show()
 
     def add_parameter(self, range_min = 0, range_max = 1):
-        if len(self.parameter_list)<nb_parameters:
+        if len(self.parameter_list) < STUDY_OPTIONS['nb_parameters']:
             self.parameter_list.append(melissa_parameter(range_min = range_min, range_max = range_max))
-        if len(self.parameter_list)<1:
+        if len(self.parameter_list) < 1:
             self.parameter_list.append(melissa_parameter())
             self.nb_parameters = 1
             self.modified = True
@@ -317,25 +304,36 @@ class melissa_gui(QWidget):
         self.modified = True
 
     def save (self):
-        os.getcwd()
-        file = open ("./options.py", "r")
+        file = open (options_path+"/options.py", "r")
         contenu = ""
         for ligne in file:
-            if "nb_parameters =" in ligne or "nb_parameters=" in ligne:
-                contenu += "nb_parameters = "+str(self.nb_parameters)+"\n"
-                contenu += "range_min = np.zeros(nb_parameters,float)\n"
-                contenu += "range_max = np.zeros(nb_parameters,float)\n"
+            if "STUDY_OPTIONS['nb_parameters'] = " in ligne:
+                contenu += "STUDY_OPTIONS['nb_parameters'] = "+str(self.nb_parameters)+"\n"
+                contenu += "STUDY_OPTIONS['range_min_param'] = np.zeros(nb_parameters,float)\n"
+                contenu += "STUDY_OPTIONS['range_max_param'] = np.zeros(nb_parameters,float)\n"
                 for i in range (self.nb_parameters):
                     contenu += "range_min["+str(i)+"] = "+str(self.parameter_list[i].range_min)+"\n"
                     contenu += "range_max["+str(i)+"] = "+str(self.parameter_list[i].range_max)+"\n"
-            elif "sampling_size =" in ligne or "sampling_size=" in ligne:
-                contenu += "sampling_size = "+str(self.sampling_size)+"\n"
-            elif "operations =" in ligne or "operations=" in ligne:
-                self.set_operations_string()
-                contenu += "operations = "+str(self.operations)+"\n"
-            elif "threshold =" in ligne or "threshold=" in ligne:
-                contenu += "threshold = "+str(self.threshold)+"\n"
-            elif not ("range_min" in ligne or "range_max" in ligne):
+            elif "STUDY_OPTIONS['sampling_size'] = " in ligne:
+                contenu += "STUDY_OPTIONS['sampling_size'] = "+str(self.sampling_size)+"\n"
+            elif "MELISSA_STATS['mean'] = " in ligne:
+                contenu += "MELISSA_STATS['mean'] = "+str(self.mean_op)+"\n"
+            elif "MELISSA_STATS['variance'] = " in ligne:
+                contenu += "MELISSA_STATS['variance'] = "+str(self.mean_op)+"\n"
+            elif "MELISSA_STATS['min'] = " in ligne:
+                contenu += "MELISSA_STATS['min'] = "+str(self.mean_op)+"\n"
+            elif "MELISSA_STATS['max'] = " in ligne:
+                contenu += "MELISSA_STATS['max'] = "+str(self.mean_op)+"\n"
+            elif "MELISSA_STATS['threshold_exceedance'] =" in ligne:
+                contenu += "MELISSA_STATS['threshold_exceedance'] = "+str(self.mean_op)+"\n"
+            elif "MELISSA_STATS['quantile'] = " in ligne:
+                contenu += "MELISSA_STATS['quantile'] = "+str(self.mean_op)+"\n"
+            elif "MELISSA_STATS['sobol_indices'] = " in ligne:
+                contenu += "MELISSA_STATS['sobol_indices'] = "+str(self.mean_op)+"\n"
+            elif "STUDY_OPTIONS['threshold_value'] = " in ligne:
+                contenu += "STUDY_OPTIONS['threshold_value'] = "+str(self.threshold)+"\n"
+            elif not ("STUDY_OPTIONS['range_min_param'] = " in ligne or
+                      "STUDY_OPTIONS['range_max_param'] = " in ligne):
                 contenu += ligne
         file.close()
         file = open ("./options.py", "w")
@@ -471,23 +469,24 @@ class error_dialog(QMessageBox):
         QMessageBox.__init__(self, parent)
         self.setIcon(QMessageBox.Critical)
         self.vbox = QVBoxLayout()
-        self.setText("\nERROR: Missing Melissa Master file\n")
+        self.setText("\nERROR: Missing Melissa option file\n")
         self.setStandardButtons(QMessageBox.Ok)
         self.buttonClicked.connect(self.close)
-        self.setDetailedText("Usage :\neither run melissa_gui.py in a directory containing a master.py file\nor give \"path/to/melissa_master/directory\" as an argument to melissa_gui.py.")
+        self.setDetailedText("Usage :\neither run melissa_gui.py in a directory containing a option.py file\nor give \"path/to/options/directory\" as an argument to melissa_gui.py.")
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    if not os.path.isfile(master_path+"/master.py"):
-        print "ERROR no master file given"
+    if not os.path.isfile(options_path+"/options.py"):
+        print "ERROR no option file given"
         gui = error_dialog()
     else:
-        os.chdir (master_path)
-        imp.load_source("master", "./master.py")
+        os.chdir(launcher_path)
+        imp.load_source("study", "./study.py")
+        import study
+        os.chdir (options_path)
         imp.load_source("options", "./options.py")
         from options import *
-        from master import *
         gui = melissa_gui()
     gui.show()
     resolution = QDesktopWidget().screenGeometry(QDesktopWidget().screenNumber(gui))

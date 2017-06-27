@@ -13,10 +13,8 @@ GLOBAL_OPTIONS['working_directory'] = "/home/user/study"
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
-STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],
-                                            float)
-STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'],
-                                           float)
+STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
+STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'], float)
 STUDY_OPTIONS['sampling_size'] = 10
 STUDY_OPTIONS['max_additional_samples'] = 20
 STUDY_OPTIONS['nb_time_steps'] = 1
