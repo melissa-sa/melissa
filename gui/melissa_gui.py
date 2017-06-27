@@ -59,7 +59,7 @@ class melissa_gui(QWidget):
 #        self.nb_parameters  = 0
         self.sampling_size  = STUDY_OPTIONS['sampling_size']
         self.nb_time_steps  = STUDY_OPTIONS['nb_time_steps']
-        self.operations     = ""
+        self.operations     = []
         self.threshold      = STUDY_OPTIONS['threshold_value']
         self.mpi_options    = SERVER_OPTIONS['mpi_options']
         self.nb_proc_simu   = SIMULATIONS_OPTIONS['nb_proc']
@@ -83,11 +83,11 @@ class melissa_gui(QWidget):
         self.threshold_op = MELISSA_STATS['threshold_exceedance']
         self.quantile_op = MELISSA_STATS['quantile']
         self.sobol_op = MELISSA_STATS['sobol_indices']
-        self.mean_op = True
-        self.variance_op = True
-        self.min_max_op = False
-        self.threshold_op = False
-        self.sobol_op = False
+#        self.mean_op = True
+#        self.variance_op = True
+#        self.min_max_op = False
+#        self.threshold_op = False
+#        self.sobol_op = False
         self.modified = False
 
         # Username #
@@ -97,7 +97,6 @@ class melissa_gui(QWidget):
         self.QLineEdit_username.editingFinished.connect(self.change_username)
         self.fbox.addRow(self.label_username,self.QLineEdit_username)
 
-        print self.modified
         # batch scheduller #
         self.label_sched = QLabel("Batch Scheduller")
         self.QComboBo_sched = QComboBox()
@@ -146,15 +145,24 @@ class melissa_gui(QWidget):
         self.QCheckBox_variance.setChecked(self.variance_op)
         self.QCheckBox_variance.stateChanged.connect(self.change_operations)
         self.vbox_operations.addWidget(self.QCheckBox_variance)
-        self.QCheckBox_min_max = QCheckBox("Min Max")
-        self.QCheckBox_min_max.setChecked(self.min_max_op)
-        self.QCheckBox_min_max.stateChanged.connect(self.change_operations)
-        self.vbox_operations.addWidget(self.QCheckBox_min_max)
+        self.QCheckBox_min = QCheckBox("Min")
+        self.QCheckBox_min.setChecked(self.min_op)
+        self.QCheckBox_min.stateChanged.connect(self.change_operations)
+        self.vbox_operations.addWidget(self.QCheckBox_min)
+        self.QCheckBox_max = QCheckBox("Max")
+        self.QCheckBox_max.setChecked(self.max_op)
+        self.QCheckBox_max.stateChanged.connect(self.change_operations)
+        self.vbox_operations.addWidget(self.QCheckBox_max)
         self.QCheckBox_threshold = QCheckBox("Threshold Exceedance")
+        print "threshold: "+str(self.threshold_op)
         self.QCheckBox_threshold.setChecked(self.threshold_op)
         self.QCheckBox_threshold.stateChanged.connect(self.disable_threshold)
         self.QCheckBox_threshold.stateChanged.connect(self.change_operations)
         self.vbox_operations.addWidget(self.QCheckBox_threshold)
+        self.QCheckBox_quantile = QCheckBox("Quantile")
+        self.QCheckBox_quantile.setChecked(self.quantile_op)
+        self.QCheckBox_quantile.stateChanged.connect(self.change_operations)
+        self.vbox_operations.addWidget(self.QCheckBox_quantile)
         self.check_nb_param()
         self.QCheckBox_sobol.stateChanged.connect(self.change_operations)
         self.QCheckBox_sobol.stateChanged.connect(self.check_nb_param)
@@ -208,24 +216,20 @@ class melissa_gui(QWidget):
         self.setDisabled(True)
         QApplication.processEvents()
         self.set_parameters()
+        self.set_operations()
         melissa_study = study.Study()
         melissa_study.run()
         self.setEnabled(True)
         QApplication.processEvents()
 
-    def set_operations_string(self):
-        self.operations = []
-        if self.mean_op == True:
-            self.operations.append("mean")
-        if self.variance_op == True:
-            self.operations.append("variance")
-        if self.min_max_op == True:
-            self.operations.append("min")
-            self.operations.append("max")
-        if self.threshold_op == True:
-            self.operations.append("threshold")
-        if self.sobol_op == True:
-            self.operations.append("sobol")
+    def set_operations(self):
+        MELISSA_STATS['mean'] = self.mean_op
+        MELISSA_STATS['variance'] = self.variance_op
+        MELISSA_STATS['min'] = self.min_op
+        MELISSA_STATS['max'] = self.max_op
+        MELISSA_STATS['threshold_exceedance'] = self.threshold_op
+        MELISSA_STATS['quantile'] = self.quantile_op
+        MELISSA_STATS['sobol_indices'] = self.sobol_op
 
     def set_parameters(self):
         for i in range(self.nb_parameters):
@@ -245,12 +249,14 @@ class melissa_gui(QWidget):
     def change_operations(self):
         self.mean_op = self.QCheckBox_mean.isChecked()
         self.variance_op = self.QCheckBox_variance.isChecked()
-        self.min_max_op = self.QCheckBox_min_max.isChecked()
+        self.min_op = self.QCheckBox_min.isChecked()
+        self.max_op = self.QCheckBox_max.isChecked()
         self.threshold_op = self.QCheckBox_threshold.isChecked()
+        self.quantile_op = self.QCheckBox_quantile.isChecked()
         self.sobol_op = self.QCheckBox_sobol.isChecked()
-        if operations == []:
-            self.mean_op = True
-            self.variance_op = True
+#        if operations == []:
+#            self.mean_op = True
+#            self.variance_op = True
         self.modified = True
 
     def check_nb_param(self):
@@ -304,32 +310,33 @@ class melissa_gui(QWidget):
         self.modified = True
 
     def save (self):
+        os.chdir (options_path)
         file = open (options_path+"/options.py", "r")
         contenu = ""
         for ligne in file:
             if "STUDY_OPTIONS['nb_parameters'] = " in ligne:
                 contenu += "STUDY_OPTIONS['nb_parameters'] = "+str(self.nb_parameters)+"\n"
-                contenu += "STUDY_OPTIONS['range_min_param'] = np.zeros(nb_parameters,float)\n"
-                contenu += "STUDY_OPTIONS['range_max_param'] = np.zeros(nb_parameters,float)\n"
+                contenu += "STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],float)\n"
+                contenu += "STUDY_OPTIONS['range_max_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],float)\n"
                 for i in range (self.nb_parameters):
-                    contenu += "range_min["+str(i)+"] = "+str(self.parameter_list[i].range_min)+"\n"
-                    contenu += "range_max["+str(i)+"] = "+str(self.parameter_list[i].range_max)+"\n"
+                    contenu += "STUDY_OPTIONS['range_min_param']["+str(i)+"] = "+str(self.parameter_list[i].range_min)+"\n"
+                    contenu += "STUDY_OPTIONS['range_max_param']["+str(i)+"] = "+str(self.parameter_list[i].range_max)+"\n"
             elif "STUDY_OPTIONS['sampling_size'] = " in ligne:
                 contenu += "STUDY_OPTIONS['sampling_size'] = "+str(self.sampling_size)+"\n"
             elif "MELISSA_STATS['mean'] = " in ligne:
                 contenu += "MELISSA_STATS['mean'] = "+str(self.mean_op)+"\n"
             elif "MELISSA_STATS['variance'] = " in ligne:
-                contenu += "MELISSA_STATS['variance'] = "+str(self.mean_op)+"\n"
+                contenu += "MELISSA_STATS['variance'] = "+str(self.variance_op)+"\n"
             elif "MELISSA_STATS['min'] = " in ligne:
-                contenu += "MELISSA_STATS['min'] = "+str(self.mean_op)+"\n"
+                contenu += "MELISSA_STATS['min'] = "+str(self.min_op)+"\n"
             elif "MELISSA_STATS['max'] = " in ligne:
-                contenu += "MELISSA_STATS['max'] = "+str(self.mean_op)+"\n"
+                contenu += "MELISSA_STATS['max'] = "+str(self.max_op)+"\n"
             elif "MELISSA_STATS['threshold_exceedance'] =" in ligne:
-                contenu += "MELISSA_STATS['threshold_exceedance'] = "+str(self.mean_op)+"\n"
+                contenu += "MELISSA_STATS['threshold_exceedance'] = "+str(self.threshold_op)+"\n"
             elif "MELISSA_STATS['quantile'] = " in ligne:
-                contenu += "MELISSA_STATS['quantile'] = "+str(self.mean_op)+"\n"
+                contenu += "MELISSA_STATS['quantile'] = "+str(self.quantile_op)+"\n"
             elif "MELISSA_STATS['sobol_indices'] = " in ligne:
-                contenu += "MELISSA_STATS['sobol_indices'] = "+str(self.mean_op)+"\n"
+                contenu += "MELISSA_STATS['sobol_indices'] = "+str(self.sobol_op)+"\n"
             elif "STUDY_OPTIONS['threshold_value'] = " in ligne:
                 contenu += "STUDY_OPTIONS['threshold_value'] = "+str(self.threshold)+"\n"
             elif not ("STUDY_OPTIONS['range_min_param'] = " in ligne or
@@ -481,12 +488,14 @@ if __name__ == '__main__':
         print "ERROR no option file given"
         gui = error_dialog()
     else:
+        os.chdir (options_path)
+        imp.load_source("options", "./options.py")
+        from options import *
+        options_path = os.getcwd()
         os.chdir(launcher_path)
         imp.load_source("study", "./study.py")
         import study
         os.chdir (options_path)
-        imp.load_source("options", "./options.py")
-        from options import *
         gui = melissa_gui()
     gui.show()
     resolution = QDesktopWidget().screenGeometry(QDesktopWidget().screenNumber(gui))
