@@ -500,7 +500,7 @@ int main (int argc, char **argv)
         }
 
 //        if (iteration % 100 == 0)
-        if (last_checkpoint_time  + 300 < melissa_get_time() && last_checkpoint_time > 0.1)
+        if (last_checkpoint_time  + 3 < melissa_get_time() && last_checkpoint_time > 0.1)
         {
             start_save_time = melissa_get_time();
             field_ptr fptr = field;
@@ -518,7 +518,7 @@ int main (int argc, char **argv)
             save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
             last_checkpoint_time = melissa_get_time();
             end_save_time = melissa_get_time();
-            fprintf (stdout, "chekpoint time: %g\n (proc %d)", end_save_time - start_save_time, comm_data.rank);
+            fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
             total_save_time += end_save_time - start_save_time;
         }
 
@@ -551,7 +551,7 @@ int main (int argc, char **argv)
                 return 0;
             }
             end_save_time = melissa_get_time();
-            fprintf (stdout, "chekpoint time: %g\n (proc %d)", end_save_time - start_save_time, comm_data.rank);
+            fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
             total_save_time += end_save_time - start_save_time;
             break;
         }

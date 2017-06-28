@@ -175,9 +175,11 @@ endif(BUILD_WITH_PROBES)
 
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
-set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c )
+set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c
+            ${PROJECT_SOURCE_DIR}/utils/vector.c )
 set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
-set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h )
+set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h
+            ${PROJECT_SOURCE_DIR}/utils/vector.h )
 set(ALL_INCS ${ALL_INCS} ${UTILS_H})
 set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h")
 
