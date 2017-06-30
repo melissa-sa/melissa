@@ -421,7 +421,7 @@ int main (int argc, char **argv)
             field_name_ptr = buf_ptr;
             if (field == NULL)
             {
-                add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.sampling_size);
+                add_field(&field, field_name_ptr, comm_data.client_comm_size);
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 nb_fields += 1;
                 last_checkpoint_time = melissa_get_time();
@@ -431,7 +431,7 @@ int main (int argc, char **argv)
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 if (data_ptr == NULL)
                 {
-                    add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.sampling_size);
+                    add_field(&field, field_name_ptr, comm_data.client_comm_size);
                     data_ptr = get_data_ptr (field, field_name_ptr);
                     nb_fields += 1;
                 }

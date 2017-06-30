@@ -111,7 +111,7 @@ int main (int argc, char **argv)
     for (i=0; i<nb_fields; i++)
     {
         fprintf(stdout, "add field %s\n", field_name[i]);
-        add_field(&field, field_name[i], 1, melissa_options.sampling_size);
+        add_field(&field, field_name[i], 1);
     }
 
     for (time_step=0; time_step<melissa_options.nb_time_steps; time_step++)

@@ -69,8 +69,8 @@ struct melissa_data_s
     void (*increment_sobol)(sobol_array_t*, int, double**, int); /**< pointer to Sobol increment function                       */
     void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                            */
     int                  nb_simu;                                /**< number of simulation that have sent a message             */
-//    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                              */
-    vector_t             step_simu;                              /**< arrays of bits, size nb_groups                           */
+    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                              */
+//    vector_t             step_simu;                              /**< arrays of bits, size nb_groups                           */
 };
 
 //struct simu_status_s
