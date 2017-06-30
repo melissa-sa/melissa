@@ -215,13 +215,15 @@ set(SERVER_SRC compute_stats.c
                melissa_data.c
                melissa_io.c
                melissa_options.c
-               server_helper.c)
+               server_helper.c
+               fault_tolerance.c)
 set(ALL_SRCS ${ALL_SRCS} ${SERVER_SRC})
 set(SERVER_H compute_stats.h
              melissa_data.h
              melissa_io.h
              melissa_options.h
-             server.h)
+             server.h
+             fault_tolerance.h)
 set(ALL_INCS ${ALL_INCS} ${SERVER_H})
 foreach( _file ${SERVER_SRC} ${SERVER_H})
   set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/server/${_file}" )

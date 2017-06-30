@@ -351,8 +351,7 @@ def check_job(job):
     job.job_status = state
 
 def cancel_job(job):
-    global output
-    output += "cancel job "+str(job.job_id)
+    print "cancel job "+str(job.job_id)
     if (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
         call_bash("scancel "+job.job_id)
     elif (BATCH_SCHEDULER == "OAR"):
@@ -573,6 +572,7 @@ def restart_simu(simu):
     simu.job_state = 0
     simu.nb_restarts += 1
     os.chdir(GLOBAL_OPTIONS['working_directory'])
+    print output
 
 def check_scheduler_load():
 
@@ -644,6 +644,6 @@ USER_FUNCTIONS['restart_server'] = restart_server
 USER_FUNCTIONS['restart_simulation'] = restart_simu
 USER_FUNCTIONS['restart_group'] = restart_simu
 USER_FUNCTIONS['check_scheduler_load'] = check_scheduler_load
-USER_FUNCTIONS['cancel_job'] = None
+USER_FUNCTIONS['cancel_job'] = cancel_job
 USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None

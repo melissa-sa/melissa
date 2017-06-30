@@ -89,7 +89,7 @@ class Messenger(Thread):
             elif message[0] == 'timeout':
                 if message[1] != '-1':
                     simu_id = int(message[1])
-                    output += 'Simulation ' + simu_id + 'timeout\n'
+                    output += 'Simulation ' + str(simu_id) + 'timeout\n'
                     with simulations[simu_id].lock:
                         simulations[simu_id].restart()
             elif message[0] == 'simu_state':
@@ -149,8 +149,8 @@ class Study(object):
             fault_tolerance()
             check_scheduler_load()
             simu.launch()
-        while (not server.status == FINISHED
-               and not all([i.status == FINISHED for i in simulations])):
+        while (not (server.status == FINISHED
+               and all([i.status == FINISHED for i in simulations]))):
             fault_tolerance()
             time.sleep(1)
         self.messenger.running_study = False
@@ -200,16 +200,21 @@ def fault_tolerance():
     global output
     sleep = False
     with server.lock:
-        if server.status != RUNNING:
+        if server.status != RUNNING or server.job_status != RUNNING:
             sleep = True
     if sleep == True:
         time.sleep(5)
         sleep = False
 
-    if (server.status != RUNNING
+    if ((server.status != RUNNING or server.job_status != RUNNING)
             and not all([i.status == FINISHED for i in simulations])):
+        for simu in [x for x in simulations if (x.status < FINISHED and
+                                                x.job_status > NOT_SUBMITTED)]:
+            with simu.lock:
+                simu.cancel()
         with server.lock:
             server.restart()
+            server.wait_start()
         for simu in [x for x in simulations if (x.status < FINISHED and
                                                 x.job_status > NOT_SUBMITTED)]:
             with simu.lock:

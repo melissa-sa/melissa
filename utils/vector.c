@@ -8,16 +8,16 @@
 void alloc_vector(vector_t *v, int capacity)
 {
     v->capacity = capacity;
-    v->total = capacity;
+    v->size = capacity;
     v->items = melissa_calloc(v->capacity, sizeof(void *));
 }
 
-int vector_total(vector_t *v)
+int vector_size(vector_t *v)
 {
-    return v->total;
+    return v->size;
 }
 
-static void resize_vector(vector_t *v, int capacity)
+void resize_vector(vector_t *v, int capacity)
 {
     void **items = realloc(v->items, sizeof(void *) * capacity);
     if (items)
@@ -29,16 +29,16 @@ static void resize_vector(vector_t *v, int capacity)
 
 void vector_add(vector_t *v, void *item)
 {
-    if (v->capacity == v->total)
+    if (v->capacity == v->size)
     {
         resize_vector(v, v->capacity * 2);
     }
-    v->items[v->total++] = item;
+    v->items[v->size++] = item;
 }
 
 void vector_set(vector_t *v, int index, void *item)
 {
-    if (index >= 0 && index < v->total)
+    if (index >= 0 && index < v->size)
     {
         v->items[index] = item;
     }
@@ -46,7 +46,7 @@ void vector_set(vector_t *v, int index, void *item)
 
 void *vector_get(vector_t *v, int index)
 {
-    if (index >= 0 && index < v->total)
+    if (index >= 0 && index < v->size)
     {
         return v->items[index];
     }
@@ -60,22 +60,22 @@ void vector_delete(vector_t *v, int index)
 {
     int i;
 
-    if (index < 0 || index >= v->total)
+    if (index < 0 || index >= v->size)
     {
         return;
     }
 
     v->items[index] = NULL;
 
-    for (i = index; i < v->total - 1; i++)
+    for (i = index; i < v->size - 1; i++)
     {
         v->items[i] = v->items[i + 1];
         v->items[i + 1] = NULL;
     }
 
-    v->total -= 1;
+    v->size -= 1;
 
-    if (v->total > 0 && v->total == v->capacity / 4)
+    if (v->size > 0 && v->size == v->capacity / 4)
     {
         resize_vector(v, v->capacity / 2);
     }
@@ -84,53 +84,4 @@ void vector_delete(vector_t *v, int index)
 void free_vector(vector_t *v)
 {
     melissa_free(v->items);
-}
-
-void alloc_bits_array_vector(vector_t *v, int capacity, int item_size)
-{
-    int i;
-
-    v->item_size = item_size;
-    alloc_vector(v, capacity);
-
-    for (i=0; i<v->total; i++)
-    {
-        v->items[i] = melissa_calloc(sizeof(int32_t), item_size);
-    }
-}
-
-int bits_array_vector_total(vector_t *v)
-{
-    return vector_total(v);
-}
-
-void bits_array_vector_push_to(vector_t *v,
-                               int   pos)
-{
-    int i;
-
-    if (pos >= v->total)
-    {
-        while (v->capacity <= pos)
-        {
-            resize_vector(v, v->capacity * 2);
-        }
-
-        for (i=v->total; i<=pos; i++)
-        {
-            v->items[i] = melissa_calloc(sizeof(int32_t), v->item_size);
-        }
-        v->total = pos + 1;
-    }
-}
-
-void free_bits_array_vector(vector_t *v)
-{
-    int i;
-
-    for (i=0; i<v->total; i++)
-    {
-        melissa_free (v->items[i]);
-    }
-    free_vector(v);
 }

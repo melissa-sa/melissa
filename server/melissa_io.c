@@ -165,10 +165,10 @@ void save_stats (melissa_data_t *data,
             {
                 data[i].save_sobol(data[i].sobol_indices, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
-            for (j=0; j<data[i].options->sampling_size; j++)
-            {
-                fwrite(data[i].step_simu[j], sizeof(int32_t), (data[i].options->nb_time_steps+31)/32, f);
-            }
+//            for (j=0; j<data[i].options->sampling_size; j++)
+//            {
+//                fwrite(data[i].step_simu[j], sizeof(int32_t), (data[i].options->nb_time_steps+31)/32, f);
+//            }
             fclose(f);
         }
     }
@@ -240,10 +240,10 @@ void read_saved_stats (melissa_data_t *data,
             {
                 data[client_rank].read_sobol(data[client_rank].sobol_indices, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
             }
-            for (j=0; j<data[client_rank].options->sampling_size; j++)
-            {
-                fread(data[client_rank].step_simu[j], sizeof(int32_t), (data[client_rank].options->nb_time_steps+31)/32, f);
-            }
+//            for (j=0; j<data[client_rank].options->sampling_size; j++)
+//            {
+//                fread(data[client_rank].step_simu[j], sizeof(int32_t), (data[client_rank].options->nb_time_steps+31)/32, f);
+//            }
             fclose(f);
         }
 }

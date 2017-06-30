@@ -1,3 +1,11 @@
+/**
+ *
+ * @file server.h
+ * @author Terraz Théophile
+ * @date 2016-15-03
+ *
+ **/
+
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
 #include "melissa_data.h"
@@ -38,8 +46,7 @@ void comm_n_to_m_init (int           *rcounts,
 
 void add_field (field_ptr *field,
                 char*      field_name,
-                int        data_size,
-                int        nb_simu);
+                int        data_size);
 
 melissa_data_t* get_data_ptr (field_ptr field, char* field_name);
 
@@ -72,16 +79,5 @@ void global_confidence_sobol_martinez(field_ptr     field,
                                       comm_data_t  *comm_data,
                                       double       *interval1,
                                       double       *interval_tot);
-
-int check_timeouts (int    *simu_state,
-                    int    *simu_timeouts,
-                    double *last_message_simu,
-                    int     nb_simu);
-
-void send_timeouts (int   detected_timeouts,
-                    int  *simu_timeouts,
-                    int   nb_simu,
-                    char* txt_buffer,
-                    void *python_requester);
 
 #endif // SERVER_HELPER_H

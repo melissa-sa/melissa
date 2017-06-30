@@ -140,7 +140,7 @@ void comm_n_to_m_init (int           *rcounts,
     }
 }
 
-void add_field (field_ptr *field, char* field_name, int data_size, int nb_simu)
+void add_field (field_ptr *field, char* field_name, int data_size)
 {
     int i;
     if (*field == NULL)
@@ -156,7 +156,7 @@ void add_field (field_ptr *field, char* field_name, int data_size, int nb_simu)
     }
     else
     {
-        add_field (&(*field)->next, field_name, data_size, nb_simu);
+        add_field (&(*field)->next, field_name, data_size);
     }
 }
 
@@ -386,48 +386,4 @@ void global_confidence_sobol_martinez(field_ptr     field,
             }
         }
     }
-}
-
-int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu)
-{
-    int detected_timeouts = 0;
-    int i;
-    double timeout_simu = 50; // TODO: something more user friendly
-    double current_time = melissa_get_time();
-    for (i=0; i<nb_simu; i++)
-    {
-        if (simu_state[i] == 1)
-        {
-            if (last_message_simu[i] + timeout_simu < current_time)
-            {
-                simu_timeouts[i] = 1;
-                detected_timeouts += 1;
-                fprintf (stdout, "timeout detected on simulation group %d\n", i);
-            }
-        }
-    }
-    return detected_timeouts;
-}
-
-void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char* txt_buffer, void *python_pusher)
-{
-    int i;
-
-    if (detected_timeouts < 1)
-    {
-        sprintf(txt_buffer, "timeout -1");
-        zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-    }
-    else
-    {
-        for (i=0; i<nb_simu; i++)
-        {
-            if (simu_timeouts[i] == 1)
-            {
-                sprintf(txt_buffer, "timeout %d", i);
-                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-            }
-        }
-    }
-    return;
 }

@@ -1,3 +1,10 @@
+/**
+ *
+ * @file server.c
+ * @author Terraz Théophile
+ * @date 2016-15-03
+ *
+ **/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +20,7 @@
 #include "melissa_options.h"
 #include "melissa_data.h"
 #include "melissa_utils.h"
+#include "fault_tolerance.h"
 
 #define ZEROCOPY /**< Use ZMQ zero copy messages */
 
@@ -84,6 +92,7 @@ int main (int argc, char **argv)
     int                 detected_timeouts;
     int                 nb_finished_simulations = 0;
     double              last_checkpoint_time = 0.0;
+//    vector_t            simulations;
 
 #ifdef BUILD_WITH_MPI
     // === init MPI === //
@@ -128,11 +137,18 @@ int main (int argc, char **argv)
         melissa_print_options (&melissa_options);
         melissa_write_options (&melissa_options);
     }
-    nb_iterations     = melissa_options.sampling_size * melissa_options.nb_time_steps ;
+
+    nb_iterations     = melissa_options.sampling_size * melissa_options.nb_time_steps;
     last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
     simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
     simu_timeout      = melissa_calloc (melissa_options.sampling_size, sizeof(int));
-
+// futur work
+//    nb_iterations = melissa_options.sampling_size * melissa_options.nb_time_steps;
+//    alloc_vector (simulations, melissa_options.sampling_size);
+//    for (i=0; i<melissa_options.sampling_size; i++)
+//    {
+//        simu_push_to(vector, i, melissa_options.nb_time_steps);
+//    }
     // === Open data puller port === //
 
     port_no = 100 + comm_data.rank;
@@ -252,11 +268,25 @@ int main (int argc, char **argv)
         {
             if (last_timeout_check + 100 < melissa_get_time())
             {
-                detected_timeouts = check_timeouts(simu_state, simu_timeout, last_message_simu, melissa_options.sampling_size);
+                detected_timeouts = check_timeouts(simu_state,
+                                                   simu_timeout,
+                                                   last_message_simu,
+                                                   melissa_options.sampling_size);
+// futur work
+//                detected_timeouts = check_timeouts(&simulations);
                 last_timeout_check = melissa_get_time();
                 if (detected_timeouts > 0)
                 {
-                    send_timeouts (detected_timeouts, simu_timeout, melissa_options.sampling_size, txt_buffer, python_pusher);
+                    send_timeouts (detected_timeouts,
+                                   simu_timeout,
+                                   last_message_simu,
+                                   txt_buffer,
+                                   python_pusher);
+// futur work
+//                    send_timeouts (detected_timeouts,
+//                                   &simulations,
+//                                   txt_buffer,
+//                                   python_pusher);
                 }
             }
         }
@@ -403,7 +433,7 @@ int main (int argc, char **argv)
             field_name_ptr = buf_ptr;
             if (field == NULL)
             {
-                add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.sampling_size);
+                add_field(&field, field_name_ptr, comm_data.client_comm_size);
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 nb_fields += 1;
                 last_checkpoint_time = melissa_get_time();
@@ -413,7 +443,7 @@ int main (int argc, char **argv)
                 data_ptr = get_data_ptr (field, field_name_ptr);
                 if (data_ptr == NULL)
                 {
-                    add_field(&field, field_name_ptr, comm_data.client_comm_size, melissa_options.sampling_size);
+                    add_field(&field, field_name_ptr, comm_data.client_comm_size);
                     data_ptr = get_data_ptr (field, field_name_ptr);
                     nb_fields += 1;
                 }

@@ -52,7 +52,7 @@ void compute_stats (melissa_data_t  *data,
         exit (1);
     }
 
-    if (group_id >= data->step_simu.total)
+    if (group_id >= data->step_simu.size)
     {
         bits_array_vector_push_to(&data->step_simu, group_id);
     }
