@@ -383,8 +383,8 @@ def create_simu(simu):
         parameters = str(simu.sobol_id)+":"+str(simu.rank)
         casedir = workdir+"/group"+str(simu.rank)+"/rank"+str(simu.sobol_id)
     else:
-        parameters = "0:"+str(simu.sobol_id)
-        casedir = workdir+"/group"+str(simu.sobol_id)+"/rank0"
+        parameters = "0:"+str(simu.rank)
+        casedir = workdir+"/group"+str(simu.rank)+"/rank0"
 #    os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
     if (simu.sobol_id > 0):
         os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
@@ -430,6 +430,9 @@ def create_simu(simu):
     return 0
 
 def create_study():
+    if not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS"):
+        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
+    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
     if MELISSA_STATS['sobol_indices']:
         create_run_coupling (GLOBAL_OPTIONS['working_directory'],
                              SIMULATIONS_OPTIONS['nb_nodes'],

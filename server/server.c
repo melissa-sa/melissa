@@ -156,9 +156,11 @@ int main (int argc, char **argv)
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     melissa_bind (data_puller, txt_buffer);
 
-    // === Open master port === //
+    // === Open launcher port === //
 
     sprintf (txt_buffer, "tcp://%s:5555", melissa_options.launcher_name);
+    i = 10000; // linger
+    zmq_setsockopt (python_pusher, ZMQ_LINGER, &i, sizeof(int));
     melissa_connect (python_pusher, txt_buffer);
 
     if (comm_data.rank == 0)

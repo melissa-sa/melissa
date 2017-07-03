@@ -89,7 +89,8 @@ class Messenger(Thread):
             elif message[0] == 'timeout':
                 if message[1] != '-1':
                     simu_id = int(message[1])
-                    output += 'Simulation ' + str(simu_id) + 'timeout\n'
+                    print "restarting simulation "+str(simu_id)+" (server detected timeout)"
+                    output += "restarting simulation "+str(simu_id)+" (server detected timeout)"
                     with simulations[simu_id].lock:
                         simulations[simu_id].restart()
             elif message[0] == 'simu_state':
@@ -108,7 +109,8 @@ class Messenger(Thread):
 
             if last_server > 0:
                 if (time.time() - last_server) > serv_opt['timeout']:
-                    output += 'Server ' + simu_id + 'timeout\n'
+                    print 'Server timeout'
+                    output += 'Server timeout\n'
                     with server.lock:
                         server.status = TIMEOUT
 
@@ -153,6 +155,7 @@ class Study(object):
                and all([i.status == FINISHED for i in simulations]))):
             fault_tolerance()
             time.sleep(1)
+        time.sleep(2)
         self.messenger.running_study = False
         self.state_checker.running_study = False
         self.messenger.join()
@@ -218,6 +221,8 @@ def fault_tolerance():
         for simu in [x for x in simulations if (x.status < FINISHED and
                                                 x.job_status > NOT_SUBMITTED)]:
             with simu.lock:
+                print "restarting simulation "+str(simu.rank)+" (server crash)"
+                output += "restarting simulation "+str(simu.rank)+" (server crash)\n"
                 simu.restart()
 
     for simu in [x for x in simulations if x.job_status > NOT_SUBMITTED]:
@@ -234,6 +239,7 @@ def fault_tolerance():
             if simu.status == WAITING and simu.job_status == RUNNING:
                 if time.time() - simu.start_time > simu_opt['timeout']:
                     print "elapsed time : "+str(time.time() - simu.start_time)
+                    output += "restarting simulation "+str(simu.rank)+" (launcher detected timeout)\n"
                     simu.restart()
 
 def check_options():

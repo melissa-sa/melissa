@@ -374,7 +374,7 @@ void melissa_write_options (melissa_options_t *options)
 
     f = fopen("options.save", "wb+");
 
-    fwrite(options, sizeof(*options), 1, f);
+    fwrite(options, sizeof(melissa_options_t), 1, f);
 
     fclose(f);
 }
@@ -404,7 +404,7 @@ int melissa_read_options (melissa_options_t *options)
 
     if (f != NULL)
     {
-        if (1 == fread(options, sizeof(*options), 1, f));
+        if (1 == fread(options, sizeof(melissa_options_t), 1, f));
         {
             ret = 0;
         }
