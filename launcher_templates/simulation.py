@@ -90,6 +90,7 @@ class Simulation(Job):
         else:
             print 'Error: no \'restart_simulation\' function provided'
         self.nb_restarts += 1
+        self.start_time = 0.0
 
     def check_job(self):
         """
@@ -163,6 +164,8 @@ class SobolCoupledGroup(Job):
             usr_func['restart_group'](self)
         else:
             pass
+        self.nb_restarts += 1
+        self.start_time = 0.0
 
     def check_job(self):
         """
@@ -283,12 +286,13 @@ class Server(Job):
             print 'Server crashed'
         else:
             print 'Server running'
+        self.start_time = time.time()
 
     def restart(self):
         """
             Restarts the server and the running and pennding simulations
         """
-        self.cmd_opt += ' -r ' + self.directory
+#        self.cmd_opt += ' -r ' + self.directory
         os.chdir(self.directory)
         if usr_func['restart_server']:
             usr_func['restart_server'](self)
@@ -298,10 +302,11 @@ class Server(Job):
                  ' -n ' + str(self.nproc) + ' ' +
                  serv_opt['path'] + '/server ' +
                  self.cmd_opt +
-                 ' &').split()).pid
+                 ' -r . &').split()).pid
             with self.lock:
                 self.status = WAITING
                 self.job_status = PENDING
+        self.start_time = 0.0
         self.wait_start()
 
     def check_job(self):

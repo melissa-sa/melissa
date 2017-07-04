@@ -111,11 +111,9 @@ int main( int argc, char **argv )
     t+=dt;
     filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &nb_op, &lx, &ly, &param[0]);
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon);
+    melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sample_id);
   }
 
-  n = 1;
-
-  melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sample_id);
   finalize (&dx, &dy, &nx, &ny, &nb_op, &u[0], &f[0], &sample_id);
 
   melissa_finalize ();

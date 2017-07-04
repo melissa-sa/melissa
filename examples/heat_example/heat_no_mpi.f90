@@ -63,11 +63,9 @@ program heat_no_mpi
     t = t + dt
     call filling_F(nx, ny, U, d, dx, dy, dt, t, F, nb_op, lx, ly, param)
     call conjgrad(A, F, U, nx, ny, epsilon)
-
+    call melissa_send_no_mpi(n, name, u, sobol_rank, sample_id)
   end do
 
-  n = 1
-  call melissa_send_no_mpi(n, name, u, sobol_rank, sample_id)
   call finalize(dx, dy, nx, ny, nb_op, u, f, sample_id)
 
   call melissa_finalize()

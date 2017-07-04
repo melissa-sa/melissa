@@ -554,6 +554,9 @@ def restart_simu(simu):
         os.system("kill "+str(simu.job_id))
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
     if MELISSA_STATS['sobol_indices']:
+        for j in range(STUDY_OPTIONS['nb_parameters']+2):
+            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank"+str(j)
+            os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         output = "Reboot simulation group "+str(simu.rank)+"\n"
         if (BATCH_SCHEDULER == "Slurm"):
             simu.job_id = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.rank))['out'].split()[-1]
@@ -562,6 +565,8 @@ def restart_simu(simu):
         elif (BATCH_SCHEDULER == "OAR"):
             simu.job_id = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
     else:
+        casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank0"
+        os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         output = "Reboot simulation "+str(simu.rank)+"\n"
         os.chdir("./rank0/SCRIPTS")
         if (BATCH_SCHEDULER == "Slurm"):

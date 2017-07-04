@@ -56,14 +56,19 @@ def launch_sobol_group(group):
     for simulation in group.simulations:
         launch_simu(simulation)
 
-def check_scheduler_load():
-    pass
-
 def check_job(job):
     if os.system('ps -p ' + str(job.job_id) + ' > /dev/null') == 0:
         job.job_status = 1
     else:
         job.job_status = 2
+
+def check_load():
+    time.sleep(10)
+
+def kill_job(job):
+    print 'killing job ...'
+    os.system('kill '+str(job.job_id))
+
 
 def heat_visu():
     os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example')
@@ -200,8 +205,7 @@ STUDY_OPTIONS['nb_parameters'] = 5
 STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
 STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'], float)
 STUDY_OPTIONS['sampling_size'] = 3
-STUDY_OPTIONS['max_additional_samples'] = 20
-STUDY_OPTIONS['nb_time_steps'] = 1
+STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.7
 
 SERVER_OPTIONS = {}
@@ -240,8 +244,8 @@ USER_FUNCTIONS['check_simulation_job'] = check_job
 USER_FUNCTIONS['restart_server'] = None
 USER_FUNCTIONS['restart_simulation'] = None
 USER_FUNCTIONS['restart_group'] = None
-USER_FUNCTIONS['check_scheduler_load'] = None
-USER_FUNCTIONS['cancel_job'] = None
+USER_FUNCTIONS['check_scheduler_load'] = check_load
+USER_FUNCTIONS['cancel_job'] = kill_job
 USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None
 

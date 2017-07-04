@@ -154,10 +154,9 @@ int main( int argc, char **argv )
     t+=dt;
     filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &i1, &in, &lx, &ly, &param[0]);
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon, &i1, &in, &np, &me, &next, &previous, &fcomm);
+    melissa_send (&n, field_name, u, &me, &sobol_rank, &sample_id);
   }
 
-  n = 1;
-  melissa_send (&n, field_name, u, &me, &sobol_rank, &sample_id);
   finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &sample_id);
 
   melissa_finalize ();
