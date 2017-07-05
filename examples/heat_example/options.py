@@ -63,7 +63,7 @@ def check_job(job):
         job.job_status = 2
 
 def check_load():
-    time.sleep(10)
+    time.sleep(1)
 
 def kill_job(job):
     print 'killing job ...'

@@ -6,6 +6,7 @@
 from threading import Thread
 import os
 import time
+import copy
 import imp
 import numpy as np
 from ctypes import cdll, create_string_buffer
@@ -55,7 +56,7 @@ class StateChecker(Thread):
             for simu in simulations:
                 if (simu.job_status < FINISHED and
                         simu.job_status > NOT_SUBMITTED):
-                    old_stat = simu.job_status
+                    old_stat = copy.deepcopy(simu.job_status)
                     with simu.lock:
                         simu.check_job()
                         if old_stat <= PENDING and simu.job_status == RUNNING:
