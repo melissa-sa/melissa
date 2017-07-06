@@ -180,9 +180,9 @@ int main (int argc, char **argv)
     {
         first_connect = 1;
         first_init = 0;
-        fprintf (stdout, "reading data files...");
         if (comm_data.rank == 0)
         {
+            fprintf (stdout, "reading data files...");
             read_client_data(&comm_data.client_comm_size, &client_vect_sizes, &melissa_options);
             // if client_data.save doesn't exist, we set restart to 0
         }
@@ -195,13 +195,16 @@ int main (int argc, char **argv)
         if (comm_data.rank != 0)
         {
             client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
+            fprintf (stdout, " ok \n");
+            fprintf (stdout, "reading simulation states at checkpoint time");
         }
-        fprintf (stdout, " ok \n");
-        fprintf (stdout, "reading simulation states at checkpoint time...");
         read_simu_states(simu_state, &melissa_options, &comm_data, melissa_options.sampling_size);
         for (i=0; i<melissa_options.sampling_size; i++)
         {
-            fprintf(stderr, "  simu_state[%d] = %d (rank %d)\n", i, simu_state[i], comm_data.rank);
+            if (comm_data.rank == 0)
+            {
+                fprintf(stderr, "  simu_state[%d] = %d\n", i, simu_state[i]);
+            }
             if (simu_state[i] == 2)
             {
                 nb_finished_simulations += 1;
@@ -222,7 +225,6 @@ int main (int argc, char **argv)
                 simu_state[i] = 0;
             }
         }
-        fprintf (stdout, " ok \n");
     }
 
     // === send node 0 name to launcher === //
@@ -456,9 +458,15 @@ int main (int argc, char **argv)
                 if (melissa_options.restart == 1)
                 {
                     start_read_time = melissa_get_time();
-                    fprintf (stdout, "reading checkpoint files...");
+                    if (comm_data.rank == 0)
+                    {
+                        fprintf (stdout, "reading checkpoint files...");
+                    }
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
-                    fprintf (stdout, " ok\n");
+                    if (comm_data.rank == 0)
+                    {
+                        fprintf (stdout, " ok\n");
+                    }
                     last_checkpoint_time = melissa_get_time();
                     end_read_time = melissa_get_time();
                     total_read_time += end_read_time - start_read_time;
@@ -534,7 +542,9 @@ int main (int argc, char **argv)
 //        if (iteration % 100 == 0)
         if (last_checkpoint_time  + 3 < melissa_get_time() && last_checkpoint_time > 0.1)
         {
+#ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
+#endif // BUILD_WITH_PROBES
             field_ptr fptr = field;
             while (fptr != NULL)
             {
@@ -549,9 +559,11 @@ int main (int argc, char **argv)
             }
             save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
             last_checkpoint_time = melissa_get_time();
+#ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
             fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
             total_save_time += end_save_time - start_save_time;
+#endif // BUILD_WITH_PROBES
         }
 
 
@@ -559,7 +571,9 @@ int main (int argc, char **argv)
 
         if (end_signal == SIGINT || end_signal == SIGUSR1 || end_signal == SIGUSR2)
         {
+#ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
+#endif // BUILD_WITH_PROBES
             field_ptr fptr = field;
             if (comm_data.rank == 0)
                 fprintf (stderr, "\nINTERUPTED at iteration %d \n", iteration);
@@ -582,8 +596,10 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
                 return 0;
             }
+#ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
             fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
+#endif // BUILD_WITH_PROBES
             total_save_time += end_save_time - start_save_time;
             break;
         }
@@ -630,7 +646,10 @@ int main (int argc, char **argv)
 
     if (end_signal == 0)
     {
-        finalize_field_data (field, &comm_data, &pull_data, &melissa_options, local_vect_sizes
+        finalize_field_data (field, &comm_data,
+                             &pull_data,
+                             &melissa_options,
+                             local_vect_sizes
 #ifdef BUILD_WITH_PROBES
                             , &total_write_time
 #endif // BUILD_WITH_PROBES

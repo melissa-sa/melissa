@@ -36,7 +36,13 @@ simulations = list()
 server = Server(glob_opt['working_directory'],
                 serv_opt['mpi_options'],
                 serv_opt['nb_proc'])
-output = ''
+output_str = 'month/day/hour/min/sec\n'
+
+def output(out = ''):
+    global output_str
+    date = time.localtime
+    print out
+    output_str += '['+time.asctime(time.localtime())+'] '+out+'\n'
 
 class StateChecker(Thread):
     """
@@ -60,8 +66,9 @@ class StateChecker(Thread):
                     with simu.lock:
                         simu.check_job()
                         if old_stat <= PENDING and simu.job_status == RUNNING:
+                            output('start simulation '+str(simu.rank))
                             simu.start_time = time.time()
-        print 'closing state checker process'
+        output('closing state checker process')
 
 class Messenger(Thread):
     """
@@ -74,7 +81,7 @@ class Messenger(Thread):
     def run(self):
         global simulations
         global server
-        global output
+        global output_str
         last_server = 0
         get_message.init_message()
         while self.running_study:
@@ -90,8 +97,7 @@ class Messenger(Thread):
             elif message[0] == 'timeout':
                 if message[1] != '-1':
                     simu_id = int(message[1])
-                    print "restarting simulation "+str(simu_id)+" (server detected timeout)"
-                    output += "restarting simulation "+str(simu_id)+" (server detected timeout)"
+                    output('restarting simulation '+str(simu_id)+' (server detected timeout)')
                     with simulations[simu_id].lock:
                         simulations[simu_id].restart()
                         simulations[simu_id].job_status = PENDING
@@ -102,22 +108,19 @@ class Messenger(Thread):
                 with server.lock:
                     server.status = RUNNING
                     server.node_name = message[1]
-                    print 'server node name: '+message[1]
-                    print 'server job id: '+str(server.job_id)
-                    output += 'Melissa Server node name: ' + \
-                              str(server.node_name) + '\n' +\
-                              'Melissa Server job id: ' + \
-                              str(server.job_id) + '\n'
+                    output('Melissa Server node name: ' +
+                              str(server.node_name) + '; '+
+                              'Melissa Server job id: ' +
+                              str(server.job_id))
 
             if last_server > 0:
                 if (time.time() - last_server) > serv_opt['timeout']:
-                    print 'Server timeout'
-                    output += 'Server timeout\n'
+                    output('Server timeout\n')
                     with server.lock:
                         server.status = TIMEOUT
 
         get_message.close_message()
-        print 'closing messenger thread'
+        output('closing messenger thread')
 
 
 class Study(object):
@@ -145,14 +148,17 @@ class Study(object):
             return -1
         self.create_job_lists()
         create_study()
+        output('submit server')
         server.launch()
         self.messenger.start()
         server.wait_start()
+        output('start server')
         time.sleep(2)
         self.state_checker.start()
         for simu in simulations:
             fault_tolerance()
             check_scheduler_load()
+            output('submit simulation '+str(simu.rank))
             simu.launch()
         while (server.status != FINISHED
                or any([i.status != FINISHED for i in simulations])):
@@ -203,7 +209,7 @@ def fault_tolerance():
     """
     global simulations
     global server
-    global output
+    global output_str
     sleep = False
     with server.lock:
         if server.status != RUNNING or server.job_status != RUNNING:
@@ -226,8 +232,7 @@ def fault_tolerance():
         for simu in [x for x in simulations if (x.status < FINISHED and
                                                 x.job_status > NOT_SUBMITTED)]:
             with simu.lock:
-                print "restarting simulation "+str(simu.rank)+" (server crash)"
-                output += "restarting simulation "+str(simu.rank)+" (server crash)\n"
+                output('restart simulation '+str(simu.rank)+' (server crash)')
                 simu.restart()
                 simu.job_status = PENDING
         time.sleep(2)
@@ -241,15 +246,13 @@ def fault_tolerance():
             sleep = False
             with simu.lock:
                 if simu.status <= RUNNING:
-                    print "restarting simulation "+str(simu.rank)+" (simulation crashed)"
-                    output += "restarting simulation "+str(simu.rank)+" (simulation crashed)\n"
+                    output("restart simulation "+str(simu.rank)+" (simulation crashed)")
                     simu.restart()
                     simu.job_status = PENDING
         with simu.lock:
             if simu.status == WAITING and simu.job_status == RUNNING:
                 if time.time() - simu.start_time > simu_opt['timeout']:
-                    print "elapsed time : "+str(time.time() - simu.start_time)
-                    output += "restarting simulation "+str(simu.rank)+" (launcher detected timeout)\n"
+                    output("elapsed time : "+str(time.time() - simu.start_time))
                     simu.restart()
                     simu.job_status = PENDING
     time.sleep(1)
@@ -261,28 +264,28 @@ def check_options():
     errors = 0
     nb_parameters = stdy_opt['nb_parameters']
     if not os.path.isdir(glob_opt['home_path']):
-        print 'error bad option: home_path: no such directory'
+        output('error bad option: home_path: no such directory')
         errors += 1
     if not ml_stats['sobol_indices'] and nb_parameters < 1:
-        print 'error bad option: nb_parameters too small'
+        output('error bad option: nb_parameters too small')
         errors += 1
     if ml_stats['sobol_indices'] and nb_parameters < 2:
-        print 'error bad option: nb_parameters too small'
+        output('error bad option: nb_parameters too small')
         errors += 1
     if len(stdy_opt['range_min_param']) != nb_parameters:
-        print 'error bad option: wrong dimension for range_min_param'
+        output('error bad option: wrong dimension for range_min_param')
         errors += 1
     if len(stdy_opt['range_max_param']) != nb_parameters:
-        print 'error bad option: wrong dimension for range_max_param'
+        output('error bad option: wrong dimension for range_max_param')
         errors += 1
     if stdy_opt['sampling_size'] < 2:
-        print 'error bad option: sample_size not big enough'
+        output('error bad option: sample_size not big enough')
         errors += 1
     if not os.path.isdir(serv_opt['path']):
-        print 'error bad option: server_path: no such directory'
+        output('error bad option: server_path: no such directory')
         errors += 1
     elif not os.path.isfile(serv_opt['path']+'/server'):
-        print 'error bad option: server_path: wrong directory'
+        output('error bad option: server_path: wrong directory')
         errors += 1
     return errors
 
@@ -334,10 +337,10 @@ def finalize(file_name='melissa_launcher.out'):
     """
         User defined final step
     """
-    global output
+    global output_str
     if usr_func['finalize']:
         usr_func['finalize']()
     file = open(file_name, 'w')
-    file.write(output)
+    file.write(output_str)
     file.close()
 
