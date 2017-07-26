@@ -68,6 +68,8 @@ class StateChecker(Thread):
                         if old_stat <= PENDING and simu.job_status == RUNNING:
                             output('start simulation '+str(simu.rank))
                             simu.start_time = time.time()
+                        elif old_stat <= RUNNING and simu.job_status == FINISHED:
+                            output('end simulation '+str(simu.rank))
         output('closing state checker process')
 
 class Messenger(Thread):
@@ -81,7 +83,6 @@ class Messenger(Thread):
     def run(self):
         global simulations
         global server
-        global output_str
         last_server = 0
         get_message.init_message()
         while self.running_study:
@@ -94,6 +95,7 @@ class Messenger(Thread):
             if message[0] == 'stop':
                 with server.lock:
                     server.status = FINISHED # finished
+                    output('end study')
             elif message[0] == 'timeout':
                 if message[1] != '-1':
                     simu_id = int(message[1])
@@ -115,7 +117,7 @@ class Messenger(Thread):
 
             if last_server > 0:
                 if (time.time() - last_server) > serv_opt['timeout']:
-                    output('Server timeout\n')
+                    output('server timeout\n')
                     with server.lock:
                         server.status = TIMEOUT
 
@@ -160,6 +162,7 @@ class Study(object):
             check_scheduler_load()
             output('submit simulation '+str(simu.rank))
             simu.launch()
+            simu.job_status = PENDING
         while (server.status != FINISHED
                or any([i.status != FINISHED for i in simulations])):
             fault_tolerance()
@@ -209,7 +212,6 @@ def fault_tolerance():
     """
     global simulations
     global server
-    global output_str
     sleep = False
     with server.lock:
         if server.status != RUNNING or server.job_status != RUNNING:
@@ -226,13 +228,15 @@ def fault_tolerance():
                 simu.cancel()
 #                simu.job_status = NOT_SUBMITTED
         with server.lock:
+            output('resubmit server job')
             server.restart()
             server.wait_start()
+            output('server start')
             time.sleep(1)
         for simu in [x for x in simulations if (x.status < FINISHED and
                                                 x.job_status > NOT_SUBMITTED)]:
             with simu.lock:
-                output('restart simulation '+str(simu.rank)+' (server crash)')
+                output('resubmit simulation '+str(simu.rank)+' (server crash)')
                 simu.restart()
                 simu.job_status = PENDING
         time.sleep(2)
@@ -246,13 +250,14 @@ def fault_tolerance():
             sleep = False
             with simu.lock:
                 if simu.status <= RUNNING:
-                    output("restart simulation "+str(simu.rank)+" (simulation crashed)")
+                    output("resubmit simulation "+str(simu.rank)+" (simulation crashed)")
                     simu.restart()
                     simu.job_status = PENDING
         with simu.lock:
             if simu.status == WAITING and simu.job_status == RUNNING:
                 if time.time() - simu.start_time > simu_opt['timeout']:
-                    output("elapsed time : "+str(time.time() - simu.start_time))
+                    output("resubmit simulation "+str(simu.rank)+" (launcher detected timeout)")
+#                    output("elapsed time : "+str(time.time() - simu.start_time))
                     simu.restart()
                     simu.job_status = PENDING
     time.sleep(1)

@@ -606,8 +606,7 @@ STUDY_OPTIONS['range_max_param'][2:4] = 0.1
 STUDY_OPTIONS['range_max_param'][2:4] = 0.9
 STUDY_OPTIONS['range_max_param'][4:6] = 0.001
 STUDY_OPTIONS['range_max_param'][4:6] = 0.1
-STUDY_OPTIONS['sampling_size'] = 100
-STUDY_OPTIONS['max_additional_samples'] = 20
+STUDY_OPTIONS['sampling_size'] = 1000
 STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.4
 
