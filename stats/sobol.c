@@ -11,6 +11,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#ifdef BUILD_WITH_OPENMP
+#include <omp.h>
+#endif // BUILD_WITH_OPENMP
 #include "mean.h"
 #include "variance.h"
 #include "covariance.h"
@@ -134,51 +137,46 @@ void increment_sobol_jansen (sobol_array_t *sobol_array,
 
     for (i=0; i< nb_parameters; i++)
     {
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-        for (j=0; j<vect_size; j++)
+#pragma omp parallel
         {
-            sobol_array->sobol_jansen[i].summ_a[j] += (in_vect_tab[0][j] + in_vect_tab[i+2][j])*(in_vect_tab[0][j] + in_vect_tab[i+2][j]);
-        }
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-        for (j=0; j<vect_size; j++)
-        {
-            sobol_array->sobol_jansen[i].summ_b[j] += (in_vect_tab[1][j] + in_vect_tab[i+2][j])*(in_vect_tab[1][j] + in_vect_tab[i+2][j]);
-        }
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-        for (j=0; j<vect_size; j++)
-        {
-            if (sobol_array->variance_a.variance[j] > epsylon)
+#pragma omp for nowait schedule(static)
+            for (j=0; j<vect_size; j++)
             {
-                sobol_array->sobol_jansen[i].first_order_values[j] = 1 - (sobol_array->sobol_jansen[i].summ_b[j]
-                                                                          /(2*sobol_array->iteration-1))
-                                                                          /sobol_array->variance_a.variance[j];
+                sobol_array->sobol_jansen[i].summ_a[j] += (in_vect_tab[0][j] + in_vect_tab[i+2][j])*(in_vect_tab[0][j] + in_vect_tab[i+2][j]);
             }
-            else
+#pragma omp for nowait schedule(static)
+            for (j=0; j<vect_size; j++)
             {
-                sobol_array->sobol_jansen[i].first_order_values[j] = 0;
+                sobol_array->sobol_jansen[i].summ_b[j] += (in_vect_tab[1][j] + in_vect_tab[i+2][j])*(in_vect_tab[1][j] + in_vect_tab[i+2][j]);
             }
-        }
+#pragma omp  for nowait schedule(static)
+            for (j=0; j<vect_size; j++)
+            {
+                if (sobol_array->variance_a.variance[j] > epsylon)
+                {
+                    sobol_array->sobol_jansen[i].first_order_values[j] = 1 - (sobol_array->sobol_jansen[i].summ_b[j]
+                                                                              /(2*sobol_array->iteration-1))
+                            /sobol_array->variance_a.variance[j];
+                }
+                else
+                {
+                    sobol_array->sobol_jansen[i].first_order_values[j] = 0;
+                }
+            }
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-        for (j=0; j<vect_size; j++)
-        {
-            if (sobol_array->variance_a.variance[j] > epsylon)
+#pragma omp for nowait schedule(static)
+            for (j=0; j<vect_size; j++)
             {
-                sobol_array->sobol_jansen[i].total_order_values[j] = (sobol_array->sobol_jansen[i].summ_a[j]
-                                                                      /(2*sobol_array->iteration-1))
-                                                                      /sobol_array->variance_a.variance[j];
-            }
-            else
-            {
-                sobol_array->sobol_jansen[i].total_order_values[j] = 0;
+                if (sobol_array->variance_a.variance[j] > epsylon)
+                {
+                    sobol_array->sobol_jansen[i].total_order_values[j] = (sobol_array->sobol_jansen[i].summ_a[j]
+                                                                          /(2*sobol_array->iteration-1))
+                            /sobol_array->variance_a.variance[j];
+                }
+                else
+                {
+                    sobol_array->sobol_jansen[i].total_order_values[j] = 0;
+                }
             }
         }
     }
@@ -224,37 +222,36 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
         increment_covariance (&(sobol_array->sobol_martinez[i].first_order_covariance), in_vect_tab[1], in_vect_tab[i+2], vect_size);
         increment_covariance (&(sobol_array->sobol_martinez[i].total_order_covariance), in_vect_tab[0], in_vect_tab[i+2], vect_size);
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-        for (j=0; j<vect_size; j++)
+#pragma omp parallel
         {
-            if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_b.variance[j] > epsylon)
+#pragma omp for nowait schedule(static)
+            for (j=0; j<vect_size; j++)
             {
-                sobol_array->sobol_martinez[i].first_order_values[j] = sobol_array->sobol_martinez[i].first_order_covariance.covariance[j]
-                        / ( sqrt(sobol_array->variance_b.variance[j])
-                            * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
+                if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_b.variance[j] > epsylon)
+                {
+                    sobol_array->sobol_martinez[i].first_order_values[j] = sobol_array->sobol_martinez[i].first_order_covariance.covariance[j]
+                            / ( sqrt(sobol_array->variance_b.variance[j])
+                                * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
+                }
+                else
+                {
+                    sobol_array->sobol_martinez[i].first_order_values[j] = 0;
+                }
             }
-            else
-            {
-                sobol_array->sobol_martinez[i].first_order_values[j] = 0;
-            }
-        }
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-        for (j=0; j<vect_size; j++)
-        {
-            if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_a.variance[j] > epsylon)
+#pragma omp for nowait schedule(static)
+            for (j=0; j<vect_size; j++)
             {
-                sobol_array->sobol_martinez[i].total_order_values[j] = 1.0 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[j]
-                        / ( sqrt(sobol_array->variance_a.variance[j])
-                            * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
-            }
-            else
-            {
-                sobol_array->sobol_martinez[i].total_order_values[j] = 0;
+                if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_a.variance[j] > epsylon)
+                {
+                    sobol_array->sobol_martinez[i].total_order_values[j] = 1.0 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[j]
+                            / ( sqrt(sobol_array->variance_a.variance[j])
+                                * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
+                }
+                else
+                {
+                    sobol_array->sobol_martinez[i].total_order_values[j] = 0;
+                }
             }
         }
     }

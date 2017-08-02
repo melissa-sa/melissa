@@ -10,10 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
-#include <math.h>
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP
@@ -74,14 +74,11 @@ void increment_mean (mean_t    *mean,
 
     mean->increment += 1;
 
-    #pragma omp parallel private(temp)
+#pragma omp parallel for schedule(static) private(temp)
+    for (i=0; i<vect_size; i++)
     {
-        #pragma omp for
-        for (i=0; i<vect_size; i++)
-        {
-            temp = mean->mean[i];
-            mean->mean[i] = temp + (in_vect[i] - temp)/mean->increment;
-        }
+        temp = mean->mean[i];
+        mean->mean[i] = temp + (in_vect[i] - temp)/mean->increment;
     }
 }
 
@@ -118,14 +115,11 @@ void update_mean (mean_t    *mean1,
 
     updated_mean->increment = mean2->increment + mean1->increment;
 
-    #pragma omp parallel private(delta)
+#pragma omp parallel for schedule(static) private(delta)
+    for (i=0; i<vect_size; i++)
     {
-        #pragma omp for
-        for (i=0; i<vect_size; i++)
-        {
-            delta = (mean2->mean[i] - mean1->mean[i]);
-            updated_mean->mean[i] = mean1->mean[i] + mean2->increment * delta / updated_mean->increment;
-        }
+        delta = (mean2->mean[i] - mean1->mean[i]);
+        updated_mean->mean[i] = mean1->mean[i] + mean2->increment * delta / updated_mean->increment;
     }
 }
 

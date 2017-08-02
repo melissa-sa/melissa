@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef BUILD_WITH_OPENMP
+#include <omp.h>
+#endif // BUILD_WITH_OPENMP
 #include "mean.h"
 #include "variance.h"
 #include "melissa_utils.h"
@@ -66,9 +69,7 @@ void increment_mean_and_variance (variance_t *partial_variance,
 {
     int     i;
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
+#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         double temp = partial_variance->mean_structure.mean[i];

@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#ifdef BUILD_WITH_OPENMP
+#include <omp.h>
+#endif // BUILD_WITH_OPENMP
 #include "min_max.h"
 #include "melissa_utils.h"
 
@@ -72,9 +75,7 @@ void min_and_max (min_max_t *min_max,
     else
     {
         int     i;
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             if (min_max->min[i] > in_vect[i])

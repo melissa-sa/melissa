@@ -13,6 +13,9 @@
 #ifdef BUILD_WITH_MPI
 //#include <mpi.h>
 #endif // BUILD_WITH_MPI
+#ifdef BUILD_WITH_OPENMP
+#include <omp.h>
+#endif // BUILD_WITH_OPENMP
 #include "mean.h"
 #include "variance.h"
 #include "covariance.h"
@@ -78,9 +81,7 @@ void increment_covariance (covariance_t *covariance,
     increment_mean(&(covariance->mean1), in_vect1, vect_size);
     if (covariance->increment > 0)
     {
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             covariance->covariance[i] *= (covariance->increment - 1);
@@ -124,9 +125,7 @@ void update_covariance (covariance_t *covariance1,
 
     updated_covariance->increment = covariance1->increment + covariance2->increment;
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
+#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         updated_covariance->covariance[i] = ((covariance1->increment - 1) * covariance1->covariance[i]

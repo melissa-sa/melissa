@@ -11,6 +11,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#ifdef BUILD_WITH_OPENMP
+#include <omp.h>
+#endif // BUILD_WITH_OPENMP
 #include "quantile.h"
 #include "melissa_utils.h"
 
@@ -85,9 +88,7 @@ void increment_quantile (quantile_t *quantile,
 
     if (quantile->increment > 1)
     {
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
+#pragma omp parallel for schedule(static) private(temp)
         for (i=0; i<vect_size; i++)
         {
             gamma = quantile->increment*(0.9/(nmax-1)) - 0.9/(nmax-1) +0.1;
@@ -104,9 +105,7 @@ void increment_quantile (quantile_t *quantile,
     }
     else
     {
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             quantile->quantile[i] = in_vect[i];
