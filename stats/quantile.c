@@ -83,27 +83,30 @@ void increment_quantile (quantile_t *quantile,
 
     quantile->increment += 1;
 
+    if (quantile->increment > 1)
+    {
 #ifdef BUILD_WITH_OPENMP
 #pragma omp parallel for
 #endif // BUILD_WITH_OPENMP
-    if (quantile->increment > 1)
-    {
-    for (i=0; i<vect_size; i++)
-    {
-        gamma = quantile->increment*(0.9/(nmax-1)) - 0.9/(nmax-1) +0.1;
-        if (quantile->quantile[i] >= in_vect[i])
+        for (i=0; i<vect_size; i++)
         {
-            temp = 1 - quantile->alpha;
+            gamma = quantile->increment*(0.9/(nmax-1)) - 0.9/(nmax-1) +0.1;
+            if (quantile->quantile[i] >= in_vect[i])
+            {
+                temp = 1 - quantile->alpha;
+            }
+            else
+            {
+                temp = 0 - quantile->alpha;
+            }
+            quantile->quantile[i] -= temp/pow(quantile->increment, gamma);
         }
-        else
-        {
-            temp = 0 - quantile->alpha;
-        }
-        quantile->quantile[i] -= temp/pow(quantile->increment, gamma);
-    }
     }
     else
     {
+#ifdef BUILD_WITH_OPENMP
+#pragma omp parallel for
+#endif // BUILD_WITH_OPENMP
         for (i=0; i<vect_size; i++)
         {
             quantile->quantile[i] = in_vect[i];

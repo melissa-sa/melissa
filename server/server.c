@@ -97,7 +97,7 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
     // === init MPI === //
 
-    MPI_Init (&argc, &argv);
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED , &i);
     comm_data.comm = MPI_COMM_WORLD;
     MPI_Comm_size(comm_data.comm, &comm_data.comm_size);
     MPI_Comm_rank (comm_data.comm, &comm_data.rank);

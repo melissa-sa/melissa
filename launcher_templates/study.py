@@ -38,7 +38,7 @@ server = Server(glob_opt['working_directory'],
                 serv_opt['nb_proc'])
 output_str = 'month/day/hour/min/sec\n'
 
-def output(out = ''):
+def output(out=''):
     global output_str
     date = time.localtime
     print out
@@ -111,9 +111,9 @@ class Messenger(Thread):
                     server.status = RUNNING
                     server.node_name = message[1]
                     output('Melissa Server node name: ' +
-                              str(server.node_name) + '; '+
-                              'Melissa Server job id: ' +
-                              str(server.job_id))
+                           str(server.node_name) + '; '+
+                           'Melissa Server job id: ' +
+                           str(server.job_id))
 
             if last_server > 0:
                 if (time.time() - last_server) > serv_opt['timeout']:

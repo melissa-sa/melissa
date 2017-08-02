@@ -14,6 +14,9 @@
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
 #include <math.h>
+#ifdef BUILD_WITH_OPENMP
+#include <omp.h>
+#endif // BUILD_WITH_OPENMP
 #include "mean.h"
 #include "melissa_utils.h"
 
@@ -67,16 +70,18 @@ void increment_mean (mean_t    *mean,
                      const int  vect_size)
 {
     int     i;
+    double temp;
 
     mean->increment += 1;
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-    for (i=0; i<vect_size; i++)
+    #pragma omp parallel private(temp)
     {
-        double temp = mean->mean[i];
-        mean->mean[i] = temp + (in_vect[i] - temp)/mean->increment;
+        #pragma omp for
+        for (i=0; i<vect_size; i++)
+        {
+            temp = mean->mean[i];
+            mean->mean[i] = temp + (in_vect[i] - temp)/mean->increment;
+        }
     }
 }
 
@@ -109,16 +114,18 @@ void update_mean (mean_t    *mean1,
                   const int  vect_size)
 {
     int     i;
+    double delta;
 
     updated_mean->increment = mean2->increment + mean1->increment;
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
-    for (i=0; i<vect_size; i++)
+    #pragma omp parallel private(delta)
     {
-        double delta = (mean2->mean[i] - mean1->mean[i]);
-        updated_mean->mean[i] = mean1->mean[i] + mean2->increment * delta / updated_mean->increment;
+        #pragma omp for
+        for (i=0; i<vect_size; i++)
+        {
+            delta = (mean2->mean[i] - mean1->mean[i]);
+            updated_mean->mean[i] = mean1->mean[i] + mean2->increment * delta / updated_mean->increment;
+        }
     }
 }
 
