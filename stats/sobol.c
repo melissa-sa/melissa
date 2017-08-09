@@ -149,7 +149,7 @@ void increment_sobol_jansen (sobol_array_t *sobol_array,
             {
                 sobol_array->sobol_jansen[i].summ_b[j] += (in_vect_tab[1][j] + in_vect_tab[i+2][j])*(in_vect_tab[1][j] + in_vect_tab[i+2][j]);
             }
-#pragma omp  for nowait schedule(static)
+#pragma omp for nowait schedule(static)
             for (j=0; j<vect_size; j++)
             {
                 if (sobol_array->variance_a.variance[j] > epsylon)

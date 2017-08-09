@@ -150,9 +150,7 @@ void update_variance (variance_t *variance1,
                 &updated_variance->mean_structure,
                 vect_size);
 
-#ifdef BUILD_WITH_OPENMP
-#pragma omp parallel for
-#endif // BUILD_WITH_OPENMP
+#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         double delta = (variance1->mean_structure.mean[i] - variance2->mean_structure.mean[i]);

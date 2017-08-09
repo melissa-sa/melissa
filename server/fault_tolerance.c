@@ -7,6 +7,7 @@
  **/
 
 #include "fault_tolerance.h"
+#include "zmq.h"
 
 melissa_simulation_t* add_simulation(int id, int nb_time_steps)
 {
@@ -23,7 +24,7 @@ melissa_simulation_t* add_simulation(int id, int nb_time_steps)
     return simu;
 }
 
-simu_push_to(vector_t *v,
+void simu_push_to(vector_t *v,
              int       pos,
              int       nb_time_steps)
 {

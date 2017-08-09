@@ -77,16 +77,18 @@ void increment_covariance (covariance_t *covariance,
                            const int     vect_size)
 {
     int     i;
+    int     incr = 0;
 
     increment_mean(&(covariance->mean1), in_vect1, vect_size);
+    incr = covariance->increment;
     if (covariance->increment > 0)
     {
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) firstprivate(incr)
         for (i=0; i<vect_size; i++)
         {
-            covariance->covariance[i] *= (covariance->increment - 1);
+            covariance->covariance[i] *= (incr - 1);
             covariance->covariance[i] +=  (in_vect1[i] - covariance->mean1.mean[i]) * (in_vect2[i] - covariance->mean2.mean[i]);
-            covariance->covariance[i] /= (double)(covariance->increment);
+            covariance->covariance[i] /= (double)(incr);
         }
     }
     increment_mean(&(covariance->mean2), in_vect2, vect_size);

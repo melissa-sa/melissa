@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+//#include "cblas.h"
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
@@ -71,13 +72,21 @@ void increment_mean (mean_t    *mean,
 {
     int     i;
     double temp;
+//    double *temp2;
 
     mean->increment += 1;
 
+    // test
+//    temp2 = melissa_malloc(vect_size * sizeof(double));
+//    memcpy(temp2, mean->mean, vect_size * sizeof(double));
+//    cblas_dscal(vect_size, -1.0, temp2, 1);
+//    cblas_daxpy(vect_size, 1.0, in_vect, 1, temp2, 1);
+//    cblas_daxpy(vect_size, 1.0/(double)mean->increment, temp2, 1, mean->mean, 1);
 #pragma omp parallel for schedule(static) private(temp)
     for (i=0; i<vect_size; i++)
     {
         temp = mean->mean[i];
+        // mean = temp + in_vect/increment
         mean->mean[i] = temp + (in_vect[i] - temp)/mean->increment;
     }
 }

@@ -1,6 +1,6 @@
 project(Melissa C CXX Fortran)
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.2.2)
 include(CTest)
 
 #function(find_python_module module)
@@ -40,6 +40,14 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 find_package(PkgConfig REQUIRED)
 
 find_package(PythonLibs)
+
+#find_package(BLAS REQUIRED)
+#find_path(BLAS_INCLUDE_DIRS cblas.h
+#  $ENV{BLAS_HOME}/include)
+#message(STATUS "Blas ${BLAS_FOUND} in ${BLAS_INCLUDE_DIRS} ${BLAS_LIBRARIES}")
+#include_directories( ${BLAS_INCLUDE_DIR} )
+#set(EXTRA_LIBS ${EXTRA_LIBS}
+#                 ${BLAS_LIBRARIES} )
 
 option(BUILD_EXAMPLES "Build examples" ON)
 
@@ -138,6 +146,21 @@ if(BUILD_WITH_OpenMP)
   endif(OPENMP_FOUND)
 endif(BUILD_WITH_OpenMP)
 
+include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+ExternalProject_Add(HDF5
+  URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/HDF5
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF
+)
+  set(HDF5_DIR ${CMAKE_CURRENT_BINARY_DIR}/HDF5 CACHE FORCE " ")
+  set(HDF5_LIBRARY ${HDF5_DIR}/lib/libhdf5-shared.so CACHE INTERNAL " ")
+  set(HDF5_INCLUDE_DIR ${HDF5_DIR}/include CACHE INTERNAL " ")
+  include_directories( ${HDF5_INCLUDE_DIR} )
+  set(EXTRA_LIBS ${EXTRA_LIBS}
+                 ${HDF5_LIBRARY} )
+  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HDF5_DIR}/lib/pkgconfig" )
+
+
 option(BUILD_WITH_FLOWVR "Build with FlowVR interface" OFF)
 
 if(BUILD_WITH_FLOWVR)
@@ -152,7 +175,7 @@ if(BUILD_WITH_FLOWVR)
                     ${FLOWVR_mod_LIBRARY}
                     ${CMAKE_THREAD_LIBS_INIT} )
     set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${FLOWVR_LIBS} )
+                   ${FLOWVR_LIBS})
   else(FLOWVR_FOUND)
     # Disable  Option if missing dependencies
     set(BUILD_WITH_FLOWVR FALSE CACHE BOOL "Build with FlowVR interface" FORCE)
