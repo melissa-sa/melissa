@@ -14,6 +14,7 @@
 #include "mean.h"
 #include "variance.h"
 #include "covariance.h"
+#include "melissa_utils.h"
 
 int main(int argc, char **argv)
 {
@@ -21,10 +22,12 @@ int main(int argc, char **argv)
     double       *ref_mean1 = NULL, *ref_mean2 = NULL;
     covariance_t  my_covariance;
     double       *ref_covariance;
-    int           n = 5; // n expériences
-    int           vect_size = 5; // size points de l'espace
+    int           n = 1000; // n expériences
+    int           vect_size = 100000; // size points de l'espace
     int           i, j;
     int           ret = 0;
+    double        start_time = 0;
+    double        end_time = 0;
 
     init_covariance (&my_covariance, vect_size);
     tableau1 = calloc (n * vect_size, sizeof(double));
@@ -38,7 +41,6 @@ int main(int argc, char **argv)
         tableau1[j] = rand() / (double)RAND_MAX * (1000);
         tableau2[j] = rand() / (double)RAND_MAX * (1000);
     }
-    fprintf (stdout, "ref_mean1        = ");
     for (i=0; i<vect_size; i++)
     {
         for (j=0; j<n; j++)
@@ -48,31 +50,17 @@ int main(int argc, char **argv)
         }
         ref_mean1[i] /= (double)n;
         ref_mean2[i] /= (double)n;
-        fprintf (stdout, "%g ", ref_mean1[i]);
     }
+    start_time = melissa_get_time();
     for (j=0; j<n; j++)
     {
         increment_covariance (&my_covariance, &tableau1[j * vect_size], &tableau2[j * vect_size], vect_size);
     }
-    fprintf (stdout, "\ncovariance mean1 = ");
-    for (i=0; i<vect_size; i++)
-    {
-        fprintf (stdout, "%g ", my_covariance.mean1.mean[i]);
-    }
-    fprintf (stdout, "\nref_mean2        = ");
-    for (i=0; i<vect_size; i++)
-    {
-        fprintf (stdout, "%g ", ref_mean2[i]);
-    }
-    fprintf (stdout, "\ncovariance mean2 = ");
-    for (i=0; i<vect_size; i++)
-    {
-        fprintf (stdout, "%g ", my_covariance.mean2.mean[i]);
-    }
+    end_time = melissa_get_time();
+    fprintf (stdout, "covariance time: %g\n", end_time - start_time);
 
     // covariance //
 
-    fprintf (stdout, "\nref_covariance       = ");
     for (i=0; i<vect_size; i++)
     {
         for (j=0; j<n; j++)
@@ -80,19 +68,12 @@ int main(int argc, char **argv)
             ref_covariance[i] += (tableau1[i + j*vect_size] - ref_mean1[i])*(tableau2[i + j*vect_size] - ref_mean2[i]);
         }
         ref_covariance[i] /= (n-1);
-        fprintf (stdout, "%g ", ref_covariance[i]);
     }
-    fprintf (stdout, "\niterative covariance = ");
-    for (i=0; i<vect_size; i++)
-    {
-        fprintf (stdout, "%g ", my_covariance.covariance[i]);
-    }
-    fprintf (stdout, "\n");
     for (i=0; i<vect_size; i++)
     {
         if (fabs((my_covariance.covariance[i] - ref_covariance[i])/ref_covariance[i]) > 10E-12)
         {
-            fprintf (stdout, "\ncovariance failed (%g, i=%d)\n", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
+            fprintf (stdout, "covariance failed (%g, i=%d)\n", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
             ret = 1;
         }
     }

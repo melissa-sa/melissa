@@ -15,37 +15,43 @@
 #include "variance.h"
 #include "covariance.h"
 #include "sobol.h"
+#include "melissa_utils.h"
 
 int main(int argc, char **argv)
 {
-    double        *tableau1 = NULL, *tableau2 = NULL, *tableau3 = NULL;
-    sobol_array_t sobol_indices;
-    double*        vect_tab[3];
-    int            nb_parameters = 3; // number of parameters
-    int            n = 5; // sampling size
-    int            vect_size = 5; // space size
-    int            j;
-    int            ret = 0;
+    double         *tableau = NULL;
+    sobol_array_t   sobol_indices;
+    double        **vect_tab;
+    int             nb_parameters = 3; // number of parameters
+    int             n = 1000; // sampling size
+    int             vect_size = 500000; // space size
+    int             i, j;
+    int             ret = 0;
+    double          start_time = 0;
+    double          end_time = 0;
 
     init_sobol_martinez (&sobol_indices, nb_parameters, vect_size);
-    tableau1 = calloc (n * vect_size, sizeof(double));
-    tableau2 = calloc (n * vect_size, sizeof(double));
-    tableau3 = calloc (n * vect_size, sizeof(double));
+    tableau = melissa_calloc ((nb_parameters+2) * vect_size, sizeof(double));
+    vect_tab = melissa_malloc ((nb_parameters+2) * sizeof(double*));
 
-    for (j=0; j<vect_size * n; j++)
-    {
-        tableau1[j] = rand() / (double)RAND_MAX * (1000);
-        tableau2[j] = rand() / (double)RAND_MAX * (1000);
-        tableau3[j] = rand() / (double)RAND_MAX * (1000);
-    }
     for (j=0; j<n; j++)
     {
-        vect_tab[0] = &tableau1[j*vect_size];
-        vect_tab[1] = &tableau2[j*vect_size];
-        vect_tab[2] = &tableau3[j*vect_size];
+        for (i=0; i<vect_size * (nb_parameters+2); i++)
+        {
+            tableau[i] = rand() / (double)RAND_MAX * (1000);
+        }
+        for (i=0; i<(nb_parameters+2); i++)
+        {
+            vect_tab[i] = &tableau[vect_size * i];
+        }
+        start_time = melissa_get_time();
         increment_sobol_martinez (&sobol_indices, nb_parameters, vect_tab, vect_size);
+        end_time += melissa_get_time() - start_time;
     }
+    fprintf (stdout, "Sobol time: %g\n", end_time);
 
+    melissa_free(vect_tab);
+    melissa_free(tableau);
     free_sobol_martinez (&sobol_indices, nb_parameters);
 
     return ret;

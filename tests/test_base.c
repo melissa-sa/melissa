@@ -105,8 +105,8 @@ int main (int argc, char **argv)
     int        *my_threshold_exceedance = NULL, *my_temp_exceedance = NULL;
     double     *temp_variance = NULL;
     int         i, j;
-    int         n = 5; // n expériences
-    int         vect_size = 5; // size points de l'espace
+    int         n = 500; // n expériences
+    int         vect_size = 50000; // size points de l'espace
     int         rank = 0;
 
 #ifdef BUILD_WITH_MPI
@@ -150,59 +150,59 @@ int main (int argc, char **argv)
 
 #ifndef BUILD_WITH_MPI
 
-    fprintf (stdout, "mean:                 {");
-    for (i=0; i<vect_size; i++)
-        fprintf (stdout, " %g", my_mean.mean[i]);
-    printf (" }\n");
+//    fprintf (stdout, "mean:                 {");
+//    for (i=0; i<vect_size; i++)
+//        fprintf (stdout, " %g", my_mean.mean[i]);
+//    printf (" }\n");
 
-    fprintf (stdout, "variance:             {");
-    for (i=0; i<vect_size; i++)
-        fprintf (stdout, " %g", my_variance.variance[i]);
-    printf (" }\n");
+//    fprintf (stdout, "variance:             {");
+//    for (i=0; i<vect_size; i++)
+//        fprintf (stdout, " %g", my_variance.variance[i]);
+//    printf (" }\n");
 
-    fprintf (stdout, "min:                  {");
-    for (i=0; i<vect_size; i++)
-        fprintf (stdout, " %g", my_min_and_max.min[i]);
-    printf (" }\n");
+//    fprintf (stdout, "min:                  {");
+//    for (i=0; i<vect_size; i++)
+//        fprintf (stdout, " %g", my_min_and_max.min[i]);
+//    printf (" }\n");
 
-    fprintf (stdout, "max:                  {");
-    for (i=0; i<vect_size; i++)
-        fprintf (stdout, " %g", my_min_and_max.max[i]);
-    printf (" }\n");
+//    fprintf (stdout, "max:                  {");
+//    for (i=0; i<vect_size; i++)
+//        fprintf (stdout, " %g", my_min_and_max.max[i]);
+//    printf (" }\n");
 
-    fprintf (stdout, "threshold exceedance: {");
-    for (i=0; i<vect_size; i++)
-        fprintf (stdout, " %d", my_threshold_exceedance[i]);
-    printf (" }\n");
-    printf ("\n");
+//    fprintf (stdout, "threshold exceedance: {");
+//    for (i=0; i<vect_size; i++)
+//        fprintf (stdout, " %d", my_threshold_exceedance[i]);
+//    printf (" }\n");
+//    printf ("\n");
 
 #else // BUILD_WITH_MPI
 
-    MPI_Barrier(MPI_COMM_WORLD);
+//    MPI_Barrier(MPI_COMM_WORLD);
 
-    if (rank == 0)
-        fprintf (stdout, "local mean       ");
-    d_print_vector (my_mean.mean, vect_size, rank, comm_size, MPI_COMM_WORLD);
+//    if (rank == 0)
+//        fprintf (stdout, "local mean       ");
+//    d_print_vector (my_mean.mean, vect_size, rank, comm_size, MPI_COMM_WORLD);
 
-    if (rank == 0)
-        fprintf (stdout, "local variance   ");
-    for (i=0; i<vect_size; i++)
-        temp_variance[i] = my_variance.variance[i];
-    d_print_vector (temp_variance, vect_size, rank, comm_size, MPI_COMM_WORLD);
+//    if (rank == 0)
+//        fprintf (stdout, "local variance   ");
+//    for (i=0; i<vect_size; i++)
+//        temp_variance[i] = my_variance.variance[i];
+//    d_print_vector (temp_variance, vect_size, rank, comm_size, MPI_COMM_WORLD);
 
-    if (rank == 0)
-        fprintf (stdout, "local min        ");
-    d_print_vector (my_min_and_max.min, vect_size, rank, comm_size, MPI_COMM_WORLD);
+//    if (rank == 0)
+//        fprintf (stdout, "local min        ");
+//    d_print_vector (my_min_and_max.min, vect_size, rank, comm_size, MPI_COMM_WORLD);
 
-    if (rank == 0)
-        fprintf (stdout, "local max        ");
-    d_print_vector (my_min_and_max.max, vect_size, rank, comm_size, MPI_COMM_WORLD);
+//    if (rank == 0)
+//        fprintf (stdout, "local max        ");
+//    d_print_vector (my_min_and_max.max, vect_size, rank, comm_size, MPI_COMM_WORLD);
 
-    if (rank == 0)
-        fprintf (stdout, "local exceedance ");
-    i_print_vector (my_threshold_exceedance, vect_size, rank, comm_size, MPI_COMM_WORLD);
-    if (rank == 0)
-        printf ("\n");
+//    if (rank == 0)
+//        fprintf (stdout, "local exceedance ");
+//    i_print_vector (my_threshold_exceedance, vect_size, rank, comm_size, MPI_COMM_WORLD);
+//    if (rank == 0)
+//        printf ("\n");
 
     update_global_mean(&my_mean, vect_size, rank, comm_size, MPI_COMM_WORLD);
 
@@ -218,33 +218,33 @@ int main (int argc, char **argv)
     if(rank == 0) memcpy (my_threshold_exceedance, my_temp_exceedance,  vect_size*sizeof(int));
 
 
-    if(rank == 0)
-    {
-        fprintf (stdout, "global mean:                 {");
-        for (i=0; i<vect_size; i++)
-            fprintf (stdout, " %g",my_mean.mean[i]);
-        printf (" }\n");
+//    if(rank == 0)
+//    {
+//        fprintf (stdout, "global mean:                 {");
+//        for (i=0; i<vect_size; i++)
+//            fprintf (stdout, " %g",my_mean.mean[i]);
+//        printf (" }\n");
 
-        fprintf (stdout, "global variance:             {");
-        for (i=0; i<vect_size; i++)
-            fprintf (stdout, " %g", my_variance.variance[i]);
-        printf (" }\n");
+//        fprintf (stdout, "global variance:             {");
+//        for (i=0; i<vect_size; i++)
+//            fprintf (stdout, " %g", my_variance.variance[i]);
+//        printf (" }\n");
 
-        fprintf (stdout, "global min:                  {");
-        for (i=0; i<vect_size; i++)
-            fprintf (stdout, " %g", my_min_and_max.min[i]);
-        printf (" }\n");
+//        fprintf (stdout, "global min:                  {");
+//        for (i=0; i<vect_size; i++)
+//            fprintf (stdout, " %g", my_min_and_max.min[i]);
+//        printf (" }\n");
 
-        fprintf (stdout, "global max:                  {");
-        for (i=0; i<vect_size; i++)
-            fprintf (stdout, " %g", my_min_and_max.max[i]);
-        printf (" }\n");
+//        fprintf (stdout, "global max:                  {");
+//        for (i=0; i<vect_size; i++)
+//            fprintf (stdout, " %g", my_min_and_max.max[i]);
+//        printf (" }\n");
 
-        fprintf (stdout, "global threshold exceedance: {");
-        for (i=0; i<vect_size; i++)
-            fprintf (stdout, " %d", my_threshold_exceedance[i]);
-        printf (" }\n");
-    }
+//        fprintf (stdout, "global threshold exceedance: {");
+//        for (i=0; i<vect_size; i++)
+//            fprintf (stdout, " %d", my_threshold_exceedance[i]);
+//        printf (" }\n");
+//    }
 
 #endif // BUILD_WITH_MPI
 

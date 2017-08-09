@@ -14,6 +14,7 @@
 #include "mean.h"
 #include "variance.h"
 #include "covariance.h"
+#include "melissa_utils.h"
 
 int main(int argc, char **argv)
 {
@@ -21,21 +22,22 @@ int main(int argc, char **argv)
     double       *ref_mean = NULL;
     variance_t    my_variance;
     double       *ref_variance;
-    int           n = 5; // n expériences
-    int           vect_size = 5; // size points de l'espace
+    int           n = 1000; // n expériences
+    int           vect_size = 100000; // size points de l'espace
     int           i, j;
     int           ret = 0;
+    double        start_time = 0;
+    double        end_time = 0;
 
     init_variance (&my_variance, vect_size);
-    tableau = calloc (n * vect_size, sizeof(double));
-    ref_mean = calloc (vect_size, sizeof(double));
-    ref_variance = calloc (vect_size, sizeof(double));
+    tableau = melissa_calloc (n * vect_size, sizeof(double));
+    ref_mean = melissa_calloc (vect_size, sizeof(double));
+    ref_variance = melissa_calloc (vect_size, sizeof(double));
 
     for (j=0; j<vect_size * n; j++)
     {
         tableau[j] = rand() / (double)RAND_MAX * (1000);
     }
-    fprintf (stdout, "ref_mean      = ");
     for (i=0; i<vect_size; i++)
     {
         for (j=0; j<n; j++)
@@ -43,21 +45,17 @@ int main(int argc, char **argv)
             ref_mean[i] += tableau[i + j*vect_size];
         }
         ref_mean[i] /= (double)n;
-        fprintf (stdout, "%g ", ref_mean[i]);
     }
+    start_time = melissa_get_time();
     for (j=0; j<n; j++)
     {
         increment_variance (&my_variance, &tableau[j * vect_size], vect_size);
     }
-    fprintf (stdout, "\nvariance mean = ");
-    for (i=0; i<vect_size; i++)
-    {
-        fprintf (stdout, "%g ", my_variance.mean_structure.mean[i]);
-    }
+    end_time = melissa_get_time();
+    fprintf (stdout, "variance time: %g\n", end_time - start_time);
 
     // variance //
 
-    fprintf (stdout, "\nref_variance       = ");
     for (i=0; i<vect_size; i++)
     {
         for (j=0; j<n; j++)
@@ -65,14 +63,7 @@ int main(int argc, char **argv)
             ref_variance[i] += (tableau[i + j*vect_size] - ref_mean[i])*(tableau[i + j*vect_size] - ref_mean[i]);
         }
         ref_variance[i] /= (n-1);
-        fprintf (stdout, "%g ", ref_variance[i]);
     }
-    fprintf (stdout, "\niterative variance = ");
-    for (i=0; i<vect_size; i++)
-    {
-        fprintf (stdout, "%g ", my_variance.variance[i]);
-    }
-    fprintf (stdout, "\n");
     for (i=0; i<vect_size; i++)
     {
         if (fabs((my_variance.variance[i] - ref_variance[i])/ref_variance[i]) > 10E-12)
@@ -81,5 +72,10 @@ int main(int argc, char **argv)
             ret = 1;
         }
     }
+
+    free_variance(&my_variance);
+    melissa_free(tableau);
+    melissa_free(ref_mean);
+    melissa_free(ref_variance);
     return ret;
 }
