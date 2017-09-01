@@ -84,7 +84,11 @@ int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_si
     return detected_timeouts;
 }
 
-void send_timeouts (int detected_timeouts, int *simu_timeouts, int nb_simu, char* txt_buffer, void *python_pusher)
+void send_timeouts (int   detected_timeouts,
+                    int  *simu_timeouts,
+                    int   nb_simu,
+                    char* txt_buffer,
+                    void *python_pusher)
 {
     int i;
 

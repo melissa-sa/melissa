@@ -1,9 +1,9 @@
 /**
  *
  * @file melissa_data.c
- * @brief Routines related to the stats_data structure.
+ * @brief Routines related to the melissa_data structure.
  * @author Terraz Théophile
- * @date 2016-05-24
+ * @date 2016-24-05
  *
  * @defgroup melissa_data Melissa data
  *

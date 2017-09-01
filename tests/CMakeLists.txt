@@ -2,6 +2,15 @@
 set(TESTS_LIBS ${EXTRA_LIBS}
                   m )
 
+#foreach(lang C CXX Fortran)
+#    if(CMAKE_COMPILER_IS_GNU${lang})
+#        set(TESTS_LIBS ${TESTS_LIBS}
+#                   gcov )
+#        include(CodeCoverage)
+#        setup_target_for_coverage(${PROJECT_NAME}_coverage ${PROJECT_TEST_NAME} coverage)
+#    endif()
+#endforeach()
+
 add_executable(test_base test_base.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(test_base ${TESTS_LIBS} melissa_stats)
 add_test(TestBase mpirun -np 2 ./test_base)

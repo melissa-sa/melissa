@@ -41,13 +41,15 @@ find_package(PkgConfig REQUIRED)
 
 find_package(PythonLibs)
 
-#find_package(BLAS REQUIRED)
-#find_path(BLAS_INCLUDE_DIRS cblas.h
-#  $ENV{BLAS_HOME}/include)
-#message(STATUS "Blas ${BLAS_FOUND} in ${BLAS_INCLUDE_DIRS} ${BLAS_LIBRARIES}")
-#include_directories( ${BLAS_INCLUDE_DIR} )
-#set(EXTRA_LIBS ${EXTRA_LIBS}
-#                 ${BLAS_LIBRARIES} )
+# BLAS #
+
+find_package(BLAS REQUIRED)
+find_path(BLAS_INCLUDE_DIRS cblas.h
+  $ENV{BLAS_HOME}/include)
+message(STATUS "Blas ${BLAS_FOUND} in ${BLAS_INCLUDE_DIRS} ${BLAS_LIBRARIES}")
+include_directories( ${BLAS_INCLUDE_DIR} )
+set(EXTRA_LIBS ${EXTRA_LIBS}
+                 ${BLAS_LIBRARIES} )
 
 option(BUILD_EXAMPLES "Build examples" ON)
 
@@ -93,6 +95,8 @@ else(INSTALL_ZMQ)
   pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
 endif(INSTALL_ZMQ)
 
+# MPI #
+
 option(BUILD_WITH_MPI "Build with MPI" ON)
 
 if(BUILD_WITH_MPI)
@@ -130,6 +134,8 @@ else(BUILD_WITH_MPI)
   mark_as_advanced(FORCE BUILD_EXAMPLES_WITH_MPI)
 endif(BUILD_WITH_MPI)
 
+# OpenMP #
+
 option(BUILD_WITH_OpenMP "Build with OpenMP" OFF)
 
 if(BUILD_WITH_OpenMP)
@@ -146,20 +152,23 @@ if(BUILD_WITH_OpenMP)
   endif(OPENMP_FOUND)
 endif(BUILD_WITH_OpenMP)
 
+# HDF5 #
+
 include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 ExternalProject_Add(HDF5
   URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}/HDF5
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF
 )
-  set(HDF5_DIR ${CMAKE_CURRENT_BINARY_DIR}/HDF5 CACHE FORCE " ")
-  set(HDF5_LIBRARY ${HDF5_DIR}/lib/libhdf5-shared.so CACHE INTERNAL " ")
-  set(HDF5_INCLUDE_DIR ${HDF5_DIR}/include CACHE INTERNAL " ")
-  include_directories( ${HDF5_INCLUDE_DIR} )
-  set(EXTRA_LIBS ${EXTRA_LIBS}
-                 ${HDF5_LIBRARY} )
-  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HDF5_DIR}/lib/pkgconfig" )
+set(HDF5_DIR ${CMAKE_CURRENT_BINARY_DIR}/HDF5 CACHE FORCE " ")
+set(HDF5_LIBRARY ${HDF5_DIR}/lib/libhdf5-shared.so CACHE INTERNAL " ")
+set(HDF5_INCLUDE_DIR ${HDF5_DIR}/include CACHE INTERNAL " ")
+include_directories( ${HDF5_INCLUDE_DIR} )
+set(EXTRA_LIBS ${EXTRA_LIBS}
+              ${HDF5_LIBRARY} )
+set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HDF5_DIR}/lib/pkgconfig" )
 
+# FlowVR #
 
 option(BUILD_WITH_FLOWVR "Build with FlowVR interface" OFF)
 
@@ -183,6 +192,8 @@ if(BUILD_WITH_FLOWVR)
   endif(FLOWVR_FOUND)
 endif(BUILD_WITH_FLOWVR)
 
+# Doxygen #
+
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
   option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" ON)
@@ -190,6 +201,8 @@ if(DOXYGEN_FOUND)
 else(DOXYGEN_FOUND)
   option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
 endif(DOXYGEN_FOUND)
+
+# Probes #
 
 option(BUILD_WITH_PROBES "Set probes for bench" ON)
 if(BUILD_WITH_PROBES)
@@ -235,6 +248,7 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")
 add_subdirectory(stats)
 
 set(SERVER_SRC compute_stats.c
+               melissa_fields.c
                melissa_data.c
                melissa_io.c
                melissa_options.c
@@ -242,6 +256,7 @@ set(SERVER_SRC compute_stats.c
                fault_tolerance.c)
 set(ALL_SRCS ${ALL_SRCS} ${SERVER_SRC})
 set(SERVER_H compute_stats.h
+             melissa_fields.h
              melissa_data.h
              melissa_io.h
              melissa_options.h

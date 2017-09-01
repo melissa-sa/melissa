@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     covariance_t  my_covariance;
     double       *ref_covariance;
     int           n = 1000; // n expériences
-    int           vect_size = 100000; // size points de l'espace
+    int           vect_size = 10000; // size points de l'espace
     int           i, j;
     int           ret = 0;
     double        start_time = 0;

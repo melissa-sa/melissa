@@ -204,9 +204,11 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
 STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
 STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'], float)
-STUDY_OPTIONS['sampling_size'] = 3
+STUDY_OPTIONS['sampling_size'] = 10
 STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.7
+STUDY_OPTIONS['nb_fields'] = 1
+STUDY_OPTIONS['field_names'] = "heat"
 
 SERVER_OPTIONS = {}
 SERVER_OPTIONS['nb_proc'] = 3

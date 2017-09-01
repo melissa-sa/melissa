@@ -16,6 +16,7 @@
 #include <string.h>
 #include <getopt.h>
 #include "melissa_options.h"
+#include "melissa_data.h"
 #include "melissa_utils.h"
 
 static inline void stats_usage ()
@@ -62,6 +63,7 @@ static inline void init_options (melissa_options_t *options)
     options->nb_parameters   = 0;
     options->sampling_size   = 0;
     options->nb_simu         = 0;
+    options->nb_fields         = 0;
     options->threshold       = 0.0;
     options->mean_op         = 0;
     options->variance_op     = 0;
@@ -73,6 +75,31 @@ static inline void init_options (melissa_options_t *options)
     options->restart         = 0;
     sprintf (options->restart_dir, ".");
     sprintf (options->launcher_name, "localhost");
+}
+
+void get_fields (char               *name,
+                 melissa_options_t  *options)
+{
+    const char  s[2] = ":";
+    char       *temp_char;
+
+    if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
+    {
+        stats_usage ();
+        exit (1);
+    }
+
+    /* get the first token */
+    temp_char = strtok (name, s);
+
+    /* walk through other tokens */
+    while( temp_char != NULL )
+    {
+
+        options->nb_fields += 1;
+
+        temp_char = strtok (NULL, s);
+    }
 }
 
 static inline void get_operations (char              *name,
@@ -132,7 +159,7 @@ static inline void get_operations (char              *name,
             exit (1);
         }
 
-       temp_char = strtok (NULL, s);
+        temp_char = strtok (NULL, s);
     }
 }
 
@@ -153,10 +180,11 @@ static inline void get_operations (char              *name,
 void melissa_print_options (melissa_options_t *options)
 {
     fprintf(stdout, "Options:\n");
-    fprintf(stdout, "nb_time_step = %d\n", options->nb_time_steps);
+    fprintf(stdout, "nb_time_steps = %d\n", options->nb_time_steps);
     fprintf(stdout, "nb_parameters = %d\n", options->nb_parameters);
     fprintf(stdout, "sampling_size = %d\n", options->sampling_size);
     fprintf(stdout, "nb_simu = %d\n", options->nb_simu);
+    fprintf(stdout, "nb_fields = %d\n", options->nb_fields);
     fprintf(stdout, "operations:\n");
     if (options->mean_op != 0)
         fprintf(stdout, "    mean\n");
@@ -196,7 +224,8 @@ void melissa_print_options (melissa_options_t *options)
  *
  *******************************************************************************/
 
-void melissa_get_options (int argc, char    **argv,
+void melissa_get_options (int                 argc,
+                          char              **argv,
                           melissa_options_t  *options)
 {
     int opt;
@@ -211,7 +240,7 @@ void melissa_get_options (int argc, char    **argv,
 
     do
     {
-        opt = getopt (argc, argv, "p:t:o:e:s:g:n:lhr:");
+        opt = getopt (argc, argv, "f:p:t:o:e:s:g:n:lhr:");
 
         switch (opt) {
         case 'r':
@@ -250,6 +279,9 @@ void melissa_get_options (int argc, char    **argv,
             break;
         case 'n':
             sprintf (options->launcher_name, optarg);
+            break;
+        case 'f':
+            get_fields (optarg, options);
             break;
         case 'h':
             stats_usage ();

@@ -609,6 +609,8 @@ STUDY_OPTIONS['range_max_param'][4:6] = 0.1
 STUDY_OPTIONS['sampling_size'] = 1000
 STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.4
+STUDY_OPTIONS['nb_fields'] = 1
+STUDY_OPTIONS['field_names'] = "scalar1"
 
 SERVER_OPTIONS = {}
 SERVER_OPTIONS['walltime'] = '3600'

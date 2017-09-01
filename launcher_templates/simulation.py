@@ -248,6 +248,7 @@ class Server(Job):
                                  '-s', str(stdy_opt['sampling_size']),
                                  '-t', str(stdy_opt['nb_time_steps']),
                                  '-e', str(stdy_opt['threshold_value']),
+                                 '-f', str(stdy_opt['field_names']),
                                  '-n', str(gethostname())))
 
     def launch(self):

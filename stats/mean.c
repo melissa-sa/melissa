@@ -76,7 +76,7 @@ void increment_mean (mean_t    *mean,
 
     mean->increment += 1;
 
-    // test
+//    // test
 //    temp2 = melissa_malloc(vect_size * sizeof(double));
 //    memcpy(temp2, mean->mean, vect_size * sizeof(double));
 //    cblas_dscal(vect_size, -1.0, temp2, 1);

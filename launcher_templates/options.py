@@ -19,6 +19,8 @@ STUDY_OPTIONS['sampling_size'] = 10
 STUDY_OPTIONS['max_additional_samples'] = 20
 STUDY_OPTIONS['nb_time_steps'] = 1
 STUDY_OPTIONS['threshold_value'] = 0.7
+STUDY_OPTIONS['nb_fields'] = 1
+STUDY_OPTIONS['field_names'] = "field1"
 
 SERVER_OPTIONS = {}
 SERVER_OPTIONS['nb_proc'] = 3

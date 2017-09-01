@@ -20,10 +20,11 @@
 
 struct melissa_options_s
 {
-    int                  nb_time_steps;      /**< numberb of time steps of the study                               */
+    int                  nb_time_steps;      /**< number of time steps of the study                                */
     int                  nb_parameters;      /**< nb of variables parameters of the study                          */
     int                  sampling_size;      /**< nb of randomly drawn simulation parameter sets                   */
     int                  nb_simu;            /**< nb of simulation of the study                                    */
+    int                  nb_fields;          /**< nb of fields of the simulations                                  */
     int                  mean_op;            /**< 1 if the user needs to compute the means, 0 otherwise.           */
     int                  variance_op;        /**< 1 if the user needs to compute the variances, 0 otherwise.       */
     int                  min_and_max_op;     /**< 1 if the user needs to compute min and max, 0 otherwise.         */

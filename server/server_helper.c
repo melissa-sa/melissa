@@ -140,142 +140,45 @@ void comm_n_to_m_init (int           *rcounts,
     }
 }
 
-void add_field (field_ptr *field, char* field_name, int data_size)
+int check_simu_state(melissa_field_t *field,
+                     int              nb_fields,
+                     int              group_id,
+                     int              nb_time_steps,
+                     comm_data_t     *comm_data)
 {
-    int i;
-    if (*field == NULL)
-    {
-        *field = melissa_malloc(sizeof(field_t));
-        (*field)->stats_data = melissa_malloc (data_size * sizeof(melissa_data_t));
-        for (i=0; i<data_size; i++)
-        {
-            (*field)->stats_data[i].is_valid = 0;
-        }
-        strncpy((*field)->name, field_name, MAX_FIELD_NAME);
-        (*field)->next = NULL;
-    }
-    else
-    {
-        add_field (&(*field)->next, field_name, data_size);
-    }
-}
-
-melissa_data_t* get_data_ptr (field_ptr field, char* field_name)
-{
-    if (field != NULL)
-    {
-        if (strcmp(field->name, field_name) == 0)
-        {
-            return field->stats_data;
-        }
-        else
-        {
-            return get_data_ptr (field->next, field_name);
-        }
-    }
-    return NULL;
-}
-
-int check_simu_state(field_ptr field, int simu_state, int group_id, int nb_time_steps, comm_data_t *comm_data)
-{
-    int i, t;
+    int i, j, t;
 
     if (field == NULL)
     {
-        return simu_state;
+        return 0;
     }
     else
     {
-        for (i=0; i<comm_data->client_comm_size; i++)
+        for (j=0; j<nb_fields; j++)
         {
-            if (comm_data->rcounts[i] > 0)
+            for (i=0; i<comm_data->client_comm_size; i++)
             {
-                if (field->stats_data[i].is_valid == 1)
+                if (comm_data->rcounts[i] > 0)
                 {
-                    for (t=0; t<nb_time_steps; t++)
+                    if (field[j].stats_data[i].is_valid == 1)
                     {
-                        if (test_bit (field->stats_data[i].step_simu[group_id], t) == 0)
+                        for (t=0; t<nb_time_steps; t++)
                         {
-                            return 1;
+                            if (test_bit (field->stats_data[i].step_simu[group_id], t) == 0)
+                            {
+                                return 1;
+                            }
                         }
                     }
+                    else
+                    {
+                        return 1;
+                    }
                 }
-                else
-                {
-                    return 1;
-                }
             }
         }
-        return check_simu_state(field->next, simu_state, group_id, nb_time_steps, comm_data);
     }
-}
-
-void finalize_field_data (field_ptr         field,
-                          comm_data_t       *comm_data,
-                          pull_data_t       *pull_data,
-                          melissa_options_t *options,
-                          int               *local_vect_sizes
-#ifdef BUILD_WITH_PROBES
-                          , double *total_write_time
-#endif // BUILD_WITH_PROBES
-                          )
-{
-    double start_write_time, end_write_time;
-    int i;
-    if (field == NULL)
-    {
-        return;
-    }
-    else
-    {
-        finalize_field_data (field->next, comm_data, pull_data, options, local_vect_sizes
-#ifdef BUILD_WITH_PROBES
-                             , total_write_time
-#endif // BUILD_WITH_PROBES
-                             );
-        for (i=0; i<comm_data->client_comm_size; i++)
-        {
-            if (comm_data->rcounts[i] > 0)
-            {
-                finalize_stats (&field->stats_data[i]);
-            }
-        }
-
-#ifdef BUILD_WITH_PROBES
-        start_write_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
-//        write_stats_bin (&(field->stats_data),
-//                         options,
-//                         comm_data,
-//                         local_vect_sizes,
-//                         field->name);
-        write_stats_txt (&(field->stats_data),
-                         options,
-                         comm_data,
-                         local_vect_sizes,
-                         field->name);
-//        write_stats_ensight (&(field->stats_data),
-//                             options,
-//                             comm_data,
-//                             local_vect_sizes,
-//                             field->name);
-#ifdef BUILD_WITH_PROBES
-        end_write_time = melissa_get_time();
-        *total_write_time += end_write_time - start_write_time;
-#endif // BUILD_WITH_PROBES
-
-        for (i=0; i<comm_data->client_comm_size; i++)
-        {
-            if (comm_data->rcounts[i] > 0)
-            {
-                melissa_free_data (&field->stats_data[i]);
-            }
-        }
-        melissa_free (field->stats_data);
-        melissa_free (field);
-        field = NULL;
-    }
-    return;
+    return 2;
 }
 
 long int count_mbytes_written (melissa_options_t  *options)
@@ -331,7 +234,10 @@ int string_recv (void  *socket,
  *******************************************************************************
  *
  * @param[in] field
- * pointer to a field structure
+ * array of field structures
+ *
+ * @param[in] nb_field
+ * size of field array
  *
  * @param[out] *comm_data
  * comm data structure
@@ -344,42 +250,45 @@ int string_recv (void  *socket,
  *
  *******************************************************************************/
 
-void global_confidence_sobol_martinez(field_ptr     field,
-                                      comm_data_t  *comm_data,
-                                      double       *interval1,
-                                      double       *interval_tot)
+void global_confidence_sobol_martinez(melissa_field_t *field,
+                                      int              nb_fields,
+                                      comm_data_t     *comm_data,
+                                      double          *interval1,
+                                      double          *interval_tot)
 {
-    int i, j, t, p;
+    int i, j, t, p, f;
     melissa_data_t *data;
     if (field == NULL)
     {
         return;
     }
-    global_confidence_sobol_martinez(field->next, comm_data, interval1, interval_tot);
 
-    for (i=0; i<comm_data->client_comm_size; i++)
+    for (f=0; f<nb_fields; f++)
     {
-        if (comm_data->rcounts[i] > 0)
+        for (i=0; i<comm_data->client_comm_size; i++)
         {
-            data = &(field->stats_data[i]);
-
-            for (t=0; t<data->options->nb_time_steps; t++)
+            if (comm_data->rcounts[i] > 0)
             {
-                for (p=0; p<data->options->nb_parameters; p++)
+                data = &(field[f].stats_data[i]);
+
+                for (t=0; t<data->options->nb_time_steps; t++)
                 {
-                    if (data->sobol_indices[t].iteration < 4)
+                    for (p=0; p<data->options->nb_parameters; p++)
                     {
-                        return;
-                    }
-                    for (j=0; j< data->options->nb_parameters; j++)
-                    {
-                        if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[0] > *interval1)
+                        if (data->sobol_indices[t].iteration < 4)
                         {
-                            *interval1 = data->sobol_indices[t].sobol_martinez[p].confidence_interval[0];
+                            return;
                         }
-                        if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[1] > *interval_tot)
+                        for (j=0; j< data->options->nb_parameters; j++)
                         {
-                            *interval_tot = data->sobol_indices[t].sobol_martinez[p].confidence_interval[1];
+                            if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[0] > *interval1)
+                            {
+                                *interval1 = data->sobol_indices[t].sobol_martinez[p].confidence_interval[0];
+                            }
+                            if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[1] > *interval_tot)
+                            {
+                                *interval_tot = data->sobol_indices[t].sobol_martinez[p].confidence_interval[1];
+                            }
                         }
                     }
                 }

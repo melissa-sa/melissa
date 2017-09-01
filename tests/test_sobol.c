@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     double        **vect_tab;
     int             nb_parameters = 3; // number of parameters
     int             n = 1000; // sampling size
-    int             vect_size = 500000; // space size
+    int             vect_size = 10000; // space size
     int             i, j;
     int             ret = 0;
     double          start_time = 0;

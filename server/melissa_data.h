@@ -10,6 +10,7 @@
 #define MELISSA_DATA_H
 
 #include <stdint.h>
+#include "melissa_utils.h"
 #include "melissa_options.h"
 #include "mean.h"
 #include "variance.h"
@@ -73,14 +74,14 @@ struct melissa_data_s
 //    vector_t             step_simu;                              /**< arrays of bits, size nb_groups                           */
 };
 
+typedef struct melissa_data_s melissa_data_t; /**< type corresponding to melissa_data_s */
+
 //struct simu_status_s
 //{
 //    int            simu_id;
 //    int32_t       *step_simu;
 //    simu_status_s *next;
 //};
-
-typedef struct melissa_data_s melissa_data_t; /**< type corresponding to melissa_data_s */
 
 void melissa_init_data (melissa_data_t    *data,
                         melissa_options_t *options,

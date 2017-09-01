@@ -35,7 +35,7 @@ int main (int argc, char **argv)
 {
     melissa_options_t   melissa_options;
     melissa_data_t     *data_ptr = NULL;
-    field_ptr           field = NULL;
+    melissa_field_t    *fields = NULL;
     comm_data_t         comm_data;
     int                 time_step;
     int                 recv_buff_size, i, client_rank;
@@ -52,7 +52,6 @@ int main (int argc, char **argv)
     void               *init_responder = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
     void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
-    int                 nb_fields = 0;
     int                 first_init = 1;
     int                 first_connect = 1;
     int                 get_next_message = 0;
@@ -110,7 +109,6 @@ int main (int argc, char **argv)
     {
         melissa_logo ();
     }
-    sprintf (txt_buffer, "tcp://%s:5555", melissa_options.launcher_name);
 
     // === Get the node adress === //
 
@@ -137,6 +135,9 @@ int main (int argc, char **argv)
         melissa_print_options (&melissa_options);
         melissa_write_options (&melissa_options);
     }
+
+    fields = melissa_malloc (melissa_options.nb_fields * sizeof(melissa_field_t));
+    melissa_get_fields (argc, argv, fields, melissa_options.nb_fields);
 
     nb_iterations     = melissa_options.sampling_size * melissa_options.nb_time_steps;
     last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
@@ -283,7 +284,7 @@ int main (int argc, char **argv)
                 {
                     send_timeouts (detected_timeouts,
                                    simu_timeout,
-                                   last_message_simu,
+                                   melissa_options.nb_simu,
                                    txt_buffer,
                                    python_pusher);
 // futur work
@@ -403,6 +404,9 @@ int main (int argc, char **argv)
             {
                 buff_tab_ptr = melissa_malloc (sizeof(double*));
             }
+            add_fields(fields,
+                       comm_data.client_comm_size,
+                       melissa_options.nb_fields);
             first_connect = 0;
         }
 
@@ -435,26 +439,13 @@ int main (int argc, char **argv)
             memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             field_name_ptr = buf_ptr;
-            if (field == NULL)
             {
-                add_field(&field, field_name_ptr, comm_data.client_comm_size);
-                data_ptr = get_data_ptr (field, field_name_ptr);
-                nb_fields += 1;
-                last_checkpoint_time = melissa_get_time();
-            }
-            else
-            {
-                data_ptr = get_data_ptr (field, field_name_ptr);
-                if (data_ptr == NULL)
-                {
-                    add_field(&field, field_name_ptr, comm_data.client_comm_size);
-                    data_ptr = get_data_ptr (field, field_name_ptr);
-                    nb_fields += 1;
-                }
+                data_ptr = get_data_ptr (fields, melissa_options.nb_fields, field_name_ptr);
             }
             if (data_ptr[client_rank].is_valid != 1)
             {
                 melissa_init_data (&data_ptr[client_rank], &melissa_options, comm_data.rcounts[client_rank]);
+                last_checkpoint_time = melissa_get_time();
                 if (melissa_options.restart == 1)
                 {
                     start_read_time = melissa_get_time();
@@ -500,7 +491,9 @@ int main (int argc, char **argv)
                 // === Compute classical statistics + Sobol indices === //
                 compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
                 iteration++;
-                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]), melissa_options.nb_parameters, data_ptr[client_rank].vect_size);
+                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]),
+                                           melissa_options.nb_parameters,
+                                           data_ptr[client_rank].vect_size);
                 nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
                                                                         0.01,
                                                                         melissa_options.nb_time_steps,
@@ -512,7 +505,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
 //            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
             old_simu_state = simu_state[group_id];
-            simu_state[group_id] = check_simu_state(field, 2, group_id, melissa_options.nb_time_steps, &comm_data);
+            simu_state[group_id] = check_simu_state(fields, melissa_options.nb_fields, group_id, melissa_options.nb_time_steps, &comm_data);
 
             if (simu_state[group_id] == 2)
             {
@@ -527,7 +520,7 @@ int main (int argc, char **argv)
 
             if (comm_data.rank==0 && ((iteration % 10) == 0 || iteration < 10) )
             {
-                fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*nb_fields, field_name_ptr);
+                fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*melissa_options.nb_fields, field_name_ptr);
             }
 #ifdef ZEROCOPY
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
@@ -540,22 +533,20 @@ int main (int argc, char **argv)
         }
 
 //        if (iteration % 100 == 0)
-        if (last_checkpoint_time  + 3 < melissa_get_time() && last_checkpoint_time > 0.1)
+        if (last_checkpoint_time  + 300 < melissa_get_time() && last_checkpoint_time > 0.1)
         {
 #ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-            field_ptr fptr = field;
-            while (fptr != NULL)
+            for (i=0; i<melissa_options.nb_fields; i++)
             {
-                save_stats (fptr->stats_data, &comm_data, fptr->name);
+                save_stats (fields[i].stats_data, &comm_data, fields[i].name);
                 if (comm_data.rank == 0)
                 {
                     char dir[256];
                     getcwd(dir, 256*sizeof(char));
-                    fprintf(stderr, "statistic field %s saved in %s\n", fptr->name, dir);
+                    fprintf(stderr, "statistic field %s saved in %s\n", fields[i].name, dir);
                 }
-                fptr = field->next;
             }
             save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
             last_checkpoint_time = melissa_get_time();
@@ -574,13 +565,11 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-            field_ptr fptr = field;
             if (comm_data.rank == 0)
                 fprintf (stderr, "\nINTERUPTED at iteration %d \n", iteration);
-            while (fptr != NULL)
+            for (i=0; i<melissa_options.nb_fields; i++)
             {
-                save_stats (fptr->stats_data, &comm_data, fptr->name);
-                fptr = field->next;
+                save_stats (fields[i].stats_data, &comm_data, fields[i].name);
                 if (comm_data.rank == 0)
                 {
                     char dir[256];
@@ -604,23 +593,20 @@ int main (int argc, char **argv)
             break;
         }
 
-        if (nb_fields > 0)
+        // === Send a message to the Python Launcher in case of Sobol indices convergence === //
+        if (nb_converged_fields >= melissa_options.nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
         {
-            // === Send a message to the Python Launcher in case of Sobol indices convergence === //
-            if (nb_converged_fields >= nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
-            {
-                sprintf (txt_buffer, "converged %d", comm_data.rank);
-                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-//                if (strcmp ("stop", txt_buffer))
-//                {
-                    break;
-//                }
-            }
+            sprintf (txt_buffer, "converged %d", comm_data.rank);
+            zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+            //                if (strcmp ("stop", txt_buffer))
+            //                {
+            break;
+            //                }
+        }
 
-            if (nb_finished_simulations >= melissa_options.sampling_size)
-            {
-                break;
-            }
+        if (nb_finished_simulations >= melissa_options.sampling_size)
+        {
+            break;
         }
     }
 
@@ -641,13 +627,17 @@ int main (int argc, char **argv)
     interval_tot = 0;
     if (melissa_options.sobol_op == 1)
     {
-        global_confidence_sobol_martinez (field, &comm_data, &interval1, &interval_tot);
+        global_confidence_sobol_martinez (fields,
+                                          melissa_options.nb_fields,
+                                          &comm_data,
+                                          &interval1,
+                                          &interval_tot);
     }
 
     if (end_signal == 0)
     {
-        finalize_field_data (field, &comm_data,
-                             &pull_data,
+        finalize_field_data (fields,
+                             &comm_data,
                              &melissa_options,
                              local_vect_sizes
 #ifdef BUILD_WITH_PROBES
@@ -686,7 +676,7 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
         fprintf (stdout, " --- MB recieved:                     %ld MB\n",total_mbytes_recv);
         fprintf (stdout, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
-        fprintf (stdout, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&melissa_options)*nb_fields);
+        fprintf (stdout, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&melissa_options));
         if (melissa_options.sobol_op == 1)
         {
             fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
