@@ -165,8 +165,12 @@ class SobolCoupledGroup(Job):
             Ends and restarts the Sobol group (mandatory)
         """
         if self.nb_restarts > 4:
-            print 'Simulation '+ self.rank +' crashed 5 times, drawing new parameter set'
-            self.param_set = usr_func['draw_parameter']
+            print 'Group '+ self.rank +' crashed 5 times, drawing new parameter sets'
+            self.param_set_a = usr_func['draw_parameter']
+            self.param_set_b = usr_func['draw_parameter']
+            for i in range(len(self.param_set_b)):
+                self.param_set[i+2] = numpy.copy(param_set_a)
+                self.param_set[i+2][i] = param_set_b[i]
             self.nb_restarts = -1
         if usr_func['restart_group']:
             usr_func['restart_group'](self)
@@ -251,12 +255,16 @@ class Server(Job):
         if op_str == '':
             print 'error bad option: no operation given'
             return
+        field_str = ':'.join([x for x in stdy_opt['field_names']])
+        if field_str == '':
+            print 'error bad option: no field name given'
+            return
         self.cmd_opt = ' '.join(('-o', op_str,
                                  '-p', str(stdy_opt['nb_parameters']),
                                  '-s', str(stdy_opt['sampling_size']),
                                  '-t', str(stdy_opt['nb_time_steps']),
                                  '-e', str(stdy_opt['threshold_value']),
-                                 '-f', str(stdy_opt['field_names']),
+                                 '-f', field_str,
                                  '-n', str(gethostname())))
 
     def launch(self):
