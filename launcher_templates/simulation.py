@@ -85,6 +85,10 @@ class Simulation(Job):
         """
             Kills and restarts the simulation (mandatory)
         """
+        if self.nb_restarts > 4:
+            print 'Simulation '+ self.rank +' crashed 5 times, drawing new parameter set'
+            self.param_set = usr_func['draw_parameter']
+            self.nb_restarts = 0
         if usr_func['restart_simulation']:
             usr_func['restart_simulation'](self)
         else:
@@ -160,10 +164,14 @@ class SobolCoupledGroup(Job):
         """
             Ends and restarts the Sobol group (mandatory)
         """
+        if self.nb_restarts > 4:
+            print 'Simulation '+ self.rank +' crashed 5 times, drawing new parameter set'
+            self.param_set = usr_func['draw_parameter']
+            self.nb_restarts = -1
         if usr_func['restart_group']:
             usr_func['restart_group'](self)
         else:
-            pass
+            print 'Error: no \'restart_group\' function provided'
         self.nb_restarts += 1
         self.start_time = 0.0
 
