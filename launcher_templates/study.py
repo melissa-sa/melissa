@@ -1,6 +1,6 @@
 
 """
-    Study main module jobs module
+    Study main module
 """
 
 from threading import Thread
@@ -9,6 +9,7 @@ import time
 import copy
 import imp
 import numpy as np
+import logging
 from ctypes import cdll, create_string_buffer
 from options import GLOBAL_OPTIONS as glob_opt
 from options import SERVER_OPTIONS as serv_opt
@@ -17,8 +18,8 @@ from options import SIMULATIONS_OPTIONS as simu_opt
 from options import MELISSA_STATS as ml_stats
 from options import USER_FUNCTIONS as usr_func
 imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher_templates/simulation.py')
-from simulation import Simulation
 from simulation import Server
+from simulation import SingleSimuGroup
 from simulation import SobolCoupledGroup
 from simulation import SobolMultiJobsGroup
 
@@ -32,17 +33,15 @@ from simulation import RUNNING
 from simulation import FINISHED
 from simulation import TIMEOUT
 
-simulations = list()
+logging.basicConfig(format='%(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    filename='melissa_launcher.log',
+                    filemode='w',
+                    level=logging.INFO)
+groups = list()
 server = Server(glob_opt['working_directory'],
                 serv_opt['mpi_options'],
                 serv_opt['nb_proc'])
-output_str = 'month/day/hour/min/sec\n'
-
-def output(out=''):
-    global output_str
-    date = time.localtime
-    print out
-    output_str += '['+time.asctime(time.localtime())+'] '+out+'\n'
 
 class StateChecker(Thread):
     """
@@ -53,24 +52,27 @@ class StateChecker(Thread):
         self.running_study = True
 
     def run(self):
-        global simulations
-        global server
+#        global groups
+#        global server
         while self.running_study:
             time.sleep(1)
             with server.lock:
                 server.check_job()
-            for simu in simulations:
-                if (simu.job_status < FINISHED and
-                        simu.job_status > NOT_SUBMITTED):
-                    old_stat = copy.deepcopy(simu.job_status)
-                    with simu.lock:
-                        simu.check_job()
-                        if old_stat <= PENDING and simu.job_status == RUNNING:
-                            output('start simulation '+str(simu.rank))
-                            simu.start_time = time.time()
-                        elif old_stat <= RUNNING and simu.job_status == FINISHED:
-                            output('end simulation '+str(simu.rank))
-        output('closing state checker process')
+            for group in groups:
+                for simu in group.simulations:
+                    if (simu.job_status < FINISHED and
+                            simu.job_status > NOT_SUBMITTED):
+                        stat = copy.deepcopy(simu.job_status)
+                        with simu.lock:
+                            simu.check_job()
+                            if stat <= PENDING and simu.job_status == RUNNING:
+                                logging.info('start simulation ' +
+                                             str(simu.rank))
+                                simu.start_time = time.time()
+                            elif stat <= RUNNING and simu.job_status == FINISHED:
+                                logging.info('end simulation ' + str(simu.rank)
+                                             + ' group ' + str(simu.group.rank))
+        logging.info('closing state checker process')
 
 class Messenger(Thread):
     """
@@ -81,48 +83,50 @@ class Messenger(Thread):
         self.running_study = True
 
     def run(self):
-        global simulations
-        global server
+#        global groups
+#        global server
         last_server = 0
         get_message.init_message()
         while self.running_study:
             buff = create_string_buffer('\000' * 256)
             get_message.wait_message(buff)
             if buff.value != 'nothing':
-                print 'message: '+buff.value
+                logging.debug('message: '+buff.value)
             last_server = time.time()
             message = buff.value.split()
             if message[0] == 'stop':
                 with server.lock:
                     server.status = FINISHED # finished
-                    output('end study')
+                    logging.info('end study')
             elif message[0] == 'timeout':
                 if message[1] != '-1':
-                    simu_id = int(message[1])
-                    output('restarting simulation '+str(simu_id)+' (server detected timeout)')
-                    with simulations[simu_id].lock:
-                        simulations[simu_id].restart()
-                        simulations[simu_id].job_status = PENDING
-            elif message[0] == 'simu_state':
-                with simulations[int(message[1])].lock:
-                    simulations[int(message[1])].status = int(message[2])
+                    group_id = int(message[1])
+                    logging.info('restarting group ' + str(group_id)
+                                 + ' (timeout detected by server)')
+                    with groups[group_id].lock:
+                        groups[group_id].restart()
+                        for simu in groups[group_id].simulations:
+                            simu.job_status = PENDING
+            elif message[0] == 'group_state':
+                with groups[int(message[1])].lock:
+                    groups[int(message[1])].status = int(message[2])
             elif message[0] == 'server':
                 with server.lock:
                     server.status = RUNNING
                     server.node_name = message[1]
-                    output('Melissa Server node name: ' +
-                           str(server.node_name) + '; '+
-                           'Melissa Server job id: ' +
-                           str(server.job_id))
+                    logging.info('Melissa Server node name: ' +
+                                 str(server.node_name) + '; '+
+                                 'Melissa Server job id: ' +
+                                 str(server.job_id))
 
             if last_server > 0:
                 if (time.time() - last_server) > serv_opt['timeout']:
-                    output('server timeout\n')
+                    logging.info('server timeout\n')
                     with server.lock:
                         server.status = TIMEOUT
 
         get_message.close_message()
-        output('closing messenger thread')
+        logging.info('closing messenger thread')
 
 
 class Study(object):
@@ -143,28 +147,29 @@ class Study(object):
         """
             Main study method
         """
-        global server
-        global simulations
+#        global server
+#        global groups
         os.chdir(glob_opt['working_directory'])
         if check_options() > 0:
             return -1
-        self.create_job_lists()
+        print "plop"
+        self.create_group_list()
+        print "plop"
         create_study()
-        output('submit server')
+        logging.info('submit server')
         server.launch()
         self.messenger.start()
         server.wait_start()
-        output('start server')
+        logging.info('start server')
         time.sleep(2)
         self.state_checker.start()
-        for simu in simulations:
+        for group in groups:
             fault_tolerance()
             check_scheduler_load()
-            output('submit simulation '+str(simu.rank))
-            simu.launch()
-            simu.job_status = PENDING
+            logging.info('submit group '+str(group.rank))
+            group.launch()
         while (server.status != FINISHED
-               or any([i.status != FINISHED for i in simulations])):
+               or any([i.status != FINISHED for i in groups])):
             fault_tolerance()
             time.sleep(1)
         time.sleep(2)
@@ -175,43 +180,36 @@ class Study(object):
         postprocessing()
         finalize()
 
-    def create_job_lists(self):
+    def create_group_list(self):
         """
             Job list creation
         """
-        global simulations
+        global groups
         if self.sobol and simu_opt['coupling']:
             while len(self.groups) < stdy_opt['sampling_size']:
                 self.groups.append(SobolCoupledGroup(
                     draw_parameter_set(),
                     draw_parameter_set(),
                     simu_opt['executable']))
-                self.groups[-1].create()
-            simulations = self.groups
         elif self.sobol:
             while len(self.groups) < stdy_opt['sampling_size']:
                 self.groups.append(SobolMultiJobsGroup(
                     draw_parameter_set(),
                     draw_parameter_set(),
                     simu_opt['executable']))
-                self.groups[-1].create()
-                for simu in self.groups[-1].simulations:
-                    simulations.append(simu)
-                    simu.create()
         else:
-            while len(simulations) < stdy_opt['sampling_size']:
-                simulations.append(Simulation(
-                    draw_parameter_set(),
-                    simu_opt['executable'],
-                    0))
-            simulations[-1].create()
+            while len(self.groups) < stdy_opt['sampling_size']:
+                self.groups.append(SingleSimuGroup(draw_parameter_set(),
+                                                   simu_opt['executable']))
+        self.groups[-1].create()
+        groups = self.groups
 
 def fault_tolerance():
     """
-        Compares job status and study status, restart crashed jobs
+        Compares job status and study status, restart crashed groups
     """
-    global simulations
-    global server
+#    global groups
+#    global server
     sleep = False
     with server.lock:
         if server.status != RUNNING or server.job_status != RUNNING:
@@ -221,45 +219,48 @@ def fault_tolerance():
         sleep = False
 
     if ((server.status != RUNNING or server.job_status != RUNNING)
-            and not all([i.status == FINISHED for i in simulations])):
-        for simu in [x for x in simulations if (x.status < FINISHED and
-                                                x.job_status > NOT_SUBMITTED)]:
-            with simu.lock:
-                simu.cancel()
-#                simu.job_status = NOT_SUBMITTED
+            and not all([i.status == FINISHED for i in groups])):
+        for group in groups:
+            if group.status < FINISHED and group.status > NOT_SUBMITTED:
+                with group.lock:
+                    group.cancel()
         with server.lock:
-            output('resubmit server job')
+            logging.info('resubmit server job')
             server.restart()
             server.wait_start()
-            output('server start')
+            logging.info('server start')
             time.sleep(1)
-        for simu in [x for x in simulations if (x.status < FINISHED and
-                                                x.job_status > NOT_SUBMITTED)]:
-            with simu.lock:
-                output('resubmit simulation '+str(simu.rank)+' (server crash)')
-                simu.restart()
-                simu.job_status = PENDING
+        for group in groups:
+            if group.status < FINISHED and group.status > NOT_SUBMITTED:
+                with group.lock:
+                    logging.info('resubmit group ' + str(group.rank)
+                                 + ' (server crash)')
+                    group.restart()
         time.sleep(2)
 
-    for simu in [x for x in simulations if x.job_status > NOT_SUBMITTED]:
-        with simu.lock:
-            if simu.status <= RUNNING and simu.job_status == FINISHED:
-                sleep = True
+    for group in groups:
+        if group.status > NOT_SUBMITTED and group.status < FINISHED:
+            with group.lock:
+                for simu in group.simulations:
+                    if group.status <= RUNNING and simu.job_status == FINISHED:
+                        sleep = True
+                        break
         if sleep == True:
             time.sleep(10)
             sleep = False
-            with simu.lock:
-                if simu.status <= RUNNING:
-                    output("resubmit simulation "+str(simu.rank)+" (simulation crashed)")
-                    simu.restart()
-                    simu.job_status = PENDING
-        with simu.lock:
-            if simu.status == WAITING and simu.job_status == RUNNING:
-                if time.time() - simu.start_time > simu_opt['timeout']:
-                    output("resubmit simulation "+str(simu.rank)+" (launcher detected timeout)")
-#                    output("elapsed time : "+str(time.time() - simu.start_time))
-                    simu.restart()
-                    simu.job_status = PENDING
+            with group.lock:
+                if group.status <= RUNNING:
+                    logging.info("resubmit group " + str(group.rank)
+                                 + " (simulation crashed)")
+                    group.restart()
+        with group.lock:
+            if group.status == WAITING:
+                for simu in group.simulations:
+                    if simu.job_status == RUNNING:
+                        if time.time() - simu.start_time > simu_opt['timeout']:
+                            logging.info("resubmit group " + str(simu.rank)
+                                         + " (timeout detected by launcher)")
+                            group.restart()
     time.sleep(1)
 
 def check_options():
@@ -269,28 +270,28 @@ def check_options():
     errors = 0
     nb_parameters = stdy_opt['nb_parameters']
     if not os.path.isdir(glob_opt['home_path']):
-        output('error bad option: home_path: no such directory')
+        logging.error('error bad option: home_path: no such directory')
         errors += 1
     if not ml_stats['sobol_indices'] and nb_parameters < 1:
-        output('error bad option: nb_parameters too small')
+        logging.error('error bad option: nb_parameters too small')
         errors += 1
     if ml_stats['sobol_indices'] and nb_parameters < 2:
-        output('error bad option: nb_parameters too small')
+        logging.error('error bad option: nb_parameters too small')
         errors += 1
     if len(stdy_opt['range_min_param']) != nb_parameters:
-        output('error bad option: wrong dimension for range_min_param')
+        logging.error('error bad option: wrong dimension for range_min_param')
         errors += 1
     if len(stdy_opt['range_max_param']) != nb_parameters:
-        output('error bad option: wrong dimension for range_max_param')
+        logging.error('error bad option: wrong dimension for range_max_param')
         errors += 1
     if stdy_opt['sampling_size'] < 2:
-        output('error bad option: sample_size not big enough')
+        logging.error('error bad option: sample_size not big enough')
         errors += 1
     if not os.path.isdir(serv_opt['path']):
-        output('error bad option: server_path: no such directory')
+        logging.error('error bad option: server_path: no such directory')
         errors += 1
     elif not os.path.isfile(serv_opt['path']+'/server'):
-        output('error bad option: server_path: wrong directory')
+        logging.error('error bad option: server_path: wrong directory')
         errors += 1
     return errors
 
@@ -338,14 +339,10 @@ def postprocessing():
     else:
         pass
 
-def finalize(file_name='melissa_launcher.out'):
+def finalize():
     """
         User defined final step
     """
-    global output_str
     if usr_func['finalize']:
         usr_func['finalize']()
-    file = open(file_name, 'w')
-    file.write(output_str)
-    file.close()
 

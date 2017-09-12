@@ -3,7 +3,6 @@
     user defined options
 """
 
-import json
 import numpy as np
 
 GLOBAL_OPTIONS = {}
@@ -13,8 +12,10 @@ GLOBAL_OPTIONS['working_directory'] = "/home/user/study"
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
-STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
-STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'], float)
+STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],
+                                            float)
+STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'],
+                                           float)
 STUDY_OPTIONS['sampling_size'] = 10
 STUDY_OPTIONS['max_additional_samples'] = 20
 STUDY_OPTIONS['nb_time_steps'] = 1
@@ -50,13 +51,11 @@ USER_FUNCTIONS['draw_parameter'] = np.random.uniform
 USER_FUNCTIONS['create_simulation'] = None
 USER_FUNCTIONS['create_group'] = None
 USER_FUNCTIONS['launch_simulation'] = None
-USER_FUNCTIONS['launch_group'] = None
 USER_FUNCTIONS['launch_server'] = None
 USER_FUNCTIONS['check_server_job'] = None
 USER_FUNCTIONS['check_simulation_job'] = None
 USER_FUNCTIONS['restart_server'] = None
 USER_FUNCTIONS['restart_simulation'] = None
-USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = None
 USER_FUNCTIONS['cancel_job'] = None
 USER_FUNCTIONS['postprocessing'] = None

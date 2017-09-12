@@ -514,7 +514,7 @@ int main (int argc, char **argv)
             // === Send a message to the Python master in case of simulation status update === //
             if (old_simu_state != simu_state[group_id] && comm_data.rank == 0)
             {
-                sprintf (txt_buffer, "simu_state %d %d", group_id, simu_state[group_id]);
+                sprintf (txt_buffer, "group_state %d %d", group_id, simu_state[group_id]);
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 

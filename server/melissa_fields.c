@@ -52,7 +52,6 @@ void melissa_get_fields (int               argc,
             break;
         }
     } while (opt != -1);
-    fprintf (stdout, "fini fields\n");
 }
 
 void add_fields (melissa_field_t *field,

@@ -236,7 +236,7 @@ int string_recv (void  *socket,
  * @param[in] field
  * array of field structures
  *
- * @param[in] nb_field
+ * @param[in] nb_fields
  * size of field array
  *
  * @param[out] *comm_data

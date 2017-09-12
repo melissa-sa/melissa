@@ -2,8 +2,6 @@
 """
     User defined options module
 """
-
-import json
 import os
 import time
 import numpy as np
@@ -22,39 +20,35 @@ def launch_simu(simulation):
                              '-n',
                              str(simulation.nproc),
                              './'+simulation.executable,
-                             str(simulation.sobol_id),
                              str(simulation.rank),
+                             str(simulation.group.rank),
                              ' '.join(str(i) for i in simulation.param_set)))
         print command
         simulation.job_id = subprocess.Popen(command.split()).pid
     else:
         command = ' '.join(('./'+executable,
-                            str(simulation.sobol_id),
                             str(simulation.rank),
+                            str(simulation.group.rank),
                             ' '.join(str(i) for i in simulation.param_set)))
         print command
         simulation.job_id = subprocess.Popen(command.split()).pid
 
-def launch_coupled_group(group):
+def launch_coupled_simu(simulation):
     os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example')
     command = 'mpirun '
     for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-        command += ' '.join((group.mpi_options,
+        command += ' '.join((simulation.mpi_options,
                              '-n',
-                             str(group.nproc),
-                             './'+group.executable,
+                             str(simulation.nproc),
+                             './'+simulation.executable,
                              str(i),
-                             str(group.rank),
-                             ' '.join(str(j) for j in group.param_set[i]),
+                             str(simulation.group.rank),
+                             ' '.join(str(j) for j in simulation.param_set[i]),
                              ': '))
     print command[:-2]
     group.job_id = subprocess.Popen(command[:-2].split()).pid
     while group.status < 2:
         time.sleep(1)
-
-def launch_sobol_group(group):
-    for simulation in group.simulations:
-        launch_simu(simulation)
 
 def check_job(job):
     if os.system('ps -p ' + str(job.job_id) + ' > /dev/null') == 0:
@@ -68,7 +62,6 @@ def check_load():
 def kill_job(job):
     print 'killing job ...'
     os.system('kill '+str(job.job_id))
-
 
 def heat_visu():
     os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example')
@@ -237,23 +230,16 @@ USER_FUNCTIONS['create_study'] = None
 USER_FUNCTIONS['draw_parameter'] = np.random.uniform
 USER_FUNCTIONS['create_simulation'] = None
 USER_FUNCTIONS['create_group'] = None
-USER_FUNCTIONS['launch_simulation'] = launch_simu
-USER_FUNCTIONS['launch_group'] = launch_coupled_group
+if MELISSA_STATS['sobol_indices']:
+    USER_FUNCTIONS['launch_simulation'] = launch_coupled_simu
+else:
+    USER_FUNCTIONS['launch_simulation'] = launch_simu
 USER_FUNCTIONS['launch_server'] = None
 USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_simulation_job'] = check_job
 USER_FUNCTIONS['restart_server'] = None
 USER_FUNCTIONS['restart_simulation'] = None
-USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job
 USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None
-
-#if os.path.isfile("options.json"):
-#    file=open('options.json', 'r')
-#    [str1, GLOBAL_OPTIONS,
-#     str1, SERVER_OPTIONS,
-#     str1, SIMULATIONS_OPTIONS,
-#     str1, MELISSA_STATS] = json.load(file)
-#    file.close()

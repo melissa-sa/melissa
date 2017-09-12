@@ -4,7 +4,6 @@ file(GLOB
      RELATIVE
      ${CMAKE_CURRENT_SOURCE_DIR}
      *.py
-     *.json
      )
 
 foreach( _file ${LAUNCHER_SRC})

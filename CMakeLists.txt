@@ -43,13 +43,13 @@ find_package(PythonLibs)
 
 # BLAS #
 
-find_package(BLAS REQUIRED)
-find_path(BLAS_INCLUDE_DIRS cblas.h
-  $ENV{BLAS_HOME}/include)
-message(STATUS "Blas ${BLAS_FOUND} in ${BLAS_INCLUDE_DIRS} ${BLAS_LIBRARIES}")
-include_directories( ${BLAS_INCLUDE_DIR} )
-set(EXTRA_LIBS ${EXTRA_LIBS}
-                 ${BLAS_LIBRARIES} )
+#find_package(BLAS REQUIRED)
+#find_path(BLAS_INCLUDE_DIRS cblas.h
+#  $ENV{BLAS_HOME}/include)
+#message(STATUS "Blas ${BLAS_FOUND} in ${BLAS_INCLUDE_DIRS} ${BLAS_LIBRARIES}")
+#include_directories( ${BLAS_INCLUDE_DIR} )
+#set(EXTRA_LIBS ${EXTRA_LIBS}
+#                 ${BLAS_LIBRARIES} )
 
 option(BUILD_EXAMPLES "Build examples" ON)
 

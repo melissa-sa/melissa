@@ -4,8 +4,6 @@
  * @author Terraz Théophile
  * @date 2016-09-05
  *
- * @defgroup stats_api API
- *
  **/
 
 #ifndef MELISSA_API_NO_MPI_H
