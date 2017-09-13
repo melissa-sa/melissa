@@ -46,9 +46,7 @@ def launch_coupled_simu(simulation):
                              ' '.join(str(j) for j in simulation.param_set[i]),
                              ': '))
     print command[:-2]
-    group.job_id = subprocess.Popen(command[:-2].split()).pid
-    while group.status < 2:
-        time.sleep(1)
+    simulation.job_id = subprocess.Popen(command[:-2].split()).pid
 
 def check_job(job):
     if os.system('ps -p ' + str(job.job_id) + ' > /dev/null') == 0:
@@ -197,7 +195,7 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
 STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
 STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'], float)
-STUDY_OPTIONS['sampling_size'] = 10
+STUDY_OPTIONS['sampling_size'] = 3
 STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["heat"]
@@ -223,14 +221,14 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantile'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
 USER_FUNCTIONS['draw_parameter'] = np.random.uniform
 USER_FUNCTIONS['create_simulation'] = None
 USER_FUNCTIONS['create_group'] = None
-if MELISSA_STATS['sobol_indices']:
+if MELISSA_STATS['sobol_indices'] and SIMULATIONS_OPTIONS['coupling']:
     USER_FUNCTIONS['launch_simulation'] = launch_coupled_simu
 else:
     USER_FUNCTIONS['launch_simulation'] = launch_simu

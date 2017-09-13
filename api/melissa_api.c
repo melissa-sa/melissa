@@ -362,7 +362,6 @@ void melissa_init (const int *local_vect_size,
         melissa_connect (zmq_data.connexion_requester, port_name);
         zmq_send (zmq_data.connexion_requester, zmq_data.sinit_tab, 2 * sizeof(int), 0);
         zmq_recv (zmq_data.connexion_requester, zmq_data.rinit_tab, 3 * sizeof(int), 0);
-
         sprintf (port_name, "tcp://%s:2002", server_node_name);
         melissa_connect (zmq_data.init_requester, port_name);
     }

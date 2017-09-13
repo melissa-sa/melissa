@@ -163,7 +163,6 @@ int main (int argc, char **argv)
     i = 10000; // linger
     zmq_setsockopt (python_pusher, ZMQ_LINGER, &i, sizeof(int));
     melissa_connect (python_pusher, txt_buffer);
-
     if (comm_data.rank == 0)
     {
         melissa_bind (init_responder, "tcp://*:2002");
@@ -430,6 +429,8 @@ int main (int argc, char **argv)
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
 
+            fprintf (stdout, "message !\n");
+
             memcpy(&time_step, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));
@@ -594,7 +595,10 @@ int main (int argc, char **argv)
         }
 
         // === Send a message to the Python Launcher in case of Sobol indices convergence === //
-        if (nb_converged_fields >= melissa_options.nb_fields * pull_data.local_nb_messages && melissa_options.sobol_op == 1)
+
+        if (first_connect ==0 &&
+            nb_converged_fields >= melissa_options.nb_fields * pull_data.local_nb_messages &&
+            melissa_options.sobol_op == 1)
         {
             sprintf (txt_buffer, "converged %d", comm_data.rank);
             zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);

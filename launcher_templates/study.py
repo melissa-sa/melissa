@@ -59,17 +59,17 @@ class StateChecker(Thread):
             with server.lock:
                 server.check_job()
             for group in groups:
-                for simu in group.simulations:
-                    if (simu.job_status < FINISHED and
-                            simu.job_status > NOT_SUBMITTED):
-                        stat = copy.deepcopy(simu.job_status)
-                        with simu.lock:
+                with group.lock:
+                    for simu in group.simulations:
+                        if (simu.job_status < FINISHED and
+                                simu.job_status > NOT_SUBMITTED):
+                            s = copy.deepcopy(simu.job_status)
                             simu.check_job()
-                            if stat <= PENDING and simu.job_status == RUNNING:
+                            if s <= PENDING and simu.job_status == RUNNING:
                                 logging.info('start simulation ' +
                                              str(simu.rank))
                                 simu.start_time = time.time()
-                            elif stat <= RUNNING and simu.job_status == FINISHED:
+                            elif s <= RUNNING and simu.job_status == FINISHED:
                                 logging.info('end simulation ' + str(simu.rank)
                                              + ' group ' + str(simu.group.rank))
         logging.info('closing state checker process')
@@ -152,9 +152,7 @@ class Study(object):
         os.chdir(glob_opt['working_directory'])
         if check_options() > 0:
             return -1
-        print "plop"
         self.create_group_list()
-        print "plop"
         create_study()
         logging.info('submit server')
         server.launch()
@@ -261,6 +259,7 @@ def fault_tolerance():
                             logging.info("resubmit group " + str(simu.rank)
                                          + " (timeout detected by launcher)")
                             group.restart()
+                            break
     time.sleep(1)
 
 def check_options():
