@@ -8,7 +8,7 @@ program heat_no_mpi
 
   include "melissa_api.f90"
 
-  integer :: nx, ny, n, nmax, nb_op, narg
+  integer :: nx, ny, n, nmax, vect_size, narg
   real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2
   real*8,dimension(:),pointer :: U => null(), F => null()
   real*8,dimension(3) :: A
@@ -45,28 +45,28 @@ program heat_no_mpi
 
   call read_file(nx, ny, lx, ly, d)
 
-  nb_op   = nx*ny
-  dt      = 0.01
-  nmax    = 100
-  dx      = lx/(nx+1)
-  dy      = ly/(ny+1)
-  epsilon = 0.0001
+  vect_size = nx*ny
+  dt        = 0.01
+  nmax      = 100
+  dx        = lx/(nx+1)
+  dy        = ly/(ny+1)
+  epsilon   = 0.0001
 
-  allocate(U(nb_op))
-  allocate(F(nb_op))
-  call init(U, nb_op, param(1))
+  allocate(U(vect_size))
+  allocate(F(vect_size))
+  call init(U, vect_size, param(1))
   call filling_A(d, dx, dy, dt, A) ! fill A
 
-  call melissa_init_no_mpi(nb_op, sobol_rank, sample_id)
+  call melissa_init_no_mpi(vect_size, sobol_rank, sample_id)
 
   do n=1, nmax
     t = t + dt
-    call filling_F(nx, ny, U, d, dx, dy, dt, t, F, nb_op, lx, ly, param)
+    call filling_F(nx, ny, U, d, dx, dy, dt, t, F, vect_size, lx, ly, param)
     call conjgrad(A, F, U, nx, ny, epsilon)
     call melissa_send_no_mpi(n, name, u, sobol_rank, sample_id)
   end do
 
-  call finalize(dx, dy, nx, ny, nb_op, u, f, sample_id)
+  call finalize(dx, dy, nx, ny, vect_size, u, f, sample_id)
 
   call melissa_finalize()
   

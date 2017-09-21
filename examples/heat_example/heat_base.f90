@@ -5,7 +5,7 @@ program heat
 
   implicit none
 
-  integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, nb_op, next, previous, narg
+  integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, vect_size, next, previous, narg
   integer, dimension(mpi_status_size) :: status
   real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2, temp
   real*8, dimension(:), pointer :: U => null(), F => null()
@@ -47,12 +47,12 @@ program heat
 
   call load(me, nx*ny, Np, i1, iN)
 
-  nb_op   = in-i1+1
-  dt      = 0.01
-  nmax    = 100
-  dx      = lx/(nx+1)
-  dy      = ly/(ny+1)
-  epsilon = 0.0001
+  vect_size = in-i1+1
+  dt        = 0.01
+  nmax      = 100
+  dx        = lx/(nx+1)
+  dy        = ly/(ny+1)
+  epsilon   = 0.0001
 
   allocate(U(in-i1+1))
   allocate(F(in-i1+1))

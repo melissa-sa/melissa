@@ -81,7 +81,7 @@ void finalize(double*,
 int main( int argc, char **argv )
 {
 
-  int    nx, ny, n, nmax, me, np, i1, in, nb_op, next, previous;
+  int    nx, ny, n, nmax, me, np, i1, in, vect_size, next, previous;
   double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2;
   double *u = NULL;
   double *f = NULL;
@@ -135,19 +135,19 @@ int main( int argc, char **argv )
   n = nx*ny;
   load(&me, &n, &np, &i1, &in);
 
-  nb_op   = in-i1+1;
-  dt      = 0.01;
-  nmax    = 100;
-  dx      = lx/(nx+1);
-  dy      = ly/(ny+1);
-  epsilon = 0.0001;
+  vect_size = in-i1+1;
+  dt        = 0.01;
+  nmax      = 100;
+  dx        = lx/(nx+1);
+  dy        = ly/(ny+1);
+  epsilon   = 0.0001;
 
-  u = malloc(nb_op * sizeof(double));
-  f = malloc(nb_op * sizeof(double));
+  u = malloc(vect_size * sizeof(double));
+  f = malloc(vect_size * sizeof(double));
   init(&u[0], &i1, &in, &dx, &dy, &nx, &lx, &ly, &param[0]);
   filling_A (&d, &dx, &dy, &dt, &nx, &ny, &a[0]); /* fill A */
 
-  melissa_init (&nb_op, &np, &me, &sobol_rank, &sample_id, &comm, &coupling);
+  melissa_init (&vect_size, &np, &me, &sobol_rank, &sample_id, &comm, &coupling);
 
   for(n=1; n<=nmax; n++)
   {

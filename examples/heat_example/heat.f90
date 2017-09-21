@@ -8,7 +8,7 @@ program heat
 
   include "melissa_api.f90"
 
-  integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, nb_op, next, previous, narg
+  integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, vect_size, next, previous, narg
   integer, dimension(mpi_status_size) :: status
   real*8 :: lx, ly, dt, dx, dy, d, t, epsilon, t1, t2
   real*8, dimension(:), pointer :: U => null(), F => null()
@@ -58,19 +58,19 @@ program heat
 
   call load(me, nx*ny, Np, i1, iN)
 
-  nb_op   = in-i1+1
-  dt      = 0.01
-  nmax    = 100
-  dx      = lx/(nx+1)
-  dy      = ly/(ny+1)
-  epsilon = 0.0001
+  vect_size = in-i1+1
+  dt        = 0.01
+  nmax      = 100
+  dx        = lx/(nx+1)
+  dy        = ly/(ny+1)
+  epsilon   = 0.0001
 
   allocate(U(in-i1+1))
   allocate(F(in-i1+1))
   call init(U, i1, iN, dx, dy, nx, lx, ly, param(1))
   call filling_A(d, dx, dy, dt, nx, ny, A) ! fill A
 
-  call melissa_init (nb_op, np, me, sobol_rank, sample_id, comm, coupling)
+  call melissa_init (vect_size, np, me, sobol_rank, sample_id, comm, coupling)
 
   do n=1, nmax
     t = t + dt

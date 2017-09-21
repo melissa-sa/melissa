@@ -58,7 +58,7 @@ void finalize(double*,
 int main( int argc, char **argv )
 {
 
-  int    nx, ny, n, nmax, nb_op;
+  int    nx, ny, n, nmax, vect_size;
   double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2;
   double *u = NULL;
   double *f = NULL;
@@ -92,29 +92,29 @@ int main( int argc, char **argv )
 
   read_file(&nx,&ny,&lx,&ly,&d);
 
-  nb_op   = nx*ny;
-  dt      = 0.01;
-  nmax    = 100;
-  dx      = lx/(nx+1);
-  dy      = ly/(ny+1);
-  epsilon = 0.0001;
+  vect_size = nx*ny;
+  dt        = 0.01;
+  nmax      = 100;
+  dx        = lx/(nx+1);
+  dy        = ly/(ny+1);
+  epsilon   = 0.0001;
 
-  u = malloc(nb_op * sizeof(double));
-  f = malloc(nb_op * sizeof(double));
-  init(&u[0], &nb_op, &param[0]);
+  u = malloc(vect_size * sizeof(double));
+  f = malloc(vect_size * sizeof(double));
+  init(&u[0], &vect_size, &param[0]);
   filling_A (&d, &dx, &dy, &dt, &a[0]); /* fill A */
 
-  melissa_init_no_mpi(&nb_op, &sobol_rank, &sample_id);
+  melissa_init_no_mpi(&vect_size, &sobol_rank, &sample_id);
 
   for(n=1;n<=nmax;n++)
   {
     t+=dt;
-    filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &nb_op, &lx, &ly, &param[0]);
+    filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &vect_size, &lx, &ly, &param[0]);
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon);
     melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sample_id);
   }
 
-  finalize (&dx, &dy, &nx, &ny, &nb_op, &u[0], &f[0], &sample_id);
+  finalize (&dx, &dy, &nx, &ny, &vect_size, &u[0], &f[0], &sample_id);
 
   melissa_finalize ();
 
