@@ -189,7 +189,7 @@ def heat_visu():
 GLOBAL_OPTIONS = {}
 GLOBAL_OPTIONS['home_path'] = '/home/tterraz'
 GLOBAL_OPTIONS['user_name'] = 'tterraz'
-GLOBAL_OPTIONS['working_directory'] = '/home/tterraz/avido/source/Melissa/build/examples/heat_example'
+GLOBAL_OPTIONS['working_directory'] = '/home/tterraz/avido/melissa/Melissa/build/examples/heat_example'
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
@@ -202,7 +202,7 @@ STUDY_OPTIONS['field_names'] = ["heat"]
 
 SERVER_OPTIONS = {}
 SERVER_OPTIONS['nb_proc'] = 3
-SERVER_OPTIONS['path'] = '/home/tterraz/avido/source/Melissa/build/server'
+SERVER_OPTIONS['path'] = '/home/tterraz/avido/melissa/Melissa/build/server'
 SERVER_OPTIONS['mpi_options'] = ''
 SERVER_OPTIONS['timeout'] = 600
 

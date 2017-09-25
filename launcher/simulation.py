@@ -350,8 +350,8 @@ class Server(Job):
                  '/server ' +
                  self.cmd_opt +
                  ' &').split()).pid
-            self.first_job_id = self.job_id
-            self.job_status = PENDING
+        self.first_job_id = self.job_id
+        self.job_status = PENDING
 
     def wait_start(self):
         """
@@ -384,9 +384,9 @@ class Server(Job):
                  serv_opt['path'] + '/server ' +
                  self.cmd_opt +
                  ' -r . &').split()).pid
-            with self.lock:
-                self.status = WAITING
-                self.job_status = PENDING
+        with self.lock:
+            self.status = WAITING
+            self.job_status = PENDING
         self.start_time = 0.0
         self.wait_start()
 

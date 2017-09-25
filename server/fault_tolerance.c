@@ -6,6 +6,7 @@
  *
  **/
 
+#include <string.h>
 #include "fault_tolerance.h"
 #include "zmq.h"
 

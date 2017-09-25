@@ -309,9 +309,10 @@ def draw_parameter_set():
         Draws a set of parameters using user defined function
     """
     param_set = np.zeros(stdy_opt['nb_parameters'])
-    draw_param = np.random.uniform
     if usr_func['draw_parameter']:
         draw_param = usr_func['draw_parameter']
+    else:
+        draw_param = np.random.uniform
     for i in range(stdy_opt['nb_parameters']):
         param_set[i] = draw_param(stdy_opt['range_min_param'][i],
                                   stdy_opt['range_max_param'][i])

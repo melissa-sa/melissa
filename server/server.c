@@ -429,8 +429,6 @@ int main (int argc, char **argv)
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
 
-            fprintf (stdout, "message !\n");
-
             memcpy(&time_step, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));

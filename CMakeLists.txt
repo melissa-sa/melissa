@@ -273,7 +273,7 @@ add_subdirectory(server)
 
 add_subdirectory(launcher.old)
 
-add_subdirectory(launcher_templates)
+add_subdirectory(launcher)
 
 add_subdirectory(launcher_saturne)
 
