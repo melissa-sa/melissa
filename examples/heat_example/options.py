@@ -6,11 +6,38 @@ import os
 import time
 import numpy as np
 import subprocess
+import getpass
 from matplotlib import pyplot as plt
 from matplotlib import cm
 
+USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'
+EXECUTABLE='heatc'
+NP_SIMU = 2
+NP_SERVER = 3
+SERVER_PATH = '@CMAKE_BINARY_DIR@/server'
+
+def draw_param_set():
+    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
+    for i in range(STUDY_OPTIONS['nb_parameters']):
+        param_set[i] = np.random.uniform(0, 1)
+    return param_set
+
+def launch_server(server):
+    server.job_id = subprocess.Popen(('mpirun ' +
+                                      ' -n '+str(NP_SERVER) +
+                                      ' ' + SERVER_PATH +
+                                      '/server ' +
+                                      server.cmd_opt +
+                                      ' &').split()).pid
+
+def restart_server(server):
+    server.job_id = subprocess.Popen(('mpirun ' +
+                                      ' -n ' + str(NP_SERVER) + ' ' +
+                                      SERVER_PATH + '/server ' +
+                                      server.cmd_opt +
+                                      ' -r . &').split()).pid
 
 def launch_simu(simulation):
     os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example')
@@ -18,8 +45,8 @@ def launch_simu(simulation):
         command = ' '.join(('mpirun',
                              simulation.mpi_options,
                              '-n',
-                             str(simulation.nproc),
-                             './'+simulation.executable,
+                             str(NP_SIMU),
+                             './'+EXECUTABLE,
                              str(simulation.rank),
                              str(simulation.group.rank),
                              ' '.join(str(i) for i in simulation.param_set)))
@@ -39,8 +66,8 @@ def launch_coupled_simu(simulation):
     for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
         command += ' '.join((simulation.mpi_options,
                              '-n',
-                             str(simulation.nproc),
-                             './'+simulation.executable,
+                             str(NP_SIMU),
+                             './'+EXECUTABLE,
                              str(i),
                              str(simulation.group.rank),
                              ' '.join(str(j) for j in simulation.param_set[i]),
@@ -67,18 +94,18 @@ def heat_visu():
     nb_time_steps = str(STUDY_OPTIONS['nb_time_steps'])
     matrix = np.zeros((100,100))
 
-#    for i in range(STUDY_OPTIONS['sampling_size']):
-#        fig.append(plt.figure(len(fig)))
-#        file_name = 'sol000_0000'+str(i)+'.dat'
-#        file=open(file_name)
-#        value = 0
-#        for line in file:
-#            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0][54:])
-#            value += 1
-#        plt.pcolor(matrix,cmap=cm.coolwarm)
-#        plt.colorbar().set_label('Temperature')
-#        fig[len(fig)-1].show()
-#        file.close()
+    for i in range(STUDY_OPTIONS['sampling_size']):
+        fig.append(plt.figure(len(fig)))
+        file_name = 'sol000_0000'+str(i)+'.dat'
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0][54:])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Temperature')
+        fig[len(fig)-1].show()
+        file.close()
 
     if (MELISSA_STATS['mean']):
         fig.append(plt.figure(len(fig)))
@@ -187,29 +214,21 @@ def heat_visu():
     raw_input()
 
 GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['home_path'] = '/home/tterraz'
-GLOBAL_OPTIONS['user_name'] = 'tterraz'
-GLOBAL_OPTIONS['working_directory'] = '/home/tterraz/avido/melissa/Melissa/build/examples/heat_example'
+GLOBAL_OPTIONS['home_path'] = '/home/'+USERNAME
+GLOBAL_OPTIONS['user_name'] = USERNAME
+GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example'
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5
-STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
-STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'], float)
 STUDY_OPTIONS['sampling_size'] = 3
 STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["heat"]
 
 SERVER_OPTIONS = {}
-SERVER_OPTIONS['nb_proc'] = 3
-SERVER_OPTIONS['path'] = '/home/tterraz/avido/melissa/Melissa/build/server'
-SERVER_OPTIONS['mpi_options'] = ''
 SERVER_OPTIONS['timeout'] = 600
 
 SIMULATIONS_OPTIONS = {}
-SIMULATIONS_OPTIONS['path'] = '/home/user/simu'
-SIMULATIONS_OPTIONS['executable'] = 'heatc'
-SIMULATIONS_OPTIONS['nb_proc'] = 1
 SIMULATIONS_OPTIONS['coupling'] = True
 SIMULATIONS_OPTIONS['mpi_options'] = ''
 SIMULATIONS_OPTIONS['timeout'] = 300
@@ -225,17 +244,17 @@ MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
-USER_FUNCTIONS['draw_parameter'] = np.random.uniform
+USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
 USER_FUNCTIONS['create_simulation'] = None
 USER_FUNCTIONS['create_group'] = None
 if MELISSA_STATS['sobol_indices'] and SIMULATIONS_OPTIONS['coupling']:
     USER_FUNCTIONS['launch_simulation'] = launch_coupled_simu
 else:
     USER_FUNCTIONS['launch_simulation'] = launch_simu
-USER_FUNCTIONS['launch_server'] = None
+USER_FUNCTIONS['launch_server'] = launch_server
 USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_simulation_job'] = check_job
-USER_FUNCTIONS['restart_server'] = None
+USER_FUNCTIONS['restart_server'] = restart_server
 USER_FUNCTIONS['restart_simulation'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job

@@ -17,7 +17,7 @@ from options import STUDY_OPTIONS as stdy_opt
 from options import SIMULATIONS_OPTIONS as simu_opt
 from options import MELISSA_STATS as ml_stats
 from options import USER_FUNCTIONS as usr_func
-imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher_templates/simulation.py')
+imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
 from simulation import SobolCoupledGroup
@@ -39,9 +39,7 @@ logging.basicConfig(format='%(asctime)s %(message)s',
                     filemode='w',
                     level=logging.INFO)
 groups = list()
-server = Server(glob_opt['working_directory'],
-                serv_opt['mpi_options'],
-                serv_opt['nb_proc'])
+server = Server(glob_opt['working_directory'])
 
 class StateChecker(Thread):
     """
@@ -187,18 +185,15 @@ class Study(object):
             while len(self.groups) < stdy_opt['sampling_size']:
                 self.groups.append(SobolCoupledGroup(
                     draw_parameter_set(),
-                    draw_parameter_set(),
-                    simu_opt['executable']))
+                    draw_parameter_set()))
         elif self.sobol:
             while len(self.groups) < stdy_opt['sampling_size']:
                 self.groups.append(SobolMultiJobsGroup(
                     draw_parameter_set(),
-                    draw_parameter_set(),
-                    simu_opt['executable']))
+                    draw_parameter_set()))
         else:
             while len(self.groups) < stdy_opt['sampling_size']:
-                self.groups.append(SingleSimuGroup(draw_parameter_set(),
-                                                   simu_opt['executable']))
+                self.groups.append(SingleSimuGroup(draw_parameter_set()))
         self.groups[-1].create()
         groups = self.groups
 
@@ -277,20 +272,8 @@ def check_options():
     if ml_stats['sobol_indices'] and nb_parameters < 2:
         logging.error('error bad option: nb_parameters too small')
         errors += 1
-    if len(stdy_opt['range_min_param']) != nb_parameters:
-        logging.error('error bad option: wrong dimension for range_min_param')
-        errors += 1
-    if len(stdy_opt['range_max_param']) != nb_parameters:
-        logging.error('error bad option: wrong dimension for range_max_param')
-        errors += 1
     if stdy_opt['sampling_size'] < 2:
         logging.error('error bad option: sample_size not big enough')
-        errors += 1
-    if not os.path.isdir(serv_opt['path']):
-        logging.error('error bad option: server_path: no such directory')
-        errors += 1
-    elif not os.path.isfile(serv_opt['path']+'/server'):
-        logging.error('error bad option: server_path: wrong directory')
         errors += 1
     return errors
 
@@ -308,14 +291,13 @@ def draw_parameter_set():
     """
         Draws a set of parameters using user defined function
     """
-    param_set = np.zeros(stdy_opt['nb_parameters'])
-    if usr_func['draw_parameter']:
-        draw_param = usr_func['draw_parameter']
+    if usr_func['draw_parameter_set']:
+        param_set = usr_func['draw_parameter_set']()
     else:
-        draw_param = np.random.uniform
-    for i in range(stdy_opt['nb_parameters']):
-        param_set[i] = draw_param(stdy_opt['range_min_param'][i],
-                                  stdy_opt['range_max_param'][i])
+        param_set = np.zeros(stdy_opt['nb_parameters'])
+        for i in range(stdy_opt['nb_parameters']):
+            param_set[i] = np.random.uniform(stdy_opt['range_min_param'][i],
+                                             stdy_opt['range_max_param'][i])
     return param_set
 
 

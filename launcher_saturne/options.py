@@ -335,6 +335,13 @@ def create_runcase (workdir, nodes_saturne, proc_per_node_saturne, openmp_thread
     os.system("chmod 744 run_saturne_master.sh")
 
 
+def draw_param_set():
+    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
+    for i in range(STUDY_OPTIONS['nb_parameters']):
+        param_set[i] = np.random.uniform(STUDY_OPTIONS['range_min_param'][i],
+                                         STUDY_OPTIONS['range_max_param'][i])
+    return param_set
+
 def check_job(job):
     state = 0
     if (BATCH_SCHEDULER == "OAR"):
@@ -621,8 +628,6 @@ SERVER_OPTIONS['mpi_options'] = ""
 SERVER_OPTIONS['timeout'] = 1000
 
 SIMULATIONS_OPTIONS = {}
-SIMULATIONS_OPTIONS['path'] = "/ccc/cont003/home/gen10064/terrazth/code_saturne/4.3.1/code_saturne-4.3.1/arch/Linux_x86_64/bin"
-SIMULATIONS_OPTIONS['executable'] = "code_saturne"
 SIMULATIONS_OPTIONS['walltime'] = '600'
 SIMULATIONS_OPTIONS['nb_nodes'] = 4
 SIMULATIONS_OPTIONS['nb_proc'] = 8
@@ -641,7 +646,7 @@ MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = create_study
-USER_FUNCTIONS['draw_parameter'] = np.random.uniform
+USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
 USER_FUNCTIONS['create_simulation'] = create_simu
 USER_FUNCTIONS['create_group'] = create_group
 USER_FUNCTIONS['launch_simulation'] = launch_simulation

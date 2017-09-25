@@ -35,8 +35,6 @@ class Job(object):
         self.job_status = NOT_SUBMITTED
         self.job_id = 0
         self.cmd_opt = ''
-        self.nproc = 1
-        self.executable = ''
         self.mpi_options = ''
         self.start_time = 0.0
 
@@ -102,7 +100,7 @@ class Simulation(Job):
     """
         Simulation class
     """
-    def __init__(self, param_set, executable, group, rank=0):
+    def __init__(self, param_set, group, rank=0):
         """
             Simulation constructor
         """
@@ -110,7 +108,6 @@ class Simulation(Job):
         self.rank = rank
         self.group = group
         self.param_set = param_set
-        self.executable = executable
 
     def create(self):
         """
@@ -163,7 +160,7 @@ class SingleSimuGroup(Group):
     """
     Single simulation group class
     """
-    def __init__(self, param_set, executable):
+    def __init__(self, param_set):
         """
             SingleSimuGroup constructor
         """
@@ -171,7 +168,6 @@ class SingleSimuGroup(Group):
         self.rank = Group.nb_groups
         self.param_set = numpy.copy(param_set)
         self.simulations.append(Simulation(param_set=self.param_set,
-                                           executable=executable,
                                            group=self))
 
     def restart(self):
@@ -184,7 +180,7 @@ class SingleSimuGroup(Group):
             logging.warning('Simulation ' + self.rank +
                             'crashed 5 times, drawing new parameter set')
             logging.info('old parameter set: ' + str(self.param_set))
-            self.param_set = usr_func['draw_parameter']
+            self.param_set = usr_func['draw_parameter_set']()
             logging.info('new parameter set: ' + str(self.param_set))
             self.nb_restarts = 0
             self.simulations[0].param_set = self.param_set
@@ -195,8 +191,7 @@ class SobolCoupledGroup(Group):
     """
         Sobol coupled group class
     """
-    nb_groups = 0
-    def __init__(self, param_set_a, param_set_b, executable):
+    def __init__(self, param_set_a, param_set_b):
         """
             SobolCoupledGroup constructor
         """
@@ -209,7 +204,6 @@ class SobolCoupledGroup(Group):
             self.param_set.append(numpy.copy(self.param_set[0]))
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
         self.simulations.append(Simulation(param_set=self.param_set,
-                                           executable=executable,
                                            group=self,
                                            rank=0))
     def restart(self):
@@ -224,8 +218,8 @@ class SobolCoupledGroup(Group):
                             'crashed 5 times, drawing new parameter sets')
             logging.debug('old parameter set A: ' + str(self.param_set[0]))
             logging.debug('old parameter set B: ' + str(self.param_set[1]))
-            self.param_set[0] = usr_func['draw_parameter']
-            self.param_set[1] = usr_func['draw_parameter']
+            self.param_set[0] = usr_func['draw_parameter_set']()
+            self.param_set[1] = usr_func['draw_parameter_set']()
             logging.info('new parameter set A: ' + str(self.param_set[0]))
             logging.info('new parameter set B: ' + str(self.param_set[1]))
             for i in range(len(self.param_set[0])):
@@ -240,7 +234,7 @@ class SobolMultiJobsGroup(Group):
     """
         Sobol multi job group class (not coupled)
     """
-    def __init__(self, param_set_a, param_set_b, executable):
+    def __init__(self, param_set_a, param_set_b):
         """
             SobolMultiJobsGroup constructor
         """
@@ -249,19 +243,16 @@ class SobolMultiJobsGroup(Group):
         self.param_set = list()
         self.param_set.append(numpy.copy(param_set_a))
         self.simulations.append(Simulation(param_set=self.param_set[0],
-                                           executable=executable,
                                            group=self,
                                            rank=0))
         self.param_set.append(numpy.copy(param_set_b))
         self.simulations.append(Simulation(param_set=self.param_set[1],
-                                           executable=executable,
                                            group=self,
                                            rank=1))
         for i in range(len(param_set_a)):
             self.param_set.append(numpy.copy(self.param_set[0]))
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.simulations.append(Simulation(param_set=self.param_set[i+2],
-                                               executable=executable,
                                                group=self,
                                                rank=i+2))
 
@@ -278,8 +269,8 @@ class SobolMultiJobsGroup(Group):
                             'crashed 5 times, drawing new parameter sets')
             logging.debug('old parameter set A: ' + str(self.param_set[0]))
             logging.debug('old parameter set B: ' + str(self.param_set[1]))
-            self.param_set[0] = usr_func['draw_parameter']
-            self.param_set[1] = usr_func['draw_parameter']
+            self.param_set[0] = usr_func['draw_parameter']()
+            self.param_set[1] = usr_func['draw_parameter']()
             logging.info('new parameter set A: ' + str(self.param_set[0]))
             logging.info('new parameter set B: ' + str(self.param_set[1]))
             for i in range(len(self.param_set[0])):
@@ -296,7 +287,7 @@ class Server(Job):
     """
         Server class
     """
-    def __init__(self, work_dir='./', mpi_opt='', nproc=1):
+    def __init__(self, work_dir='./'):
         """
             Server constructor
         """
@@ -305,9 +296,6 @@ class Server(Job):
         self.node_name = ''
         self.first_job_id = ''
         self.directory = work_dir
-        self.mpi_options = mpi_opt
-        self.nproc = nproc
-        self.executable = 'server'
         self.create_options()
         self.lock = RLock()
 
@@ -336,20 +324,12 @@ class Server(Job):
             Launches server job
         """
         os.chdir(self.directory)
+        logging.info('launch server')
         if usr_func['launch_server']:
             usr_func['launch_server'](self)
         else:
-            logging.info('launch server : '+'mpirun '+self.mpi_options + \
-                         ' -n '+str(self.nproc) + \
-                         ' ' + serv_opt['path'] + \
-                         '/server ' + self.cmd_opt + ' &')
-            self.job_id = subprocess.Popen(
-                ('mpirun '+self.mpi_options +
-                 ' -n '+str(self.nproc) +
-                 ' ' + serv_opt['path'] +
-                 '/server ' +
-                 self.cmd_opt +
-                 ' &').split()).pid
+            logging.error('Error: no \'launch_server\' function provided')
+            exit()
         self.first_job_id = self.job_id
         self.job_status = PENDING
 
@@ -378,12 +358,8 @@ class Server(Job):
         if usr_func['restart_server']:
             usr_func['restart_server'](self)
         else:
-            self.job_id = subprocess.Popen(
-                ('mpirun ' + self.mpi_options +
-                 ' -n ' + str(self.nproc) + ' ' +
-                 serv_opt['path'] + '/server ' +
-                 self.cmd_opt +
-                 ' -r . &').split()).pid
+            logging.error('Error: no \'launch_server\' function provided')
+            exit()
         with self.lock:
             self.status = WAITING
             self.job_status = PENDING
