@@ -80,7 +80,7 @@ int main( int argc, char **argv )
 
   for (n=0; n<4; n++)
   {
-    param[n+1] = param[0];
+    param[n+1] = 0;
     if (argc > n+4)
     {
        param[n+1] = strtod(argv[n+4], NULL);
@@ -90,14 +90,17 @@ int main( int argc, char **argv )
   ftime(&tp);
   t1 = (double)tp.time + (double)tp.millitm / 1000;
 
-  read_file(&nx,&ny,&lx,&ly,&d);
-
-  vect_size = nx*ny;
+  nx        = 100;
+  ny        = 100;
+  lx        = 10.0;
+  ly        = 10.0;
+  d         = 1.0;
   dt        = 0.01;
   nmax      = 100;
   dx        = lx/(nx+1);
   dy        = ly/(ny+1);
   epsilon   = 0.0001;
+  vect_size = nx*ny;
 
   u = malloc(vect_size * sizeof(double));
   f = malloc(vect_size * sizeof(double));

@@ -99,7 +99,7 @@ int main( int argc, char **argv )
   param[0] = strtod(argv[1], NULL);
 
   for (n=0; n<5; n++)
-    param[n+1] = param[0];
+    param[n+1] = 0;
     if (argc > n+1)
     {
        param[n] = strtod(argv[n+1], NULL);
@@ -121,17 +121,21 @@ int main( int argc, char **argv )
   if(next == np)     next=MPI_PROC_NULL;
   if(previous == -1) previous=MPI_PROC_NULL;
 
-  read_file(&nx, &ny, &lx, &ly, &d);
-
-  n = nx*ny;
-  load(&me, &n, &np, &i1, &in);
-
-  vect_size = in-i1+1;
+  nx        = 100;
+  ny        = 100;
+  lx        = 10.0;
+  ly        = 10.0;
+  d         = 1.0;
   dt        = 0.01;
   nmax      = 100;
   dx        = lx/(nx+1);
   dy        = ly/(ny+1);
   epsilon   = 0.0001;
+  n         = nx*ny;
+
+  load(&me, &n, &np, &i1, &in);
+
+  vect_size = in-i1+1;
 
   u = malloc(vect_size * sizeof(double));
   f = malloc(vect_size * sizeof(double));

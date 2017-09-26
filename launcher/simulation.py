@@ -298,6 +298,13 @@ class Server(Job):
         self.directory = work_dir
         self.create_options()
         self.lock = RLock()
+        self.path = '@CMAKE_BINARY_DIR@/server'
+
+    def write_node_name(self):
+        fichier=open("server_name.txt", "w")
+        fichier.write(self.node_name)
+        fichier.close()
+        os.system("chmod 744 server_name.txt")
 
     def create_options(self):
         """
@@ -353,12 +360,13 @@ class Server(Job):
         """
             Restarts the server
         """
-#        self.cmd_opt += ' -r ' + self.directory
+        self.cmd_opt += ' -r ' + self.directory
         os.chdir(self.directory)
         if usr_func['restart_server']:
             usr_func['restart_server'](self)
         else:
-            logging.error('Error: no \'launch_server\' function provided')
+            logging.warning('Warning: no \'restart_server\' function provided'
+                            +' using launch_server instead')
             exit()
         with self.lock:
             self.status = WAITING

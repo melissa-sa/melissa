@@ -27,13 +27,13 @@ program heat
     return
   endif
 
+  param(:) = 0
   call getarg(1, arg)
   read( arg, * ) sobol_rank ! sobol rank
   call getarg(2, arg)
   read( arg, * ) sample_id ! sobol group
   call getarg(3, arg)
   read( arg, * ) param(1) ! initial temperature
-  param(:) = param(1)
 
   do n=5, 8
     if(narg .ge. n) then
@@ -54,16 +54,20 @@ program heat
   if(next == np)     next=mpi_proc_null
   if(previous == -1) previous=mpi_proc_null
 
-  call read_file(nx, ny, lx, ly, d)
-
-  call load(me, nx*ny, Np, i1, iN)
-
-  vect_size = in-i1+1
+  nx        = 100
+  ny        = 100
+  lx        = 10.0
+  ly        = 10.0
+  d         = 1.0
   dt        = 0.01
   nmax      = 100
   dx        = lx/(nx+1)
   dy        = ly/(ny+1)
   epsilon   = 0.0001
+
+  call load(me, nx*ny, Np, i1, iN)
+
+  vect_size = in-i1+1
 
   allocate(U(in-i1+1))
   allocate(F(in-i1+1))

@@ -79,23 +79,6 @@ module heat_utils
 
 !-------------------------subroutines
 
-  subroutine read_file(nx, ny, lx, ly, d) bind (c, name = 'read_file')
-
-    implicit none
-
-    integer :: nx, ny
-    real*8  :: lx, ly, d
-
-    open(unit = 12, file = 'data.txt', action = 'read')
-    read(12, *) nx
-    read(12, *) ny
-    read(12, *) lx
-    read(12, *) ly
-    read(12, *) d
-    close(12)
-
-  end subroutine read_file
-
   subroutine load(me, n, Np, i1, iN) bind (c, name = 'load')
 
     implicit none

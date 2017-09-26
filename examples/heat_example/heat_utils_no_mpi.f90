@@ -76,23 +76,6 @@ module heat_utils_no_mpi
 
 !-------------------------subroutines
 
-  subroutine read_file(nx, ny, lx, ly, d) bind (c, name = 'read_file')
-
-    implicit none
-
-    integer :: nx, ny
-    real*8  :: lx, ly, d
-
-    open(unit = 12, file = 'data.txt', action = 'read')
-    read(12, *) nx
-    read(12, *) ny
-    read(12, *) lx
-    read(12, *) ly
-    read(12, *) d
-    close(12)
-
-  end subroutine read_file
-
   subroutine init(u0, nb_op, temp) bind (c, name = 'init')
 
     implicit none

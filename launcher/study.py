@@ -157,7 +157,8 @@ class Study(object):
         self.messenger.start()
         server.wait_start()
         logging.info('start server')
-        time.sleep(2)
+        server.write_node_name()
+#        time.sleep(2)
         self.state_checker.start()
         for group in groups:
             fault_tolerance()

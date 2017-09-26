@@ -9,6 +9,7 @@ import subprocess
 import getpass
 from matplotlib import pyplot as plt
 from matplotlib import cm
+from shutil import copyfile
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'
@@ -16,7 +17,6 @@ BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'
 EXECUTABLE='heatc'
 NP_SIMU = 2
 NP_SERVER = 3
-SERVER_PATH = '@CMAKE_BINARY_DIR@/server'
 
 def draw_param_set():
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
@@ -27,7 +27,7 @@ def draw_param_set():
 def launch_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NP_SERVER) +
-                                      ' ' + SERVER_PATH +
+                                      ' ' + server.path +
                                       '/server ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
@@ -35,9 +35,9 @@ def launch_server(server):
 def restart_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n ' + str(NP_SERVER) + ' ' +
-                                      SERVER_PATH + '/server ' +
+                                      server.path + '/server ' +
                                       server.cmd_opt +
-                                      ' -r . &').split()).pid
+                                      ' &').split()).pid
 
 def launch_simu(simulation):
     os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example')
@@ -51,6 +51,7 @@ def launch_simu(simulation):
                              str(simulation.group.rank),
                              ' '.join(str(i) for i in simulation.param_set)))
         print command
+#        copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
         simulation.job_id = subprocess.Popen(command.split()).pid
     else:
         command = ' '.join(('./'+executable,
@@ -58,6 +59,7 @@ def launch_simu(simulation):
                             str(simulation.group.rank),
                             ' '.join(str(i) for i in simulation.param_set)))
         print command
+#        copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
         simulation.job_id = subprocess.Popen(command.split()).pid
 
 def launch_coupled_simu(simulation):
@@ -73,6 +75,7 @@ def launch_coupled_simu(simulation):
                              ' '.join(str(j) for j in simulation.param_set[i]),
                              ': '))
     print command[:-2]
+#    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     simulation.job_id = subprocess.Popen(command[:-2].split()).pid
 
 def check_job(job):

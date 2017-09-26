@@ -23,6 +23,7 @@ program heat_no_mpi
     return
   endif
 
+  param(:) = 0
   call getarg(1, arg)
   print*, arg
   read( arg, * ) sobol_rank ! sobol rank
@@ -32,7 +33,6 @@ program heat_no_mpi
   call getarg(3, arg)
   read( arg, * ) param(1) ! initial temperature
   print*, arg
-  param(:) = param(1)
 
   do n=5, 8
     if(narg .ge. n) then
@@ -43,9 +43,11 @@ program heat_no_mpi
 
   call cpu_time(t1)
 
-  call read_file(nx, ny, lx, ly, d)
-
-  vect_size = nx*ny
+  nx        = 100
+  ny        = 100
+  lx        = 10.0
+  ly        = 10.0
+  d         = 1.0
   dt        = 0.01
   nmax      = 100
   dx        = lx/(nx+1)
