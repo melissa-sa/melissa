@@ -264,9 +264,6 @@ def check_options():
     """
     errors = 0
     nb_parameters = stdy_opt['nb_parameters']
-    if not os.path.isdir(glob_opt['home_path']):
-        logging.error('error bad option: home_path: no such directory')
-        errors += 1
     if not ml_stats['sobol_indices'] and nb_parameters < 1:
         logging.error('error bad option: nb_parameters too small')
         errors += 1
