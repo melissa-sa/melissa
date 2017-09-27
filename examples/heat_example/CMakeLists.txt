@@ -1,5 +1,4 @@
 
-configure_file(data.txt data.txt COPYONLY)
 configure_file(options.py options.py @ONLY)
 configure_file(heat_base.c heat_base.c COPYONLY)
 configure_file(heat_base.f90 heat_base.f90 COPYONLY)
