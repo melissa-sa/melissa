@@ -152,21 +152,21 @@ if(BUILD_WITH_OpenMP)
   endif(OPENMP_FOUND)
 endif(BUILD_WITH_OpenMP)
 
-# HDF5 #
+## HDF5 #
 
-include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
-ExternalProject_Add(HDF5
-  URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
-  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/HDF5
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF
-)
-set(HDF5_DIR ${CMAKE_CURRENT_BINARY_DIR}/HDF5 CACHE FORCE " ")
-set(HDF5_LIBRARY ${HDF5_DIR}/lib/libhdf5-shared.so CACHE INTERNAL " ")
-set(HDF5_INCLUDE_DIR ${HDF5_DIR}/include CACHE INTERNAL " ")
-include_directories( ${HDF5_INCLUDE_DIR} )
-set(EXTRA_LIBS ${EXTRA_LIBS}
-              ${HDF5_LIBRARY} )
-set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HDF5_DIR}/lib/pkgconfig" )
+#include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+#ExternalProject_Add(HDF5
+#  URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
+#  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/HDF5
+#  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF
+#)
+#set(HDF5_DIR ${CMAKE_CURRENT_BINARY_DIR}/HDF5 CACHE FORCE " ")
+#set(HDF5_LIBRARY ${HDF5_DIR}/lib/libhdf5-shared.so CACHE INTERNAL " ")
+#set(HDF5_INCLUDE_DIR ${HDF5_DIR}/include CACHE INTERNAL " ")
+#include_directories( ${HDF5_INCLUDE_DIR} )
+#set(EXTRA_LIBS ${EXTRA_LIBS}
+#              ${HDF5_LIBRARY} )
+#set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HDF5_DIR}/lib/pkgconfig" )
 
 # FlowVR #
 

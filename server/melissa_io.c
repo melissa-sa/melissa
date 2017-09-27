@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
-#include "hdf5.h"
+//#include "hdf5.h"
 #include "melissa_data.h"
 #include "melissa_utils.h"
 
@@ -381,13 +381,13 @@ void write_stats_bin (melissa_data_t    **data,
 #endif // BUILD_WITH_MPI
     char       file_name[256];
     int        max_size_time;
-// https://support.hdfgroup.org/HDF5/Tutor/parallel.html
-    /*
-     * HDF5 APIs definitions
-     */
-    hid_t   file_id;         /* file and dataset identifiers */
-    hid_t	plist_id;        /* property list identifier( access template) */
-    herr_t	status2;
+//// https://support.hdfgroup.org/HDF5/Tutor/parallel.html
+//    /*
+//     * HDF5 APIs definitions
+//     */
+//    hid_t   file_id;         /* file and dataset identifiers */
+//    hid_t	plist_id;        /* property list identifier( access template) */
+//    herr_t	status2;
 
     max_size_time=floor(log10(options->nb_time_steps))+1;
 
@@ -401,16 +401,16 @@ void write_stats_bin (melissa_data_t    **data,
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "%s_mean_%.*d", field, max_size_time, (int)t+1);
-            /*
-             * Set up file access property list with parallel I/O access
-             */
-             plist_id = H5Pcreate(H5P_FILE_ACCESS);
-             H5Pset_fapl_mpio(plist_id, comm_data->comm, info);
+//            /*
+//             * Set up file access property list with parallel I/O access
+//             */
+//             plist_id = H5Pcreate(H5P_FILE_ACCESS);
+//             H5Pset_fapl_mpio(plist_id, comm_data->comm, info);
 
-             /*
-              * Create a new file collectively.
-              */
-             file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+//             /*
+//              * Create a new file collectively.
+//              */
+//             file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
 #ifdef BUILD_WITH_MPI
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
 #else // BUILD_WITH_MPI
@@ -433,15 +433,15 @@ void write_stats_bin (melissa_data_t    **data,
             fclose(f);
 #endif // BUILD_WITH_MPI
 
-        /*
-         * Close property list.
-         */
-        H5Pclose(plist_id);
+//        /*
+//         * Close property list.
+//         */
+//        H5Pclose(plist_id);
 
-        /*
-         * Close the file.
-         */
-        H5Fclose(file_id);
+//        /*
+//         * Close the file.
+//         */
+//        H5Fclose(file_id);
         }
     }
 
