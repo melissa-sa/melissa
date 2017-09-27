@@ -217,7 +217,6 @@ def heat_visu():
     raw_input()
 
 GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['home_path'] = '/home/'+USERNAME
 GLOBAL_OPTIONS['user_name'] = USERNAME
 GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example'
 

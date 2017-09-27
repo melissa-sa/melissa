@@ -12,7 +12,6 @@ def draw_param_set():
     return param_set
 
 GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['home_path'] = "/home/user"
 GLOBAL_OPTIONS['user_name'] = "user"
 GLOBAL_OPTIONS['working_directory'] = "/home/user/study"
 
