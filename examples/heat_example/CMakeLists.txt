@@ -32,8 +32,8 @@ target_link_libraries(heatf_no_mpi ${EXAMPLES_LIBS} melissa_api heat_utils_no_mp
 add_executable(heatc_no_mpi heat_no_mpi.c)
 target_link_libraries(heatc_no_mpi ${EXAMPLES_LIBS} melissa_api heat_utils_no_mpi)
 
-add_test(TestHeatc python ../../launcher/melissa_launcher.py .)
 add_test(TestHeatcBase ./heatc_base 5)
 add_test(TestHeatfBase ./heatf_base 5)
+add_test(TestHeatc python ../../launcher/melissa_launcher.py .)
 
 #add_test(TestCrashServer python crash_server.py)
