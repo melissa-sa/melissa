@@ -360,40 +360,40 @@ def check_job(job):
 def cancel_job(job):
     print "cancel job "+str(job.job_id)
     if (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
-        call_bash("scancel "+job.job_id)
+        call_bash("scancel "+str(job.job_id))
     elif (BATCH_SCHEDULER == "OAR"):
-        call_bash("oardel "+job.job_id)
+        call_bash("oardel "+str(job.job_id))
     elif (BATCH_SCHEDULER == "local"):
-        call_bash("kill "+job.job_id)
+        call_bash("kill "+str(job.job_id))
 
-def create_group(group):
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(group.rank))):
-        create_case_str = SIMULATIONS_OPTIONS['path'] + \
-                "/code_saturne create --noref -s group" + \
-                str(group.rank) + \
-                " -c rank0"
-        if MELISSA_STATS['sobol_indices']:
-            for j in range(STUDY_OPTIONS['nb_parameters'] + 1):
-                create_case_str += " -c rank" + str(j+1)
-#        create_case_str
-        os.system(create_case_str)
-    for simu in group.simulations:
-        create_simu(simu)
+#def create_group(group):
+#    os.chdir(GLOBAL_OPTIONS['working_directory'])
+#    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(group.rank))):
+#        create_case_str = SIMULATIONS_OPTIONS['path'] + \
+#                "/code_saturne create --noref -s group" + \
+#                str(group.rank) + \
+#                " -c rank0"
+#        if MELISSA_STATS['sobol_indices']:
+#            for j in range(STUDY_OPTIONS['nb_parameters'] + 1):
+#                create_case_str += " -c rank" + str(j+1)
+##        create_case_str
+#        os.system(create_case_str)
+#    for simu in group.simulations:
+#        create_simu(simu)
 
 
 def create_simu(simu):
     workdir = GLOBAL_OPTIONS['working_directory']
     os.chdir(workdir)
 
-    if (simu.sobol_id > 0):
-        parameters = str(simu.sobol_id)+":"+str(simu.rank)
-        casedir = workdir+"/group"+str(simu.rank)+"/rank"+str(simu.sobol_id)
+    if (simu.rank > 0):
+        parameters = str(simu.rank)+":"+str(simu.rank)
+        casedir = workdir+"/group"+str(simu.rank)+"/rank"+str(simu.rank)
     else:
         parameters = "0:"+str(simu.rank)
         casedir = workdir+"/group"+str(simu.rank)+"/rank0"
 #    os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
-    if (simu.sobol_id > 0):
+    if (simu.rank > 0):
         os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
     else:
         os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne_master.sh "+casedir+"/SCRIPTS/runcase")
@@ -436,6 +436,73 @@ def create_simu(simu):
     os.system("cp "+workdir+"/case1/SRC/cs_user_mesh.c "+casedir+"/SRC/cs_user_mesh.c")
     return 0
 
+
+def create_group(group):
+    workdir = GLOBAL_OPTIONS['working_directory']
+    os.chdir(workdir)
+    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(group.rank))):
+        create_case_str = SIMULATIONS_OPTIONS['path'] + \
+                "/code_saturne create --noref -s group" + \
+                str(group.rank) + \
+                " -c rank0"
+        if MELISSA_STATS['sobol_indices']:
+            for j in range(STUDY_OPTIONS['nb_parameters'] + 1):
+                create_case_str += " -c rank" + str(j+1)
+#        create_case_str
+        os.system(create_case_str)
+
+    # Only works for Sobol
+    for simu in range(len(group.param_set)):
+        if (simu > 0):
+            parameters = str(simu)+":"+str(group.rank)
+            casedir = workdir+"/group"+str(group.rank)+"/rank"+str(simu)
+        else:
+            parameters = "0:"+str(group.rank)
+            casedir = workdir+"/group"+str(group.rank)+"/rank0"
+    #    os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
+        if (simu > 0):
+            os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
+        else:
+            os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne_master.sh "+casedir+"/SCRIPTS/runcase")
+        # modif xml file
+        os.chdir(casedir+"/DATA")
+        fichier=open(workdir+"/case1/DATA/"+xml_file_name, "r")
+        contenu = ""
+        for line in fichier:
+            if not("melissa" in line):
+                contenu += line
+            else:
+                contenu += re.sub('options=".*"','options="'+parameters+'"',line)
+        fichier.close()
+        fichier = open(xml_file_name, 'w')
+        fichier.write(contenu)
+        fichier.close()
+        os.chdir(casedir+"/SRC")
+        #modif fortran routine
+        fichier = open(workdir+'/case1/SRC/cs_user_boundary_conditions.f90', 'r')
+        contenu = ""
+        for line in fichier:
+            if ("param_intensite_haut=" in line):
+                contenu += 'param_intensite_haut='+str(group.param_set[simu][0])+'\n'
+            elif ("param_intensite_bas=" in line):
+                contenu += 'param_intensite_bas='+str(group.param_set[simu][1])+'\n'
+            elif ("param_largeur_haut=" in line):
+                contenu += 'param_largeur_haut='+str(group.param_set[simu][2])+'\n'
+            elif ("param_largeur_bas=" in line):
+                contenu += 'param_largeur_bas='+str(group.param_set[simu][3])+'\n'
+            elif ("param_duree_injection_haut=" in line):
+                contenu += 'param_duree_injection_haut='+str(group.param_set[simu][4])+'\n'
+            elif ("param_duree_injection_bas=" in line):
+                contenu += 'param_duree_injection_bas='+str(group.param_set[simu][5])+'\n'
+            else:
+                contenu += line
+        fichier.close()
+        fichier = open('cs_user_boundary_conditions.f90', 'w')
+        fichier.write(contenu)
+        fichier.close()
+        os.system("cp "+workdir+"/case1/SRC/cs_user_mesh.c "+casedir+"/SRC/cs_user_mesh.c")
+    return 0
+
 def create_study():
     if not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS"):
         os.mkdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
@@ -472,34 +539,33 @@ def create_study():
                         BATCH_SCHEDULER)
 
 def launch_simulation(simu):
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
+    os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.group.rank))
     if MELISSA_STATS['sobol_indices']:
         for j in range(STUDY_OPTIONS['nb_parameters']+2):
-            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank"+str(j)
+            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.group.rank)+"/rank"+str(j)
             os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         create_coupling_parameters (STUDY_OPTIONS['nb_parameters'],
                                     "None",
                                     SIMULATIONS_OPTIONS['nb_nodes'] * SIMULATIONS_OPTIONS['nb_proc'],
                                     "None")
         if (BATCH_SCHEDULER == "Slurm"):
-            simu.job_id = int(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.rank))['out'].split()[-1])
+            simu.job_id = int(call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.group.rank))['out'].split()[-1])
         elif (BATCH_SCHEDULER == "CCC"):
-            simu.job_id = int(call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "../STATS/run_cas_couple.sh"')['out'].split()[-1])
+            simu.job_id = int(call_bash('ccc_msub -r Saturne'+str(simu.group.rank)+' "../STATS/run_cas_couple.sh"')['out'].split()[-1])
         elif (BATCH_SCHEDULER == "OAR"):
-            simu.job_id = int(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
+            simu.job_id = int(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.group.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
 
     else:
-        casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank0"
+        casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.group.rank)+"/rank0"
         os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         os.chdir("./rank0/SCRIPTS")
         if (BATCH_SCHEDULER == "Slurm"):
-            simu.job_id = int(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1])
+            simu.job_id = int(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.group.rank))['out'].split()[-1])
         elif (BATCH_SCHEDULER == "CCC"):
             simu.job_id = int(call_bash('ccc_msub "./runcase"')['out'].split()[-1])
         elif (BATCH_SCHEDULER == "OAR"):
-            simu.job_id = int(call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
+            simu.job_id = int(call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.group.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
 
-    simu.job_status = 0 # pending
 
 def launch_server(server):
     if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS")):
@@ -550,7 +616,6 @@ def restart_server(server):
     elif (BATCH_SCHEDULER == "OAR"):
         server.job_id = call_bash('oarsub -S "./reboot_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     os.chdir(GLOBAL_OPTIONS['working_directory'])
-    server.nb_restarts += 1
 
 def restart_simu(simu):
     if (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
@@ -562,30 +627,28 @@ def restart_simu(simu):
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
     if MELISSA_STATS['sobol_indices']:
         for j in range(STUDY_OPTIONS['nb_parameters']+2):
-            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank"+str(j)
+            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.group.rank)+"/rank"+str(j)
             os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
-        output = "Reboot simulation group "+str(simu.rank)+"\n"
+        output = "Reboot simulation group "+str(simu.group.rank)+"\n"
         if (BATCH_SCHEDULER == "Slurm"):
-            simu.job_id = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.rank))['out'].split()[-1]
+            simu.job_id = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.group.rank))['out'].split()[-1]
         elif (BATCH_SCHEDULER == "CCC"):
-            simu.job_id = call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "../STATS/run_cas_couple.sh"')['out'].split()[-1]
+            simu.job_id = call_bash('ccc_msub -r Saturne'+str(simu.group.rank)+' "../STATS/run_cas_couple.sh"')['out'].split()[-1]
         elif (BATCH_SCHEDULER == "OAR"):
-            simu.job_id = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+            simu.job_id = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.group.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
     else:
-        casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank0"
+        casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.group.rank)+"/rank0"
         os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
-        output = "Reboot simulation "+str(simu.rank)+"\n"
+        output = "Reboot simulation "+str(simu.group.rank)+"\n"
         os.chdir("./rank0/SCRIPTS")
         if (BATCH_SCHEDULER == "Slurm"):
-            simu_job_id[simu_id] = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1]
+            simu_job_id[simu_id] = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.group.rank))['out'].split()[-1]
         elif (BATCH_SCHEDULER == "CCC"):
-            simu_job_id[simu_id] = call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "./runcase"')['out'].split()[-1]
+            simu_job_id[simu_id] = call_bash('ccc_msub -r Saturne'+str(simu.group.rank)+' "./runcase"')['out'].split()[-1]
         elif (BATCH_SCHEDULER == "OAR"):
-            simu_job_id[simu_id] = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+            simu_job_id[simu_id] = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.group.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
         elif (BATCH_SCHEDULER == "local"):
             simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
-    simu.job_state = 0
-    simu.nb_restarts += 1
     os.chdir(GLOBAL_OPTIONS['working_directory'])
     print output
 
@@ -628,6 +691,7 @@ SERVER_OPTIONS['mpi_options'] = ""
 SERVER_OPTIONS['timeout'] = 1000
 
 SIMULATIONS_OPTIONS = {}
+SIMULATIONS_OPTIONS['path'] = "/ccc/cont003/home/gen10064/terrazth/code_saturne/4.3.1/code_saturne-4.3.1/arch/Linux_x86_64/bin"
 SIMULATIONS_OPTIONS['walltime'] = '600'
 SIMULATIONS_OPTIONS['nb_nodes'] = 4
 SIMULATIONS_OPTIONS['nb_proc'] = 8
@@ -647,7 +711,7 @@ MELISSA_STATS['sobol_indices'] = True
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = create_study
 USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
-USER_FUNCTIONS['create_simulation'] = create_simu
+USER_FUNCTIONS['create_simulation'] = None
 USER_FUNCTIONS['create_group'] = create_group
 USER_FUNCTIONS['launch_simulation'] = launch_simulation
 USER_FUNCTIONS['launch_server'] = launch_server

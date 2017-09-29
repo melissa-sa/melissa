@@ -15,8 +15,8 @@ USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'
 EXECUTABLE='heatc'
-NP_SIMU = 2
-NP_SERVER = 3
+NP_SIMU = 1
+NP_SERVER = 1
 
 def draw_param_set():
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])

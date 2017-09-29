@@ -64,8 +64,9 @@ class StateChecker(Thread):
                             s = copy.deepcopy(simu.job_status)
                             simu.check_job()
                             if s <= PENDING and simu.job_status == RUNNING:
-                                logging.info('start simulation ' +
-                                             str(simu.rank))
+                                logging.info('simulation ' +
+                                             str(simu.rank)+ ' group ' +
+                                             str(group.rank) + ' started')
                                 simu.start_time = time.time()
                             elif s <= RUNNING and simu.job_status == FINISHED:
                                 logging.info('end simulation ' + str(simu.rank)
@@ -108,6 +109,7 @@ class Messenger(Thread):
             elif message[0] == 'group_state':
                 with groups[int(message[1])].lock:
                     groups[int(message[1])].status = int(message[2])
+                logging.info('Group ' + message[1] + ' status: ' + message[2])
             elif message[0] == 'server':
                 with server.lock:
                     server.status = RUNNING
@@ -156,7 +158,6 @@ class Study(object):
         server.launch()
         self.messenger.start()
         server.wait_start()
-        logging.info('start server')
         server.write_node_name()
 #        time.sleep(2)
         self.state_checker.start()
@@ -195,7 +196,8 @@ class Study(object):
         else:
             while len(self.groups) < stdy_opt['sampling_size']:
                 self.groups.append(SingleSimuGroup(draw_parameter_set()))
-        self.groups[-1].create()
+        for group in self.groups:
+            group.create()
         groups = self.groups
 
 def fault_tolerance():
@@ -231,6 +233,9 @@ def fault_tolerance():
                                  + ' (server crash)')
                     group.restart()
         time.sleep(2)
+    else if (server.job_status == FINISHED):
+        with server.lock:
+            server.status = FINISHED
 
     for group in groups:
         if group.status > NOT_SUBMITTED and group.status < FINISHED:

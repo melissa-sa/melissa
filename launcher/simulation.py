@@ -185,6 +185,7 @@ class SingleSimuGroup(Group):
             self.nb_restarts = 0
             self.simulations[0].param_set = self.param_set
         self.simulations[0].restart()
+        self.status = WAITING
 
 
 class SobolCoupledGroup(Group):
@@ -228,6 +229,7 @@ class SobolCoupledGroup(Group):
             self.nb_restarts = 0
             self.simulations[0].param_set = self.param_set
         self.simulations[0].restart()
+        self.status = WAITING
 
 
 class SobolMultiJobsGroup(Group):
@@ -280,8 +282,8 @@ class SobolMultiJobsGroup(Group):
             for simu in self.simulations:
                 simu.param_set = self.param_set[simu.rank]
         for simu in self.simulations:
-            self.nb_restarts += 1
             simu.restart()
+        self.status = WAITING
 
 class Server(Job):
     """

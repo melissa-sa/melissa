@@ -20,8 +20,6 @@
  *
  *******************************************************************************/
 
-typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s */
-
 struct melissa_field_s /**< Structure for a linked list of output fields */
 {
     char            name[MAX_FIELD_NAME]; /**< name of the field                                */
