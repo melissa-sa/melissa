@@ -233,9 +233,6 @@ def fault_tolerance():
                                  + ' (server crash)')
                     group.restart()
         time.sleep(2)
-    else if (server.job_status == FINISHED):
-        with server.lock:
-            server.status = FINISHED
 
     for group in groups:
         if group.status > NOT_SUBMITTED and group.status < FINISHED:
