@@ -12,9 +12,7 @@ import numpy as np
 import logging
 from ctypes import cdll, create_string_buffer
 from options import GLOBAL_OPTIONS as glob_opt
-from options import SERVER_OPTIONS as serv_opt
 from options import STUDY_OPTIONS as stdy_opt
-from options import SIMULATIONS_OPTIONS as simu_opt
 from options import MELISSA_STATS as ml_stats
 from options import USER_FUNCTIONS as usr_func
 imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher/simulation.py')
@@ -114,7 +112,7 @@ class Messenger(Thread):
                                  str(server.job_id))
 
             if last_server > 0:
-                if (time.time() - last_server) > serv_opt['timeout']:
+                if (time.time() - last_server) > stdy_opt['server_timeout']:
                     logging.info('server timeout\n')
                     with server.lock:
                         server.status = TIMEOUT
@@ -240,7 +238,7 @@ def fault_tolerance():
         with group.lock:
             if group.status == WAITING:
                 if group.job_status == RUNNING:
-                    if time.time() - group.start_time > simu_opt['timeout']:
+                    if time.time() - group.start_time > stdy_opt['simulation_timeout']:
                         logging.info("resubmit group " + str(group.rank)
                                      + " (timeout detected by launcher)")
                         group.restart()

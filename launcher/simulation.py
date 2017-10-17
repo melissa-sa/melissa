@@ -11,7 +11,6 @@ import logging
 from threading import RLock
 from socket import gethostname
 from options import USER_FUNCTIONS as usr_func
-from options import SERVER_OPTIONS as serv_opt
 from options import STUDY_OPTIONS as stdy_opt
 from options import MELISSA_STATS as ml_stats
 
@@ -35,7 +34,6 @@ class Job(object):
         self.job_status = NOT_SUBMITTED
         self.job_id = 0
         self.cmd_opt = ''
-        self.mpi_options = ''
         self.start_time = 0.0
 
     def cancel(self):

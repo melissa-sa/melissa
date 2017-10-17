@@ -173,7 +173,6 @@ def launch_simu(simulation):
     if BATCH_SCHEDULER == "local":
         if BUILD_EXAMPLES_WITH_MPI == 'ON':
             command = ' '.join(('mpirun',
-                                 simulation.mpi_options,
                                  '-n',
                                  str(NODES_GROUP),
                                  '../'+EXECUTABLE,
@@ -197,8 +196,7 @@ def launch_group(group):
     copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     command = 'mpirun '
     for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-        command += ' '.join((group.mpi_options,
-                             '-n',
+        command += ' '.join(('-n',
                              str(NODES_GROUP),
                              '../'+EXECUTABLE,
                              str(i),
@@ -413,14 +411,8 @@ STUDY_OPTIONS['sampling_size'] = 3
 STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["heat"]
-
-SERVER_OPTIONS = {}
-SERVER_OPTIONS['timeout'] = 600
-
-SIMULATIONS_OPTIONS = {}
-SIMULATIONS_OPTIONS['coupling'] = True
-SIMULATIONS_OPTIONS['mpi_options'] = ''
-SIMULATIONS_OPTIONS['timeout'] = 300
+STUDY_OPTIONS['server_timeout'] = 60
+STUDY_OPTIONS['simulation_timeout'] = 40
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
@@ -429,7 +421,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantile'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
