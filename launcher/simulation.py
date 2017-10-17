@@ -48,7 +48,7 @@ class Job(object):
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
 
-class Group(object):
+class Group(Job):
     """
         Group class
     """
@@ -57,12 +57,12 @@ class Group(object):
         """
             Group constructor
         """
+        Job.__init__(self)
         self.nb_restarts = 0
         self.status = NOT_SUBMITTED
         self.lock = RLock()
         self.rank = Group.nb_groups
         Group.nb_groups += 1
-        self.simulations = list()
 
     def create(self):
         """
@@ -70,91 +70,45 @@ class Group(object):
         """
         if usr_func['create_group']:
             usr_func['create_group'](self)
-        for simu in self.simulations:
-            simu.create()
+        logging.warning('Warning: no \'create_group\''
+                        +' function provided')
 
     def launch(self):
         """
-            Launches the simulations in the group
+            Launches the group (mandatory)
         """
-        self.status = WAITING
-        for simu in self.simulations:
-            simu.launch()
-
-    def cancel(self):
-        """
-            Cancels the simulations in the group
-        """
-        for simu in self.simulations:
-            simu.cancel()
-
-    def check_job(self):
-        """
-            Checks simulation jobs
-        """
-        for simu in self.simulations:
-            simu.check_job()
-
-
-class Simulation(Job):
-    """
-        Simulation class
-    """
-    def __init__(self, param_set, group, rank=0):
-        """
-            Simulation constructor
-        """
-        Job.__init__(self)
-        self.rank = rank
-        self.group = group
-        self.param_set = param_set
-
-    def create(self):
-        """
-            Creates a simulation environment
-        """
-        if usr_func['create_simulation']:
-            usr_func['create_simulation'](self)
+        if usr_func['launch_group']:
+            usr_func['launch_group'](self)
         else:
-            logging.warning('Warning: no \'create_simulation\''
-                            +' function provided')
-
-    def launch(self):
-        """
-            Launches the simulation (mandatory)
-        """
-        if usr_func['launch_simulation']:
-            usr_func['launch_simulation'](self)
-        else:
-            logging.error('Error: no \'launch_simulation\' function provided')
+            logging.error('Error: no \'launch_group\' function provided')
             exit()
         self.job_status = PENDING
+        self.status = WAITING
 
     def restart(self):
         """
-            Kills and restarts the simulation (mandatory)
+            Kills and restarts the group (mandatory)
         """
-        if usr_func['restart_simulation']:
-            usr_func['restart_simulation'](self)
+        if usr_func['restart_group']:
+            usr_func['restart_group'](self)
         else:
-            logging.warning('warning: no \'restart_simulation\''
+            logging.warning('warning: no \'restart_group\''
                             +' function provided,'
-                            +' using \'launch_simulation\' instead')
+                            +' using \'launch_group\' instead')
             self.launch()
         self.start_time = 0.0
         self.job_status = PENDING
 
     def check_job(self):
         """
-            Checks the simulation job status (mandatory)
+            Checks the group job status (mandatory)
         """
-        if usr_func['check_simulation_job']:
-            usr_func['check_simulation_job'](self)
+        if usr_func['check_group_job']:
+            usr_func['check_group_job'](self)
         else:
-            logging.error('Error: no \'check_simulation_job\''
+            logging.error('Error: no \'check_group_job\''
                           +' function provided')
             exit()
-
 
 class SingleSimuGroup(Group):
     """
@@ -167,14 +121,12 @@ class SingleSimuGroup(Group):
         Group.__init__(self)
         self.rank = Group.nb_groups
         self.param_set = numpy.copy(param_set)
-        self.simulations.append(Simulation(param_set=self.param_set,
-                                           group=self))
 
     def restart(self):
         """
             Ends and restarts the simulation (mandatory)
         """
-        self.simulations[0].cancel()
+        self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > 4:
             logging.warning('Simulation ' + self.rank +
@@ -183,12 +135,10 @@ class SingleSimuGroup(Group):
             self.param_set = usr_func['draw_parameter_set']()
             logging.info('new parameter set: ' + str(self.param_set))
             self.nb_restarts = 0
-            self.simulations[0].param_set = self.param_set
-        self.simulations[0].restart()
         self.status = WAITING
 
 
-class SobolCoupledGroup(Group):
+class SobolGroup(Group):
     """
         Sobol coupled group class
     """
@@ -204,14 +154,11 @@ class SobolCoupledGroup(Group):
         for i in range(len(param_set_a)):
             self.param_set.append(numpy.copy(self.param_set[0]))
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
-        self.simulations.append(Simulation(param_set=self.param_set,
-                                           group=self,
-                                           rank=0))
     def restart(self):
         """
             Ends and restarts the Sobol group (mandatory)
         """
-        self.simulations[0].cancel()
+        self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > 4:
             logging.warning('Group ' +
@@ -227,62 +174,7 @@ class SobolCoupledGroup(Group):
                 self.param_set[i+2] = numpy.copy(self.param_set[0])
                 self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.nb_restarts = 0
-            self.simulations[0].param_set = self.param_set
-        self.simulations[0].restart()
-        self.status = WAITING
-
-
-class SobolMultiJobsGroup(Group):
-    """
-        Sobol multi job group class (not coupled)
-    """
-    def __init__(self, param_set_a, param_set_b):
-        """
-            SobolMultiJobsGroup constructor
-        """
-        Group.__init__(self)
-        self.rank = Group.nb_groups
-        self.param_set = list()
-        self.param_set.append(numpy.copy(param_set_a))
-        self.simulations.append(Simulation(param_set=self.param_set[0],
-                                           group=self,
-                                           rank=0))
-        self.param_set.append(numpy.copy(param_set_b))
-        self.simulations.append(Simulation(param_set=self.param_set[1],
-                                           group=self,
-                                           rank=1))
-        for i in range(len(param_set_a)):
-            self.param_set.append(numpy.copy(self.param_set[0]))
-            self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
-            self.simulations.append(Simulation(param_set=self.param_set[i+2],
-                                               group=self,
-                                               rank=i+2))
-
-    def restart(self):
-        """
-            Ends and restarts the group (mandatory)
-        """
-        for simu in self.simulations:
-            simu.cancel()
-        self.nb_restarts += 1
-        if self.nb_restarts > 4:
-            logging.warning('Group ' +
-                            self.rank +
-                            'crashed 5 times, drawing new parameter sets')
-            logging.debug('old parameter set A: ' + str(self.param_set[0]))
-            logging.debug('old parameter set B: ' + str(self.param_set[1]))
-            self.param_set[0] = usr_func['draw_parameter']()
-            self.param_set[1] = usr_func['draw_parameter']()
-            logging.info('new parameter set A: ' + str(self.param_set[0]))
-            logging.info('new parameter set B: ' + str(self.param_set[1]))
-            for i in range(len(self.param_set[0])):
-                self.param_set[i+2] = numpy.copy(self.param_set[0])
-                self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
-            self.nb_restarts = 0
-            for simu in self.simulations:
-                simu.param_set = self.param_set[simu.rank]
-        for simu in self.simulations:
-            simu.restart()
+        self.simulation.restart()
         self.status = WAITING
 
 class Server(Job):

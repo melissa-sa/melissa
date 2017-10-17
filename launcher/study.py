@@ -20,8 +20,7 @@ from options import USER_FUNCTIONS as usr_func
 imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
-from simulation import SobolCoupledGroup
-from simulation import SobolMultiJobsGroup
+from simulation import SobolGroup
 
 get_message = cdll.LoadLibrary('@CMAKE_BINARY_DIR@/utils/libget_message.so')
 
@@ -58,19 +57,15 @@ class StateChecker(Thread):
                 server.check_job()
             for group in groups:
                 with group.lock:
-                    for simu in group.simulations:
-                        if (simu.job_status < FINISHED and
-                                simu.job_status > NOT_SUBMITTED):
-                            s = copy.deepcopy(simu.job_status)
-                            simu.check_job()
-                            if s <= PENDING and simu.job_status == RUNNING:
-                                logging.info('simulation ' +
-                                             str(simu.rank)+ ' group ' +
-                                             str(group.rank) + ' started')
-                                simu.start_time = time.time()
-                            elif s <= RUNNING and simu.job_status == FINISHED:
-                                logging.info('end simulation ' + str(simu.rank)
-                                             + ' group ' + str(simu.group.rank))
+                    if (group.job_status < FINISHED and
+                            group.job_status > NOT_SUBMITTED):
+                        s = copy.deepcopy(group.job_status)
+                        group.check_job()
+                        if s <= PENDING and group.job_status == RUNNING:
+                            logging.info('group ' + str(group.rank) + ' started')
+                            group.start_time = time.time()
+                        elif s <= RUNNING and group.job_status == FINISHED:
+                            logging.info('end group ' + str(group.rank))
         logging.info('closing state checker process')
 
 class Messenger(Thread):
@@ -104,8 +99,7 @@ class Messenger(Thread):
                                  + ' (timeout detected by server)')
                     with groups[group_id].lock:
                         groups[group_id].restart()
-                        for simu in groups[group_id].simulations:
-                            simu.job_status = PENDING
+                        group.job_status = PENDING
             elif message[0] == 'group_state':
                 with groups[int(message[1])].lock:
                     groups[int(message[1])].status = int(message[2])
@@ -183,14 +177,9 @@ class Study(object):
             Job list creation
         """
         global groups
-        if self.sobol and simu_opt['coupling']:
+        if self.sobol:
             while len(self.groups) < stdy_opt['sampling_size']:
-                self.groups.append(SobolCoupledGroup(
-                    draw_parameter_set(),
-                    draw_parameter_set()))
-        elif self.sobol:
-            while len(self.groups) < stdy_opt['sampling_size']:
-                self.groups.append(SobolMultiJobsGroup(
+                self.groups.append(SobolGroup(
                     draw_parameter_set(),
                     draw_parameter_set()))
         else:
@@ -237,10 +226,9 @@ def fault_tolerance():
     for group in groups:
         if group.status > NOT_SUBMITTED and group.status < FINISHED:
             with group.lock:
-                for simu in group.simulations:
-                    if group.status <= RUNNING and simu.job_status == FINISHED:
-                        sleep = True
-                        break
+                if group.status <= RUNNING and group.job_status == FINISHED:
+                    sleep = True
+                    break
         if sleep == True:
             time.sleep(10)
             sleep = False
@@ -251,13 +239,12 @@ def fault_tolerance():
                     group.restart()
         with group.lock:
             if group.status == WAITING:
-                for simu in group.simulations:
-                    if simu.job_status == RUNNING:
-                        if time.time() - simu.start_time > simu_opt['timeout']:
-                            logging.info("resubmit group " + str(simu.rank)
-                                         + " (timeout detected by launcher)")
-                            group.restart()
-                            break
+                if group.job_status == RUNNING:
+                    if time.time() - group.start_time > simu_opt['timeout']:
+                        logging.info("resubmit group " + str(group.rank)
+                                     + " (timeout detected by launcher)")
+                        group.restart()
+                        break
     time.sleep(1)
 
 def check_options():

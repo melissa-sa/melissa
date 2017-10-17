@@ -588,8 +588,6 @@ def launch_server(server):
     elif (BATCH_SCHEDULER == "OAR"):
         server.job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
     os.chdir(GLOBAL_OPTIONS['working_directory'])
-    server.first_job_id = server.job_id
-    server.job_status = 0
 
 
 def restart_server(server):
