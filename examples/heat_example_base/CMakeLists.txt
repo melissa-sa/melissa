@@ -4,6 +4,10 @@
  configure_file(heat_base.f90 heat_base.f90 COPYONLY)
 
  if(BUILD_WITH_MPI)
+   add_library(heat_utils heat_utils.f90)
+   target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
+   target_link_libraries(heat_utils ${EXAMPLES_LIBS})
+
    add_executable(heatf_base heat_base.f90)
    target_link_libraries(heatf_base ${EXAMPLES_LIBS} heat_utils)
 
@@ -17,4 +21,3 @@
 
  add_test(TestHeatcBase ./heatc_base 5)
  add_test(TestHeatfBase ./heatf_base 5)
- add_test(TestHeatc python ../../launcher/melissa_launcher.py .)
