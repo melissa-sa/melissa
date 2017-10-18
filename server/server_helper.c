@@ -12,6 +12,41 @@
 #include "melissa_io.h"
 #include "server.h"
 
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * This function initialises a N to M communication scheme between clients and server
+ *
+ *******************************************************************************
+ *
+ * @param[out] *rcounts
+ * recieve message sizes (size number of clients)
+ *
+ * @param[out] *rdispls
+ * recieve message pointer (size number of clients)
+ *
+ * @param[in] global_vect_size
+ * the global vector size
+ *
+ * @param[in] *server_vect_size
+ * the local server vector size by process
+ *
+ * @param[in] *client_vect_size
+ * the local client vector size by process
+ *
+ * @param[in] nb_proc_client
+ * client communicator size
+ *
+ * @param[in] rank
+ * process rank in the server communicator
+ *
+ * @param[out] *pull_data
+ * Structure containing message informations
+ *
+ *******************************************************************************/
+
 void comm_n_to_m_init (int           *rcounts,
                        int           *rdispls,
                        const int      global_vect_size,
@@ -140,7 +175,33 @@ void comm_n_to_m_init (int           *rcounts,
     }
 }
 
-int check_simu_state(melissa_field_t *field,
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * This function checks the status of a simulation
+ *
+ *******************************************************************************
+ *
+ * @param[in] *fields
+ * Melissa fields
+ *
+ * @param[in] nb_fields
+ * number of Melissa fields
+ *
+ * @param[in] group_id
+ * id of the group to check
+ *
+ * @param[in] nb_time_steps
+ * number of time step for this study
+ *
+ * @param[in] *comm_data
+ * Structure containing communication informations
+ *
+ *******************************************************************************/
+
+int check_simu_state(melissa_field_t *fields,
                      int              nb_fields,
                      int              group_id,
                      int              nb_time_steps,
@@ -148,7 +209,7 @@ int check_simu_state(melissa_field_t *field,
 {
     int i, j, t;
 
-    if (field == NULL)
+    if (fields == NULL)
     {
         return 0;
     }
@@ -160,11 +221,11 @@ int check_simu_state(melissa_field_t *field,
             {
                 if (comm_data->rcounts[i] > 0)
                 {
-                    if (field[j].stats_data[i].is_valid == 1)
+                    if (fields[j].stats_data[i].is_valid == 1)
                     {
                         for (t=0; t<nb_time_steps; t++)
                         {
-                            if (test_bit (field->stats_data[i].step_simu[group_id], t) == 0)
+                            if (test_bit (fields[j].stats_data[i].step_simu[group_id], t) == 0)
                             {
                                 return 1;
                             }
@@ -180,6 +241,20 @@ int check_simu_state(melissa_field_t *field,
     }
     return 2;
 }
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * This function counts the amount of data writen on disk
+ *
+ *******************************************************************************
+ *
+ * @param[in] *options
+ * Melissa options structure
+ *
+ *******************************************************************************/
 
 long int count_mbytes_written (melissa_options_t  *options)
 {
@@ -206,6 +281,23 @@ long int count_mbytes_written (melissa_options_t  *options)
     }
     return mbytes_written;
 }
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * This function recieves a string from the launcher
+ *
+ *******************************************************************************
+ *
+ * @param[in] *socket
+ * ZMQ socket
+ *
+ * @param[in, out] *recv_buff
+ * the recieve buffer
+ *
+ *******************************************************************************/
 
 int string_recv (void  *socket,
                  char  *recv_buff)

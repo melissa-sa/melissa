@@ -58,7 +58,7 @@ def create_run_server(server):
         contenu += "#MSUB -n "+str(NODES_SERVER*16)+"                                  \n"
         contenu += "#MSUB -o melissa.%I.log                                            \n"
         contenu += "#MSUB -e melissa.%I.err                                            \n"
-        contenu += "#MSUB -T "+WALLTIME_SERVER+"                                       \n"
+        contenu += "#MSUB -T "+str(WALLTIME_SERVER)+"                                  \n"
         contenu += "#MSUB -A gen10064                                                  \n"
         contenu += "#MSUB -r Melissa                                                   \n"
         contenu += "#MSUB -q standard                                                  \n"
@@ -97,7 +97,7 @@ def create_run_group(simulation, command):
         contenu += "module load openmpi/2.0.1                                          \n"
         contenu += "module load ifort/2017                                             \n"
     elif (BATCH_SCHEDULER == "OAR"):
-        contenu += "#OAR -l nodes="+str(NODES_GROUP)+",walltime="+WALLTIME_SIMU+ "\n"
+        contenu += "#OAR -l nodes="+str(NODES_GROUP)+",walltime="+str(WALLTIME_SIMU)+ "\n"
         contenu += "#OAR -O simu.%jobid%.log                                        \n"
         contenu += "#OAR -E simu.%jobid%.err                                        \n"
         contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
@@ -106,7 +106,7 @@ def create_run_group(simulation, command):
         contenu += "#MSUB -n "+str(16*NODES_GROUP)+"                \n"
         contenu += "#MSUB -o simu.%I.log                                                               \n"
         contenu += "#MSUB -e simu.%I.err                                                               \n"
-        contenu += "#MSUB -T "+walltime_simu+"                                                       \n"
+        contenu += "#MSUB -T "+str(WALLTIME_SIMU)+"                                                       \n"
         contenu += "#MSUB -A gen10064                                                                     \n"
         contenu += "#MSUB -q standard                                                                     \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
@@ -246,22 +246,54 @@ def check_job(job):
         else:
             state = 2
     elif (BATCH_SCHEDULER == "OAR"):
-        if (not str(job.job_id) in call_bash("oarstat -u --sql \"state = 'Waiting'\"")['out']):
+        proc = subprocess.Popen("oarstat -u --sql \"state = 'Waiting'\"",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        if (not str(job.job_id) in out):
             state = 1
-            if (not str(job.job_id) in call_bash("oarstat -u --sql \"state = 'Running'\"")['out']):
+            proc = subprocess.Popen("oarstat -u --sql \"state = 'Running'\"",
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True,
+                                    universal_newlines=True)
+            (out, err) = proc.communicate()
+            if (not str(job.job_id) in out):
                 state = 2
     elif (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
-        if (not "PENDING" in call_bash("squeue --job="+str(job.job_id)+" -l")['out']):
+        proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        if (not "PENDING" in out):
             state = 1
-            if (not "RUNNING" in call_bash("squeue --job="+str(job.job_id)+" -l")['out']):
+            proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True,
+                                    universal_newlines=True)
+            (out, err) = proc.communicate()
+            if (not "RUNNING" in out):
                 state = 2
     job.job_status = state
 
 def check_load():
     if BATCH_SCHEDULER == "local":
-        time.sleep(1)
+        time.sleep(2)
     elif (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
-        while (int(call_bash("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l")['out']) >= 250):
+        running_jobs = 100000
+        while (running_jobs >= 250):
+            proc = subprocess.Popen("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l",
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    shell=True,
+                                    universal_newlines=True)
+            (out, err) = proc.communicate()
+            running_jobs = int(out)
             time.sleep(5)
 
 def kill_job(job):
@@ -269,11 +301,11 @@ def kill_job(job):
     if BATCH_SCHEDULER == "local":
         os.system('kill '+str(job.job_id))
     elif (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
-        call_bash("scancel "+str(job.job_id))
+        os.system("scancel "+str(job.job_id))
     elif (BATCH_SCHEDULER == "OAR"):
-        call_bash("oardel "+str(job.job_id))
+        os.system("oardel "+str(job.job_id))
     elif (BATCH_SCHEDULER == "local"):
-        call_bash("kill "+str(job.job_id))
+        os.system("kill "+str(job.job_id))
 
 def heat_visu():
     if BATCH_SCHEDULER == "local":

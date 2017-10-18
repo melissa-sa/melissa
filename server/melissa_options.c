@@ -77,7 +77,7 @@ static inline void init_options (melissa_options_t *options)
     sprintf (options->launcher_name, "localhost");
 }
 
-void get_fields (char               *name,
+static inline void get_nb_fields (char               *name,
                  melissa_options_t  *options)
 {
     const char  s[2] = ":";
@@ -281,7 +281,7 @@ void melissa_get_options (int                 argc,
             sprintf (options->launcher_name, optarg);
             break;
         case 'f':
-            get_fields (optarg, options);
+            get_nb_fields (optarg, options);
             break;
         case 'h':
             stats_usage ();

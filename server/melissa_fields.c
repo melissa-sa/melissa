@@ -16,6 +16,29 @@
 #include "melissa_io.h"
 #include "compute_stats.h"
 
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fields
+ *
+ * This function parses field names from command line
+ *
+ *******************************************************************************
+ *
+ * @param[in] argc
+ * number of Melissa Server arguments
+ *
+ * @param[in] **argv
+ * Melissa Server arguments
+ *
+ * @param[in,out] *fields
+ * melissa_field_t array
+ *
+ * @param[in] nb_fields
+ * number of fields
+ *
+ *******************************************************************************/
+
 void melissa_get_fields (int               argc,
                          char            **argv,
                          melissa_field_t  *fields,
@@ -54,35 +77,78 @@ void melissa_get_fields (int               argc,
     } while (opt != -1);
 }
 
-void add_fields (melissa_field_t *field,
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fields
+ *
+ * This function initializes the fields after first contact with a client
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] *fields
+ * Melissa field array
+ *
+ * @param[in] data_size
+ * size of client MPI communicator
+ *
+ * @param[in] nb_fields
+ * number of fields
+ *
+ *******************************************************************************/
+
+void add_fields (melissa_field_t *fields,
                 int              data_size,
                 int              nb_fields)
 {
     int i, j;
     for (j=0; j<nb_fields; j++)
     {
-        field[j].stats_data = melissa_malloc (data_size * sizeof(melissa_data_t));
+        fields[j].stats_data = melissa_malloc (data_size * sizeof(melissa_data_t));
         for (i=0; i<data_size; i++)
         {
-            field[j].stats_data[i].is_valid = 0;
+            fields[j].stats_data[i].is_valid = 0;
         }
     }
 }
 
-melissa_data_t* get_data_ptr (melissa_field_t *field,
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fields
+ *
+ * This function returns a pointer to a data structure given its field name
+ *
+ *******************************************************************************
+ *
+ * @param[in] *fields
+ * Melissa field array
+ *
+ * @param[in] nb_fields
+ * number of fields
+ *
+ * @param[in] *field_name
+ * name of the field to find
+ *
+ * @retval stats_data
+ * pointer to the corresponding melissa_data_t structure
+ *
+ *******************************************************************************/
+
+melissa_data_t* get_data_ptr (melissa_field_t *fields,
                               int              nb_fields,
                               char*            field_name)
 {
     int i, j;
-    if (field != NULL)
+    if (fields != NULL)
     {
         for (j=0; j<nb_fields; j++)
         {
             for (i=0; i<nb_fields; i++)
             {
-                if (strncmp(field[i].name, field_name, MAX_FIELD_NAME) == 0)
+                if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME) == 0)
                 {
-                    return field->stats_data;
+                    return fields[i].stats_data;
                 }
             }
         }
@@ -95,7 +161,58 @@ melissa_data_t* get_data_ptr (melissa_field_t *field,
     return NULL;
 }
 
-void finalize_field_data (melissa_field_t   *field,
+#ifdef BUILD_WITH_PROBES
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fields
+ *
+ * This function writes the data and frees the fields structure
+ *
+ *******************************************************************************
+ *
+ * @param[in] *fields
+ * Melissa field array
+ *
+ * @param[in] *comm_data
+ * Melissa communication structure
+ *
+ * @param[in] *options
+ * Melissa options
+ *
+ * @param[in] *local_vect_sizes
+ * local vector sises
+ *
+ * @param[in] *total_write_time
+ * time counter
+ *
+ *******************************************************************************/
+#else // BUILD_WITH_PROBES
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fields
+ *
+ * This function writes the data and frees the fields structure
+ *
+ *******************************************************************************
+ *
+ * @param[in] *fields
+ * Melissa field array
+ *
+ * @param[in] *comm_data
+ * Melissa communication structure
+ *
+ * @param[in] *options
+ * Melissa options
+ *
+ * @param[in] *local_vect_sizes
+ * local vector sises
+ *
+ *******************************************************************************/
+#endif // BUILD_WITH_PROBES
+
+void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
                           melissa_options_t *options,
                           int               *local_vect_sizes
@@ -106,7 +223,7 @@ void finalize_field_data (melissa_field_t   *field,
 {
     double start_write_time, end_write_time;
     int i;
-    if (field == NULL)
+    if (fields == NULL)
     {
         return;
     }
@@ -116,28 +233,28 @@ void finalize_field_data (melissa_field_t   *field,
         {
             if (comm_data->rcounts[i] > 0)
             {
-                finalize_stats (&field->stats_data[i]);
+                finalize_stats (&fields->stats_data[i]);
             }
         }
 
 #ifdef BUILD_WITH_PROBES
         start_write_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-//        write_stats_bin (&(field->stats_data),
+//        write_stats_bin (&(fields->stats_data),
 //                         options,
 //                         comm_data,
 //                         local_vect_sizes,
-//                         field->name);
-        write_stats_txt (&(field->stats_data),
+//                         fields->name);
+        write_stats_txt (&(fields->stats_data),
                          options,
                          comm_data,
                          local_vect_sizes,
-                         field->name);
-//        write_stats_ensight (&(field->stats_data),
+                         fields->name);
+//        write_stats_ensight (&(fields->stats_data),
 //                             options,
 //                             comm_data,
 //                             local_vect_sizes,
-//                             field->name);
+//                             fields->name);
 #ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();
         *total_write_time += end_write_time - start_write_time;
@@ -147,10 +264,10 @@ void finalize_field_data (melissa_field_t   *field,
         {
             if (comm_data->rcounts[i] > 0)
             {
-                melissa_free_data (&field->stats_data[i]);
+                melissa_free_data (&fields->stats_data[i]);
             }
         }
-        melissa_free (field->stats_data);
+        melissa_free (fields->stats_data);
     }
     return;
 }

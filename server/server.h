@@ -40,10 +40,6 @@ void comm_n_to_m_init (int           *rcounts,
 //                char*      field_name,
 //                int        data_size);
 
-void increment_step_simu(melissa_field_t *field,
-                         char*            field_name,
-                         int              group_id);
-
 int check_simu_state(melissa_field_t *field,
                      int              nb_fields,
                      int              group_id,

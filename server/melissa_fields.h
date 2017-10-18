@@ -34,15 +34,15 @@ void melissa_get_fields (int               argc,
                          melissa_field_t  *fields,
                          int               nb_fields);
 
-void add_fields (melissa_field_t *field,
+void add_fields (melissa_field_t *fields,
                  int              data_size,
                  int              nb_fields);
 
-melissa_data_t* get_data_ptr (melissa_field_t *field,
+melissa_data_t* get_data_ptr (melissa_field_t *fields,
                               int              nb_fields,
                               char*            field_name);
 
-void finalize_field_data (melissa_field_t   *field,
+void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
                           melissa_options_t *options,
                           int               *local_vect_sizes

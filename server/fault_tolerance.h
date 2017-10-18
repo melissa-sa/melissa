@@ -31,7 +31,6 @@ struct melissa_simulation_s
     int status;
     int timeout;
     int last_message;
-
 };
 
 typedef struct melissa_simulation_s melissa_simulation_t;
