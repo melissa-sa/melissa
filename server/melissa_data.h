@@ -14,6 +14,7 @@
 #include "melissa_options.h"
 #include "mean.h"
 #include "variance.h"
+#include "general_moments.h"
 #include "min_max.h"
 #include "threshold.h"
 #include "quantile.h"
@@ -63,6 +64,7 @@ struct melissa_data_s
     min_max_t           *min_max;                                /**< array of min and max structures, size nb_time_steps       */
     int                **thresholds;                             /**< array of threshold exceedance vectors, size nb_time_steps */
     quantile_t          *quantiles;                              /**< array of quantile structures, size nb_time_steps          */
+    moments_t           *moments;                                /**< array of genera moment structures, size nb_time_steps     */
     sobol_array_t       *sobol_indices;                          /**< array of sobol array structures, size nb_time_steps       */
     void (*init_sobol)(sobol_array_t*, int, int);                /**< pointer to Sobol initialization function                  */
     void (*read_sobol)(sobol_array_t*, int, int, int, FILE*);    /**< pointer to Sobol read function                            */
@@ -70,7 +72,7 @@ struct melissa_data_s
     void (*increment_sobol)(sobol_array_t*, int, double**, int); /**< pointer to Sobol increment function                       */
     void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                            */
     int                  nb_simu;                                /**< number of simulation that have sent a message             */
-    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                              */
+    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                            */
 //    vector_t             step_simu;                              /**< arrays of bits, size nb_groups                           */
 };
 

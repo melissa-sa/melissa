@@ -27,6 +27,10 @@ static void melissa_alloc_data (melissa_data_t *data)
         exit (1);
     }
 
+    data->moments = melissa_malloc (data->options->nb_time_steps * sizeof(moments_t));
+    for (i=0; i<data->options->nb_time_steps; i++)
+        init_moments (&(data->moments[i]), data->vect_size, 4);
+
     if (data->options->mean_op == 1 && data->options->variance_op == 0)
     {
         data->means = melissa_malloc (data->options->nb_time_steps * sizeof(mean_t));
@@ -204,6 +208,9 @@ void melissa_free_data (melissa_data_t *data)
             free_quantile (&(data->quantiles[i]));
         melissa_free (data->quantiles);
     }
+    for (i=0; i<data->options->nb_time_steps; i++)
+        free_moments (&(data->moments[i]));
+    melissa_free (data->moments);
 
     if (data->options->sobol_op == 1)
     {

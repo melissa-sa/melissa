@@ -226,6 +226,7 @@ add_subdirectory(utils)
 set(STATS_C covariance.c
             variance.c
             mean.c
+            general_moments.c
             min_max.c
             sobol.c
             threshold.c
@@ -234,6 +235,7 @@ set(ALL_SRCS ${ALL_SRCS} ${STATS_C})
 set(STATS_H covariance.h
             variance.h
             mean.h
+            general_moments.h
             min_max.h
             sobol.h
             threshold.h

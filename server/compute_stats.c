@@ -66,6 +66,8 @@ void compute_stats (melissa_data_t  *data,
         return;
     }
 
+    increment_moments(&(data->moments[time_step]), in_vect_tab[0], data->vect_size);
+
     if (data->options->min_and_max_op == 1)
     {
         min_and_max (&(data->min_max[time_step]), in_vect_tab[0], data->vect_size);
@@ -156,5 +158,21 @@ void compute_stats (melissa_data_t  *data,
 
 void finalize_stats (melissa_data_t *data)
 {
+    int time_step;
+    for (time_step = 0; time_step<data->options->nb_time_steps; time_step++)
+    {
+        if (data->options->sobol_op != 1)
+        {
+            if (data->options->mean_op == 1)
+            {
+                compute_mean (&(data->moments[time_step]), &(data->means[time_step]), data->vect_size);
+            }
+
+            if (data->options->variance_op == 1)
+            {
+                compute_variance (&(data->moments[time_step]), &(data->variances[time_step]), data->vect_size);
+            }
+        }
+    }
     // delete backup files here
 }

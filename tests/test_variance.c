@@ -13,6 +13,7 @@
 #include <math.h>
 #include "mean.h"
 #include "variance.h"
+#include "general_moments.h"
 #include "covariance.h"
 #include "melissa_utils.h"
 
@@ -21,15 +22,17 @@ int main(int argc, char **argv)
     double       *tableau = NULL;
     double       *ref_mean = NULL;
     variance_t    my_variance;
+    moments_t     my_moments;
     double       *ref_variance;
-    int           n = 1000; // n expériences
-    int           vect_size = 100000; // size points de l'espace
+    int           n = 10000; // n expériences
+    int           vect_size = 1000; // size points de l'espace
     int           i, j;
     int           ret = 0;
     double        start_time = 0;
     double        end_time = 0;
 
     init_variance (&my_variance, vect_size);
+    init_moments (&my_moments, vect_size, 2);
     tableau = melissa_calloc (n * vect_size, sizeof(double));
     ref_mean = melissa_calloc (vect_size, sizeof(double));
     ref_variance = melissa_calloc (vect_size, sizeof(double));
@@ -50,6 +53,7 @@ int main(int argc, char **argv)
     for (j=0; j<n; j++)
     {
         increment_variance (&my_variance, &tableau[j * vect_size], vect_size);
+        increment_moments (&my_moments, &tableau[j * vect_size], vect_size);
     }
     end_time = melissa_get_time();
     fprintf (stdout, "variance time: %g\n", end_time - start_time);
@@ -62,13 +66,21 @@ int main(int argc, char **argv)
         {
             ref_variance[i] += (tableau[i + j*vect_size] - ref_mean[i])*(tableau[i + j*vect_size] - ref_mean[i]);
         }
-        ref_variance[i] /= (n-1);
     }
     for (i=0; i<vect_size; i++)
     {
-        if (fabs((my_variance.variance[i] - ref_variance[i])/ref_variance[i]) > 10E-12)
+        if (fabs((my_variance.variance[i] - (ref_variance[i] / (n-1)))/(ref_variance[i] / (n-1))) > 10E-12)
         {
             fprintf (stdout, "variance failed\n");
+            ret = 1;
+        }
+    }
+    compute_variance (&my_moments, my_variance.variance, vect_size);
+    for (i=0; i<vect_size; i++)
+    {
+        if (fabs((my_variance.variance[i] - (ref_variance[i] / n))/(ref_variance[i] / n)) > 10E-12)
+        {
+            fprintf (stdout, "variance failed (moments)\n");
             ret = 1;
         }
     }

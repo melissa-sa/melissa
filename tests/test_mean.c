@@ -12,6 +12,7 @@
 #include <string.h>
 #include <math.h>
 #include "mean.h"
+#include "general_moments.h"
 #include "variance.h"
 #include "covariance.h"
 #include "melissa_utils.h"
@@ -21,14 +22,16 @@ int main(int argc, char **argv)
     double       *tableau = NULL;
     double       *ref_mean = NULL;
     mean_t        my_mean;
-    int           n = 1000; // n expériences
-    int           vect_size = 100000; // size points de l'espace
+    moments_t     my_moments;
+    int           n = 10000; // n expériences
+    int           vect_size = 1000; // size points de l'espace
     int           i, j;
     int           ret = 0;
     double        start_time = 0;
     double        end_time = 0;
 
     init_mean (&my_mean, vect_size);
+    init_moments (&my_moments, vect_size, 1);
     tableau = calloc (n * vect_size, sizeof(double));
     ref_mean = calloc (vect_size, sizeof(double));
 
@@ -48,6 +51,7 @@ int main(int argc, char **argv)
     for (j=0; j<n; j++)
     {
         increment_mean (&my_mean, &tableau[j * vect_size], vect_size);
+        increment_moments (&my_moments, &tableau[j * vect_size], vect_size);
     }
     end_time = melissa_get_time();
     fprintf (stdout, "simple mean time: %g\n", end_time - start_time);
@@ -59,10 +63,20 @@ int main(int argc, char **argv)
             ret = 1;
         }
     }
+    compute_mean (&my_moments, my_mean.mean, vect_size);
+    for (i=0; i<vect_size; i++)
+    {
+        if (fabs((my_mean.mean[i] - ref_mean[i])/ref_mean[i]) > 10E-12)
+        {
+            fprintf (stdout, "mean failed (noment mean = %g, ref mean = %g, i=%d)\n", my_moments.gamma1[i]/my_moments.increment, ref_mean[i], i);
+            ret = 1;
+        }
+    }
 
     melissa_free(tableau);
     melissa_free(ref_mean);
     free_mean(&my_mean);
+    free_moments(&my_moments);
 
     return ret;
 }
