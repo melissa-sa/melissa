@@ -66,7 +66,7 @@ void compute_stats (melissa_data_t  *data,
         return;
     }
 
-    increment_moments(&(data->moments[time_step]), in_vect_tab[0], data->vect_size);
+//    increment_moments(&(data->moments[time_step]), in_vect_tab[0], data->vect_size);
 
     if (data->options->min_and_max_op == 1)
     {
@@ -138,7 +138,6 @@ void compute_stats (melissa_data_t  *data,
             increment_quantile (&(data->quantiles[time_step]), data->options->sampling_size, in_vect_tab[1], data->vect_size);
         }
     }
-//    set_bit(data->step_simu.items[group_id], time_step);
     set_bit(data->step_simu[group_id], time_step);
 }
 
@@ -158,21 +157,21 @@ void compute_stats (melissa_data_t  *data,
 
 void finalize_stats (melissa_data_t *data)
 {
-    int time_step;
-    for (time_step = 0; time_step<data->options->nb_time_steps; time_step++)
-    {
-        if (data->options->sobol_op != 1)
-        {
-            if (data->options->mean_op == 1)
-            {
-                compute_mean (&(data->moments[time_step]), &(data->means[time_step]), data->vect_size);
-            }
+//    int time_step;
+//    for (time_step = 0; time_step<data->options->nb_time_steps; time_step++)
+//    {
+//        if (data->options->sobol_op != 1)
+//        {
+//            if (data->options->mean_op == 1)
+//            {
+//                compute_mean (&(data->moments[time_step]), &(data->means[time_step]), data->vect_size);
+//            }
 
-            if (data->options->variance_op == 1)
-            {
-                compute_variance (&(data->moments[time_step]), &(data->variances[time_step]), data->vect_size);
-            }
-        }
-    }
+//            if (data->options->variance_op == 1)
+//            {
+//                compute_variance (&(data->moments[time_step]), &(data->variances[time_step]), data->vect_size);
+//            }
+//        }
+//    }
     // delete backup files here
 }

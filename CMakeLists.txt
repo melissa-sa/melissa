@@ -300,7 +300,7 @@ endif(BUILD_EXAMPLES)
 
 if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
-    message(FATAL_ERROR "Doxygen is needed to build the documentation. Please install it correctly")
+    message(FATAL_ERROR "Doxygen needed to build the documentation. Please install it correctly")
   endif(NOT DOXYGEN_FOUND)
 
   # Configure the Template Doxyfile for our project
