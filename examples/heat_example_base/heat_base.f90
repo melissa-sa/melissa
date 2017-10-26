@@ -21,7 +21,7 @@ program heat
   param(:) = 0
   if (narg .lt. 2) then
     print*,"Missing parameter"
-    return
+    stop
   endif
   ! The initial temperature is stored in param(1)
   ! The four next optional parameters are the boundary temperatures

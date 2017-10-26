@@ -13,7 +13,7 @@ def draw_param_set():
 
 GLOBAL_OPTIONS = {}
 GLOBAL_OPTIONS['user_name'] = "user"
-GLOBAL_OPTIONS['working_directory'] = "/home/user/study"
+GLOBAL_OPTIONS['working_directory'] = "/home/user/melissa_study"
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5

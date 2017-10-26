@@ -20,7 +20,7 @@ program heat_no_mpi
   narg = iargc()
   if (narg .lt. 4) then
     print*,"Missing parameter"
-    return
+    stop
   endif
 
   param(:) = 0
