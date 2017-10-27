@@ -83,20 +83,6 @@ class Group(Job):
         self.job_status = PENDING
         self.status = WAITING
 
-    def restart(self):
-        """
-            Kills and restarts the group (mandatory)
-        """
-        if usr_func['restart_group']:
-            usr_func['restart_group'](self)
-        else:
-            logging.warning('warning: no \'restart_group\''
-                            +' function provided,'
-                            +' using \'launch_group\' instead')
-            self.launch()
-        self.start_time = 0.0
-        self.job_status = PENDING
-
     def check_job(self):
         """
             Checks the group job status (mandatory)
@@ -133,6 +119,15 @@ class SingleSimuGroup(Group):
             self.param_set = usr_func['draw_parameter_set']()
             logging.info('new parameter set: ' + str(self.param_set))
             self.nb_restarts = 0
+
+        if usr_func['restart_group']:
+            usr_func['restart_group'](self)
+        else:
+            logging.warning('warning: no \'restart_group\''
+                            +' function provided,'
+                            +' using \'launch_group\' instead')
+            self.launch()
+        self.job_status = PENDING
         self.status = WAITING
 
 
@@ -152,6 +147,7 @@ class SobolGroup(Group):
         for i in range(len(param_set_a)):
             self.param_set.append(numpy.copy(self.param_set[0]))
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
+
     def restart(self):
         """
             Ends and restarts the Sobol group (mandatory)
@@ -172,7 +168,15 @@ class SobolGroup(Group):
                 self.param_set[i+2] = numpy.copy(self.param_set[0])
                 self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.nb_restarts = 0
-        self.simulation.restart()
+
+        if usr_func['restart_group']:
+            usr_func['restart_group'](self)
+        else:
+            logging.warning('warning: no \'restart_group\''
+                            +' function provided,'
+                            +' using \'launch_group\' instead')
+            self.launch()
+        self.job_status = PENDING
         self.status = WAITING
 
 class Server(Job):
