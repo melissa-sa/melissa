@@ -263,7 +263,7 @@ class Server(Job):
         else:
             logging.warning('Warning: no \'restart_server\' function provided'
                             +' using launch_server instead')
-            exit()
+            self.launch()
         with self.lock:
             self.status = WAITING
             self.job_status = PENDING

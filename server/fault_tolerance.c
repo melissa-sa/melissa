@@ -106,6 +106,7 @@ void send_timeouts (int   detected_timeouts,
             {
                 sprintf(txt_buffer, "timeout %d", i);
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+                simu_timeouts[i] == 0;
             }
         }
     }
