@@ -1,3 +1,19 @@
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
 
 add_library(get_message SHARED get_message.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(get_message ${EXTRA_LIBS})
