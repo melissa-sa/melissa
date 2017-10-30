@@ -17,6 +17,11 @@ program heat_no_mpi
   integer ::  sample_id = 0, sobol_rank = 0
   character(len=5) :: name = C_CHAR_"heat"//C_NULL_CHAR
 
+  ! The program now takes at least 3 parameter:
+  ! - the simulation rank inside the simulation group (sobol_group)
+  ! - the the group rank in the study (sample_id)
+  ! - the initial temperature
+
   narg = iargc()
   if (narg .lt. 4) then
     print*,"Missing parameter"
@@ -29,11 +34,11 @@ program heat_no_mpi
   read( arg, * ) sobol_rank ! sobol rank
   call getarg(2, arg)
   read( arg, * ) sample_id ! sobol group
-  print*, arg
   call getarg(3, arg)
   read( arg, * ) param(1) ! initial temperature
   print*, arg
 
+  ! The four next optional parameters are the boundary temperatures
   do n=5, 8
     if(narg .ge. n) then
       call getarg(n-1, arg)
@@ -41,37 +46,53 @@ program heat_no_mpi
     endif
   enddo
 
+  ! Init timer
   call cpu_time(t1)
 
-  nx        = 100
-  ny        = 100
-  lx        = 10.0
-  ly        = 10.0
-  d         = 1.0
-  dt        = 0.01
-  nmax      = 100
-  dx        = lx/(nx+1)
-  dy        = ly/(ny+1)
-  epsilon   = 0.0001
+  nx        = 100 ! x axis grid subdivisions
+  ny        = 100 ! y axis grid subdivisions
+  lx        = 10.0 ! x length
+  ly        = 10.0 ! y length
+  d         = 1.0 ! diffusion coefficient
+  dt        = 0.01 ! timestep value
+  nmax      = 100 ! number of timesteps
+  dx        = lx/(nx+1) ! x axis step
+  dy        = ly/(ny+1) ! y axis step
+  epsilon   = 0.0001 ! conjugated gradient precision
+  vect_size = nx*ny ! number of cells in the drid
 
+  ! initialization
   allocate(U(vect_size))
   allocate(F(vect_size))
+  ! we will solve Au=F
   call init(U, vect_size, param(1))
+  ! init A (tridiagonal matrix):
   call filling_A(d, dx, dy, dt, A) ! fill A
 
+  ! melissa_init_no_mpi is the first Melissa function to call, and it is called only once.
+  ! It mainly contacts the server.
   call melissa_init_no_mpi(vect_size, sobol_rank, sample_id)
 
+  ! main loop:
   do n=1, nmax
     t = t + dt
+    ! filling F (RHS) before each iteration:
     call filling_F(nx, ny, U, d, dx, dy, dt, t, F, vect_size, lx, ly, param)
+    ! conjugated gradient to solve Au = F.
     call conjgrad(A, F, U, nx, ny, epsilon)
+    ! The result is u
+    ! melissa_send_no_mpi is called at each iteration to send u to the server.
     call melissa_send_no_mpi(n, name, u, sobol_rank, sample_id)
   end do
 
+  ! write results on disk
   call finalize(dx, dy, nx, ny, vect_size, u, f, sample_id)
 
+  ! melissa_finalize closes the connexion with the server.
+  ! No Melissa function should be called after melissa_finalize.
   call melissa_finalize()
-  
+
+  ! end timer
   call cpu_time(t2)
   print*,'Calcul time:', t2-t1, 'sec'
   print*,'Final time step:', t

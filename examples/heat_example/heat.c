@@ -8,6 +8,8 @@
 #include <zmq.h>
 #include <melissa_api.h>
 
+// Fortran interfaces:
+
 void read_file(int*   ,
                int*   ,
                double*,
@@ -97,6 +99,11 @@ int main( int argc, char **argv )
 
   MPI_Init(&argc, &argv);
 
+  // The program now takes at least 3 parameter:
+  // - the simulation rank inside the simulation group (sobol_group)
+  // - the the group rank in the study (sample_id)
+  // - the initial temperature
+
   if (argc < 4)
   {
       fprintf (stderr, "Missing parameter");
@@ -106,6 +113,7 @@ int main( int argc, char **argv )
   sample_id = (int)strtol(argv[2], NULL, 10);
   param[0] = strtod(argv[3], NULL);
 
+  // The four next optional parameters are the boundary temperatures
   for (n=0; n<4; n++)
   {
     param[n+1] = 0;
@@ -115,56 +123,77 @@ int main( int argc, char **argv )
     }
   }
 
+  // The new MPI communicator is build by splitting MPI_COMM_WORLD by rank inside the group.
+  // In the case of a single simulation group, this is equivalent to MPI_Comm_dup.
   MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, &comm);
   MPI_Comm_rank(comm, &me);
   MPI_Comm_size(comm, &np);
   fcomm = MPI_Comm_c2f(comm);
 
 
+  // Init timer
   ftime(&tp);
   t1 = (double)tp.time + (double)tp.millitm / 1000;
 
+  // Neighbour ranks
   next = me+1;
   previous = me-1;
 
   if(next == np)     next=MPI_PROC_NULL;
   if(previous == -1) previous=MPI_PROC_NULL;
 
-  nx        = 100;
-  ny        = 100;
-  lx        = 10.0;
-  ly        = 10.0;
-  d         = 1.0;
-  dt        = 0.01;
-  nmax      = 100;
-  dx        = lx/(nx+1);
-  dy        = ly/(ny+1);
-  epsilon   = 0.0001;
-  n         = nx*ny;
+  nx        = 100; // x axis grid subdivisions
+  ny        = 100; // y axis grid subdivisions
+  lx        = 10.0; // x length
+  ly        = 10.0; // y length
+  d         = 1.0; // diffusion coefficient
+  dt        = 0.01; // timestep value
+  nmax      = 100; // number of timesteps
+  dx        = lx/(nx+1); // x axis step
+  dy        = ly/(ny+1); // y axis step
+  epsilon   = 0.0001;  // conjugated gradient precision
+  n         = nx*ny; // number of cells in the drid
 
+  // work repartition over the MPI processes
+  // i1 and in: first and last global cell indices atributed to this process
   load(&me, &n, &np, &i1, &in);
 
+  // local number of cells
   vect_size = in-i1+1;
 
+  // initialization
   u = malloc(vect_size * sizeof(double));
   f = malloc(vect_size * sizeof(double));
+  // we will solve Au=F
   init(&u[0], &i1, &in, &dx, &dy, &nx, &lx, &ly, &param[0]);
-  filling_A (&d, &dx, &dy, &dt, &nx, &ny, &a[0]); /* fill A */
+  // init A (tridiagonal matrix):
+  filling_A (&d, &dx, &dy, &dt, &nx, &ny, &a[0]);
 
+  // melissa_init is the first Melissa function to call, and it is called only once by each process in comm.
+  // It mainly contacts the server.
   melissa_init (&vect_size, &np, &me, &sobol_rank, &sample_id, &comm, &coupling);
 
+  // main loop:
   for(n=1; n<=nmax; n++)
   {
     t+=dt;
+    // filling F (RHS) before each iteration:
     filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &i1, &in, &lx, &ly, &param[0]);
+    // conjugated gradient to solve Au = F.
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon, &i1, &in, &np, &me, &next, &previous, &fcomm);
+    // The result is u
+    // melissa_send is called at each iteration to send u to the server.
     melissa_send (&n, field_name, u, &me, &sobol_rank, &sample_id);
   }
 
+  // write results on disk
   finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &sample_id);
 
+  // melissa_finalize closes the connexion with the server.
+  // No Melissa function should be called after melissa_finalize.
   melissa_finalize ();
 
+  // end timer
   ftime(&tp);
   t2 = (double)tp.time + (double)tp.millitm / 1000;
 
