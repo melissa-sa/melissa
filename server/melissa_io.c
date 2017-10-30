@@ -437,7 +437,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].means[t].mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                    MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].means[t].mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].means[t].mean, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -476,7 +476,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].variance, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                    MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].variance, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].variances[t].variance, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -504,7 +504,7 @@ void write_stats_bin (melissa_data_t    **data,
                     if (comm_data->rcounts[i] > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].mean_structure.mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                        MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].variances[t].mean_structure.mean, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
                         fwrite((*data)[i].variances[t].mean_structure.mean, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -534,7 +534,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].min, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                    MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].min, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].min_max[t].min, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -560,7 +560,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].max, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                    MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].min_max[t].max, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].min_max[t].max, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -589,7 +589,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].thresholds[t], comm_data->rcounts[i], MPI_INT, &status);
+                    MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].thresholds[t], comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].thresholds[t], sizeof(int), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -618,7 +618,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if (comm_data->rcounts[i] > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].quantiles[t].quantile, comm_data->rcounts[i], MPI_DOUBLE, &status);
+                    MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].quantiles[t].quantile, comm_data->rcounts[i], MPI_DOUBLE, &status);
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].quantiles[t].quantile, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -650,7 +650,7 @@ void write_stats_bin (melissa_data_t    **data,
                     if (comm_data->rcounts[i] > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, comm_data->rcounts[i], MPI_INT, &status);
+                        MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
                         fwrite((*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
@@ -679,7 +679,7 @@ void write_stats_bin (melissa_data_t    **data,
                     if (comm_data->rcounts[i] > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, comm_data->rcounts[i], MPI_INT, &status);
+                        MPI_File_write_at_all (f, offset + comm_data->rdispls[i], (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, comm_data->rcounts[i], MPI_INT, &status);
 #else // BUILD_WITH_MPI
                         fwrite((*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, sizeof(double), comm_data->rcounts[i], f);
 #endif // BUILD_WITH_MPI
