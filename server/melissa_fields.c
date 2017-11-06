@@ -57,7 +57,7 @@
 
 void melissa_get_fields (int               argc,
                          char            **argv,
-                         melissa_field_t  *fields,
+                         melissa_field_t   fields[],
                          int               nb_fields)
 {
     int         opt, i;
@@ -133,11 +133,56 @@ void add_fields (melissa_field_t *fields,
  *
  * @ingroup melissa_fields
  *
+ * This function returns a field id given its name
+ *
+ *******************************************************************************
+ *
+ * @param[in] fields[]
+ * Melissa field array
+ *
+ * @param[in] nb_fields
+ * number of fields
+ *
+ * @param[in] *field_name
+ * name of the field to find
+ *
+ * @retval field_id
+ * the field id
+ *
+ *******************************************************************************/
+
+int get_field_id(melissa_field_t fields[],
+                 int             nb_fields,
+                 char*           field_name)
+{
+    int field_id;
+    if (fields != NULL)
+    {
+        for (field_id=0; field_id<nb_fields; field_id++)
+        {
+            if (strncmp(fields[field_id].name, field_name, MAX_FIELD_NAME) == 0)
+            {
+                return field_id;
+            }
+        }
+    }
+    else
+    {
+        fprintf (stderr, "ERROR: wrong field name (get_field_id)\n");
+    }
+    return -1;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fields
+ *
  * This function returns a pointer to a data structure given its field name
  *
  *******************************************************************************
  *
- * @param[in] *fields
+ * @param[in] fields[]
  * Melissa field array
  *
  * @param[in] nb_fields
@@ -151,21 +196,18 @@ void add_fields (melissa_field_t *fields,
  *
  *******************************************************************************/
 
-melissa_data_t* get_data_ptr (melissa_field_t *fields,
-                              int              nb_fields,
-                              char*            field_name)
+melissa_data_t* get_data_ptr (melissa_field_t fields[],
+                              int             nb_fields,
+                              char*           field_name)
 {
-    int i, j;
+    int i;
     if (fields != NULL)
     {
-        for (j=0; j<nb_fields; j++)
+        for (i=0; i<nb_fields; i++)
         {
-            for (i=0; i<nb_fields; i++)
+            if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME) == 0)
             {
-                if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME) == 0)
-                {
-                    return fields[i].stats_data;
-                }
+                return fields[i].stats_data;
             }
         }
     }
