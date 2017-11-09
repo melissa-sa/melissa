@@ -1,0 +1,169 @@
+/******************************************************************
+*                            Melissa                              *
+*-----------------------------------------------------------------*
+*   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    *
+*                                                                 *
+* This source is covered by the BSD 3-Clause License.             *
+* Refer to the  LICENCE file for further information.             *
+*                                                                 *
+*-----------------------------------------------------------------*
+*  Original Contributors:                                         *
+*    Theophile Terraz,                                            *
+*    Bruno Raffin,                                                *
+*    Alejandro Ribes,                                             *
+*    Bertrand Iooss,                                              *
+******************************************************************/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/timeb.h>
+#include <zmq.h>
+#include <melissa_api_no_mpi.h>
+
+// Fortran interfaces:
+
+void read_file(int*   ,
+               int*   ,
+               double*,
+               double*,
+               double* );
+
+void init(double*,
+          int*   ,
+          double* );
+
+void filling_A(double*,
+               double*,
+               double*,
+               double*,
+               double* );
+
+void filling_F(int*   ,
+               int*   ,
+               double*,
+               double*,
+               double*,
+               double*,
+               double*,
+               double*,
+               double*,
+               int*   ,
+               double*,
+               double*,
+               double* );
+
+void conjgrad(double*,
+              double*,
+              double*,
+              int*   ,
+              int*   ,
+              double* );
+
+void finalize(double*,
+              double*,
+              int*   ,
+              int*   ,
+              int*   ,
+              double*,
+              double*,
+              int*    );
+
+
+int main( int argc, char **argv )
+{
+
+  int    nx, ny, n, nmax, vect_size;
+  double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2;
+  double *u = NULL;
+  double *f = NULL;
+  double a[3];
+  double param[5];
+  struct timeb tp;
+  int sample_id = 0;
+  int sobol_rank = 0;
+  char *field_name = "heat";
+
+  // The program now takes at least 3 parameter:
+  // - the simulation rank inside the simulation group (sobol_group)
+  // - the the group rank in the study (sample_id)
+  // - the initial temperature
+
+  if (argc < 4)
+  {
+      fprintf (stderr, "Missing parameter");
+      return -1;
+  }
+  sobol_rank = (int)strtol(argv[1], NULL, 10);
+  sample_id = (int)strtol(argv[2], NULL, 10);
+  param[0] = strtod(argv[3], NULL);
+
+  // The four next optional parameters are the boundary temperatures
+  for (n=0; n<4; n++)
+  {
+    param[n+1] = 0;
+    if (argc > n+4)
+    {
+       param[n+1] = strtod(argv[n+4], NULL);
+    }
+  }
+
+  // Init timer
+  ftime(&tp);
+  t1 = (double)tp.time + (double)tp.millitm / 1000;
+
+  nx        = 100; // x axis grid subdivisions
+  ny        = 100; // y axis grid subdivisions
+  lx        = 10.0; // x length
+  ly        = 10.0; // y length
+  d         = 1.0; // diffusion coefficient
+  dt        = 0.01; // timestep value
+  nmax      = 100; // number of timesteps
+  dx        = lx/(nx+1); // x axis step
+  dy        = ly/(ny+1); // y axis step
+  epsilon   = 0.0001;  // conjugated gradient precision
+  vect_size = nx*ny; // number of cells in the drid
+
+  // initialization
+  u = malloc(vect_size * sizeof(double));
+  f = malloc(vect_size * sizeof(double));
+  // we will solve Au=F
+  init(&u[0], &vect_size, &param[0]);
+  // init A (tridiagonal matrix):
+  filling_A (&d, &dx, &dy, &dt, &a[0]);
+
+  // melissa_init_no_mpi is the first Melissa function to call, and it is called only once.
+  // It mainly contacts the server.
+  melissa_init_no_mpi(&vect_size, &sobol_rank, &sample_id);
+
+  // main loop:
+  for(n=1;n<=nmax;n++)
+  {
+    t+=dt;
+    // filling F (RHS) before each iteration:
+    filling_F (&nx, &ny, &u[0], &d, &dx, &dy, &dt, &t, &f[0], &vect_size, &lx, &ly, &param[0]);
+    // conjugated gradient to solve Au = F.
+    conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon);
+    // The result is u
+    // melissa_send_no_mpi is called at each iteration to send u to the server.
+    melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sample_id);
+  }
+
+  // write results on disk
+  finalize (&dx, &dy, &nx, &ny, &vect_size, &u[0], &f[0], &sample_id);
+
+  // melissa_finalize closes the connexion with the server.
+  // No Melissa function should be called after melissa_finalize.
+  melissa_finalize ();
+
+  // end timer
+  ftime(&tp);
+  t2 = (double)tp.time + (double)tp.millitm / 1000;
+
+  fprintf(stdout, "Calcul time: %g sec\n", t2-t1);
+  fprintf(stdout, "Final time step: %g\n", t);
+
+  return 0;
+}
