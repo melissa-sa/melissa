@@ -124,6 +124,7 @@ void add_fields (melissa_field_t *fields,
         for (i=0; i<data_size; i++)
         {
             fields[j].stats_data[i].is_valid = 0;
+            fields[j].stats_data[i].vect_size = 0;
         }
     }
 }
@@ -238,9 +239,6 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
  * @param[in] *options
  * Melissa options
  *
- * @param[in] *local_vect_sizes
- * local vector sises
- *
  * @param[in] *total_write_time
  * time counter
  *
@@ -264,23 +262,19 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
  * @param[in] *options
  * Melissa options
  *
- * @param[in] *local_vect_sizes
- * local vector sises
- *
  *******************************************************************************/
 #endif // BUILD_WITH_PROBES
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
-                          melissa_options_t *options,
-                          int               *local_vect_sizes
+                          melissa_options_t *options
 #ifdef BUILD_WITH_PROBES
                           , double *total_write_time
 #endif // BUILD_WITH_PROBES
                           )
 {
     double start_write_time, end_write_time;
-    int i;
+    int i, j;
     if (fields == NULL)
     {
         return;
@@ -289,9 +283,12 @@ void finalize_field_data (melissa_field_t   *fields,
     {
         for (i=0; i<comm_data->client_comm_size; i++)
         {
-            if (comm_data->rcounts[i] > 0)
+            for (j=0; j<options->nb_fields; j++)
             {
-                finalize_stats (&fields->stats_data[i]);
+                if (fields[j].stats_data[i].vect_size > 0)
+                {
+                    finalize_stats (&fields[j].stats_data[i]);
+                }
             }
         }
 
@@ -303,11 +300,11 @@ void finalize_field_data (melissa_field_t   *fields,
 //                         comm_data,
 //                         local_vect_sizes,
 //                         fields->name);
-        write_stats_txt (&(fields->stats_data),
-                         options,
-                         comm_data,
-                         local_vect_sizes,
-                         fields->name);
+//        write_stats_txt (&(fields->stats_data),
+//                         options,
+//                         comm_data,
+//                         local_vect_sizes,
+//                         fields->name);
 //        write_stats_ensight (&(fields->stats_data),
 //                             options,
 //                             comm_data,
@@ -320,9 +317,12 @@ void finalize_field_data (melissa_field_t   *fields,
 
         for (i=0; i<comm_data->client_comm_size; i++)
         {
-            if (comm_data->rcounts[i] > 0)
+            for (j=0; j<options->nb_fields; j++)
             {
-                melissa_free_data (&fields->stats_data[i]);
+                if (fields[j].stats_data[i].vect_size > 0)
+                {
+                    melissa_free_data (&fields->stats_data[i]);
+                }
             }
         }
         melissa_free (fields->stats_data);

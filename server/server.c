@@ -54,8 +54,9 @@ int main (int argc, char **argv)
     melissa_field_t    *fields = NULL;
     comm_data_t         comm_data;
     int                 time_step;
-    int                 recv_buff_size, i, client_rank;
-    char               *buffer = NULL, *buf_ptr = NULL;
+    int                 i, client_rank, field_id;
+    int                 recv_vect_size = 0;
+    char               *buf_ptr = NULL;
     double            **buff_tab_ptr;
     int                 iteration = 0, nb_iterations = 0;
     int                 port_no;
@@ -66,10 +67,12 @@ int main (int argc, char **argv)
     char                node_name[MPI_MAX_PROCESSOR_NAME];
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void               *init_responder = zmq_socket (context, ZMQ_REP);
+    void               *init_responder2 = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
     void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
-    int                 first_init = 1;
-    int                 first_connect = 1;
+    int                 first_init;
+    int                 first_connect;
+    int                *first_send;
     int                 get_next_message = 0;
     int                *client_vect_sizes = NULL, *local_vect_sizes = NULL;
     pull_data_t         pull_data;
@@ -110,6 +113,9 @@ int main (int argc, char **argv)
 //    vector_t            simulations;
 
 #ifdef BUILD_WITH_MPI
+//    MPI_Win *win;
+//    MPI_Status status;
+
     // === init MPI === //
 
     MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED , &i);
@@ -155,6 +161,8 @@ int main (int argc, char **argv)
     fields = melissa_malloc (melissa_options.nb_fields * sizeof(melissa_field_t));
     melissa_get_fields (argc, argv, fields, melissa_options.nb_fields);
 
+//    win = melissa_malloc (melissa_options.nb_fields * sizeof(MPI_Win));
+
     nb_iterations     = melissa_options.sampling_size * melissa_options.nb_time_steps;
     last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
     simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
@@ -182,12 +190,17 @@ int main (int argc, char **argv)
     if (comm_data.rank == 0)
     {
         melissa_bind (init_responder, "tcp://*:2002");
+        melissa_bind (init_responder2, "tcp://*:2004");
         melissa_bind (connexion_responder, "tcp://*:2003");
 
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
-
         first_connect = 2;
         first_init = 2;
+    }
+    else
+    {
+        first_connect = 1;
+        first_init = 1;
     }
 
     // === Restart initialisation === //
@@ -208,6 +221,7 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_MPI
         MPI_Bcast(&comm_data.client_comm_size, 1, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
+        first_send = melissa_calloc(melissa_options.nb_fields*comm_data.client_comm_size, sizeof(int));
         if (comm_data.rank != 0)
         {
             client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
@@ -343,7 +357,32 @@ int main (int argc, char **argv)
             MPI_Bcast(rinit_tab, 2, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
             comm_data.client_comm_size = rinit_tab[0];
-            client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
+            first_send = melissa_calloc(melissa_options.nb_fields*comm_data.client_comm_size, sizeof(int));
+            for (i=0; i<melissa_options.nb_fields; i++)
+            {
+                fields[i].client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
+//#ifdef BUILD_WITH_MPI
+//                MPI_Win_create (fields[i].client_vect_sizes,
+//                                comm_data.client_comm_size * sizeof(int),
+//                                sizeof(int),
+//                                MPI_INFO_NULL,
+//                                MPI_COMM_WORLD,
+//                                &win[i]);
+//#endif // BUILD_WITH_MPI
+            }
+            if (melissa_options.sobol_op == 1)
+            {
+                buff_tab_ptr = melissa_malloc ((melissa_options.nb_parameters + 2) * sizeof(double*));
+            }
+            else
+            {
+                buff_tab_ptr = melissa_malloc (sizeof(double*));
+            }
+            pull_data.local_nb_messages = 0;
+            add_fields(fields,
+                       comm_data.client_comm_size,
+                       melissa_options.nb_fields);
+
             first_init = 0;
         }
 
@@ -356,8 +395,12 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             // new simulation wants to connect, step two
 
-            zmq_recv (init_responder, client_vect_sizes, comm_data.client_comm_size * sizeof(int), 0);
+//            zmq_recv (init_responder2, txt_buffer, MPI_MAX_PROCESSOR_NAME, 0);
+//            zmq_send (init_responder2, sinit_tab, 3 * sizeof(int), 0);
+//            field_id = get_field_id(fields, melissa_options.nb_fields, txt_buffer);
+            zmq_recv (init_responder, &i, comm_data.client_comm_size * sizeof(int), 0);
             zmq_send (init_responder, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+//            sleep(2);
 
             get_next_message = 0;
             if (first_connect == 2)
@@ -368,7 +411,7 @@ int main (int argc, char **argv)
             end_comm_time = melissa_get_time();
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
-            write_client_data (&comm_data.client_comm_size, client_vect_sizes);
+//            write_client_data (&comm_data.client_comm_size, client_vect_sizes); TODO later
         }
 
         // === Melissa structures initialisation, after the second part of the first connexion === //
@@ -376,52 +419,44 @@ int main (int argc, char **argv)
         if (first_connect == 1 && first_init == 0)
         {
 #ifdef BUILD_WITH_MPI
-            MPI_Bcast(client_vect_sizes, comm_data.client_comm_size, MPI_INT, 0, comm_data.comm);
+//            MPI_Bcast(fields[i].client_vect_sizes, comm_data.client_comm_size, MPI_INT, 0, comm_data.comm);
 #endif // BUILD_WITH_MPI
-            melissa_options.global_vect_size = 0;
-            for (i=0; i< comm_data.client_comm_size; i++)
-            {
-                melissa_options.global_vect_size += client_vect_sizes[i];
-            }
-            local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
-            for (i=0; i<comm_data.comm_size; i++)
-            {
-                local_vect_sizes[i] = melissa_options.global_vect_size / comm_data.comm_size;
-                if (i < melissa_options.global_vect_size % comm_data.comm_size)
-                    local_vect_sizes[i] += 1;
-            }
+//            melissa_options.global_vect_size = 0;
+//            for (i=0; i< comm_data.client_comm_size; i++)
+//            {
+//                melissa_options.global_vect_size += client_vect_sizes[i];
+//            }
+//            local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
+//            for (i=0; i<comm_data.comm_size; i++)
+//            {
+//                local_vect_sizes[i] = melissa_options.global_vect_size / comm_data.comm_size;
+//                if (i < melissa_options.global_vect_size % comm_data.comm_size)
+//                    local_vect_sizes[i] += 1;
+//            }
 
-            comm_data.rcounts = melissa_calloc (comm_data.client_comm_size, sizeof(int));
-            comm_data.rdispls = melissa_calloc (comm_data.client_comm_size, sizeof(int));
+//            comm_data.rcounts = melissa_calloc (comm_data.client_comm_size, sizeof(int));
+//            comm_data.rdispls = melissa_calloc (comm_data.client_comm_size, sizeof(int));
 
-            comm_n_to_m_init (comm_data.rcounts,
-                              comm_data.rdispls,
-                              melissa_options.global_vect_size,
-                              local_vect_sizes,
-                              client_vect_sizes,
-                              comm_data.client_comm_size,
-                              comm_data.rank,
-                              &pull_data);
-            nb_iterations *= pull_data.local_nb_messages;
-            recv_buff_size = pull_data.buff_size * sizeof(double);
-            if (melissa_options.sobol_op == 1)
-            {
-                recv_buff_size *= melissa_options.nb_parameters+2;
-            }
-            recv_buff_size += MAX_FIELD_NAME * sizeof(char) + 4 * sizeof(int);
-            buffer = melissa_malloc (recv_buff_size);
+//            comm_n_to_m_init (comm_data.rcounts,
+//                              comm_data.rdispls,
+//                              melissa_options.global_vect_size,
+//                              local_vect_sizes,
+//                              client_vect_sizes,
+//                              comm_data.client_comm_size,
+//                              comm_data.rank,
+//                              &pull_data);
+//            new_recv_buff_size = pull_data.buff_size * sizeof(double);
+//            if (melissa_options.sobol_op == 1)
+//            {
+//                new_recv_buff_size *= melissa_options.nb_parameters+2;
+//            }
+//            new_recv_buff_size += MAX_FIELD_NAME * sizeof(char) + 5 * sizeof(int);
+//            if (recv_buff_size < new_recv_buff_size)
+//            {
+//                recv_buff_size = new_recv_buff_size;
+//                buffer = melissa_realloc (buffer, recv_buff_size);
+//            }
 
-            if (melissa_options.sobol_op == 1)
-            {
-                buff_tab_ptr = melissa_malloc ((melissa_options.nb_parameters + 2) * sizeof(double*));
-            }
-            else
-            {
-                buff_tab_ptr = melissa_malloc (sizeof(double*));
-            }
-            add_fields(fields,
-                       comm_data.client_comm_size,
-                       melissa_options.nb_fields);
             first_connect = 0;
         }
 
@@ -432,14 +467,9 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-#ifdef ZEROCOPY
             zmq_msg_init (&msg);
             zmq_msg_recv (&msg, data_puller, 0);
             buf_ptr = zmq_msg_data (&msg);
-#else // ZEROCOPY
-            zmq_recv (data_puller, buffer, recv_buff_size, 0);
-            buf_ptr = buffer;
-#endif // ZEROCOPY
 #ifdef BUILD_WITH_PROBES
             end_comm_time = melissa_get_time();
             total_comm_time += end_comm_time - start_comm_time;
@@ -453,13 +483,24 @@ int main (int argc, char **argv)
             buf_ptr += sizeof(int);
             memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
+            memcpy(&recv_vect_size, buf_ptr, sizeof(int));
+            buf_ptr += sizeof(int);
             field_name_ptr = buf_ptr;
+
+//====================== NEW ======================
+            field_id = get_field_id(fields, melissa_options.nb_fields, field_name_ptr);
+            if (first_send[field_id*comm_data.client_comm_size+client_rank] == 0)
             {
-                data_ptr = get_data_ptr (fields, melissa_options.nb_fields, field_name_ptr);
+                pull_data.local_nb_messages += 1;
+                nb_iterations = melissa_options.sampling_size * melissa_options.nb_time_steps * pull_data.local_nb_messages;
+                first_send[field_id*comm_data.client_comm_size+client_rank] = 1;
             }
+//====================== END NEW ======================
+
+            data_ptr = fields[field_id].stats_data;
             if (data_ptr[client_rank].is_valid != 1)
             {
-                melissa_init_data (&data_ptr[client_rank], &melissa_options, comm_data.rcounts[client_rank]);
+                melissa_init_data (&data_ptr[client_rank], &melissa_options, recv_vect_size);
                 last_checkpoint_time = melissa_get_time();
                 if (melissa_options.restart == 1)
                 {
@@ -481,11 +522,7 @@ int main (int argc, char **argv)
             last_message_simu[group_id] = melissa_get_time();
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
 #ifdef BUILD_WITH_PROBES
-#ifdef ZEROCOPY
             total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
-#else // ZEROCOPY
-            total_mbytes_recv += recv_buff_size / 1000000;
-#endif // ZEROCOPY
             start_computation_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
@@ -520,7 +557,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             old_simu_state = simu_state[group_id];
             simu_state[group_id] = check_simu_state(fields, melissa_options.nb_fields, group_id, melissa_options.nb_time_steps, &comm_data);
-//            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
+            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
 
             if (simu_state[group_id] == 2)
             {
@@ -628,7 +665,6 @@ int main (int argc, char **argv)
         }
     }
 
-
     if (end_signal == 0)
     {
 
@@ -654,18 +690,20 @@ int main (int argc, char **argv)
 
     if (end_signal == 0)
     {
-        finalize_field_data (fields,
+        for (i=0; i< melissa_options.nb_fields; i++)
+        {
+        finalize_field_data (&fields[i],
                              &comm_data,
-                             &melissa_options,
-                             local_vect_sizes
+                             &melissa_options
 #ifdef BUILD_WITH_PROBES
                             , &total_write_time
 #endif // BUILD_WITH_PROBES
                             );
+        }
     }
-    melissa_free (buffer);
-    melissa_free (comm_data.rcounts);
-    melissa_free (comm_data.rdispls);
+//    melissa_free (comm_data.rcounts);
+//    melissa_free (comm_data.rdispls);
+    melissa_free (first_send);
 
 #ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI

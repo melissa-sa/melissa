@@ -17,14 +17,16 @@
 
 interface
 
-subroutine melissa_init(local_vect_size,&
+subroutine melissa_init(field_name,&
+                        local_vect_size,&
                         comm_size,&
                         rank,&
                         sobol_rank,&
                         sample_id,&
                         comm,&
                         coupling) bind(c, name = 'melissa_init_f')
-    use ISO_C_BINDING, only: C_INT
+    use ISO_C_BINDING, only: C_INT, C_CHAR
+    character(kind=C_CHAR),dimension(*) :: field_name
     integer(kind=C_INT) :: local_vect_size
     integer(kind=C_INT) :: comm_size
     integer(kind=C_INT) :: rank
@@ -34,10 +36,12 @@ subroutine melissa_init(local_vect_size,&
     integer(kind=C_INT) :: coupling
 end subroutine melissa_init
 
-subroutine melissa_init_no_mpi(vect_size,&
+subroutine melissa_init_no_mpi(field_name,&
+                               vect_size,&
                                sobol_rank,&
                                sample_id) bind(c, name = 'melissa_init_no_mpi')
-    use ISO_C_BINDING, only: C_INT
+    use ISO_C_BINDING, only: C_INT, C_CHAR
+    character(kind=C_CHAR),dimension(*) :: field_name
     integer(kind=C_INT) :: vect_size
     integer(kind=C_INT) :: sobol_rank
     integer(kind=C_INT) :: sample_id
@@ -49,7 +53,7 @@ subroutine melissa_send(time_step,&
                         rank,&
                         sobol_rank,&
                         sample_id) bind(c, name = 'melissa_send')
-    use ISO_C_BINDING
+    use ISO_C_BINDING, only: C_INT, C_DOUBLE, C_CHAR
     integer(kind=C_INT)                 :: time_step
     character(kind=C_CHAR),dimension(*) :: field_name
     real(kind=C_DOUBLE),dimension(*)    :: send_vect

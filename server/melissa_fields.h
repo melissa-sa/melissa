@@ -38,9 +38,9 @@
 
 struct melissa_field_s /**< Structure for a linked list of output fields */
 {
-    char            name[MAX_FIELD_NAME]; /**< name of the field                                */
-    melissa_data_t *stats_data;           /**< stats_data structure                             */
-//    struct field_s *next;                 /**< pointer to the next field structure              */
+    char            name[MAX_FIELD_NAME]; /**< name of the field                                       */
+    melissa_data_t *stats_data;           /**< stats_data structure                                    */
+    int            *client_vect_sizes;    /**< client vector sizes for this field for each client rank */
 };
 
 typedef struct melissa_field_s melissa_field_t; /**< type corresponding to field_s */
@@ -54,14 +54,17 @@ void add_fields (melissa_field_t *fields,
                  int              data_size,
                  int              nb_fields);
 
+int get_field_id(melissa_field_t fields[],
+                 int             nb_fields,
+                 char*           field_name);
+
 melissa_data_t* get_data_ptr (melissa_field_t fields[],
                               int             nb_fields,
                               char*           field_name);
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
-                          melissa_options_t *options,
-                          int               *local_vect_sizes
+                          melissa_options_t *options
 #ifdef BUILD_WITH_PROBES
                           , double *write_time
 #endif // BUILD_WITH_PROBES

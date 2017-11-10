@@ -87,7 +87,7 @@ program heat_no_mpi
 
   ! melissa_init_no_mpi is the first Melissa function to call, and it is called only once.
   ! It mainly contacts the server.
-  call melissa_init_no_mpi(vect_size, sobol_rank, sample_id)
+  call melissa_init_no_mpi(name, vect_size, sobol_rank, sample_id)
 
   ! main loop:
   do n=1, nmax

@@ -205,6 +205,41 @@ void* melissa_calloc (size_t num,
  *
  * @ingroup melissa_utils
  *
+ * Wraper around melissa_realloc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *ptr
+ * The pointer to the previously allocated memory
+ *
+ * @param[in] size
+ * Number of bytes to allocate
+ *
+ * @return The pointer to the new allocated memory
+ *
+ *******************************************************************************/
+
+void* melissa_realloc (void   *ptr,
+                       size_t  size)
+{
+    ptr = realloc (ptr, size);
+    if (ptr == NULL)
+    {
+        fprintf (stderr, "ERROR melissa_realloc failed");
+        exit(0);
+    }
+    else
+    {
+//        fprintf(stdout, "Allocated size : %d\n",size);
+        return ptr;
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
  * Free and nullify a pointer
  *
  *******************************************************************************

@@ -109,7 +109,7 @@ program heat
 
   ! melissa_init is the first Melissa function to call, and it is called only once by each process in comm.
   ! It mainly contacts the server.
-  call melissa_init (vect_size, np, me, sobol_rank, sample_id, comm, coupling)
+  call melissa_init (name, vect_size, np, me, sobol_rank, sample_id, comm, coupling)
 
   ! main loop:
   do n=1, nmax

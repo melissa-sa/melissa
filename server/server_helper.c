@@ -235,21 +235,14 @@ int check_simu_state(melissa_field_t *fields,
         {
             for (i=0; i<comm_data->client_comm_size; i++)
             {
-                if (comm_data->rcounts[i] > 0)
+                if (fields[j].stats_data[i].is_valid == 1)
                 {
-                    if (fields[j].stats_data[i].is_valid == 1)
+                    for (t=0; t<nb_time_steps; t++)
                     {
-                        for (t=0; t<nb_time_steps; t++)
+                        if (test_bit (fields[j].stats_data[i].step_simu[group_id], t) == 0)
                         {
-                            if (test_bit (fields[j].stats_data[i].step_simu[group_id], t) == 0)
-                            {
-                                return 1;
-                            }
+                            return 1;
                         }
-                    }
-                    else
-                    {
-                        return 1;
                     }
                 }
             }
@@ -275,26 +268,26 @@ int check_simu_state(melissa_field_t *fields,
 long int count_mbytes_written (melissa_options_t  *options)
 {
     long int mbytes_written = 0;
-    if (options->mean_op == 1)
-    {
-        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-    }
-    if (options->variance_op == 1)
-    {
-        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-    }
-    if (options->min_and_max_op == 1)
-    {
-        mbytes_written += 2*options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-    }
-    if (options->threshold_op == 1)
-    {
-        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-    }
-    if (options->sobol_op == 1)
-    {
-        mbytes_written += options->nb_parameters * 2 *options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-    }
+//    if (options->mean_op == 1)
+//    {
+//        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
+//    }
+//    if (options->variance_op == 1)
+//    {
+//        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
+//    }
+//    if (options->min_and_max_op == 1)
+//    {
+//        mbytes_written += 2*options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
+//    }
+//    if (options->threshold_op == 1)
+//    {
+//        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
+//    }
+//    if (options->sobol_op == 1)
+//    {
+//        mbytes_written += options->nb_parameters * 2 *options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
+//    }
     return mbytes_written;
 }
 
@@ -375,8 +368,8 @@ void global_confidence_sobol_martinez(melissa_field_t *field,
     {
         for (i=0; i<comm_data->client_comm_size; i++)
         {
-            if (comm_data->rcounts[i] > 0)
-            {
+//            if (comm_data->rcounts[i] > 0)
+//            {
                 data = &(field[f].stats_data[i]);
 
                 for (t=0; t<data->options->nb_time_steps; t++)
@@ -400,7 +393,7 @@ void global_confidence_sobol_martinez(melissa_field_t *field,
                         }
                     }
                 }
-            }
+//            }
         }
     }
 }

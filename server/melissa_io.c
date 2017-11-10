@@ -391,7 +391,6 @@ void write_stats_bin (melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
     MPI_File   f;
     MPI_Status status;
-    MPI_Info   info  = MPI_INFO_NULL;
 #else // BUILD_WITH_MPI
     FILE* f;
 #endif // BUILD_WITH_MPI
@@ -694,6 +693,8 @@ void write_stats_bin (melissa_data_t    **data,
         }
     }
 }
+
+#ifdef PLOP
 
 /**
  *******************************************************************************
@@ -1874,3 +1875,5 @@ void write_stats_txt (melissa_data_t    **data,
     }
     melissa_free (d_buffer);
 }
+
+#endif
