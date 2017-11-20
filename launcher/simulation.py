@@ -120,6 +120,7 @@ class SingleSimuGroup(Group):
         """
         Group.__init__(self)
         self.rank = Group.nb_groups
+        self.simu_id = self.rank
         self.param_set = numpy.copy(param_set)
 
     def restart(self):
@@ -153,16 +154,20 @@ class SobolGroup(Group):
     """
     def __init__(self, param_set_a, param_set_b):
         """
-            SobolCoupledGroup constructor
+            SobolGroup constructor
         """
         Group.__init__(self)
         self.rank = Group.nb_groups
         self.param_set = list()
+        self.simu_id = list()
         self.param_set.append(numpy.copy(param_set_a))
+        self.simu_id.append(self.rank*(len(param_set_a)+2))
         self.param_set.append(numpy.copy(param_set_b))
+        self.simu_id.append(self.rank*(len(param_set_a)+2)+1)
         for i in range(len(param_set_a)):
             self.param_set.append(numpy.copy(self.param_set[0]))
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
+            self.simu_id.append(self.rank*(len(param_set_a)+2)+i+2)
 
     def restart(self):
         """

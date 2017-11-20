@@ -192,8 +192,7 @@ def launch_simu(simulation):
                                  '-n',
                                  str(NODES_GROUP),
                                  '../'+EXECUTABLE,
-                                 str(0),
-                                 str(simulation.rank),
+                                 str(simulation.simu_id),
                                  ' '.join(str(i) for i in simulation.param_set)))
             print command
             simulation.job_id = subprocess.Popen(command.split()).pid
@@ -215,12 +214,10 @@ def launch_group(group):
         command += ' '.join(('-n',
                              str(NODES_GROUP),
                              '../'+EXECUTABLE,
-                             str(i),
-                             str(group.rank),
+                             str(group.simu_id[i]),
                              ' '.join(str(j) for j in group.param_set[i]),
                              ': '))
     print command[:-2]
-    create_run_group(group, command)
     if BATCH_SCHEDULER == "local":
         group.job_id = subprocess.Popen(command[:-2].split()).pid
     else:
@@ -469,7 +466,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantile'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

@@ -82,31 +82,28 @@ int main( int argc, char **argv )
   double a[3];
   double param[5];
   struct timeb tp;
-  int sample_id = 0;
-  int sobol_rank = 0;
+  int simu_id = 0;
   char *field_name = "heat";
 
   // The program now takes at least 3 parameter:
-  // - the simulation rank inside the simulation group (sobol_group)
-  // - the the group rank in the study (sample_id)
+  // - the simulation id given by the launcher
   // - the initial temperature
 
-  if (argc < 4)
+  if (argc < 3)
   {
       fprintf (stderr, "Missing parameter");
       return -1;
   }
-  sobol_rank = (int)strtol(argv[1], NULL, 10);
-  sample_id = (int)strtol(argv[2], NULL, 10);
-  param[0] = strtod(argv[3], NULL);
+  simu_id = (int)strtol(argv[1], NULL, 10);
+  param[0] = strtod(argv[2], NULL);
 
   // The four next optional parameters are the boundary temperatures
-  for (n=0; n<4; n++)
+  for (n=0; n<3; n++)
   {
     param[n+1] = 0;
-    if (argc > n+4)
+    if (argc > n+3)
     {
-       param[n+1] = strtod(argv[n+4], NULL);
+       param[n+1] = strtod(argv[n+3], NULL);
     }
   }
 
@@ -136,7 +133,7 @@ int main( int argc, char **argv )
 
   // melissa_init_no_mpi is the first Melissa function to call, and it is called only once.
   // It mainly contacts the server.
-  melissa_init_no_mpi(field_name, &vect_size, &sobol_rank, &sample_id);
+  melissa_init_no_mpi(field_name, &vect_size, &simu_id);
 
   // main loop:
   for(n=1;n<=nmax;n++)
@@ -148,11 +145,11 @@ int main( int argc, char **argv )
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon);
     // The result is u
     // melissa_send_no_mpi is called at each iteration to send u to the server.
-    melissa_send_no_mpi(&n, field_name, u, &sobol_rank, &sample_id);
+    melissa_send_no_mpi(&n, field_name, u, &simu_id);
   }
 
   // write results on disk
-  finalize (&dx, &dy, &nx, &ny, &vect_size, &u[0], &f[0], &sample_id);
+  finalize (&dx, &dy, &nx, &ny, &vect_size, &u[0], &f[0], &simu_id);
 
   // melissa_finalize closes the connexion with the server.
   // No Melissa function should be called after melissa_finalize.

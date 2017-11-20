@@ -293,7 +293,7 @@ add_subdirectory(server)
 
 add_subdirectory(launcher)
 
-#add_subdirectory(launcher_saturne)
+add_subdirectory(launcher_saturne)
 
 add_subdirectory(gui)
 

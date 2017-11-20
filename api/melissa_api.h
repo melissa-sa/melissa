@@ -35,8 +35,7 @@ void melissa_init(const char *field_name,
                   const int  *local_vect_size,
                   const int  *comm_size,
                   const int  *rank,
-                  const int  *sobol_rank,
-                  const int  *sample_id,
+                  const int  *simu_id,
                   MPI_Comm   *comm,
                   const int  *coupling);
 
@@ -44,8 +43,7 @@ void melissa_init_f(const char *field_name,
                     int        *local_vect_size,
                     int        *comm_size,
                     int        *rank,
-                    const int  *sobol_rank,
-                    const int  *sample_id,
+                    const int  *simu_id,
                     MPI_Fint   *comm_fortran,
                     int        *coupling);
 
@@ -53,10 +51,9 @@ void melissa_send(const int  *time_step,
                   const char *field_name,
                   double     *send_vect,
                   const int  *rank,
-                  const int  *sobol_rank,
-                  const int  *sample_id);
+                  const int  *simu_id);
 
-void melissa_finalize();
+void melissa_finalize(void);
 #endif // BUILD_WITH_MPI
 
 #endif // MELISSA_API_H

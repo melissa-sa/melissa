@@ -30,32 +30,28 @@ program heat_no_mpi
   real*8,dimension(3) :: A
   real*8,dimension(5) :: param
   character(len=32) :: arg
-  integer ::  sample_id = 0, sobol_rank = 0
+  integer ::  simu_id = 0
   character(len=5) :: name = C_CHAR_"heat"//C_NULL_CHAR
 
   ! The program now takes at least 3 parameter:
-  ! - the simulation rank inside the simulation group (sobol_group)
-  ! - the the group rank in the study (sample_id)
+  ! - the simulation id given by the launcher
   ! - the initial temperature
 
   narg = iargc()
-  if (narg .lt. 4) then
+  if (narg .lt. 3) then
     print*,"Missing parameter"
     stop
   endif
 
   param(:) = 0
   call getarg(1, arg)
-  print*, arg
-  read( arg, * ) sobol_rank ! sobol rank
+  read( arg, * ) simu_id ! simulation id
   call getarg(2, arg)
-  read( arg, * ) sample_id ! sobol group
-  call getarg(3, arg)
   read( arg, * ) param(1) ! initial temperature
   print*, arg
 
   ! The four next optional parameters are the boundary temperatures
-  do n=5, 8
+  do n=4, 7
     if(narg .ge. n) then
       call getarg(n-1, arg)
       read( arg, * ) param(n-3)
@@ -87,7 +83,7 @@ program heat_no_mpi
 
   ! melissa_init_no_mpi is the first Melissa function to call, and it is called only once.
   ! It mainly contacts the server.
-  call melissa_init_no_mpi(name, vect_size, sobol_rank, sample_id)
+  call melissa_init_no_mpi(name, vect_size, simu_id)
 
   ! main loop:
   do n=1, nmax
@@ -98,11 +94,11 @@ program heat_no_mpi
     call conjgrad(A, F, U, nx, ny, epsilon)
     ! The result is u
     ! melissa_send_no_mpi is called at each iteration to send u to the server.
-    call melissa_send_no_mpi(n, name, u, sobol_rank, sample_id)
+    call melissa_send_no_mpi(n, name, u, simu_id)
   end do
 
   ! write results on disk
-  call finalize(dx, dy, nx, ny, vect_size, u, f, sample_id)
+  call finalize(dx, dy, nx, ny, vect_size, u, f, simu_id)
 
   ! melissa_finalize closes the connexion with the server.
   ! No Melissa function should be called after melissa_finalize.

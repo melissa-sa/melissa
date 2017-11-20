@@ -38,8 +38,6 @@
 #include "melissa_utils.h"
 #include "fault_tolerance.h"
 
-#define ZEROCOPY /**< Use ZMQ zero copy messages */
-
 static volatile int end_signal = 0;
 
 void sig_handler(int signo) {
@@ -67,7 +65,7 @@ int main (int argc, char **argv)
     char                node_name[MPI_MAX_PROCESSOR_NAME];
     void               *connexion_responder = zmq_socket (context, ZMQ_REP);
     void               *init_responder = zmq_socket (context, ZMQ_REP);
-    void               *init_responder2 = zmq_socket (context, ZMQ_REP);
+//    void               *init_responder2 = zmq_socket (context, ZMQ_REP);
     void               *data_puller = zmq_socket (context, ZMQ_PULL);
     void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
     int                 first_init;
@@ -190,7 +188,7 @@ int main (int argc, char **argv)
     if (comm_data.rank == 0)
     {
         melissa_bind (init_responder, "tcp://*:2002");
-        melissa_bind (init_responder2, "tcp://*:2004");
+//        melissa_bind (init_responder2, "tcp://*:2004");
         melissa_bind (connexion_responder, "tcp://*:2003");
 
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
@@ -478,8 +476,10 @@ int main (int argc, char **argv)
             memcpy(&time_step, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));
+            fprintf (stdout, "simu id: %d \n", simu_id);
             buf_ptr += sizeof(int);
             memcpy(&group_id, buf_ptr, sizeof(int));
+            fprintf (stdout, "group id: %d \n", group_id);
             buf_ptr += sizeof(int);
             memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
@@ -538,7 +538,7 @@ int main (int argc, char **argv)
                 for (i=0; i<melissa_options.nb_parameters+2; i++)
                 {
                     buff_tab_ptr[i] = (double*)buf_ptr;
-                    buf_ptr += comm_data.rcounts[client_rank] * sizeof(double);
+                    buf_ptr += recv_vect_size * sizeof(double);
                 }
                 // === Compute classical statistics + Sobol indices === //
                 compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
@@ -574,14 +574,12 @@ int main (int argc, char **argv)
             {
                 fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*melissa_options.nb_fields, field_name_ptr);
             }
-#ifdef ZEROCOPY
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
             {
                 buff_tab_ptr[i] = NULL;
             }
             buf_ptr = NULL;
             zmq_msg_close (&msg);
-#endif // ZEROCOPY
         }
 
 //        if (iteration % 100 == 0)
@@ -647,7 +645,7 @@ int main (int argc, char **argv)
 
         // === Send a message to the Python Launcher in case of Sobol indices convergence === //
 
-        if (first_connect ==0 &&
+        if (first_connect == 0 &&
             nb_converged_fields >= melissa_options.nb_fields * pull_data.local_nb_messages &&
             melissa_options.sobol_op == 1)
         {
@@ -655,7 +653,7 @@ int main (int argc, char **argv)
             zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
             //                if (strcmp ("stop", txt_buffer))
             //                {
-            break;
+            //                    break;
             //                }
         }
 
@@ -679,14 +677,14 @@ int main (int argc, char **argv)
 
     interval1 = 0;
     interval_tot = 0;
-    if (melissa_options.sobol_op == 1)
-    {
-        global_confidence_sobol_martinez (fields,
-                                          melissa_options.nb_fields,
-                                          &comm_data,
-                                          &interval1,
-                                          &interval_tot);
-    }
+//    if (melissa_options.sobol_op == 1)
+//    {
+//        global_confidence_sobol_martinez (fields,
+//                                          melissa_options.nb_fields,
+//                                          &comm_data,
+//                                          &interval1,
+//                                          &interval_tot);
+//    }
 
     if (end_signal == 0)
     {
