@@ -141,7 +141,6 @@ int main( int argc, char **argv )
   // In the case of a single simulation group, this is equivalent to MPI_Comm_dup.
   MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &appnum, &statinfo);
   MPI_Comm_split(MPI_COMM_WORLD, *appnum, me, &comm);
-  fprintf (stdout, "appnum = %d\n", *appnum);
   MPI_Comm_rank(comm, &me);
   MPI_Comm_size(comm, &np);
   fcomm = MPI_Comm_c2f(comm);

@@ -300,11 +300,10 @@ void finalize_field_data (melissa_field_t   *fields,
 //                         comm_data,
 //                         local_vect_sizes,
 //                         fields->name);
-//        write_stats_txt (&(fields->stats_data),
-//                         options,
-//                         comm_data,
-//                         local_vect_sizes,
-//                         fields->name);
+        write_stats_txt (&(fields->stats_data),
+                         options,
+                         comm_data,
+                         fields->name);
 //        write_stats_ensight (&(fields->stats_data),
 //                             options,
 //                             comm_data,

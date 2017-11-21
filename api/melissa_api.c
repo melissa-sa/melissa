@@ -425,7 +425,6 @@ void melissa_init (const char *field_name,
         global_data.rinit_tab[0] = 0;
         global_data.rinit_tab[1] = 1;
         global_data.buff_size    = 0;
-        fprintf (stdout, "plop 0 (%s)\n", field_name);
 
         sprintf (port_name, "tcp://%s:2003", server_node_name);
         melissa_connect (global_data.connexion_requester, port_name);
@@ -458,7 +457,6 @@ void melissa_init (const char *field_name,
     comm_ptr->global_vect_size = 0;
     comm_ptr->local_vect_sizes = malloc(*comm_size * sizeof(int));
 
-    fprintf (stdout, "plop (%s)\n", field_name);
 #ifdef BUILD_WITH_MPI
     if (*comm_size > 1)
     {

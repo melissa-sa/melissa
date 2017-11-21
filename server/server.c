@@ -72,7 +72,6 @@ int main (int argc, char **argv)
     int                 first_connect;
     int                *first_send;
     int                 get_next_message = 0;
-    int                *client_vect_sizes = NULL, *local_vect_sizes = NULL;
     pull_data_t         pull_data;
     int                 nb_bufferized_messages = 32;
     char               *field_name_ptr = NULL;
@@ -108,11 +107,8 @@ int main (int argc, char **argv)
     int                 detected_timeouts;
     int                 nb_finished_simulations = 0;
     double              last_checkpoint_time = 0.0;
-//    vector_t            simulations;
 
 #ifdef BUILD_WITH_MPI
-//    MPI_Win *win;
-//    MPI_Status status;
 
     // === init MPI === //
 
@@ -159,8 +155,6 @@ int main (int argc, char **argv)
     fields = melissa_malloc (melissa_options.nb_fields * sizeof(melissa_field_t));
     melissa_get_fields (argc, argv, fields, melissa_options.nb_fields);
 
-//    win = melissa_malloc (melissa_options.nb_fields * sizeof(MPI_Win));
-
     nb_iterations     = melissa_options.sampling_size * melissa_options.nb_time_steps;
     last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
     simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
@@ -199,60 +193,6 @@ int main (int argc, char **argv)
     {
         first_connect = 1;
         first_init = 1;
-    }
-
-    // === Restart initialisation === //
-
-    if (melissa_options.restart == 1)
-    {
-        first_connect = 1;
-        first_init = 0;
-        if (comm_data.rank == 0)
-        {
-            fprintf (stdout, "reading data files...");
-            read_client_data(&comm_data.client_comm_size, &client_vect_sizes, &melissa_options);
-            // if client_data.save doesn't exist, we set restart to 0
-        }
-    }
-    if (melissa_options.restart == 1)
-    {
-#ifdef BUILD_WITH_MPI
-        MPI_Bcast(&comm_data.client_comm_size, 1, MPI_INT, 0, comm_data.comm);
-#endif // BUILD_WITH_MPI
-        first_send = melissa_calloc(melissa_options.nb_fields*comm_data.client_comm_size, sizeof(int));
-        if (comm_data.rank != 0)
-        {
-            client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
-            fprintf (stdout, " ok \n");
-            fprintf (stdout, "reading simulation states at checkpoint time");
-        }
-        read_simu_states(simu_state, &melissa_options, &comm_data, melissa_options.sampling_size);
-        for (i=0; i<melissa_options.sampling_size; i++)
-        {
-            if (comm_data.rank == 0)
-            {
-                fprintf(stderr, "  simu_state[%d] = %d\n", i, simu_state[i]);
-            }
-            if (simu_state[i] == 2)
-            {
-                nb_finished_simulations += 1;
-            }
-        }
-        if (comm_data.rank == 0)
-        {
-            for (i=0; i<melissa_options.sampling_size; i++)
-            {
-                sprintf (txt_buffer, "simu_state %d %d", i, simu_state[i]);
-                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-            }
-        }
-        for (i=0; i<melissa_options.sampling_size; i++)
-        {
-            if (simu_state[i] == 1)
-            {
-                simu_state[i] = 0;
-            }
-        }
     }
 
     // === send node 0 name to launcher === //
@@ -296,7 +236,7 @@ int main (int argc, char **argv)
 
         // === If no message on the connexion port === //
 
-//        if (comm_data.rank == 0)
+        if (comm_data.rank == 0)
         {
             if (last_timeout_check + 100 < melissa_get_time())
             {
@@ -358,15 +298,7 @@ int main (int argc, char **argv)
             first_send = melissa_calloc(melissa_options.nb_fields*comm_data.client_comm_size, sizeof(int));
             for (i=0; i<melissa_options.nb_fields; i++)
             {
-                fields[i].client_vect_sizes = melissa_malloc (comm_data.client_comm_size * sizeof(int));
-//#ifdef BUILD_WITH_MPI
-//                MPI_Win_create (fields[i].client_vect_sizes,
-//                                comm_data.client_comm_size * sizeof(int),
-//                                sizeof(int),
-//                                MPI_INFO_NULL,
-//                                MPI_COMM_WORLD,
-//                                &win[i]);
-//#endif // BUILD_WITH_MPI
+                fields[i].client_vect_sizes = melissa_calloc (comm_data.client_comm_size, sizeof(int));
             }
             if (melissa_options.sobol_op == 1)
             {
@@ -393,12 +325,8 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             // new simulation wants to connect, step two
 
-//            zmq_recv (init_responder2, txt_buffer, MPI_MAX_PROCESSOR_NAME, 0);
-//            zmq_send (init_responder2, sinit_tab, 3 * sizeof(int), 0);
-//            field_id = get_field_id(fields, melissa_options.nb_fields, txt_buffer);
             zmq_recv (init_responder, &i, comm_data.client_comm_size * sizeof(int), 0);
             zmq_send (init_responder, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-//            sleep(2);
 
             get_next_message = 0;
             if (first_connect == 2)
@@ -409,52 +337,12 @@ int main (int argc, char **argv)
             end_comm_time = melissa_get_time();
             total_comm_time += end_comm_time - start_comm_time;
 #endif // BUILD_WITH_PROBES
-//            write_client_data (&comm_data.client_comm_size, client_vect_sizes); TODO later
         }
 
-        // === Melissa structures initialisation, after the second part of the first connexion === //
+        // === Melissa structures initialisation, after the second part of the first connexion (deprecated) === //
 
         if (first_connect == 1 && first_init == 0)
         {
-#ifdef BUILD_WITH_MPI
-//            MPI_Bcast(fields[i].client_vect_sizes, comm_data.client_comm_size, MPI_INT, 0, comm_data.comm);
-#endif // BUILD_WITH_MPI
-//            melissa_options.global_vect_size = 0;
-//            for (i=0; i< comm_data.client_comm_size; i++)
-//            {
-//                melissa_options.global_vect_size += client_vect_sizes[i];
-//            }
-//            local_vect_sizes = melissa_malloc (comm_data.comm_size * sizeof(int));
-//            for (i=0; i<comm_data.comm_size; i++)
-//            {
-//                local_vect_sizes[i] = melissa_options.global_vect_size / comm_data.comm_size;
-//                if (i < melissa_options.global_vect_size % comm_data.comm_size)
-//                    local_vect_sizes[i] += 1;
-//            }
-
-//            comm_data.rcounts = melissa_calloc (comm_data.client_comm_size, sizeof(int));
-//            comm_data.rdispls = melissa_calloc (comm_data.client_comm_size, sizeof(int));
-
-//            comm_n_to_m_init (comm_data.rcounts,
-//                              comm_data.rdispls,
-//                              melissa_options.global_vect_size,
-//                              local_vect_sizes,
-//                              client_vect_sizes,
-//                              comm_data.client_comm_size,
-//                              comm_data.rank,
-//                              &pull_data);
-//            new_recv_buff_size = pull_data.buff_size * sizeof(double);
-//            if (melissa_options.sobol_op == 1)
-//            {
-//                new_recv_buff_size *= melissa_options.nb_parameters+2;
-//            }
-//            new_recv_buff_size += MAX_FIELD_NAME * sizeof(char) + 5 * sizeof(int);
-//            if (recv_buff_size < new_recv_buff_size)
-//            {
-//                recv_buff_size = new_recv_buff_size;
-//                buffer = melissa_realloc (buffer, recv_buff_size);
-//            }
-
             first_connect = 0;
         }
 
@@ -476,10 +364,8 @@ int main (int argc, char **argv)
             memcpy(&time_step, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));
-            fprintf (stdout, "simu id: %d \n", simu_id);
             buf_ptr += sizeof(int);
             memcpy(&group_id, buf_ptr, sizeof(int));
-            fprintf (stdout, "group id: %d \n", group_id);
             buf_ptr += sizeof(int);
             memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
@@ -557,7 +443,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             old_simu_state = simu_state[group_id];
             simu_state[group_id] = check_simu_state(fields, melissa_options.nb_fields, group_id, melissa_options.nb_time_steps, &comm_data);
-            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
+//            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
 
             if (simu_state[group_id] == 2)
             {
