@@ -41,10 +41,10 @@ program heat
   endif
   ! The initial temperature is stored in param(1)
   ! The four next optional parameters are the boundary temperatures
-  do n=2, 6
+  do n=1, 5
     if(narg .ge. n) then
       call getarg(n, arg)
-      read( arg, * ) param(n-1)
+      read( arg, * ) param(n)
     endif
   enddo
   temp = param(1)
@@ -103,7 +103,7 @@ program heat
   end do
 
   ! write results on disk
-  call finalize(dx, dy, nx, ny, i1, in, u, f, me, 1)
+  call finalize(dx, dy, nx, ny, i1, in, u, f, me, 0)
 
   ! end timer
   t2 = mpi_wtime()

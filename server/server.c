@@ -373,7 +373,7 @@ int main (int argc, char **argv)
             buf_ptr += sizeof(int);
             field_name_ptr = buf_ptr;
 
-//====================== NEW ======================
+//======================== NEW ========================
             field_id = get_field_id(fields, melissa_options.nb_fields, field_name_ptr);
             if (first_send[field_id*comm_data.client_comm_size+client_rank] == 0)
             {

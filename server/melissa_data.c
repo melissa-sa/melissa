@@ -43,6 +43,11 @@ static void melissa_alloc_data (melissa_data_t *data)
         exit (1);
     }
 
+    if (data->vect_size <= 0)
+    {
+        return;
+    }
+
     data->moments = melissa_malloc (data->options->nb_time_steps * sizeof(moments_t));
     for (i=0; i<data->options->nb_time_steps; i++)
         init_moments (&(data->moments[i]), data->vect_size, 4);

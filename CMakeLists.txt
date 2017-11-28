@@ -88,7 +88,8 @@ endif(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
 if(INSTALL_ZMQ)
   include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
   ExternalProject_Add(ZeroMQ
-    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
+#    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
+    URL https://github.com/zeromq/libzmq/releases/download/v4.2.1/zeromq-4.2.1.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
   )

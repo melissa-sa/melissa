@@ -51,14 +51,13 @@ program heat
   param(:) = 0
   call getarg(1, arg)
   read( arg, * ) simu_id ! simulation id
-  call getarg(2, arg)
-  read( arg, * ) param(1) ! initial temperature
 
+  ! The initial temperature is stored in param(1)
   ! The four next optional parameters are the boundary temperatures
-  do n=4, 7
+  do n=2, 6
     if(narg .ge. n) then
-      call getarg(n-1, arg)
-      read( arg, * ) param(n-3)
+      call getarg(n, arg)
+      read( arg, * ) param(n-1)
     endif
   enddo
 

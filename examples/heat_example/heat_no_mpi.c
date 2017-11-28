@@ -95,15 +95,15 @@ int main( int argc, char **argv )
       return -1;
   }
   simu_id = (int)strtol(argv[1], NULL, 10);
-  param[0] = strtod(argv[2], NULL);
 
+  // The initial temperature is stored in param[0]
   // The four next optional parameters are the boundary temperatures
-  for (n=0; n<3; n++)
+  for (n=0; n<5; n++)
   {
-    param[n+1] = 0;
-    if (argc > n+3)
+    param[n] = 0;
+    if (argc > n+2)
     {
-       param[n+1] = strtod(argv[n+3], NULL);
+       param[n] = strtod(argv[n+2], NULL);
     }
   }
 

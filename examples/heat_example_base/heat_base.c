@@ -98,7 +98,7 @@ int main( int argc, char **argv )
 {
 
   int    nx, ny, n, nmax, me, np, i1, in, vect_size, next, previous;
-  double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2, temp;
+  double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2;
   double *u = NULL;
   double *f = NULL;
   double a[3];
@@ -125,7 +125,6 @@ int main( int argc, char **argv )
        param[n] = strtod(argv[n+1], NULL);
     }
   }
-  temp = param[0];
 
   // The new MPI communicator, process rank and communicator size
   MPI_Comm_dup(MPI_COMM_WORLD, &comm);
@@ -167,7 +166,7 @@ int main( int argc, char **argv )
   u = malloc(vect_size * sizeof(double));
   f = malloc(vect_size * sizeof(double));
   // we will solve Au=F
-  init(&u[0], &i1, &in, &dx, &dy, &nx, &lx, &ly, &temp);
+  init(&u[0], &i1, &in, &dx, &dy, &nx, &lx, &ly, &param[0]);
   // init A (tridiagonal matrix):
   filling_A (&d, &dx, &dy, &dt, &nx, &ny, &a[0]);
 
