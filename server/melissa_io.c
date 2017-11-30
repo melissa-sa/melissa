@@ -227,7 +227,7 @@ void read_saved_stats (melissa_data_t *data,
     f = fopen(file_name, "rb");
     if (f == NULL)
     {
-        fprintf(stdout,"WARNING: can not open %s%d_%d.data\n", field_name, comm_data->rank, client_rank);
+        fprintf(stdout,"WARNING: can not open %s/%d_%d.data\n", field_name, comm_data->rank, client_rank);
         return;
     }
     fread(&data[client_rank].vect_size, sizeof(int), 1, f);
@@ -296,8 +296,8 @@ void save_simu_states(int         *simu_states,
     f = fopen(file_name, "wb+");
     if (f == NULL)
     {
-      fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
-      return;
+        fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
+        return;
     }
 //    fprintf (stdout, "simulation states (rank %d):", comm_data->);
 //    for (i=0; i<size; i++)

@@ -223,12 +223,12 @@ def fault_tolerance():
             if group.status < FINISHED and group.status > NOT_SUBMITTED:
                 with group.lock:
                     group.cancel()
-        with server.lock:
-            logging.info('resubmit server job')
-            server.restart()
-            server.wait_start()
-            logging.info('server start')
-            time.sleep(1)
+        logging.info('resubmit server job')
+        time.sleep(1)
+        server.restart()
+        server.wait_start()
+        logging.info('server start')
+        time.sleep(1)
         for group in groups:
             if group.status < FINISHED and group.status > NOT_SUBMITTED:
                 with group.lock:

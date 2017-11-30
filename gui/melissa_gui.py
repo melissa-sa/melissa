@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding : utf-8 -*-
+
 ###################################################################
 #                            Melissa                              #
 #-----------------------------------------------------------------#
@@ -14,9 +17,6 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-#!/usr/bin/python
-# -*- coding : utf-8 -*-
-
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from copy import deepcopy
@@ -26,7 +26,7 @@ import imp
 import time
 
 cwd = os.getcwd()
-launcher_path = "@CMAKE_BINARY_DIR@/launcher_templates"
+launcher_path = "@CMAKE_BINARY_DIR@/launcher"
 print launcher_path
 if len(sys.argv) == 2:
     options_path = sys.argv[1]
@@ -77,10 +77,9 @@ class melissa_gui(QWidget):
         self.nb_time_steps  = STUDY_OPTIONS['nb_time_steps']
         self.operations     = []
         self.threshold      = STUDY_OPTIONS['threshold_value']
-        self.mpi_options    = SERVER_OPTIONS['mpi_options']
-        self.nb_proc_simu   = SIMULATIONS_OPTIONS['nb_proc']
-        self.nb_proc_server = SERVER_OPTIONS['nb_proc']
-        self.server_path    = SERVER_OPTIONS['path']
+#        self.nb_proc_simu   = SIMULATIONS_OPTIONS['nb_proc']
+#        self.nb_proc_server = SERVER_OPTIONS['nb_proc']
+#        self.server_path    = SERVER_OPTIONS['path']
 #        self.server_path    = "../server"
         self.range_min = []
         self.range_max = []
@@ -89,7 +88,6 @@ class melissa_gui(QWidget):
 #            self.range_max.append = range_max[i]
 #        self.range_min      = range_min
 #        self.range_max      = range_max
-        self.coupling       = SIMULATIONS_OPTIONS['coupling']
 
         self.QCheckBox_sobol = QCheckBox("Sobol Indices")
         self.mean_op = MELISSA_STATS['mean']
@@ -113,34 +111,34 @@ class melissa_gui(QWidget):
         self.QLineEdit_username.editingFinished.connect(self.change_username)
         self.fbox.addRow(self.label_username,self.QLineEdit_username)
 
-        # batch scheduller #
-        self.label_sched = QLabel("Batch Scheduller")
-        self.QComboBo_sched = QComboBox()
-        self.QComboBo_sched.addItems(["Slurm", "CCC", "OAR"])
-        self.fbox.addRow(self.label_sched,self.QComboBo_sched)
+#        # batch scheduller #
+#        self.label_sched = QLabel("Batch Scheduller")
+#        self.QComboBo_sched = QComboBox()
+#        self.QComboBo_sched.addItems(["Slurm", "CCC", "OAR"])
+#        self.fbox.addRow(self.label_sched,self.QComboBo_sched)
 
-        # number of parameters #
-        self.dialog = None
-        self.label_param = QLabel("Parameters")
-        self.new_param_name = "NewParam"
-        self.new_param_range_min = 0
-        self.new_param_range_max = 1
-        self.item_list = []
-        self.parameter_list = []
-        self.QListWidget_param = QListWidget()
-#        self.QListWidget_param.itemDoubleClicked.connect(self.print_plop)
-        self.QListWidget_param.itemDoubleClicked.connect(self.show_modif_param_dialog)
-        if STUDY_OPTIONS['nb_parameters'] > 0:
-            for i in range(STUDY_OPTIONS['nb_parameters']):
-                self.add_parameter(STUDY_OPTIONS['range_min_param'][i],
-                                   STUDY_OPTIONS['range_max_param'][i])
-        else:
-            self.add_parameter()
-        self.fbox.addRow(self.label_param,self.QListWidget_param)
-        self.QPushButton_add = QPushButton("Add Parameter")
-        self.connect(self.QPushButton_add,  SIGNAL("clicked()"), self.show_add_param_dialog)
-        self.connect(self.QPushButton_add,  SIGNAL("clicked()"), self.check_nb_param)
-        self.fbox.addRow(QLabel(""),self.QPushButton_add)
+#        # number of parameters #
+#        self.dialog = None
+#        self.label_param = QLabel("Parameters")
+#        self.new_param_name = "NewParam"
+#        self.new_param_range_min = 0
+#        self.new_param_range_max = 1
+#        self.item_list = []
+#        self.parameter_list = []
+#        self.QListWidget_param = QListWidget()
+##        self.QListWidget_param.itemDoubleClicked.connect(self.print_plop)
+#        self.QListWidget_param.itemDoubleClicked.connect(self.show_modif_param_dialog)
+#        if STUDY_OPTIONS['nb_parameters'] > 0:
+#            for i in range(STUDY_OPTIONS['nb_parameters']):
+#                self.add_parameter(STUDY_OPTIONS['range_min_param'][i],
+#                                   STUDY_OPTIONS['range_max_param'][i])
+#        else:
+#            self.add_parameter()
+#        self.fbox.addRow(self.label_param,self.QListWidget_param)
+#        self.QPushButton_add = QPushButton("Add Parameter")
+#        self.connect(self.QPushButton_add,  SIGNAL("clicked()"), self.show_add_param_dialog)
+#        self.connect(self.QPushButton_add,  SIGNAL("clicked()"), self.check_nb_param)
+#        self.fbox.addRow(QLabel(""),self.QPushButton_add)
 
         # number of groups #
         self.label_groups = QLabel("Sampling size")
@@ -179,9 +177,9 @@ class melissa_gui(QWidget):
         self.QCheckBox_quantile.setChecked(self.quantile_op)
         self.QCheckBox_quantile.stateChanged.connect(self.change_operations)
         self.vbox_operations.addWidget(self.QCheckBox_quantile)
-        self.check_nb_param()
+#        self.check_nb_param()
         self.QCheckBox_sobol.stateChanged.connect(self.change_operations)
-        self.QCheckBox_sobol.stateChanged.connect(self.check_nb_param)
+#        self.QCheckBox_sobol.stateChanged.connect(self.check_nb_param)
         self.vbox_operations.addWidget(self.QCheckBox_sobol)
         self.fbox.addRow(self.label_operations,self.vbox_operations)
 
@@ -231,7 +229,7 @@ class melissa_gui(QWidget):
     def launch_study(self):
         self.setDisabled(True)
         QApplication.processEvents()
-        self.set_parameters()
+#        self.set_parameters()
         self.set_operations()
         melissa_study = study.Study()
         melissa_study.run()
@@ -247,10 +245,10 @@ class melissa_gui(QWidget):
         MELISSA_STATS['quantile'] = self.quantile_op
         MELISSA_STATS['sobol_indices'] = self.sobol_op
 
-    def set_parameters(self):
-        for i in range(self.nb_parameters):
-            self.range_min.append(deepcopy(self.parameter_list[i].range_min))
-            self.range_max.append(deepcopy(self.parameter_list[i].range_max))
+#    def set_parameters(self):
+#        for i in range(self.nb_parameters):
+#            self.range_min.append(deepcopy(self.parameter_list[i].range_min))
+#            self.range_max.append(deepcopy(self.parameter_list[i].range_max))
 
 
     def change_username(self):
@@ -275,51 +273,51 @@ class melissa_gui(QWidget):
 #            self.variance_op = True
         self.modified = True
 
-    def check_nb_param(self):
-        if self.nb_parameters < 2:
-            self.QCheckBox_sobol.setChecked(False)
-            self.QCheckBox_sobol.setDisabled(True)
-        else:
-            self.QCheckBox_sobol.setDisabled(False)
-            self.QCheckBox_sobol.setChecked(self.sobol_op)
+#    def check_nb_param(self):
+#        if self.nb_parameters < 2:
+#            self.QCheckBox_sobol.setChecked(False)
+#            self.QCheckBox_sobol.setDisabled(True)
+#        else:
+#            self.QCheckBox_sobol.setDisabled(False)
+#            self.QCheckBox_sobol.setChecked(self.sobol_op)
 
 
     def disable_threshold(self):
         self.QDoubleSpinBox_threshold.setDisabled(not self.QCheckBox_threshold.isChecked())
         self.label_threshold.setDisabled(not self.QCheckBox_threshold.isChecked())
 
-    def show_add_param_dialog(self):
-         self.dialog = melissa_param_dialog(parent = self, status = "Add", item = None)
-#         self.dialog = melissa_param_dialog(parent = None, status = "Add", item = None)
-         self.dialog.setModal(True)
-         self.dialog.show()
+#    def show_add_param_dialog(self):
+#         self.dialog = melissa_param_dialog(parent = self, status = "Add", item = None)
+##         self.dialog = melissa_param_dialog(parent = None, status = "Add", item = None)
+#         self.dialog.setModal(True)
+#         self.dialog.show()
 
-    def show_modif_param_dialog(self, item):
-         self.dialog = melissa_param_dialog(parent = self, status = "Edit", item = item)
-         self.dialog.setModal(True)
-         self.dialog.show()
+#    def show_modif_param_dialog(self, item):
+#         self.dialog = melissa_param_dialog(parent = self, status = "Edit", item = item)
+#         self.dialog.setModal(True)
+#         self.dialog.show()
 
-    def add_parameter(self, range_min = 0, range_max = 1):
-        if len(self.parameter_list) < STUDY_OPTIONS['nb_parameters']:
-            self.parameter_list.append(melissa_parameter(range_min = range_min, range_max = range_max))
-        if len(self.parameter_list) < 1:
-            self.parameter_list.append(melissa_parameter())
-            self.nb_parameters = 1
-            self.modified = True
-        self.QListWidget_param.addItem(self.parameter_list[-1].name+"  ["+str(self.parameter_list[-1].range_min)+" : "+str(self.parameter_list[-1].range_max)+"]")
-        self.QListWidget_param.setCurrentRow(self.nb_parameters-1)
-        self.check_nb_param()
+#    def add_parameter(self, range_min = 0, range_max = 1):
+#        if len(self.parameter_list) < STUDY_OPTIONS['nb_parameters']:
+#            self.parameter_list.append(melissa_parameter(range_min = range_min, range_max = range_max))
+#        if len(self.parameter_list) < 1:
+#            self.parameter_list.append(melissa_parameter())
+#            self.nb_parameters = 1
+#            self.modified = True
+#        self.QListWidget_param.addItem(self.parameter_list[-1].name+"  ["+str(self.parameter_list[-1].range_min)+" : "+str(self.parameter_list[-1].range_max)+"]")
+#        self.QListWidget_param.setCurrentRow(self.nb_parameters-1)
+#        self.check_nb_param()
 
-    def remove_parameter(self):
-        if len(self.parameter_list)>1:
-            row = self.QListWidget_param.currentRow()
-            self.nb_parameters -= 1
-            self.QListWidget_param.takeItem(row)
-            del self.parameter_list[row]
-        else:
-            print "Can not remove the last parameter"
-        self.check_nb_param()
-        self.modified = True
+#    def remove_parameter(self):
+#        if len(self.parameter_list)>1:
+#            row = self.QListWidget_param.currentRow()
+#            self.nb_parameters -= 1
+#            self.QListWidget_param.takeItem(row)
+#            del self.parameter_list[row]
+#        else:
+#            print "Can not remove the last parameter"
+#        self.check_nb_param()
+#        self.modified = True
 
     def modif_threshold(self):
         self.threshold=float(self.QDoubleSpinBox_threshold.value())
@@ -330,14 +328,7 @@ class melissa_gui(QWidget):
         file = open (options_path+"/options.py", "r")
         contenu = ""
         for ligne in file:
-            if "STUDY_OPTIONS['nb_parameters'] = " in ligne:
-                contenu += "STUDY_OPTIONS['nb_parameters'] = "+str(self.nb_parameters)+"\n"
-                contenu += "STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],float)\n"
-                contenu += "STUDY_OPTIONS['range_max_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],float)\n"
-                for i in range (self.nb_parameters):
-                    contenu += "STUDY_OPTIONS['range_min_param']["+str(i)+"] = "+str(self.parameter_list[i].range_min)+"\n"
-                    contenu += "STUDY_OPTIONS['range_max_param']["+str(i)+"] = "+str(self.parameter_list[i].range_max)+"\n"
-            elif "STUDY_OPTIONS['sampling_size'] = " in ligne:
+            if "STUDY_OPTIONS['sampling_size'] = " in ligne:
                 contenu += "STUDY_OPTIONS['sampling_size'] = "+str(self.sampling_size)+"\n"
             elif "MELISSA_STATS['mean'] = " in ligne:
                 contenu += "MELISSA_STATS['mean'] = "+str(self.mean_op)+"\n"
@@ -365,126 +356,126 @@ class melissa_gui(QWidget):
         self.modified = False
         print "Study saved"
 
-class melissa_param_dialog(QDialog):
-    def __init__(self, parent = None, status = "Add", item = None):
-        QWidget.__init__(self, parent)
+#class melissa_param_dialog(QDialog):
+#    def __init__(self, parent = None, status = "Add", item = None):
+#        QWidget.__init__(self, parent)
 
-        self.parent = parent
-        self.item = item
-        self.fbox = QFormLayout()
-        if status == "Edit":
-            self.new_parameter = deepcopy(self.parent.parameter_list[self.parent.QListWidget_param.row(self.item)])
-        else:
-            self.new_parameter = (melissa_parameter())
-        # name #
-        self.label_name = QLabel("Name")
-        self.QLineEdit_name = QLineEdit(self.new_parameter.name)
-        self.QLineEdit_name.setMaxLength(128);
-        self.QLineEdit_name.setReadOnly(False);
-        self.connect(self.QLineEdit_name,  SIGNAL("validated()"), self.change_name)
-        self.change_name()
-        self.fbox.addRow(self.label_name,self.QLineEdit_name)
-        # range #
-        self.hbox_range_param=QHBoxLayout()
-#        self.QLineEdit_param_min = QLineEdit(str(parent.new_param_range_min))
-        self.QDoubleSpinBox_param_min = QDoubleSpinBox()
-        self.QDoubleSpinBox_param_min.setValue(self.new_parameter.range_min)
-        self.QDoubleSpinBox_param_min.setRange(-60000,60000)
-#        self.QLineEdit_param_min.setValidator(QDoubleValidator())
-#        self.QLineEdit_param_min.setMaxLength(12)
-        self.connect(self.QDoubleSpinBox_param_min,  SIGNAL("editingFinished()"), self.change_min_of_max)
-        self.connect(self.QDoubleSpinBox_param_min,  SIGNAL("editingFinished()"), self.change_range_min)
-#        self.change_range_min()
-        self.QLabel_range_min = QLabel("From")
-#        self.QLineEdit_param_max = QDoubleSpinBox(str(parent.new_param_range_max))
-        self.QDoubleSpinBox_param_max = QDoubleSpinBox()
-        self.QDoubleSpinBox_param_max.setValue(self.new_parameter.range_max)
-        self.QDoubleSpinBox_param_max.setRange(-60000,60000)
-#        self.QLineEdit_param_max.setValidator(QDoubleValidator());
-#        self.QLineEdit_param_max.setMaxLength(12);
-        self.connect(self.QDoubleSpinBox_param_max,  SIGNAL("editingFinished()"), self.change_max_of_min)
-        self.connect(self.QDoubleSpinBox_param_max,  SIGNAL("editingFinished()"), self.change_range_max)
-#        self.change_range_max()
-        self.QLabel_range_max = QLabel("To")
-        self.change_max_of_min()
-        self.change_min_of_max()
-        self.hbox_range_param.addWidget(self.QLabel_range_min)
-        self.hbox_range_param.addWidget(self.QDoubleSpinBox_param_min)
-        self.hbox_range_param.addWidget(self.QLabel_range_max)
-        self.hbox_range_param.addWidget(self.QDoubleSpinBox_param_max)
-        self.fbox.addRow(QLabel("Range"),self.hbox_range_param)
-        # button #
-        self.hbox_button = QHBoxLayout()
-        self.add = QPushButton(status,self)
-        if status == "Edit":
-            self.remove = QPushButton("Delete",self)
-            self.connect(self.remove,  SIGNAL("clicked()"), parent.remove_parameter)
-            self.connect(self.remove,  SIGNAL("clicked()"), self.close)
-        self.cancel = QPushButton("Cancel",self)
-        self.connect(self.add,  SIGNAL("clicked()"), self.change_range_min)
-        self.connect(self.add,  SIGNAL("clicked()"), self.change_range_max)
-        self.connect(self.add,  SIGNAL("clicked()"), self.change_name)
-        if status == "Edit":
-            parent.connect(self.add,  SIGNAL("clicked()"), self.edit_parameter)
-        else:
-            self.connect(self.add,  SIGNAL("clicked()"), self.add_parameter)
-            self.connect(self.add,  SIGNAL("clicked()"), parent.add_parameter)
-        self.connect(self.add,  SIGNAL("clicked()"), self.close)
-        self.connect(self.cancel,  SIGNAL("clicked()"), self.close)
-        self.hbox_button.addWidget(self.add)
-        if status == "Edit":
-            self.hbox_button.addWidget(self.remove)
-        self.hbox_button.addWidget(self.cancel)
-        if status == "Edit":
-            self.setWindowTitle("Edit Parameter")
-        else:
-            self.setWindowTitle("New Parameter")
-        self.setWindowModality(Qt.ApplicationModal)
-        self.fbox.addRow(QLabel(""),self.hbox_button)
-        self.setLayout(self.fbox)
-#        self.open()
+#        self.parent = parent
+#        self.item = item
+#        self.fbox = QFormLayout()
+#        if status == "Edit":
+#            self.new_parameter = deepcopy(self.parent.parameter_list[self.parent.QListWidget_param.row(self.item)])
+#        else:
+#            self.new_parameter = (melissa_parameter())
+#        # name #
+#        self.label_name = QLabel("Name")
+#        self.QLineEdit_name = QLineEdit(self.new_parameter.name)
+#        self.QLineEdit_name.setMaxLength(128);
+#        self.QLineEdit_name.setReadOnly(False);
+#        self.connect(self.QLineEdit_name,  SIGNAL("validated()"), self.change_name)
+#        self.change_name()
+#        self.fbox.addRow(self.label_name,self.QLineEdit_name)
+#        # range #
+#        self.hbox_range_param=QHBoxLayout()
+##        self.QLineEdit_param_min = QLineEdit(str(parent.new_param_range_min))
+#        self.QDoubleSpinBox_param_min = QDoubleSpinBox()
+#        self.QDoubleSpinBox_param_min.setValue(self.new_parameter.range_min)
+#        self.QDoubleSpinBox_param_min.setRange(-60000,60000)
+##        self.QLineEdit_param_min.setValidator(QDoubleValidator())
+##        self.QLineEdit_param_min.setMaxLength(12)
+#        self.connect(self.QDoubleSpinBox_param_min,  SIGNAL("editingFinished()"), self.change_min_of_max)
+#        self.connect(self.QDoubleSpinBox_param_min,  SIGNAL("editingFinished()"), self.change_range_min)
+##        self.change_range_min()
+#        self.QLabel_range_min = QLabel("From")
+##        self.QLineEdit_param_max = QDoubleSpinBox(str(parent.new_param_range_max))
+#        self.QDoubleSpinBox_param_max = QDoubleSpinBox()
+#        self.QDoubleSpinBox_param_max.setValue(self.new_parameter.range_max)
+#        self.QDoubleSpinBox_param_max.setRange(-60000,60000)
+##        self.QLineEdit_param_max.setValidator(QDoubleValidator());
+##        self.QLineEdit_param_max.setMaxLength(12);
+#        self.connect(self.QDoubleSpinBox_param_max,  SIGNAL("editingFinished()"), self.change_max_of_min)
+#        self.connect(self.QDoubleSpinBox_param_max,  SIGNAL("editingFinished()"), self.change_range_max)
+##        self.change_range_max()
+#        self.QLabel_range_max = QLabel("To")
+#        self.change_max_of_min()
+#        self.change_min_of_max()
+#        self.hbox_range_param.addWidget(self.QLabel_range_min)
+#        self.hbox_range_param.addWidget(self.QDoubleSpinBox_param_min)
+#        self.hbox_range_param.addWidget(self.QLabel_range_max)
+#        self.hbox_range_param.addWidget(self.QDoubleSpinBox_param_max)
+#        self.fbox.addRow(QLabel("Range"),self.hbox_range_param)
+#        # button #
+#        self.hbox_button = QHBoxLayout()
+#        self.add = QPushButton(status,self)
+#        if status == "Edit":
+#            self.remove = QPushButton("Delete",self)
+#            self.connect(self.remove,  SIGNAL("clicked()"), parent.remove_parameter)
+#            self.connect(self.remove,  SIGNAL("clicked()"), self.close)
+#        self.cancel = QPushButton("Cancel",self)
+#        self.connect(self.add,  SIGNAL("clicked()"), self.change_range_min)
+#        self.connect(self.add,  SIGNAL("clicked()"), self.change_range_max)
+#        self.connect(self.add,  SIGNAL("clicked()"), self.change_name)
+#        if status == "Edit":
+#            parent.connect(self.add,  SIGNAL("clicked()"), self.edit_parameter)
+#        else:
+#            self.connect(self.add,  SIGNAL("clicked()"), self.add_parameter)
+#            self.connect(self.add,  SIGNAL("clicked()"), parent.add_parameter)
+#        self.connect(self.add,  SIGNAL("clicked()"), self.close)
+#        self.connect(self.cancel,  SIGNAL("clicked()"), self.close)
+#        self.hbox_button.addWidget(self.add)
+#        if status == "Edit":
+#            self.hbox_button.addWidget(self.remove)
+#        self.hbox_button.addWidget(self.cancel)
+#        if status == "Edit":
+#            self.setWindowTitle("Edit Parameter")
+#        else:
+#            self.setWindowTitle("New Parameter")
+#        self.setWindowModality(Qt.ApplicationModal)
+#        self.fbox.addRow(QLabel(""),self.hbox_button)
+#        self.setLayout(self.fbox)
+##        self.open()
 
-    def change_name(self):
-        self.new_parameter.name=self.QLineEdit_name.text()
+#    def change_name(self):
+#        self.new_parameter.name=self.QLineEdit_name.text()
 
-    def change_range_min(self):
-        self.new_parameter.range_min=float(self.QDoubleSpinBox_param_min.value())
-        self.parent.modified = True
+#    def change_range_min(self):
+#        self.new_parameter.range_min=float(self.QDoubleSpinBox_param_min.value())
+#        self.parent.modified = True
 
-    def change_range_max(self):
-        self.new_parameter.range_max=float(self.QDoubleSpinBox_param_max.value())
-        self.parent.modified = True
+#    def change_range_max(self):
+#        self.new_parameter.range_max=float(self.QDoubleSpinBox_param_max.value())
+#        self.parent.modified = True
 
-    def add_parameter(self):
-        self.parent.nb_parameters += 1
-        self.parent.parameter_list.append(deepcopy(self.new_parameter))
-        self.parent.modified = True
+#    def add_parameter(self):
+#        self.parent.nb_parameters += 1
+#        self.parent.parameter_list.append(deepcopy(self.new_parameter))
+#        self.parent.modified = True
 
-    def edit_parameter(self):
-        row = self.parent.QListWidget_param.row(self.item)
-        self.parent.parameter_list[row]=deepcopy(self.new_parameter)
-#        self.parent.QListWidget_param.setItemWidget(self.item, QLabel(self.parent.parameter_list[row].name))
-        self.parent.QListWidget_param.takeItem(row)
-        self.parent.QListWidget_param.insertItem(row, self.parent.parameter_list[row].name+"  ["+str(self.parent.parameter_list[row].range_min)+" : "+str(self.parent.parameter_list[row].range_max)+"]")
-        self.parent.QListWidget_param.setCurrentRow(row)
-        self.parent.modified = True
+#    def edit_parameter(self):
+#        row = self.parent.QListWidget_param.row(self.item)
+#        self.parent.parameter_list[row]=deepcopy(self.new_parameter)
+##        self.parent.QListWidget_param.setItemWidget(self.item, QLabel(self.parent.parameter_list[row].name))
+#        self.parent.QListWidget_param.takeItem(row)
+#        self.parent.QListWidget_param.insertItem(row, self.parent.parameter_list[row].name+"  ["+str(self.parent.parameter_list[row].range_min)+" : "+str(self.parent.parameter_list[row].range_max)+"]")
+#        self.parent.QListWidget_param.setCurrentRow(row)
+#        self.parent.modified = True
 
-    def change_min_of_max(self):
-        if self.QDoubleSpinBox_param_max.value() < self.QDoubleSpinBox_param_min.value():
-            self.QDoubleSpinBox_param_max.setValue(self.QDoubleSpinBox_param_min.value())
-#        self.QDoubleSpinBox_param_max.setMinimum(self.QDoubleSpinBox_param_min.value())
-#        self.QDoubleSpinBox_param_max.correctionMode()
+#    def change_min_of_max(self):
+#        if self.QDoubleSpinBox_param_max.value() < self.QDoubleSpinBox_param_min.value():
+#            self.QDoubleSpinBox_param_max.setValue(self.QDoubleSpinBox_param_min.value())
+##        self.QDoubleSpinBox_param_max.setMinimum(self.QDoubleSpinBox_param_min.value())
+##        self.QDoubleSpinBox_param_max.correctionMode()
 
-    def change_max_of_min(self):
-        if self.QDoubleSpinBox_param_min.value() > self.QDoubleSpinBox_param_max.value():
-            self.QDoubleSpinBox_param_min.setValue(self.QDoubleSpinBox_param_max.value())
-#        self.QDoubleSpinBox_param_min.setMaximum(self.QDoubleSpinBox_param_max.value())
+#    def change_max_of_min(self):
+#        if self.QDoubleSpinBox_param_min.value() > self.QDoubleSpinBox_param_max.value():
+#            self.QDoubleSpinBox_param_min.setValue(self.QDoubleSpinBox_param_max.value())
+##        self.QDoubleSpinBox_param_min.setMaximum(self.QDoubleSpinBox_param_max.value())
 
-class melissa_parameter:
-    def __init__(self, name="NewParameter", range_min = 0.0, range_max = 1.0):
-        self.name = name
-        self.range_min = range_min
-        self.range_max = range_max
+#class melissa_parameter:
+#    def __init__(self, name="NewParameter", range_min = 0.0, range_max = 1.0):
+#        self.name = name
+#        self.range_min = range_min
+#        self.range_max = range_max
 
 
 class error_dialog(QMessageBox):

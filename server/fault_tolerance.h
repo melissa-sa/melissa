@@ -30,23 +30,16 @@
 #include <melissa_utils.h>
 #include <vector.h>
 
-//struct field_status_s
-//{
-//    char                   name[MAX_FIELD_NAME];
-//    int32_t               *time_steps;
-//    struct field_status_s *next;
-//};
-
 typedef struct field_status_s field_status_t;
 
 struct melissa_simulation_s
 {
-    int id;
+    int    id;
 //    field_status_t *field_status;
 //    int32_t *time_steps;
-    int status;
-    int timeout;
-    int last_message;
+    int    status;
+    int    timeout;
+    double last_message;
 };
 
 typedef struct melissa_simulation_s melissa_simulation_t;

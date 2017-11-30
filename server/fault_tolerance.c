@@ -82,7 +82,7 @@ int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_si
 {
     int detected_timeouts = 0;
     int i;
-    double timeout_simu = 120; // TODO: something more user friendly
+    double timeout_simu = 12; // TODO: something more user friendly
     double current_time = melissa_get_time();
     for (i=0; i<nb_simu; i++)
     {

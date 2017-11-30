@@ -215,8 +215,8 @@ void melissa_print_options (melissa_options_t *options)
         fprintf(stdout, "    threshold exceedance, with threshold = %g\n", options->threshold);
     if (options->sobol_op != 0)
         fprintf(stdout, "    sobol indices, max order: %d\n", options->sobol_order);
-    if (options->restart != 0)
-        fprintf(stdout, "using options.save restart file\n");
+//    if (options->restart != 0)
+//        fprintf(stdout, "using options.save restart file\n");
     fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
 }
 
@@ -265,15 +265,16 @@ void melissa_get_options (int                 argc,
             {
                 sprintf (options->restart_dir, ".");
             }
-            if (0 == melissa_read_options (options))
-            {
-                options->restart = 1;
-                melissa_check_options (options);
-                return;
-            }
-            fprintf (stderr, "ERROR: can not read options.save file\n");
-            stats_usage ();
-            exit (1);
+            options->restart = 1;
+//            if (0 == melissa_read_options (options))
+//            {
+//                options->restart = 1;
+//                melissa_check_options (options);
+//                return;
+//            }
+//            fprintf (stderr, "ERROR: can not read options.save file\n");
+//            stats_usage ();
+//            exit (1);
             break;
         case 'p':
             options->nb_parameters = atoi (optarg);
@@ -402,62 +403,62 @@ void melissa_check_options (melissa_options_t  *options)
     }
 }
 
-/**
- *******************************************************************************
- *
- * @ingroup melissa_options
- *
- * This function writes the option structure on disc
- *
- *******************************************************************************
- *
- * @param[in] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
+///**
+// *******************************************************************************
+// *
+// * @ingroup melissa_options
+// *
+// * This function writes the option structure on disc
+// *
+// *******************************************************************************
+// *
+// * @param[in] *options
+// * pointer to the structure containing global options
+// *
+// *******************************************************************************/
 
-void melissa_write_options (melissa_options_t *options)
-{
-    FILE* f;
+//void melissa_write_options (melissa_options_t *options)
+//{
+//    FILE* f;
 
-    f = fopen("options.save", "wb+");
+//    f = fopen("options.save", "wb+");
 
-    fwrite(options, sizeof(melissa_options_t), 1, f);
+//    fwrite(options, sizeof(melissa_options_t), 1, f);
 
-    fclose(f);
-}
+//    fclose(f);
+//}
 
-/**
- *******************************************************************************
- *
- * @ingroup melissa_options
- *
- * This function reads a saved option structure on disc
- *
- *******************************************************************************
- *
- * @param[in,out] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
+///**
+// *******************************************************************************
+// *
+// * @ingroup melissa_options
+// *
+// * This function reads a saved option structure on disc
+// *
+// *******************************************************************************
+// *
+// * @param[in,out] *options
+// * pointer to the structure containing global options
+// *
+// *******************************************************************************/
 
-int melissa_read_options (melissa_options_t *options)
-{
-    FILE* f = NULL;
-    int ret = 1;
-    char file_name[256];
+//int melissa_read_options (melissa_options_t *options)
+//{
+//    FILE* f = NULL;
+//    int ret = 1;
+//    char file_name[256];
 
-    sprintf (file_name, "%s/options.save", options->restart_dir);
-    f = fopen(file_name, "rb");
+//    sprintf (file_name, "%s/options.save", options->restart_dir);
+//    f = fopen(file_name, "rb");
 
-    if (f != NULL)
-    {
-        if (1 == fread(options, sizeof(melissa_options_t), 1, f))
-        {
-            ret = 0;
-        }
-    }
+//    if (f != NULL)
+//    {
+//        if (1 == fread(options, sizeof(melissa_options_t), 1, f))
+//        {
+//            ret = 0;
+//        }
+//    }
 
-    fclose(f);
-    return ret;
-}
+//    fclose(f);
+//    return ret;
+//}

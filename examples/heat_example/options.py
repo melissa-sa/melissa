@@ -140,9 +140,9 @@ def draw_param_set():
     return param_set
 
 def launch_server(server):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS")):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
+    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
+        os.mkdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(GLOBAL_OPTIONS['working_directory'])
     create_run_server(server)
     if BATCH_SCHEDULER == "local":
         server.job_id = subprocess.Popen(('mpirun ' +
@@ -191,7 +191,7 @@ def launch_simu(simulation):
             command = ' '.join(('mpirun',
                                  '-n',
                                  str(NODES_GROUP),
-                                 '../'+EXECUTABLE,
+                                 '../../'+EXECUTABLE,
                                  str(simulation.simu_id),
                                  ' '.join(str(i) for i in simulation.param_set)))
             print command
@@ -213,7 +213,7 @@ def launch_group(group):
     for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
         command += ' '.join(('-n',
                              str(NODES_GROUP),
-                             '../'+EXECUTABLE,
+                             '../../'+EXECUTABLE,
                              str(group.simu_id[i]),
                              ' '.join(str(j) for j in group.param_set[i]),
                              ': '))
@@ -448,7 +448,7 @@ def heat_visu():
 
 GLOBAL_OPTIONS = {}
 GLOBAL_OPTIONS['user_name'] = USERNAME
-GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example'
+GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example/STATS'
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5

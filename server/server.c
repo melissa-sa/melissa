@@ -149,7 +149,7 @@ int main (int argc, char **argv)
     if (comm_data.rank == 0)
     {
         melissa_print_options (&melissa_options);
-        melissa_write_options (&melissa_options);
+//        melissa_write_options (&melissa_options);
     }
 
     fields = melissa_malloc (melissa_options.nb_fields * sizeof(melissa_field_t));
@@ -182,7 +182,6 @@ int main (int argc, char **argv)
     if (comm_data.rank == 0)
     {
         melissa_bind (init_responder, "tcp://*:2002");
-//        melissa_bind (init_responder2, "tcp://*:2004");
         melissa_bind (connexion_responder, "tcp://*:2003");
 
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
@@ -201,6 +200,38 @@ int main (int argc, char **argv)
     {
         sprintf (txt_buffer, "server %s", node_name);
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+    }
+
+    // === Restart initialisation === //
+
+    if (melissa_options.restart == 1)
+    {
+        fprintf (stdout, "reading simulation states at checkpoint time... ");
+        read_simu_states(simu_state, &melissa_options, &comm_data, melissa_options.sampling_size);
+        for (i=0; i<melissa_options.sampling_size; i++)
+        {
+            fprintf(stderr, "  simu_state[%d] = %d (rank %d)\n", i, simu_state[i], comm_data.rank);
+            if (simu_state[i] == 2)
+            {
+                nb_finished_simulations += 1;
+            }
+        }
+        for (i=0; i<melissa_options.sampling_size; i++)
+        {
+            if (simu_state[i] == 1)
+            {
+                simu_state[i] = 0;
+            }
+        }
+        if (comm_data.rank == 0)
+        {
+            for (i=0; i<melissa_options.sampling_size; i++)
+            {
+                sprintf (txt_buffer, "simu_state %d %d", i, simu_state[i]);
+                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+            }
+        }
+        fprintf (stdout, " ok \n");
     }
 
     // === Gather node names on node 0 === //
@@ -456,9 +487,9 @@ int main (int argc, char **argv)
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 
-            if (comm_data.rank==0 && ((iteration % 10) == 0 || iteration < 10) )
+            if (/*comm_data.rank==0 && */((iteration % 10) == 0 || iteration < 10) )
             {
-                fprintf(stdout, "iteration %d / %d  - field \"%s\"\n", iteration, nb_iterations*melissa_options.nb_fields, field_name_ptr);
+                fprintf(stdout, "time step %d - simulation %d\n", time_step, group_id);
             }
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
             {
