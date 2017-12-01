@@ -30,16 +30,13 @@
 #include <melissa_utils.h>
 #include <vector.h>
 
-typedef struct field_status_s field_status_t;
-
 struct melissa_simulation_s
 {
-    int    id;
-//    field_status_t *field_status;
+    int      id;
 //    int32_t *time_steps;
-    int    status;
-    int    timeout;
-    double last_message;
+    int      status;
+    int      timeout;
+    double   last_message;
 };
 
 typedef struct melissa_simulation_s melissa_simulation_t;
@@ -52,11 +49,11 @@ void simu_push_to(vector_t *v,
 
 void free_simu_vector(vector_t v);
 
-int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu);
+//int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu);
+int check_timeouts (vector_t *simulations);
 
 void send_timeouts (int       detected_timeouts,
-                    int *simu_timeouts,
-                    int       nb_simu,
+                    vector_t *simulations,
                     char*     txt_buffer,
                     void     *python_requester);
 

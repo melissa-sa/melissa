@@ -77,37 +77,45 @@ void free_simu_vector(vector_t v)
     melissa_free (v.items);
 }
 
-//int check_timeouts (vector_t *simulations)
-int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu)
+//int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu)
+int check_timeouts (vector_t *simulations)
 {
     int detected_timeouts = 0;
     int i;
     double timeout_simu = 12; // TODO: something more user friendly
     double current_time = melissa_get_time();
-    for (i=0; i<nb_simu; i++)
+    melissa_simulation_t *simu_ptr;
+
+    for (i=0; i<simulations->size; i++)
     {
-        if (simu_state[i] == 1)
+        simu_ptr = vector_get (simulations, i);
+        if (simu_ptr->status == 1)
         {
-            if (last_message_simu[i] + timeout_simu < current_time)
+            if (simu_ptr->last_message + timeout_simu < current_time)
             {
-                simu_timeouts[i] = 1;
+                simu_ptr->timeout = 1;
                 detected_timeouts += 1;
                 fprintf (stdout, "timeout detected on simulation group %d\n", i);
-                last_message_simu[i] = 0;
-                simu_state[i] = 0;
+                simu_ptr->last_message = 0;
+                simu_ptr->status = 0;
             }
         }
     }
     return detected_timeouts;
 }
 
-void send_timeouts (int   detected_timeouts,
-                    int  *simu_timeouts,
-                    int   nb_simu,
-                    char* txt_buffer,
-                    void *python_pusher)
+//void send_timeouts (int   detected_timeouts,
+//                    int  *simu_timeouts,
+//                    int   nb_simu,
+//                    char* txt_buffer,
+//                    void *python_pusher)
+send_timeouts (int       detected_timeouts,
+               vector_t *simulations,
+               char*     txt_buffer,
+               void     *python_pusher)
 {
     int i;
+    melissa_simulation_t *simu_ptr;
 
     if (detected_timeouts < 1)
     {
@@ -116,13 +124,14 @@ void send_timeouts (int   detected_timeouts,
     }
     else
     {
-        for (i=0; i<nb_simu; i++)
+        for (i=0; i<simulations->size; i++)
         {
-            if (simu_timeouts[i] == 1)
+            simu_ptr = vector_get (simulations, i);
+            if (simu_ptr->timeout == 1)
             {
                 sprintf(txt_buffer, "timeout %d", i);
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
-                simu_timeouts[i] == 0;
+                simu_ptr->timeout == 0;
             }
         }
     }

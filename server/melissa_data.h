@@ -89,7 +89,7 @@ struct melissa_data_s
     void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                            */
     int                  nb_simu;                                /**< number of simulation that have sent a message             */
     int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                            */
-//    vector_t             step_simu;                              /**< arrays of bits, size nb_groups                           */
+//    vector_t             step_simu;                              /**< vector of arrays of bits, size nb_groups                           */
 };
 
 typedef struct melissa_data_s melissa_data_t; /**< type corresponding to melissa_data_s */

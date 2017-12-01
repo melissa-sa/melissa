@@ -108,6 +108,11 @@ int main (int argc, char **argv)
     int                 nb_finished_simulations = 0;
     double              last_checkpoint_time = 0.0;
 
+    // === new === //
+    vector_t              simulations;
+    melissa_simulation_t *simu_ptr;
+    // === end === //
+
 #ifdef BUILD_WITH_MPI
 
     // === init MPI === //
@@ -159,13 +164,15 @@ int main (int argc, char **argv)
     last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
     simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
     simu_timeout      = melissa_calloc (melissa_options.sampling_size, sizeof(int));
-// futur work
-//    nb_iterations = melissa_options.sampling_size * melissa_options.nb_time_steps;
-//    alloc_vector (simulations, melissa_options.sampling_size);
-//    for (i=0; i<melissa_options.sampling_size; i++)
-//    {
-//        simu_push_to(vector, i, melissa_options.nb_time_steps);
-//    }
+
+    // === new === //
+    alloc_vector (&simulations, melissa_options.sampling_size);
+    for (i=0; i<melissa_options.sampling_size; i++)
+    {
+        vector_set (&simulations, i, add_simulation(i, melissa_options.nb_time_steps));
+    }
+    // === end === //
+
     // === Open data puller port === //
 
     port_no = 100 + comm_data.rank;
@@ -271,25 +278,25 @@ int main (int argc, char **argv)
         {
             if (last_timeout_check + 100 < melissa_get_time())
             {
-                detected_timeouts = check_timeouts(simu_state,
-                                                   simu_timeout,
-                                                   last_message_simu,
-                                                   melissa_options.sampling_size);
+//                detected_timeouts = check_timeouts(simu_state,
+//                                                   simu_timeout,
+//                                                   last_message_simu,
+//                                                   melissa_options.sampling_size);
 // futur work
-//                detected_timeouts = check_timeouts(&simulations);
+                detected_timeouts = check_timeouts(&simulations);
                 last_timeout_check = melissa_get_time();
                 if (detected_timeouts > 0)
                 {
-                    send_timeouts (detected_timeouts,
-                                   simu_timeout,
-                                   melissa_options.nb_simu,
-                                   txt_buffer,
-                                   python_pusher);
-// futur work
 //                    send_timeouts (detected_timeouts,
-//                                   &simulations,
+//                                   simu_timeout,
+//                                   melissa_options.nb_simu,
 //                                   txt_buffer,
 //                                   python_pusher);
+// futur work
+                    send_timeouts (detected_timeouts,
+                                   &simulations,
+                                   txt_buffer,
+                                   python_pusher);
                 }
             }
         }
@@ -412,6 +419,13 @@ int main (int argc, char **argv)
                 nb_iterations = melissa_options.sampling_size * melissa_options.nb_time_steps * pull_data.local_nb_messages;
                 first_send[field_id*comm_data.client_comm_size+client_rank] = 1;
             }
+            if (group_id > simulations.size)
+            {
+                for (i=simulations.size; i<group_id; i++)
+                {
+                    vector_set (&simulations, i, add_simulation(i, melissa_options.nb_time_steps));
+                }
+            }
 //====================== END NEW ======================
 
             data_ptr = fields[field_id].stats_data;
@@ -447,7 +461,11 @@ int main (int argc, char **argv)
             {
                 buff_tab_ptr[0] = (double*)buf_ptr;
                 // === Compute classical statistics === //
-                compute_stats (&data_ptr[client_rank], time_step-1, 1, buff_tab_ptr, group_id);
+                compute_stats (&data_ptr[client_rank],
+                               time_step-1,
+                               1,
+                               buff_tab_ptr,
+                               group_id);
                 iteration++;
             }
             else
@@ -458,7 +476,11 @@ int main (int argc, char **argv)
                     buf_ptr += recv_vect_size * sizeof(double);
                 }
                 // === Compute classical statistics + Sobol indices === //
-                compute_stats (&data_ptr[client_rank], time_step-1, melissa_options.nb_parameters+2, buff_tab_ptr, group_id);
+                compute_stats (&data_ptr[client_rank],
+                               time_step-1,
+                               melissa_options.nb_parameters+2,
+                               buff_tab_ptr,
+                               group_id);
                 iteration++;
                 confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]),
                                            melissa_options.nb_parameters,
@@ -619,6 +641,7 @@ int main (int argc, char **argv)
 //    melissa_free (comm_data.rcounts);
 //    melissa_free (comm_data.rdispls);
     melissa_free (first_send);
+    free_simu_vector (simulations);
 
 #ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI
