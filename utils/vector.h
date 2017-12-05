@@ -39,11 +39,11 @@ void alloc_vector(vector_t *v,
 int vector_size(vector_t *v);
 
 void vector_add(vector_t *v,
-                void *item);
+                void     *item);
 
 void vector_set(vector_t *v,
-                int index,
-                void *item);
+                int       index,
+                void     *item);
 
 void resize_vector(vector_t *v,
                    int capacity);

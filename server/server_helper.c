@@ -239,7 +239,7 @@ int check_simu_state(melissa_field_t *fields,
                 {
                     for (t=0; t<nb_time_steps; t++)
                     {
-                        if (test_bit (fields[j].stats_data[i].step_simu[group_id], t) == 0)
+                        if (test_bit (fields[j].stats_data[i].step_simu.items[group_id], t) == 0)
                         {
                             return 1;
                         }

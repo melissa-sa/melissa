@@ -88,18 +88,11 @@ struct melissa_data_s
     void (*increment_sobol)(sobol_array_t*, int, double**, int); /**< pointer to Sobol increment function                       */
     void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                            */
     int                  nb_simu;                                /**< number of simulation that have sent a message             */
-    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                            */
-//    vector_t             step_simu;                              /**< vector of arrays of bits, size nb_groups                           */
+//    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                            */
+    vector_t             step_simu;                              /**< vector of arrays of bits, size nb_groups                           */
 };
 
 typedef struct melissa_data_s melissa_data_t; /**< type corresponding to melissa_data_s */
-
-//struct simu_status_s
-//{
-//    int            simu_id;
-//    int32_t       *step_simu;
-//    simu_status_s *next;
-//};
 
 void melissa_init_data (melissa_data_t    *data,
                         melissa_options_t *options,

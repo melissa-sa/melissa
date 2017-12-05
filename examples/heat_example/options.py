@@ -33,7 +33,7 @@ BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'
 EXECUTABLE='heatc'
 BATCH_SCHEDULER = "local"
 WALLTIME_SERVER = 600
-NODES_SERVER = 2
+NODES_SERVER = 3
 WALLTIME_SIMU = 300
 NODES_GROUP = 2
 
@@ -483,5 +483,5 @@ USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job
-USER_FUNCTIONS['postprocessing'] = heat_visu
+USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None

@@ -44,8 +44,8 @@ typedef struct melissa_simulation_s melissa_simulation_t;
 melissa_simulation_t* add_simulation(int id, int nb_time_steps);
 
 void simu_push_to(vector_t *v,
-             int       pos,
-             int       nb_time_steps);
+                  int       pos,
+                  int       nb_time_steps);
 
 void free_simu_vector(vector_t v);
 
