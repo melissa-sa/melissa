@@ -113,7 +113,7 @@ class Messenger(Thread):
                                  + ' (timeout detected by server)')
                     with groups[group_id].lock:
                         groups[group_id].restart()
-                        group.job_status = PENDING
+                        groups[group_id].job_status = PENDING
             elif message[0] == 'group_state':
                 with groups[int(message[1])].lock:
                     groups[int(message[1])].status = int(message[2])
@@ -171,14 +171,17 @@ class Study(object):
         self.state_checker.start()
         for group in groups:
             fault_tolerance()
-            check_scheduler_load()
+            while check_scheduler_load() == False:
+                time.sleep(1)
+                fault_tolerance()
             logging.info('submit group '+str(group.rank))
             group.launch()
+            time.sleep(1)
         while (server.status != FINISHED
                or any([i.status != FINISHED for i in groups])):
             fault_tolerance()
             time.sleep(1)
-        time.sleep(2)
+        time.sleep(1)
         self.messenger.running_study = False
         self.state_checker.running_study = False
         self.messenger.join()
@@ -259,7 +262,7 @@ def fault_tolerance():
                                      + " (timeout detected by launcher)")
                         group.restart()
                         break
-    time.sleep(1)
+#    time.sleep(1)
 
 def check_options():
     """
@@ -304,12 +307,12 @@ def draw_parameter_set():
 
 def check_scheduler_load():
     """
-        Waits if the load is full
+        Return False if the load is full
     """
     if usr_func['check_scheduler_load']:
-        usr_func['check_scheduler_load']()
+        return usr_func['check_scheduler_load']()
     else:
-        pass
+        return True
 
 # Study end #
 

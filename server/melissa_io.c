@@ -33,6 +33,7 @@
 //#include "hdf5.h"
 #include "melissa_data.h"
 #include "melissa_utils.h"
+#include "fault_tolerance.h"
 
 /**
  *******************************************************************************
@@ -182,10 +183,11 @@ void save_stats (melissa_data_t *data,
             {
                 data[i].save_sobol(data[i].sobol_indices, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
-//            for (j=0; j<data[i].options->sampling_size; j++)
-//            {
-//                fwrite(data[i].step_simu[j], sizeof(int32_t), (data[i].options->nb_time_steps+31)/32, f);
-//            }
+            fwrite(&data[i].step_simu.size, sizeof(int), 1, f);
+            for (j=0; j<data[i].step_simu.size; j++)
+            {
+                fwrite(data[i].step_simu.items[j], sizeof(int32_t), (data[i].options->nb_time_steps+31)/32, f);
+            }
         }
         fclose(f);
     }
@@ -220,7 +222,7 @@ void read_saved_stats (melissa_data_t *data,
                        int             client_rank)
 {
     char       file_name[256];
-    int        j;
+    int        j, temp_size;
     FILE*      f = NULL;
 
     sprintf(file_name, "%s/%s%d_%d.data", data[client_rank].options->restart_dir, field_name, comm_data->rank, client_rank);
@@ -257,10 +259,16 @@ void read_saved_stats (melissa_data_t *data,
         {
             data[client_rank].read_sobol(data[client_rank].sobol_indices, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
         }
-//        for (j=0; j<data[client_rank].options->sampling_size; j++)
-//        {
-//            fread(data[client_rank].step_simu[j], sizeof(int32_t), (data[client_rank].options->nb_time_steps+31)/32, f);
-//        }
+        fread(&temp_size, sizeof(int), 1, f);
+        while (temp_size > data[client_rank].step_simu.size)
+        {
+            vector_add(&data[client_rank].step_simu, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
+            temp_size ++;
+        }
+        for (j=0; j<data[client_rank].step_simu.size; j++)
+        {
+            fread(data[client_rank].step_simu.items[j], sizeof(int32_t), (data[client_rank].options->nb_time_steps+31)/32, f);
+        }
     }
     fclose(f);
 }
@@ -274,38 +282,36 @@ void read_saved_stats (melissa_data_t *data,
  *
  *******************************************************************************
  *
- * @param[in] *simu_states
- * array of simulation states
+ * @param[in] *simu
+ * simulations vector
  *
  * @param[in] *comm_data
  * communication structure
  *
- * @param[in] size
- * size of *simu_states
- *
  *******************************************************************************/
 
-void save_simu_states(int         *simu_states,
-                      comm_data_t *comm_data,
-                      int          size)
+void save_simu_states(vector_t    *simu,
+                      comm_data_t *comm_data)
 {
-    char       file_name[256];
-    FILE*      f = NULL;
-//    int        i;
-    sprintf(file_name, "simu_state_%d.data",comm_data->rank);
+    char                  file_name[256];
+    FILE*                 f = NULL;
+    melissa_simulation_t *simu_ptr;
+    int                   i;
+
+    sprintf(file_name, "simu_%d.data",comm_data->rank);
     f = fopen(file_name, "wb+");
     if (f == NULL)
     {
         fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
         return;
     }
-//    fprintf (stdout, "simulation states (rank %d):", comm_data->);
-//    for (i=0; i<size; i++)
-//    {
-//        fprintf (stdout, " %d", simu_states[i]);
-//    }
-//    fprintf (stdout, "\n");
-    fwrite(simu_states, sizeof(int), size, f);
+    fwrite(&simu->size, sizeof(int), 1, f);
+    for (i=0; i<simu->size; i++)
+    {
+        simu_ptr = simu->items[i];
+//        fprintf (stdout, " %d", simu_ptr->status);
+        fwrite(&simu_ptr->status, sizeof(int), 1, f);
+    }
     fclose(f);
 }
 
@@ -318,8 +324,8 @@ void save_simu_states(int         *simu_states,
  *
  *******************************************************************************
  *
- * @param[out] *simu_states
- * array of simulation states
+ * @param[out] *simu
+ * simulations vector
  *
  * @param[in] *options
  * Melissa option structure
@@ -327,29 +333,57 @@ void save_simu_states(int         *simu_states,
  * @param[in] *comm_data
  * communication structure
  *
- * @param[in] size
- * size of *simu_states
- *
  *******************************************************************************/
 
-void read_simu_states(int               *simu_states,
+void read_simu_states(vector_t          *simu,
                       melissa_options_t *options,
-                      comm_data_t       *comm_data,
-                      int                size)
+                      comm_data_t       *comm_data)
 {
-    char       file_name[256];
-    FILE*      f = NULL;
-    sprintf(file_name, "%s/simu_state_%d.data", options->restart_dir, comm_data->rank);
+    char                  file_name[256];
+    FILE*                 f = NULL;
+    int                   i, size, max_size;
+    melissa_simulation_t *simu_ptr;
+    MPI_Request          *request;
+    MPI_Status            status;
+
+    sprintf(file_name, "%s/simu_%d.data", options->restart_dir, comm_data->rank);
     f = fopen(file_name, "rb");
     if (f == NULL)
     {
       fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
       return;
     }
-    fread(simu_states, sizeof(int), size, f);
+
+    fread(&size, sizeof(int), 1, f);
 #ifdef BUILD_WITH_MPI
-    MPI_Allreduce (MPI_IN_PLACE, simu_states, size, MPI_INT, MPI_MIN, comm_data->comm);
+    MPI_Allreduce (&max_size, &size, 1, MPI_INT, MPI_MAX, comm_data->comm);
+#else // BUILD_WITH_MPI
+    max_size = size;
 #endif // BUILD_WITH_MPI
+    alloc_vector (simu, max_size);
+    request = melissa_malloc(max_size * sizeof(MPI_Request));
+    for (i=0; i<max_size; i++)
+    {
+        vector_set (simu, i, add_simulation(i, options->nb_time_steps));
+    }
+    for (i=0; i<size; i++)
+    {
+        simu_ptr = vector_get(simu, i);
+        fread(&simu_ptr->status, sizeof(int), 1, f);
+#ifdef BUILD_WITH_MPI
+        MPI_Iallreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm, &request[i]);
+    }
+    for (i=size; i<max_size; i++)
+    {
+        simu_ptr = vector_get(simu, i);
+        MPI_Iallreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm, &request[i]);
+    }
+    for (i=0; i<max_size; i++)
+    {
+        MPI_Wait(&request[i], &status);
+#endif // BUILD_WITH_MPI
+    }
+
     fclose(f);
 }
 
@@ -383,7 +417,7 @@ void write_stats_bin (melissa_data_t    **data,
                       )
 {
     long int   i, temp_offset = 0;
-    int        t, offset;
+    int        t, offset = 0;
 #ifdef BUILD_WITH_MPI
     MPI_File   f;
     MPI_Status status;
@@ -417,7 +451,9 @@ void write_stats_bin (melissa_data_t    **data,
     {
         vect_size += (*data)[i].vect_size;
     }
+    fprintf (stdout,"allgather (process %d)...\n", comm_data->rank);
     MPI_Allgather (&vect_size, 1, MPI_INT, local_vect_sizes, 1, MPI_INT, comm_data->comm);
+    fprintf (stdout," allgather (process %d) ok\n", comm_data->rank);
 
     for (i=0; i<comm_data->comm_size; i++)
     {
@@ -457,7 +493,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if ((*data)[i].vect_size > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].means[t].mean, (*data)[i].vect_size, MPI_DOUBLE, &status);
+                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].means[t].mean, (*data)[i].vect_size, MPI_DOUBLE, &status);
                     temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].means[t].mean, sizeof(double), (*data)[i].vect_size, f);
@@ -498,7 +534,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if ((*data)[i].vect_size > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].variances[t].variance, (*data)[i].vect_size, MPI_DOUBLE, &status);
+                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].variances[t].variance, (*data)[i].vect_size, MPI_DOUBLE, &status);
                     temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].variances[t].variance, sizeof(double), (*data)[i].vect_size, f);
@@ -528,7 +564,7 @@ void write_stats_bin (melissa_data_t    **data,
                     if ((*data)[i].vect_size > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].variances[t].mean_structure.mean, (*data)[i].vect_size, MPI_DOUBLE, &status);
+                        MPI_File_write_at (f, offset + temp_offset, (*data)[i].variances[t].mean_structure.mean, (*data)[i].vect_size, MPI_DOUBLE, &status);
                         temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                         fwrite((*data)[i].variances[t].mean_structure.mean, sizeof(double), (*data)[i].vect_size, f);
@@ -560,7 +596,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if ((*data)[i].vect_size > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].min_max[t].min, (*data)[i].vect_size, MPI_DOUBLE, &status);
+                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].min_max[t].min, (*data)[i].vect_size, MPI_DOUBLE, &status);
                     temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].min_max[t].min, sizeof(double), (*data)[i].vect_size, f);
@@ -588,7 +624,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if ((*data)[i].vect_size > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].min_max[t].max, (*data)[i].vect_size, MPI_DOUBLE, &status);
+                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].min_max[t].max, (*data)[i].vect_size, MPI_DOUBLE, &status);
                     temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].min_max[t].max, sizeof(double), (*data)[i].vect_size, f);
@@ -619,7 +655,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if ((*data)[i].vect_size > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].thresholds[t], (*data)[i].vect_size, MPI_INT, &status);
+                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].thresholds[t], (*data)[i].vect_size, MPI_INT, &status);
                     temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].thresholds[t], sizeof(int), (*data)[i].vect_size, f);
@@ -650,7 +686,7 @@ void write_stats_bin (melissa_data_t    **data,
                 if ((*data)[i].vect_size > 0)
                 {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].quantiles[t].quantile, (*data)[i].vect_size, MPI_DOUBLE, &status);
+                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].quantiles[t].quantile, (*data)[i].vect_size, MPI_DOUBLE, &status);
                     temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                     fwrite((*data)[i].quantiles[t].quantile, sizeof(double), (*data)[i].vect_size, f);
@@ -684,7 +720,7 @@ void write_stats_bin (melissa_data_t    **data,
                     if ((*data)[i].vect_size > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, (*data)[i].vect_size, MPI_INT, &status);
+                        MPI_File_write_at (f, offset + temp_offset, (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, (*data)[i].vect_size, MPI_INT, &status);
                         temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                         fwrite((*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, sizeof(double), (*data)[i].vect_size, f);
@@ -715,7 +751,7 @@ void write_stats_bin (melissa_data_t    **data,
                     if ((*data)[i].vect_size > 0)
                     {
 #ifdef BUILD_WITH_MPI
-                        MPI_File_write_at_all (f, offset + temp_offset, (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, (*data)[i].vect_size, MPI_INT, &status);
+                        MPI_File_write_at (f, offset + temp_offset, (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, (*data)[i].vect_size, MPI_INT, &status);
                         temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
                         fwrite((*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, sizeof(double), (*data)[i].vect_size, f);
@@ -1946,7 +1982,6 @@ void write_stats_txt (melissa_data_t    **data,
         }
     }
     melissa_free (d_buffer);
-    melissa_free (i_buffer);
     melissa_free (offsets);
 }
 

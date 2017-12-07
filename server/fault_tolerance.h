@@ -32,7 +32,6 @@
 
 struct melissa_simulation_s
 {
-    int      id;
 //    int32_t *time_steps;
     int      status;
     int      timeout;

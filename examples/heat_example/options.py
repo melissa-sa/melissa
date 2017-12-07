@@ -296,18 +296,20 @@ def check_job(job):
 
 def check_load():
     if BATCH_SCHEDULER == "local":
-        time.sleep(5)
+        try:
+            subprocess.check_output(["pidof",EXECUTABLE])
+            return False
+        except:
+            return True
     elif (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
-        running_jobs = 100000
-        while (running_jobs >= 250):
-            proc = subprocess.Popen("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l",
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    shell=True,
-                                    universal_newlines=True)
-            (out, err) = proc.communicate()
-            running_jobs = int(out)
-            time.sleep(5)
+        proc = subprocess.Popen("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        running_jobs = int(out)
+        return running_jobs < 250
 
 def kill_job(job):
     print 'killing job ...'

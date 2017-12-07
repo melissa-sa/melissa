@@ -56,7 +56,6 @@ int main (int argc, char **argv)
     int                 recv_vect_size = 0;
     char               *buf_ptr = NULL;
     double            **buff_tab_ptr;
-    int                 iteration = 0, nb_iterations = 0;
     int                 port_no;
     char                txt_buffer[MPI_MAX_PROCESSOR_NAME] = {0};
     char               *node_names = NULL;
@@ -99,10 +98,7 @@ int main (int argc, char **argv)
     double              total_write_time = 0;
     long int            total_mbytes_recv = 0;
 #endif // BUILD_WITH_PROBES
-    double             *last_message_simu;
-    int                *simu_state;
     int                 old_simu_state;
-    int                *simu_timeout;
     double              last_timeout_check = 0;
     int                 detected_timeouts;
     int                 nb_finished_simulations = 0;
@@ -160,19 +156,6 @@ int main (int argc, char **argv)
     fields = melissa_malloc (melissa_options.nb_fields * sizeof(melissa_field_t));
     melissa_get_fields (argc, argv, fields, melissa_options.nb_fields);
 
-    nb_iterations     = melissa_options.sampling_size * melissa_options.nb_time_steps;
-    last_message_simu = melissa_calloc (melissa_options.sampling_size, sizeof(double));
-    simu_state        = melissa_calloc (melissa_options.sampling_size, sizeof(int));
-    simu_timeout      = melissa_calloc (melissa_options.sampling_size, sizeof(int));
-
-    // === new === //
-    alloc_vector (&simulations, melissa_options.sampling_size);
-    for (i=0; i<melissa_options.sampling_size; i++)
-    {
-        vector_set (&simulations, i, add_simulation(i, melissa_options.nb_time_steps));
-    }
-    // === end === //
-
     // === Open data puller port === //
 
     port_no = 100 + comm_data.rank;
@@ -209,35 +192,46 @@ int main (int argc, char **argv)
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
     }
 
-    // === Restart initialisation === //
-
-    if (melissa_options.restart == 1)
+    if (melissa_options.restart == 0)
     {
-        fprintf (stdout, "reading simulation states at checkpoint time... ");
-        read_simu_states(simu_state, &melissa_options, &comm_data, melissa_options.sampling_size);
+        alloc_vector (&simulations, melissa_options.sampling_size);
         for (i=0; i<melissa_options.sampling_size; i++)
         {
-            fprintf(stderr, "  simu_state[%d] = %d (rank %d)\n", i, simu_state[i], comm_data.rank);
-            if (simu_state[i] == 2)
+            vector_set (&simulations, i, add_simulation(i, melissa_options.nb_time_steps));
+        }
+    }
+    else
+    {
+        // === Restart initialisation === //
+        fprintf (stdout, "reading simulation states at checkpoint time... ");
+        read_simu_states(&simulations, &melissa_options, &comm_data);
+        for (i=0; i<simulations.size; i++)
+        {
+            simu_ptr = simulations.items[i];
+            fprintf(stderr, "  simu_state[%d] = %d (rank %d)\n", i, simu_ptr->status, comm_data.rank);
+            if (simu_ptr->status == 2)
             {
                 nb_finished_simulations += 1;
             }
         }
-        for (i=0; i<melissa_options.sampling_size; i++)
+        for (i=0; i<simulations.size; i++)
         {
-            if (simu_state[i] == 1)
+            simu_ptr = simulations.items[i];
+            if (simu_ptr->status == 1)
             {
-                simu_state[i] = 0;
+                simu_ptr->status = 0;
             }
         }
         if (comm_data.rank == 0)
         {
-            for (i=0; i<melissa_options.sampling_size; i++)
+            for (i=0; i<simulations.size; i++)
             {
-                sprintf (txt_buffer, "simu_state %d %d", i, simu_state[i]);
+                simu_ptr = simulations.items[i];
+                sprintf (txt_buffer, "simu_state %d %d", i, simu_ptr->status);
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
         }
+        melissa_options.sampling_size = simulations.size;
         fprintf (stdout, " ok \n");
     }
 
@@ -278,21 +272,10 @@ int main (int argc, char **argv)
         {
             if (last_timeout_check + 100 < melissa_get_time())
             {
-//                detected_timeouts = check_timeouts(simu_state,
-//                                                   simu_timeout,
-//                                                   last_message_simu,
-//                                                   melissa_options.sampling_size);
-// futur work
                 detected_timeouts = check_timeouts(&simulations);
                 last_timeout_check = melissa_get_time();
                 if (detected_timeouts > 0)
                 {
-//                    send_timeouts (detected_timeouts,
-//                                   simu_timeout,
-//                                   melissa_options.nb_simu,
-//                                   txt_buffer,
-//                                   python_pusher);
-// futur work
                     send_timeouts (detected_timeouts,
                                    &simulations,
                                    txt_buffer,
@@ -416,7 +399,6 @@ int main (int argc, char **argv)
             if (first_send[field_id*comm_data.client_comm_size+client_rank] == 0)
             {
                 pull_data.local_nb_messages += 1;
-                nb_iterations = melissa_options.sampling_size * melissa_options.nb_time_steps * pull_data.local_nb_messages;
                 first_send[field_id*comm_data.client_comm_size+client_rank] = 1;
             }
             if (group_id > simulations.size)
@@ -425,6 +407,7 @@ int main (int argc, char **argv)
                 {
                     vector_set (&simulations, i, add_simulation(i, melissa_options.nb_time_steps));
                 }
+                melissa_options.sampling_size = simulations.size;
             }
 //====================== END NEW ======================
 
@@ -450,7 +433,8 @@ int main (int argc, char **argv)
                     total_read_time += end_read_time - start_read_time;
                 }
             }
-            last_message_simu[group_id] = melissa_get_time();
+            simu_ptr = simulations.items[group_id];
+            simu_ptr->last_message = melissa_get_time();
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
 #ifdef BUILD_WITH_PROBES
             total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
@@ -466,7 +450,6 @@ int main (int argc, char **argv)
                                1,
                                buff_tab_ptr,
                                group_id);
-                iteration++;
             }
             else
             {
@@ -481,7 +464,6 @@ int main (int argc, char **argv)
                                melissa_options.nb_parameters+2,
                                buff_tab_ptr,
                                group_id);
-                iteration++;
                 confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]),
                                            melissa_options.nb_parameters,
                                            data_ptr[client_rank].vect_size);
@@ -494,25 +476,26 @@ int main (int argc, char **argv)
             end_computation_time = melissa_get_time();
             total_computation_time += end_computation_time - start_computation_time;
 #endif // BUILD_WITH_PROBES
-            old_simu_state = simu_state[group_id];
-            simu_state[group_id] = check_simu_state(fields, melissa_options.nb_fields, group_id, melissa_options.nb_time_steps, &comm_data);
+            old_simu_state = simu_ptr->status;
+            simu_ptr->status = check_simu_state(fields, melissa_options.nb_fields, group_id, melissa_options.nb_time_steps, &comm_data);
 //            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
 
-            if (simu_state[group_id] == 2)
+            if (simu_ptr->status == 2)
             {
                 nb_finished_simulations += 1;
+                fprintf(stdout, "  nb_finished_simulations: %d/%d\n", nb_finished_simulations, simulations.size);
             }
             // === Send a message to the Python master in case of simulation status update === //
-            if (old_simu_state != simu_state[group_id] && comm_data.rank == 0)
+            if (old_simu_state != simu_ptr->status && comm_data.rank == 0)
             {
-                sprintf (txt_buffer, "group_state %d %d", group_id, simu_state[group_id]);
+                sprintf (txt_buffer, "group_state %d %d", group_id, simu_ptr->status);
                 zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 
-            if (/*comm_data.rank==0 && */((iteration % 10) == 0 || iteration < 10) )
-            {
-                fprintf(stdout, "time step %d - simulation %d\n", time_step, group_id);
-            }
+//            if (/*comm_data.rank==0 && */((iteration % 10) == 0 || iteration < 10) )
+//            {
+//                fprintf(stdout, "time step %d - simulation %d\n", time_step, group_id);
+//            }
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
             {
                 buff_tab_ptr[i] = NULL;
@@ -522,7 +505,7 @@ int main (int argc, char **argv)
         }
 
 //        if (iteration % 100 == 0)
-        if (last_checkpoint_time  + 300 < melissa_get_time() && last_checkpoint_time > 0.1)
+        if (last_checkpoint_time  + 3 < melissa_get_time() && last_checkpoint_time > 0.1)
         {
 #ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
@@ -537,7 +520,7 @@ int main (int argc, char **argv)
                     fprintf(stderr, "statistic field %s saved in %s\n", fields[i].name, dir);
                 }
             }
-            save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
+            save_simu_states (&simulations, &comm_data);
             last_checkpoint_time = melissa_get_time();
 #ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
@@ -555,7 +538,7 @@ int main (int argc, char **argv)
             start_save_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank == 0)
-                fprintf (stderr, "\nINTERUPTED at iteration %d \n", iteration);
+                fprintf (stderr, "\n   INTERUPTED\n");
             for (i=0; i<melissa_options.nb_fields; i++)
             {
                 save_stats (fields[i].stats_data, &comm_data, fields[i].name);
@@ -566,7 +549,7 @@ int main (int argc, char **argv)
                     fprintf(stderr, "statistic fields saved in %s\n\n", dir);
                 }
             }
-            save_simu_states (simu_state, &comm_data, melissa_options.sampling_size);
+            save_simu_states (&simulations, &comm_data);
             if (end_signal == SIGINT)
             {
 #ifdef BUILD_WITH_MPI
@@ -596,7 +579,7 @@ int main (int argc, char **argv)
             //                }
         }
 
-        if (nb_finished_simulations >= melissa_options.sampling_size)
+        if (nb_finished_simulations >= simulations.size)
         {
             break;
         }
@@ -606,7 +589,6 @@ int main (int argc, char **argv)
     {
 
     melissa_free (buff_tab_ptr);
-    melissa_free (last_message_simu);
     }
 
     if (comm_data.rank == 0)
@@ -629,13 +611,14 @@ int main (int argc, char **argv)
     {
         for (i=0; i< melissa_options.nb_fields; i++)
         {
-        finalize_field_data (&fields[i],
-                             &comm_data,
-                             &melissa_options
+            fprintf (stdout, "finalize field %d\n", i);
+            finalize_field_data (&fields[i],
+                                 &comm_data,
+                                 &melissa_options
 #ifdef BUILD_WITH_PROBES
-                            , &total_write_time
+                                 , &total_write_time
 #endif // BUILD_WITH_PROBES
-                            );
+                                 );
         }
     }
 //    melissa_free (comm_data.rcounts);

@@ -111,7 +111,6 @@ static void melissa_alloc_data (melissa_data_t *data)
     alloc_vector (&data->step_simu, data->options->sampling_size);
     for (i=0; i<data->options->sampling_size; i++)
     {
-//        items_ptr = melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t));
         vector_set (&data->step_simu, i, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
     }
     // === end new === //

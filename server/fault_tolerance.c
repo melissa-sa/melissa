@@ -32,11 +32,8 @@ melissa_simulation_t* add_simulation(int id, int nb_time_steps)
 
     simu = melissa_malloc (sizeof(melissa_simulation_t));
 
-    simu->id = id;
-//    simu->field_status = NULL;
-//    simu->time_steps = melissa_calloc((nb_time_steps+31)/32, sizeof(int32_t*));
     simu->timeout = 0;
-    simu->last_message = 0;
+    simu->last_message = 0.0;
 
     return simu;
 }
