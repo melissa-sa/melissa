@@ -197,7 +197,7 @@ int main (int argc, char **argv)
         alloc_vector (&simulations, melissa_options.sampling_size);
         for (i=0; i<melissa_options.sampling_size; i++)
         {
-            vector_set (&simulations, i, add_simulation(i, melissa_options.nb_time_steps));
+            vector_set (&simulations, i, add_simulation());
         }
     }
     else
@@ -270,7 +270,7 @@ int main (int argc, char **argv)
 
         if (comm_data.rank == 0)
         {
-            if (last_timeout_check + 100 < melissa_get_time())
+            if (last_timeout_check + 20 < melissa_get_time())
             {
                 detected_timeouts = check_timeouts(&simulations);
                 last_timeout_check = melissa_get_time();
@@ -278,7 +278,6 @@ int main (int argc, char **argv)
                 {
                     send_timeouts (detected_timeouts,
                                    &simulations,
-                                   txt_buffer,
                                    python_pusher);
                 }
             }
@@ -405,7 +404,7 @@ int main (int argc, char **argv)
             {
                 for (i=simulations.size; i<group_id; i++)
                 {
-                    vector_set (&simulations, i, add_simulation(i, melissa_options.nb_time_steps));
+                    vector_set (&simulations, i, add_simulation());
                 }
                 melissa_options.sampling_size = simulations.size;
             }
@@ -505,7 +504,7 @@ int main (int argc, char **argv)
         }
 
 //        if (iteration % 100 == 0)
-        if (last_checkpoint_time  + 3 < melissa_get_time() && last_checkpoint_time > 0.1)
+        if (last_checkpoint_time  + melissa_options.check_interval < melissa_get_time() && last_checkpoint_time > 0.1)
         {
 #ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
@@ -652,7 +651,7 @@ int main (int argc, char **argv)
         fprintf (stdout, " --- Chekpointing time:               %g s\n", total_save_time);
         fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
         fprintf (stdout, " --- MB recieved:                     %ld MB\n",total_mbytes_recv);
-        fprintf (stdout, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
+//        fprintf (stdout, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
         fprintf (stdout, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&melissa_options));
         if (melissa_options.sobol_op == 1)
         {

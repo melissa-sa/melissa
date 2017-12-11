@@ -266,24 +266,24 @@ void melissa_free_data (melissa_data_t *data)
     data->is_valid = 0;
 }
 
-/**
- *******************************************************************************
- *
- * @ingroup stats_data
- *
- * This function computes and displays the memory consumption of the library
- *
- *******************************************************************************
- *
- * @param[in] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
+///**
+// *******************************************************************************
+// *
+// * @ingroup stats_data
+// *
+// * This function computes and displays the memory consumption of the library
+// *
+// *******************************************************************************
+// *
+// * @param[in] *options
+// * pointer to the structure containing global options
+// *
+// *******************************************************************************/
 
-long int mem_conso (melissa_options_t *options)
-{
-    long int memory = 0;
-    long int temp_mem = 0;
+//long int mem_conso (melissa_options_t *options)
+//{
+//    long int memory = 0;
+//    long int temp_mem = 0;
 
 //    if (options->mean_op != 0)
 //    {
@@ -329,5 +329,5 @@ long int mem_conso (melissa_options_t *options)
 //        memory += temp_mem;
 //    }
 //    fprintf(stdout, " --- Total memory usage:      %d MB\n", memory);
-    return memory;
-}
+//    return memory;
+//}

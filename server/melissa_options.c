@@ -40,7 +40,7 @@ static inline void stats_usage ()
     fprintf(stderr,
             " Usage:\n"
             " -p <int>       : number of parameters for the parametric study\n"
-            " -s <int>       : study sampling size\n"
+            " -s <int>       : study initial sampling size\n"
             " -t <int>       : number of time steps of the study\n"
             " -o <char*>     : operations separated by semicolons\n"
             "                  possibles values :\n"
@@ -56,6 +56,7 @@ static inline void stats_usage ()
             " -n <char*>     : Melissa Launcher node name (default: localhost)\n"
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
+            " -c <double>    : Server checkpoints intervals (seconds, default: 300)"
             " -h             : Print this message\n"
             "\n"
             );
@@ -79,7 +80,7 @@ static inline void init_options (melissa_options_t *options)
     options->nb_parameters   = 0;
     options->sampling_size   = 0;
     options->nb_simu         = 0;
-    options->nb_fields         = 0;
+    options->nb_fields       = 0;
     options->threshold       = 0.0;
     options->mean_op         = 0;
     options->variance_op     = 0;
@@ -89,6 +90,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
+    options->check_interval  = 300.0;
     sprintf (options->restart_dir, ".");
     sprintf (options->launcher_name, "localhost");
 }
@@ -130,13 +132,13 @@ static inline void get_operations (char              *name,
         exit (1);
     }
 
-    /* gjuste to be sure */
+    /* juste to be sure */
     options->mean_op         = 0;
     options->variance_op     = 0;
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
+    options->quantile_op     = 0;
     options->sobol_op        = 0;
-
     /* get the first token */
     temp_char = strtok (name, s);
 
@@ -218,6 +220,7 @@ void melissa_print_options (melissa_options_t *options)
 //    if (options->restart != 0)
 //        fprintf(stdout, "using options.save restart file\n");
     fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
+    fprintf(stdout, "Checkpoint every %g seconds\n", options->check_interval);
 }
 
 /**
@@ -256,7 +259,7 @@ void melissa_get_options (int                 argc,
 
     do
     {
-        opt = getopt (argc, argv, "f:p:t:o:e:s:g:n:lhr:");
+        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:");
 
         switch (opt) {
         case 'r':
@@ -299,6 +302,9 @@ void melissa_get_options (int                 argc,
             break;
         case 'f':
             get_nb_fields (optarg, options);
+            break;
+        case 'c':
+            options->check_interval = atof (optarg);
             break;
         case 'h':
             stats_usage ();
@@ -401,64 +407,70 @@ void melissa_check_options (melissa_options_t  *options)
         fprintf (stderr, "options->restart_dir= %s changing to .\n", options->restart_dir);
         sprintf (options->restart_dir, ".");
     }
+
+    if (options->check_interval < 5.0)
+    {
+        fprintf (stderr, "checkpoint interval too small, changing to 5.0\n");
+        options->check_interval = 5.0;
+    }
 }
 
-///**
-// *******************************************************************************
-// *
-// * @ingroup melissa_options
-// *
-// * This function writes the option structure on disc
-// *
-// *******************************************************************************
-// *
-// * @param[in] *options
-// * pointer to the structure containing global options
-// *
-// *******************************************************************************/
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_options
+ *
+ * This function writes the option structure on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in] *options
+ * pointer to the structure containing global options
+ *
+ *******************************************************************************/
 
-//void melissa_write_options (melissa_options_t *options)
-//{
-//    FILE* f;
+void melissa_write_options (melissa_options_t *options)
+{
+    FILE* f;
 
-//    f = fopen("options.save", "wb+");
+    f = fopen("options.save", "wb+");
 
-//    fwrite(options, sizeof(melissa_options_t), 1, f);
+    fwrite(options, sizeof(melissa_options_t), 1, f);
 
-//    fclose(f);
-//}
+    fclose(f);
+}
 
-///**
-// *******************************************************************************
-// *
-// * @ingroup melissa_options
-// *
-// * This function reads a saved option structure on disc
-// *
-// *******************************************************************************
-// *
-// * @param[in,out] *options
-// * pointer to the structure containing global options
-// *
-// *******************************************************************************/
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_options
+ *
+ * This function reads a saved option structure on disc
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] *options
+ * pointer to the structure containing global options
+ *
+ *******************************************************************************/
 
-//int melissa_read_options (melissa_options_t *options)
-//{
-//    FILE* f = NULL;
-//    int ret = 1;
-//    char file_name[256];
+int melissa_read_options (melissa_options_t *options)
+{
+    FILE* f = NULL;
+    int ret = 1;
+    char file_name[256];
 
-//    sprintf (file_name, "%s/options.save", options->restart_dir);
-//    f = fopen(file_name, "rb");
+    sprintf (file_name, "%s/options.save", options->restart_dir);
+    f = fopen(file_name, "rb");
 
-//    if (f != NULL)
-//    {
-//        if (1 == fread(options, sizeof(melissa_options_t), 1, f))
-//        {
-//            ret = 0;
-//        }
-//    }
+    if (f != NULL)
+    {
+        if (1 == fread(options, sizeof(melissa_options_t), 1, f))
+        {
+            ret = 0;
+        }
+    }
 
-//    fclose(f);
-//    return ret;
-//}
+    fclose(f);
+    return ret;
+}

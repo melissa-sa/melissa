@@ -240,8 +240,10 @@ class Server(Job):
                                  '-s', str(stdy_opt['sampling_size']),
                                  '-t', str(stdy_opt['nb_time_steps']),
                                  '-e', str(stdy_opt['threshold_value']),
+                                 '-c', str(stdy_opt['checkpoint_interval']),
                                  '-f', field_str,
                                  '-n', str(gethostname())))
+        print self.cmd_opt
 
     def launch(self):
         """

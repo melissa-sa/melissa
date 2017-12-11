@@ -217,7 +217,7 @@ def fault_tolerance():
         if server.status != RUNNING or server.job_status != RUNNING:
             sleep = True
     if sleep == True:
-        time.sleep(5)
+        time.sleep(3)
         sleep = False
 
     if ((server.status != RUNNING or server.job_status != RUNNING)

@@ -254,9 +254,10 @@ def launch_group(group):
 def check_job(job):
     state = 0
     if BATCH_SCHEDULER == "local":
-        if os.system('ps -p ' + str(job.job_id) + ' > /dev/null') == 0:
+        try:
+            subprocess.check_output(["ps",str(job.job_id)])
             state = 1
-        else:
+        except:
             state = 2
     elif (BATCH_SCHEDULER == "OAR"):
         proc = subprocess.Popen("oarstat -u --sql \"state = 'Waiting'\"",
@@ -453,13 +454,14 @@ GLOBAL_OPTIONS['user_name'] = USERNAME
 GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example/STATS'
 
 STUDY_OPTIONS = {}
-STUDY_OPTIONS['nb_parameters'] = 5
-STUDY_OPTIONS['sampling_size'] = 5
-STUDY_OPTIONS['nb_time_steps'] = 100
+STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 5          # initial number of parameter sets
+STUDY_OPTIONS['nb_time_steps'] = 100        # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
-STUDY_OPTIONS['field_names'] = ["heat"]
-STUDY_OPTIONS['server_timeout'] = 60
-STUDY_OPTIONS['simulation_timeout'] = 40
+STUDY_OPTIONS['field_names'] = ["heat"]     # list of field names
+STUDY_OPTIONS['server_timeout'] = 60        # server is restarted if no life sign for 40 seconds
+STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

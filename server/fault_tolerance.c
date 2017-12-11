@@ -17,8 +17,11 @@
 /**
  *
  * @file fault_tolerance.c
+ * @brief Routines related to the melissa fault tolerance.
  * @author Terraz Théophile
  * @date 2017-30-06
+ *
+ * @defgroup melissa_fault_tolerance Melissa fault tolerance
  *
  **/
 
@@ -26,55 +29,66 @@
 #include "fault_tolerance.h"
 #include "zmq.h"
 
-melissa_simulation_t* add_simulation(int id, int nb_time_steps)
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function allocates and return a pointer to a simulation structure
+ *
+ *******************************************************************************/
+
+melissa_simulation_t* add_simulation()
 {
     melissa_simulation_t *simu;
 
     simu = melissa_malloc (sizeof(melissa_simulation_t));
 
+    simu->status = 0;
     simu->timeout = 0;
     simu->last_message = 0.0;
 
     return simu;
 }
 
-void simu_push_to(vector_t *v,
-             int       pos,
-             int       nb_time_steps)
-{
-    int i;
-
-    if (pos >= v->size)
-    {
-        while (v->capacity <= pos)
-        {
-            resize_vector(v, v->capacity * 2);
-        }
-
-        for (i=v->size; i<pos; i++)
-        {
-            v->items[i] = add_simulation(i, nb_time_steps);
-        }
-        v->size = pos + 1;
-    }
-//    (melissa_simulation_t*)v->items[pos] = add_simulation(pos, nb_time_steps);
-    v->items[pos] = add_simulation(pos, nb_time_steps);
-}
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function frees a simulation vector
+ *
+ *******************************************************************************
+ *
+ * @param[in] *v
+ * pointer to the simulation vector to free
+ *
+ *******************************************************************************/
 
 void free_simu_vector(vector_t v)
 {
     int i;
-    melissa_simulation_t *simu;
     for (i=0; i<v.size; i++)
     {
-        simu = v.items[i];
-//        melissa_free (simu->time_steps);
         melissa_free (v.items[i]);
     }
     melissa_free (v.items);
 }
 
-//int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu)
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function checks if the simulations are in a timeout situation
+ *
+ *******************************************************************************
+ *
+ * @param[in] *simulations
+ * pointer to the simulation vector to check
+ *
+ *******************************************************************************/
+
 int check_timeouts (vector_t *simulations)
 {
     int detected_timeouts = 0;
@@ -101,17 +115,32 @@ int check_timeouts (vector_t *simulations)
     return detected_timeouts;
 }
 
-//void send_timeouts (int   detected_timeouts,
-//                    int  *simu_timeouts,
-//                    int   nb_simu,
-//                    char* txt_buffer,
-//                    void *python_pusher)
-send_timeouts (int       detected_timeouts,
-               vector_t *simulations,
-               char*     txt_buffer,
-               void     *python_pusher)
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function sends the timeouts detected by check_timeouts
+ *
+ *******************************************************************************
+ *
+ * @param[in] *detected_timeouts
+ * number of timeouts detected
+ *
+ * @param[in] *simulations
+ * pointer to the simulation vector
+ *
+ * @param[in] *python_pusher
+ * ZMQ socket to the python launcher
+ *
+ *******************************************************************************/
+
+void send_timeouts (int       detected_timeouts,
+                    vector_t *simulations,
+                    void     *python_pusher)
 {
-    int i;
+    int                   i;
+    char                  txt_buffer[32];
     melissa_simulation_t *simu_ptr;
 
     if (detected_timeouts < 1)
@@ -132,5 +161,4 @@ send_timeouts (int       detected_timeouts,
             }
         }
     }
-    return;
 }

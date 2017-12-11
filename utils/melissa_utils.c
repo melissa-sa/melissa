@@ -154,7 +154,7 @@ void* melissa_malloc (size_t size)
     ptr = malloc (size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR melissa_malloc failed");
+        fprintf (stderr, "ERROR melissa_malloc failed\n");
         exit(0);
     }
     else
@@ -190,7 +190,7 @@ void* melissa_calloc (size_t num,
     ptr = calloc (num, size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR melissa_calloc failed");
+        fprintf (stderr, "ERROR melissa_calloc failed\n");
         exit(0);
     }
     else
@@ -225,7 +225,7 @@ void* melissa_realloc (void   *ptr,
     ptr = realloc (ptr, size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR melissa_realloc failed");
+        fprintf (stderr, "ERROR melissa_realloc failed\n");
         exit(0);
     }
     else

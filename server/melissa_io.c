@@ -355,8 +355,10 @@ void read_simu_states(vector_t          *simu,
     }
 
     fread(&size, sizeof(int), 1, f);
+    fprintf (stdout, "====== read file ======\nsize : %d\n", size);
 #ifdef BUILD_WITH_MPI
-    MPI_Allreduce (&max_size, &size, 1, MPI_INT, MPI_MAX, comm_data->comm);
+    MPI_Allreduce (&size, &max_size, 1, MPI_INT, MPI_MAX, comm_data->comm);
+    fprintf (stdout, "max size : %d\n", max_size);
 #else // BUILD_WITH_MPI
     max_size = size;
 #endif // BUILD_WITH_MPI
@@ -383,6 +385,7 @@ void read_simu_states(vector_t          *simu,
         MPI_Wait(&request[i], &status);
 #endif // BUILD_WITH_MPI
     }
+    melissa_free (request);
 
     fclose(f);
 }
