@@ -241,9 +241,9 @@ class Server(Job):
                                  '-t', str(stdy_opt['nb_time_steps']),
                                  '-e', str(stdy_opt['threshold_value']),
                                  '-c', str(stdy_opt['checkpoint_interval']),
+                                 '-w', str(stdy_opt['simulation_timeout']),
                                  '-f', field_str,
                                  '-n', str(gethostname())))
-        print self.cmd_opt
 
     def launch(self):
         """

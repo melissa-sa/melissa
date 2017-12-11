@@ -91,6 +91,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_order     = 0;
     options->restart         = 0;
     options->check_interval  = 300.0;
+    options->timeout_simu    = 300.0;
     sprintf (options->restart_dir, ".");
     sprintf (options->launcher_name, "localhost");
 }
@@ -221,6 +222,7 @@ void melissa_print_options (melissa_options_t *options)
 //        fprintf(stdout, "using options.save restart file\n");
     fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
     fprintf(stdout, "Checkpoint every %g seconds\n", options->check_interval);
+    fprintf(stdout, "Wait time for simulation message before timeout: %g seconds\n", options->timeout_simu);
 }
 
 /**
@@ -259,7 +261,7 @@ void melissa_get_options (int                 argc,
 
     do
     {
-        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:");
+        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:w:");
 
         switch (opt) {
         case 'r':
@@ -305,6 +307,9 @@ void melissa_get_options (int                 argc,
             break;
         case 'c':
             options->check_interval = atof (optarg);
+            break;
+        case 'w':
+            options->timeout_simu = atof (optarg);
             break;
         case 'h':
             stats_usage ();
@@ -412,6 +417,12 @@ void melissa_check_options (melissa_options_t  *options)
     {
         fprintf (stderr, "checkpoint interval too small, changing to 5.0\n");
         options->check_interval = 5.0;
+    }
+
+    if (options->timeout_simu < 5.0)
+    {
+        fprintf (stderr, "time before simulation timeout too small, changing to 5.0\n");
+        options->timeout_simu = 5.0;
     }
 }
 

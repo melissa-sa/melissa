@@ -47,67 +47,63 @@ void sig_handler(int signo) {
 
 int main (int argc, char **argv)
 {
-    melissa_options_t   melissa_options;
-    melissa_data_t     *data_ptr = NULL;
-    melissa_field_t    *fields = NULL;
-    comm_data_t         comm_data;
-    int                 time_step;
-    int                 i, client_rank, field_id;
-    int                 recv_vect_size = 0;
-    char               *buf_ptr = NULL;
-    double            **buff_tab_ptr;
-    int                 port_no;
-    char                txt_buffer[MPI_MAX_PROCESSOR_NAME] = {0};
-    char               *node_names = NULL;
-    int                 sinit_tab[3], rinit_tab[2];
-    void               *context = zmq_ctx_new ();
-    char                node_name[MPI_MAX_PROCESSOR_NAME];
-    void               *connexion_responder = zmq_socket (context, ZMQ_REP);
-    void               *init_responder = zmq_socket (context, ZMQ_REP);
-//    void               *init_responder2 = zmq_socket (context, ZMQ_REP);
-    void               *data_puller = zmq_socket (context, ZMQ_PULL);
-    void               *python_pusher = zmq_socket (context, ZMQ_PUSH);
-    int                 first_init;
-    int                 first_connect;
-    int                *first_send;
-    int                 get_next_message = 0;
-    pull_data_t         pull_data;
-    int                 nb_bufferized_messages = 32;
-    char               *field_name_ptr = NULL;
-    int                 simu_id, group_id;
-    int                 nb_converged_fields = 0;
-    double              interval1, interval_tot;
-    zmq_msg_t           msg;
+    melissa_options_t     melissa_options;
+    melissa_data_t       *data_ptr = NULL;
+    melissa_field_t      *fields = NULL;
+    comm_data_t           comm_data;
+    int                   time_step;
+    int                   i, client_rank, field_id;
+    int                   recv_vect_size = 0;
+    char                 *buf_ptr = NULL;
+    double              **buff_tab_ptr;
+    int                   port_no;
+    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME] = {0};
+    char                 *node_names = NULL;
+    int                   sinit_tab[3], rinit_tab[2];
+    void                 *context = zmq_ctx_new ();
+    char                  node_name[MPI_MAX_PROCESSOR_NAME];
+    void                 *connexion_responder = zmq_socket (context, ZMQ_REP);
+    void                 *init_responder = zmq_socket (context, ZMQ_REP);
+    void                 *data_puller = zmq_socket (context, ZMQ_PULL);
+    void                 *python_pusher = zmq_socket (context, ZMQ_PUSH);
+    int                   first_init;
+    int                   first_connect;
+    int                  *first_send;
+    int                   get_next_message = 0;
+    int                   local_nb_messages;
+    int                   nb_bufferized_messages = 32;
+    char                 *field_name_ptr = NULL;
+    int                   simu_id, group_id;
+    int                   nb_converged_fields = 0;
+    double                interval1, interval_tot;
+    zmq_msg_t             msg;
 #ifdef BUILD_WITH_PROBES
-    double              start_time = 0;
-    double              total_comm_time = 0;
-    double              start_comm_time = 0;
-    double              end_comm_time = 0;
-    double              total_computation_time = 0;
-    double              start_computation_time = 0;
-    double              end_computation_time = 0;
-    double              total_wait_time = 0;
-    double              start_wait_time = 0;
-    double              end_wait_time = 0;
-    double              total_save_time = 0;
-    double              start_save_time = 0;
-    double              end_save_time = 0;
-    double              total_read_time = 0;
-    double              start_read_time = 0;
-    double              end_read_time = 0;
-    double              total_write_time = 0;
-    long int            total_mbytes_recv = 0;
+    double                start_time = 0;
+    double                total_comm_time = 0;
+    double                start_comm_time = 0;
+    double                end_comm_time = 0;
+    double                total_computation_time = 0;
+    double                start_computation_time = 0;
+    double                end_computation_time = 0;
+    double                total_wait_time = 0;
+    double                start_wait_time = 0;
+    double                end_wait_time = 0;
+    double                total_save_time = 0;
+    double                start_save_time = 0;
+    double                end_save_time = 0;
+    double                total_read_time = 0;
+    double                start_read_time = 0;
+    double                end_read_time = 0;
+    double                total_write_time = 0;
+    long int              total_mbytes_recv = 0;
 #endif // BUILD_WITH_PROBES
-    int                 old_simu_state;
-    double              last_timeout_check = 0;
-    int                 detected_timeouts;
-    int                 nb_finished_simulations = 0;
-    double              last_checkpoint_time = 0.0;
-
-    // === new === //
+    int                   old_simu_state;
+    double                last_timeout_check = 0;
+    int                   detected_timeouts;
+    int                   nb_finished_simulations = 0;
+    double                last_checkpoint_time = 0.0;
     vector_t              simulations;
     melissa_simulation_t *simu_ptr;
-    // === end === //
 
 #ifdef BUILD_WITH_MPI
 
@@ -272,7 +268,8 @@ int main (int argc, char **argv)
         {
             if (last_timeout_check + 20 < melissa_get_time())
             {
-                detected_timeouts = check_timeouts(&simulations);
+                detected_timeouts = check_timeouts(&simulations,
+                                                   melissa_options.timeout_simu);
                 last_timeout_check = melissa_get_time();
                 if (detected_timeouts > 0)
                 {
@@ -328,7 +325,7 @@ int main (int argc, char **argv)
             {
                 buff_tab_ptr = melissa_malloc (sizeof(double*));
             }
-            pull_data.local_nb_messages = 0;
+            local_nb_messages = 0;
             add_fields(fields,
                        comm_data.client_comm_size,
                        melissa_options.nb_fields);
@@ -397,7 +394,7 @@ int main (int argc, char **argv)
             field_id = get_field_id(fields, melissa_options.nb_fields, field_name_ptr);
             if (first_send[field_id*comm_data.client_comm_size+client_rank] == 0)
             {
-                pull_data.local_nb_messages += 1;
+                local_nb_messages += 1;
                 first_send[field_id*comm_data.client_comm_size+client_rank] = 1;
             }
             if (group_id > simulations.size)
@@ -482,7 +479,10 @@ int main (int argc, char **argv)
             if (simu_ptr->status == 2)
             {
                 nb_finished_simulations += 1;
-                fprintf(stdout, "  nb_finished_simulations: %d/%d\n", nb_finished_simulations, simulations.size);
+                if (comm_data.rank == 0)
+                {
+                    fprintf(stdout, "  finished simulations: %d/%d\n", nb_finished_simulations, simulations.size);
+                }
             }
             // === Send a message to the Python master in case of simulation status update === //
             if (old_simu_state != simu_ptr->status && comm_data.rank == 0)
@@ -567,7 +567,7 @@ int main (int argc, char **argv)
         // === Send a message to the Python Launcher in case of Sobol indices convergence === //
 
         if (first_connect == 0 &&
-            nb_converged_fields >= melissa_options.nb_fields * pull_data.local_nb_messages &&
+            nb_converged_fields >= melissa_options.nb_fields * local_nb_messages &&
             melissa_options.sobol_op == 1)
         {
             sprintf (txt_buffer, "converged %d", comm_data.rank);

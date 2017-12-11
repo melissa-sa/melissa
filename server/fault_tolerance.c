@@ -87,13 +87,16 @@ void free_simu_vector(vector_t v)
  * @param[in] *simulations
  * pointer to the simulation vector to check
  *
+ * @param[in] timeout_simu
+ * time before timeout
+ *
  *******************************************************************************/
 
-int check_timeouts (vector_t *simulations)
+int check_timeouts (vector_t *simulations,
+                    int       timeout_simu)
 {
     int detected_timeouts = 0;
     int i;
-    double timeout_simu = 12; // TODO: something more user friendly
     double current_time = melissa_get_time();
     melissa_simulation_t *simu_ptr;
 

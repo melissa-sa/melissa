@@ -52,7 +52,8 @@ melissa_simulation_t* add_simulation();
 
 void free_simu_vector(vector_t v);
 
-int check_timeouts (vector_t *simulations);
+int check_timeouts (vector_t *simulations,
+                    int       timeout_simu);
 
 void send_timeouts (int       detected_timeouts,
                     vector_t *simulations,

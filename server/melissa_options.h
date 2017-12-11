@@ -52,6 +52,7 @@ struct melissa_options_s
 //    int                  global_vect_size;   /**< global size of input vector                                      */
     int                  restart;            /**< 1 if restart, 0 otherwise                                        */
     double               check_interval;     /**< interval between checkpoints                                     */
+    int                  timeout_simu;       /**< time to wait for next simulation message before timeout          */
     char                 restart_dir[256];   /**< Melissa restart files directory                                  */
     char                 launcher_name[256]; /**< Melissa master node name                                         */
 };

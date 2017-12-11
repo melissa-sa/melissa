@@ -459,7 +459,6 @@ STUDY_OPTIONS['sampling_size'] = 5          # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100        # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["heat"]     # list of field names
-STUDY_OPTIONS['server_timeout'] = 60        # server is restarted if no life sign for 40 seconds
 STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
 

@@ -128,7 +128,7 @@ class Messenger(Thread):
                                  str(server.job_id))
 
             if last_server > 0:
-                if (time.time() - last_server) > stdy_opt['server_timeout']:
+                if (time.time() - last_server) > 100:
                     logging.info('server timeout\n')
                     with server.lock:
                         server.status = TIMEOUT
@@ -157,6 +157,8 @@ class Study(object):
         """
 #        global server
 #        global groups
+        if not os.path.isdir(glob_opt['working_directory']):
+            os.mkdir(glob_opt['working_directory'])
         os.chdir(glob_opt['working_directory'])
         if check_options() > 0:
             return -1
