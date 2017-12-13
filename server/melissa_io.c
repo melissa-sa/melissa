@@ -366,7 +366,7 @@ void read_simu_states(vector_t          *simu,
     request = melissa_malloc(max_size * sizeof(MPI_Request));
     for (i=0; i<max_size; i++)
     {
-        vector_set (simu, i, add_simulation(i, options->nb_time_steps));
+        vector_set (simu, i, add_simulation());
     }
     for (i=0; i<size; i++)
     {
@@ -454,9 +454,7 @@ void write_stats_bin (melissa_data_t    **data,
     {
         vect_size += (*data)[i].vect_size;
     }
-    fprintf (stdout,"allgather (process %d)...\n", comm_data->rank);
     MPI_Allgather (&vect_size, 1, MPI_INT, local_vect_sizes, 1, MPI_INT, comm_data->comm);
-    fprintf (stdout," allgather (process %d) ok\n", comm_data->rank);
 
     for (i=0; i<comm_data->comm_size; i++)
     {

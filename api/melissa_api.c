@@ -62,13 +62,11 @@ struct global_data_s
 {
     void    *context;             /**< ZeroMQ context                                             */
     void    *connexion_requester; /**< connexion ZeroMQ port                                      */
-    void    *init_requester;      /**< initialization ZeroMQ port                                 */
     void   **sobol_requester;     /**< data ZeroMQ Sobol port                                     */
     int      rinit_tab[3];        /**< array used to receive data                                 */
     int      sobol;               /**< 1 if sobol computation, 0 otherwhise                       */
     int      sobol_rank;          /**< sobol rank                                                 */
     int      sample_id;           /**< parameters sample id                                       */
-    int      sinit_tab[2];        /**< array used to send data                                    */
     int      nb_proc_server;      /**< number of MPI processes of the library                     */
     int      nb_parameters;       /**< number of parameters of the study                          */
     char    *buffer;              /**< buffer used to send data to the library                    */
@@ -380,7 +378,7 @@ void melissa_init (const char *field_name,
 {
     char           server_node_name[MPI_MAX_PROCESSOR_NAME];
     char           port_name[MPI_MAX_PROCESSOR_NAME] = {0};
-    int            port_no, i, j;
+    int            port_no, i, j, ret;
     FILE*          file = NULL;
     int            linger = -1;
     char           master_node_name[MPI_MAX_PROCESSOR_NAME];
@@ -388,10 +386,11 @@ void melissa_init (const char *field_name,
     void          *master_requester = NULL;
     static int     first_init = 1;
     field_data_t  *comm_ptr = NULL;
+    zmq_msg_t      msg;
+    char          *buf_ptr = NULL;
 
     global_data.context = zmq_ctx_new ();
     global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
-    global_data.init_requester = zmq_socket (global_data.context, ZMQ_REQ);
     global_data.sobol_requester = NULL;
 //    global_data.sobol_rank = *sobol_rank;
     global_data.coupling = *coupling;
@@ -420,18 +419,34 @@ void melissa_init (const char *field_name,
             fclose(file);
         }
 
-        global_data.sinit_tab[0] = *comm_size;
-        global_data.sinit_tab[1] = *simu_id;
         global_data.rinit_tab[0] = 0;
         global_data.rinit_tab[1] = 1;
         global_data.buff_size    = 0;
-
+        zmq_msg_init_size (&msg, 2 * sizeof(int));
+        buf_ptr = zmq_msg_data (&msg);
+        memcpy (buf_ptr, comm_size, sizeof(int));
+        buf_ptr += sizeof(int);
+        memcpy (buf_ptr, simu_id, sizeof(int));
         sprintf (port_name, "tcp://%s:2003", server_node_name);
         melissa_connect (global_data.connexion_requester, port_name);
-        zmq_send (global_data.connexion_requester, global_data.sinit_tab, 2 * sizeof(int), 0);
-        zmq_recv (global_data.connexion_requester, global_data.rinit_tab, 3 * sizeof(int), 0);
-        sprintf (port_name, "tcp://%s:2002", server_node_name);
-        melissa_connect (global_data.init_requester, port_name);
+        fprintf (stderr, "send message...\n");
+        ret = zmq_msg_send (&msg, global_data.connexion_requester, 0);
+        if (ret == -1)
+        {
+            ret = errno;
+            print_zmq_error(ret);
+        }
+        zmq_msg_close (&msg);
+        zmq_msg_init (&msg);
+        ret = zmq_msg_recv (&msg, global_data.connexion_requester, 0);
+        if (ret == -1)
+        {
+            ret = errno;
+            print_zmq_error(ret);
+        }
+        buf_ptr = zmq_msg_data (&msg);
+        memcpy(global_data.rinit_tab, buf_ptr, 3 * sizeof(int));
+        buf_ptr += 3 * sizeof(int);
     }
 
     // bcast infos
@@ -515,8 +530,9 @@ void melissa_init (const char *field_name,
 
     if (*rank == 0 && first_init != 0)
     {
-        zmq_send (global_data.init_requester, &comm_size, sizeof(int), 0);
-        zmq_recv (global_data.init_requester, node_names, global_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
+        memcpy(node_names, buf_ptr, global_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+        buf_ptr = NULL;
+        zmq_msg_close (&msg);
     }
 
 #ifdef BUILD_WITH_MPI
@@ -706,7 +722,6 @@ void melissa_init (const char *field_name,
     if (first_init != 0)
     {
         zmq_close (global_data.connexion_requester);
-        zmq_close (global_data.init_requester);
         if (global_data.coupling == 0)
         {
             zmq_close (master_requester);

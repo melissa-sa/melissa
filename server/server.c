@@ -59,7 +59,7 @@ int main (int argc, char **argv)
     int                   port_no;
     char                  txt_buffer[MPI_MAX_PROCESSOR_NAME] = {0};
     char                 *node_names = NULL;
-    int                   sinit_tab[3], rinit_tab[2];
+    int                   rinit_tab[2];
     void                 *context = zmq_ctx_new ();
     char                  node_name[MPI_MAX_PROCESSOR_NAME];
     void                 *connexion_responder = zmq_socket (context, ZMQ_REP);
@@ -67,9 +67,7 @@ int main (int argc, char **argv)
     void                 *data_puller = zmq_socket (context, ZMQ_PULL);
     void                 *python_pusher = zmq_socket (context, ZMQ_PUSH);
     int                   first_init;
-    int                   first_connect;
     int                  *first_send;
-    int                   get_next_message = 0;
     int                   local_nb_messages;
     int                   nb_bufferized_messages = 32;
     char                 *field_name_ptr = NULL;
@@ -171,12 +169,10 @@ int main (int argc, char **argv)
         melissa_bind (connexion_responder, "tcp://*:2003");
 
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
-        first_connect = 2;
         first_init = 2;
     }
     else
     {
-        first_connect = 1;
         first_init = 1;
     }
 
@@ -239,9 +235,9 @@ int main (int argc, char **argv)
     memcpy (node_names, node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
 
-    sinit_tab[0] = comm_data.comm_size;
-    sinit_tab[1] = melissa_options.sobol_op;
-    sinit_tab[2] = melissa_options.nb_parameters;
+//    sinit_tab[0] = comm_data.comm_size;
+//    sinit_tab[1] = melissa_options.sobol_op;
+//    sinit_tab[2] = melissa_options.nb_parameters;
 
     // =================== //
     // ===  Main loop  === //
@@ -290,9 +286,20 @@ int main (int argc, char **argv)
                 start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
                 // new simulation wants to connect
-                zmq_recv (connexion_responder, rinit_tab, 2 * sizeof(int), 0);
-                zmq_send (connexion_responder, sinit_tab, 3 * sizeof(int), 0);
-                get_next_message = 1;
+                zmq_msg_init (&msg);
+                zmq_msg_recv (&msg, connexion_responder, 0);
+                memcpy(rinit_tab, zmq_msg_data (&msg), 2 * sizeof(int));
+                zmq_msg_close (&msg);
+                zmq_msg_init_size (&msg, 3 * sizeof(int) + comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+                buf_ptr = zmq_msg_data (&msg);
+                memcpy (buf_ptr, &comm_data.comm_size, sizeof(int));
+                buf_ptr += sizeof(int);
+                memcpy (buf_ptr, &melissa_options.sobol_op, sizeof(int));
+                buf_ptr += sizeof(int);
+                memcpy (buf_ptr, &melissa_options.nb_parameters, sizeof(int));
+                buf_ptr += sizeof(int);
+                memcpy (buf_ptr, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+                zmq_msg_send (&msg, connexion_responder, 0);
                 if (first_init == 2)
                 {
                     first_init = 1;
@@ -331,36 +338,6 @@ int main (int argc, char **argv)
                        melissa_options.nb_fields);
 
             first_init = 0;
-        }
-
-        // === Second part of the connexion message, only for rank 0 === //
-
-        if (get_next_message == 1)
-        {
-#ifdef BUILD_WITH_PROBES
-            start_comm_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
-            // new simulation wants to connect, step two
-
-            zmq_recv (init_responder, &i, comm_data.client_comm_size * sizeof(int), 0);
-            zmq_send (init_responder, node_names, comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-
-            get_next_message = 0;
-            if (first_connect == 2)
-            {
-                first_connect = 1;
-            }
-#ifdef BUILD_WITH_PROBES
-            end_comm_time = melissa_get_time();
-            total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
-        }
-
-        // === Melissa structures initialisation, after the second part of the first connexion (deprecated) === //
-
-        if (first_connect == 1 && first_init == 0)
-        {
-            first_connect = 0;
         }
 
         // === Data reception and statistics computation === //
@@ -566,7 +543,7 @@ int main (int argc, char **argv)
 
         // === Send a message to the Python Launcher in case of Sobol indices convergence === //
 
-        if (first_connect == 0 &&
+        if (first_init == 0 &&
             nb_converged_fields >= melissa_options.nb_fields * local_nb_messages &&
             melissa_options.sobol_op == 1)
         {
@@ -610,7 +587,6 @@ int main (int argc, char **argv)
     {
         for (i=0; i< melissa_options.nb_fields; i++)
         {
-            fprintf (stdout, "finalize field %d\n", i);
             finalize_field_data (&fields[i],
                                  &comm_data,
                                  &melissa_options
