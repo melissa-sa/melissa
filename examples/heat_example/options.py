@@ -455,7 +455,7 @@ GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example/
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 5          # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 50          # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100        # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["heat"]     # list of field names
@@ -469,7 +469,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantile'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

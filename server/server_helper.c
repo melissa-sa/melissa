@@ -205,10 +205,9 @@ void global_confidence_sobol_martinez(melissa_field_t *field,
     {
         for (i=0; i<comm_data->client_comm_size; i++)
         {
-//            if (comm_data->rcounts[i] > 0)
-//            {
-                data = &(field[f].stats_data[i]);
-
+            data = &(field[f].stats_data[i]);
+            if (data->vect_size > 0)
+            {
                 for (t=0; t<data->options->nb_time_steps; t++)
                 {
                     for (p=0; p<data->options->nb_parameters; p++)
@@ -230,7 +229,7 @@ void global_confidence_sobol_martinez(melissa_field_t *field,
                         }
                     }
                 }
-//            }
+            }
         }
     }
 }

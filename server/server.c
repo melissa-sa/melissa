@@ -574,14 +574,14 @@ int main (int argc, char **argv)
 
     interval1 = 0;
     interval_tot = 0;
-//    if (melissa_options.sobol_op == 1)
-//    {
-//        global_confidence_sobol_martinez (fields,
-//                                          melissa_options.nb_fields,
-//                                          &comm_data,
-//                                          &interval1,
-//                                          &interval_tot);
-//    }
+    if (melissa_options.sobol_op == 1)
+    {
+        global_confidence_sobol_martinez (fields,
+                                          melissa_options.nb_fields,
+                                          &comm_data,
+                                          &interval1,
+                                          &interval_tot);
+    }
 
     if (end_signal == 0)
     {

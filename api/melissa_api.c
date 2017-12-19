@@ -429,7 +429,6 @@ void melissa_init (const char *field_name,
         memcpy (buf_ptr, simu_id, sizeof(int));
         sprintf (port_name, "tcp://%s:2003", server_node_name);
         melissa_connect (global_data.connexion_requester, port_name);
-        fprintf (stderr, "send message...\n");
         ret = zmq_msg_send (&msg, global_data.connexion_requester, 0);
         if (ret == -1)
         {
