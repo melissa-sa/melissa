@@ -455,7 +455,7 @@ GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example/
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 50          # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 6          # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100        # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["heat"]     # list of field names
@@ -484,6 +484,7 @@ USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_group_job'] = check_job
 USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
+#USER_FUNCTIONS['check_scheduler_load'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job
 USER_FUNCTIONS['postprocessing'] = None

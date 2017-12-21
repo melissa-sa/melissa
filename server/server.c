@@ -514,7 +514,9 @@ int main (int argc, char **argv)
             start_save_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank == 0)
+            {
                 fprintf (stderr, "\n   INTERUPTED\n");
+            }
             for (i=0; i<melissa_options.nb_fields; i++)
             {
                 save_stats (fields[i].stats_data, &comm_data, fields[i].name);
@@ -637,7 +639,6 @@ int main (int argc, char **argv)
         fprintf (stdout, "\n");
     }
 #endif // BUILD_WITH_PROBES
-
 
     // === Sockets deconnexion === //
 
