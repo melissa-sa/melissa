@@ -182,74 +182,123 @@ def launch_server(server):
     os.chdir(GLOBAL_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
-    if BATCH_SCHEDULER == "local":
-        if BUILD_EXAMPLES_WITH_MPI == 'ON':
-            command = ' '.join(('mpirun',
-                                 '-n',
+    if MELISSA_STATS['sobol_indices']:
+        if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+            os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+        os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+        copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+        command = 'mpirun '
+        for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+            command += ' '.join(('-n',
                                  str(NODES_GROUP),
                                  '../../'+EXECUTABLE,
-                                 str(simulation.simu_id),
-                                 ' '.join(str(i) for i in simulation.param_set)))
-            print command
-            simulation.job_id = subprocess.Popen(command.split()).pid
+                                 str(simulation.simu_id[i]),
+                                 ' '.join(str(j) for j in simulation.param_set[i]),
+                                 ': '))
+        print command[:-2]
+        if BATCH_SCHEDULER == "local":
+            simulation.job_id = subprocess.Popen(command[:-2].split()).pid
         else:
-            command = ' '.join(('./'+executable,
-                                str(0),
-                                str(simulation.rank),
-                                ' '.join(str(i) for i in simulation.param_set)))
-            print command
-            simulation.job_id = subprocess.Popen(command.split()).pid
+            create_run_group(simulation, command)
+            if (BATCH_SCHEDULER == "Slurm"):
+                proc = subprocess.Popen('sbatch "./run_group.sh"',
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE,
+                                              shell=True,
+                                              universal_newlines=True)
+                # get the job ID
+                (out, err) = proc.communicate()
+                server.job_id = out.split()[-1]
+            elif (BATCH_SCHEDULER == "CCC"):
+                proc = subprocess.Popen('ccc_msub -r Simu'+str(simulation.rank)+' "./run_group.sh"',
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE,
+                                              shell=True,
+                                              universal_newlines=True)
+                # get the job ID
+                (out, err) = proc.communicate()
+            elif (BATCH_SCHEDULER == "OAR"):
+                proc = subprocess.Popen('oarsub -S "./run_group.sh"',
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE,
+                                              shell=True,
+                                              universal_newlines=True)
+                # get the job ID
+                (out, err) = proc.communicate()
+                server.job_id = out.split("OAR_JOB_ID=")[1]
 
-def launch_group(group):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
-    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
-    command = 'mpirun '
-    for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-        command += ' '.join(('-n',
-                             str(NODES_GROUP),
-                             '../../'+EXECUTABLE,
-                             str(group.simu_id[i]),
-                             ' '.join(str(j) for j in group.param_set[i]),
-                             ': '))
-    print command[:-2]
-    if BATCH_SCHEDULER == "local":
-        group.job_id = subprocess.Popen(command[:-2].split()).pid
+
     else:
-        create_run_group(group, command)
-        if (BATCH_SCHEDULER == "Slurm"):
-            proc = subprocess.Popen('sbatch "./run_group.sh"',
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE,
-                                          shell=True,
-                                          universal_newlines=True)
-            # get the job ID
-            (out, err) = proc.communicate()
-            server.job_id = out.split()[-1]
-        elif (BATCH_SCHEDULER == "CCC"):
-            proc = subprocess.Popen('ccc_msub -r Simu'+str(group.rank)+' "./run_group.sh"',
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE,
-                                          shell=True,
-                                          universal_newlines=True)
-            # get the job ID
-            (out, err) = proc.communicate()
-        elif (BATCH_SCHEDULER == "OAR"):
-            proc = subprocess.Popen('oarsub -S "./run_group.sh"',
-                                          stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE,
-                                          shell=True,
-                                          universal_newlines=True)
-            # get the job ID
-            (out, err) = proc.communicate()
-            server.job_id = out.split("OAR_JOB_ID=")[1]
+        if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+            os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+        os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+        copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+        if BATCH_SCHEDULER == "local":
+            if BUILD_EXAMPLES_WITH_MPI == 'ON':
+                command = ' '.join(('mpirun',
+                                     '-n',
+                                     str(NODES_GROUP),
+                                     '../../'+EXECUTABLE,
+                                     str(simulation.simu_id),
+                                     ' '.join(str(i) for i in simulation.param_set)))
+                print command
+                simulation.job_id = subprocess.Popen(command.split()).pid
+            else:
+                command = ' '.join(('./'+executable,
+                                    str(0),
+                                    str(simulation.rank),
+                                    ' '.join(str(i) for i in simulation.param_set)))
+                print command
+                simulation.job_id = subprocess.Popen(command.split()).pid
 
     os.chdir(GLOBAL_OPTIONS['working_directory'])
+
+#def launch_group(group):
+#    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))):
+#        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
+#    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
+#    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+#    command = 'mpirun '
+#    for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+#        command += ' '.join(('-n',
+#                             str(NODES_GROUP),
+#                             '../../'+EXECUTABLE,
+#                             str(group.simu_id[i]),
+#                             ' '.join(str(j) for j in group.param_set[i]),
+#                             ': '))
+#    print command[:-2]
+#    if BATCH_SCHEDULER == "local":
+#        group.job_id = subprocess.Popen(command[:-2].split()).pid
+#    else:
+#        create_run_group(group, command)
+#        if (BATCH_SCHEDULER == "Slurm"):
+#            proc = subprocess.Popen('sbatch "./run_group.sh"',
+#                                          stdout=subprocess.PIPE,
+#                                          stderr=subprocess.PIPE,
+#                                          shell=True,
+#                                          universal_newlines=True)
+#            # get the job ID
+#            (out, err) = proc.communicate()
+#            server.job_id = out.split()[-1]
+#        elif (BATCH_SCHEDULER == "CCC"):
+#            proc = subprocess.Popen('ccc_msub -r Simu'+str(group.rank)+' "./run_group.sh"',
+#                                          stdout=subprocess.PIPE,
+#                                          stderr=subprocess.PIPE,
+#                                          shell=True,
+#                                          universal_newlines=True)
+#            # get the job ID
+#            (out, err) = proc.communicate()
+#        elif (BATCH_SCHEDULER == "OAR"):
+#            proc = subprocess.Popen('oarsub -S "./run_group.sh"',
+#                                          stdout=subprocess.PIPE,
+#                                          stderr=subprocess.PIPE,
+#                                          shell=True,
+#                                          universal_newlines=True)
+#            # get the job ID
+#            (out, err) = proc.communicate()
+#            server.job_id = out.split("OAR_JOB_ID=")[1]
+
+#    os.chdir(GLOBAL_OPTIONS['working_directory'])
 
 def check_job(job):
     state = 0
@@ -475,10 +524,10 @@ USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
 USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
 USER_FUNCTIONS['create_group'] = None
-if MELISSA_STATS['sobol_indices']:
-    USER_FUNCTIONS['launch_group'] = launch_group
-else:
-    USER_FUNCTIONS['launch_group'] = launch_simu
+#if MELISSA_STATS['sobol_indices']:
+#    USER_FUNCTIONS['launch_group'] = launch_group
+#else:
+USER_FUNCTIONS['launch_group'] = launch_simu
 USER_FUNCTIONS['launch_server'] = launch_server
 USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_group_job'] = check_job

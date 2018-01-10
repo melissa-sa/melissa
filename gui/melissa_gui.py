@@ -89,7 +89,6 @@ class melissa_gui(QWidget):
 #        self.range_min      = range_min
 #        self.range_max      = range_max
 
-        self.QCheckBox_sobol = QCheckBox("Sobol Indices")
         self.mean_op = MELISSA_STATS['mean']
         self.variance_op = MELISSA_STATS['variance']
         self.min_op = MELISSA_STATS['min']
@@ -178,6 +177,8 @@ class melissa_gui(QWidget):
         self.QCheckBox_quantile.stateChanged.connect(self.change_operations)
         self.vbox_operations.addWidget(self.QCheckBox_quantile)
 #        self.check_nb_param()
+        self.QCheckBox_sobol = QCheckBox("Sobol Indices")
+        self.QCheckBox_sobol.setChecked(self.sobol_op)
         self.QCheckBox_sobol.stateChanged.connect(self.change_operations)
 #        self.QCheckBox_sobol.stateChanged.connect(self.check_nb_param)
         self.vbox_operations.addWidget(self.QCheckBox_sobol)
@@ -231,8 +232,12 @@ class melissa_gui(QWidget):
         QApplication.processEvents()
 #        self.set_parameters()
         self.set_operations()
-        melissa_study = study.Study()
+        melissa_study = study.Study(GLOBAL_OPTIONS,
+                                    STUDY_OPTIONS,
+                                    MELISSA_STATS,
+                                    USER_FUNCTIONS)
         melissa_study.run()
+        del(melissa_study)
         self.setEnabled(True)
         QApplication.processEvents()
 
@@ -324,6 +329,7 @@ class melissa_gui(QWidget):
         self.modified = True
 
     def save (self):
+        cwd = os.getcwd()
         os.chdir (options_path)
         file = open (options_path+"/options.py", "r")
         contenu = ""
@@ -354,6 +360,7 @@ class melissa_gui(QWidget):
         file.write(contenu)
         file.close()
         self.modified = False
+        os.chdir (cwd)
         print "Study saved"
 
 #class melissa_param_dialog(QDialog):

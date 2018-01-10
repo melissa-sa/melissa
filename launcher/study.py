@@ -27,14 +27,16 @@ import imp
 import numpy as np
 import logging
 from ctypes import cdll, create_string_buffer
-from options import GLOBAL_OPTIONS as glob_opt
-from options import STUDY_OPTIONS as stdy_opt
-from options import MELISSA_STATS as ml_stats
-from options import USER_FUNCTIONS as usr_func
+#from options import GLOBAL_OPTIONS as glob_opt
+#from options import STUDY_OPTIONS as stdy_opt
+#from options import MELISSA_STATS as ml_stats
+#from options import USER_FUNCTIONS as usr_func
 imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
+from simulation import Group
 from simulation import SobolGroup
+from simulation import Job
 
 get_message = cdll.LoadLibrary('@CMAKE_BINARY_DIR@/utils/libget_message.so')
 
@@ -52,7 +54,7 @@ logging.basicConfig(format='%(asctime)s %(message)s',
                     filemode='w',
                     level=logging.INFO)
 groups = list()
-server = Server(glob_opt['working_directory'])
+server = Server()
 
 class StateChecker(Thread):
     """
@@ -141,7 +143,7 @@ class Study(object):
     """
         Study class, containing instances of the threads
     """
-    def __init__(self):
+    def __init__(self, glob_opt, stdy_opt, ml_stats, usr_func):
         self.groups = list()
         self.nb_groups = stdy_opt['sampling_size']
         if ml_stats['sobol_indices']:
@@ -150,6 +152,13 @@ class Study(object):
             self.sobol = False
         self.messenger = Messenger()
         self.state_checker = StateChecker()
+        self.glob_opt = glob_opt
+        self.stdy_opt = stdy_opt
+        self.ml_stats = ml_stats
+        self.usr_func = usr_func
+        Job.set_usr_func(usr_func)
+        Job.set_stdy_opt(stdy_opt)
+        Job.set_ml_stats(ml_stats)
 
     def run(self):
         """
@@ -157,14 +166,16 @@ class Study(object):
         """
 #        global server
 #        global groups
-        if not os.path.isdir(glob_opt['working_directory']):
-            os.mkdir(glob_opt['working_directory'])
-        os.chdir(glob_opt['working_directory'])
-        if check_options() > 0:
+        if not os.path.isdir(self.glob_opt['working_directory']):
+            os.mkdir(self.glob_opt['working_directory'])
+        os.chdir(self.glob_opt['working_directory'])
+        if self.check_options() > 0:
             return -1
         self.create_group_list()
-        create_study()
+        create_study(self.usr_func)
         logging.info('submit server')
+        server.set_path(self.glob_opt['working_directory'])
+        server.create_options()
         server.launch()
         self.messenger.start()
         server.wait_start()
@@ -172,43 +183,61 @@ class Study(object):
 #        time.sleep(2)
         self.state_checker.start()
         for group in groups:
-            fault_tolerance()
-            while check_scheduler_load() == False:
+            fault_tolerance(self.stdy_opt['simulation_timeout'])
+            while check_scheduler_load(self.usr_func) == False:
                 time.sleep(1)
-                fault_tolerance()
+                fault_tolerance(self.stdy_opt['simulation_timeout'])
             logging.info('submit group '+str(group.rank))
             group.launch()
             time.sleep(1)
         while (server.status != FINISHED
                or any([i.status != FINISHED for i in groups])):
-            fault_tolerance()
+            fault_tolerance(self.stdy_opt['simulation_timeout'])
             time.sleep(1)
         time.sleep(1)
         self.messenger.running_study = False
         self.state_checker.running_study = False
         self.messenger.join()
         self.state_checker.join()
-        postprocessing()
-        finalize()
+        postprocessing(self.usr_func)
+        finalize(self.usr_func)
+
+    def check_options(self):
+        """
+            Validates user provided options
+        """
+        errors = 0
+        nb_parameters = self.stdy_opt['nb_parameters']
+        if not self.ml_stats['sobol_indices'] and nb_parameters < 1:
+            logging.error('error bad option: nb_parameters too small')
+            errors += 1
+        if self.ml_stats['sobol_indices'] and nb_parameters < 2:
+            logging.error('error bad option: nb_parameters too small')
+            errors += 1
+        if self.stdy_opt['sampling_size'] < 2:
+            logging.error('error bad option: sample_size not big enough')
+            errors += 1
+        return errors
 
     def create_group_list(self):
         """
             Job list creation
         """
         global groups
+        Group.reset()
         if self.sobol:
-            while len(self.groups) < stdy_opt['sampling_size']:
+            while len(self.groups) < self.stdy_opt['sampling_size']:
                 self.groups.append(SobolGroup(
-                    draw_parameter_set(),
-                    draw_parameter_set()))
+                    draw_parameter_set(self.usr_func, self.stdy_opt),
+                    draw_parameter_set(self.usr_func, self.stdy_opt)))
         else:
-            while len(self.groups) < stdy_opt['sampling_size']:
-                self.groups.append(SingleSimuGroup(draw_parameter_set()))
+            while len(self.groups) < self.stdy_opt['sampling_size']:
+                self.groups.append(SingleSimuGroup(draw_parameter_set(self.usr_func, self.stdy_opt)))
         for group in self.groups:
             group.create()
         groups = self.groups
 
-def fault_tolerance():
+def fault_tolerance(simulation_timeout):
     """
         Compares job status and study status, restart crashed groups
     """
@@ -259,32 +288,15 @@ def fault_tolerance():
         with group.lock:
             if group.status == WAITING:
                 if group.job_status == RUNNING:
-                    if time.time() - group.start_time > stdy_opt['simulation_timeout']:
+                    if time.time() - group.start_time > simulation_timeout:
                         logging.info("resubmit group " + str(group.rank)
                                      + " (timeout detected by launcher)")
                         group.restart()
                         break
 #    time.sleep(1)
 
-def check_options():
-    """
-        Validates user provided options
-    """
-    errors = 0
-    nb_parameters = stdy_opt['nb_parameters']
-    if not ml_stats['sobol_indices'] and nb_parameters < 1:
-        logging.error('error bad option: nb_parameters too small')
-        errors += 1
-    if ml_stats['sobol_indices'] and nb_parameters < 2:
-        logging.error('error bad option: nb_parameters too small')
-        errors += 1
-    if stdy_opt['sampling_size'] < 2:
-        logging.error('error bad option: sample_size not big enough')
-        errors += 1
-    return errors
 
-
-def create_study():
+def create_study(usr_func):
     """
         Creates study environment
     """
@@ -293,7 +305,7 @@ def create_study():
     else:
         pass
 
-def draw_parameter_set():
+def draw_parameter_set(usr_func, stdy_opt):
     """
         Draws a set of parameters using user defined function
     """
@@ -307,7 +319,7 @@ def draw_parameter_set():
     return param_set
 
 
-def check_scheduler_load():
+def check_scheduler_load(usr_func):
     """
         Return False if the load is full
     """
@@ -318,7 +330,7 @@ def check_scheduler_load():
 
 # Study end #
 
-def postprocessing():
+def postprocessing(usr_func):
     """
         User defined postprocessing
     """
@@ -327,7 +339,7 @@ def postprocessing():
     else:
         pass
 
-def finalize():
+def finalize(usr_func):
     """
         User defined final step
     """

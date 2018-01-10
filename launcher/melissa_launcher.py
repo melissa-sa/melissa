@@ -43,8 +43,12 @@ def main():
         print "ERROR no Melissa Launcher options file given"
     else:
         imp.load_source("options", options_path+"/options.py")
+        from options import GLOBAL_OPTIONS as glob_opt
+        from options import STUDY_OPTIONS as stdy_opt
+        from options import MELISSA_STATS as ml_stats
+        from options import USER_FUNCTIONS as usr_func
         from study import Study
-        melissa_study = Study()
+        melissa_study = Study(glob_opt, stdy_opt, ml_stats, usr_func)
         melissa_study.run()
 
 if __name__ == '__main__':

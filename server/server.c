@@ -505,7 +505,6 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
         }
 
-
         // === Signal handling === //
 
         if (end_signal == SIGINT || end_signal == SIGUSR1 || end_signal == SIGUSR2)

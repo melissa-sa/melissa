@@ -216,13 +216,15 @@ void melissa_print_options (melissa_options_t *options)
     }
     if (options->threshold_op != 0)
         fprintf(stdout, "    threshold exceedance, with threshold = %g\n", options->threshold);
+    if (options->quantile_op != 0)
+        fprintf(stdout, "    quantiles\n");
     if (options->sobol_op != 0)
-        fprintf(stdout, "    sobol indices, max order: %d\n", options->sobol_order);
+        fprintf(stdout, "    sobol indices\n");
 //    if (options->restart != 0)
 //        fprintf(stdout, "using options.save restart file\n");
     fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
     fprintf(stdout, "Checkpoint every %g seconds\n", options->check_interval);
-    fprintf(stdout, "Wait time for simulation message before timeout: %g seconds\n", options->timeout_simu);
+    fprintf(stdout, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
 }
 
 /**
