@@ -57,7 +57,7 @@
 
 void melissa_get_fields (int               argc,
                          char            **argv,
-                         melissa_field_t  *fields,
+                         melissa_field_t   fields[],
                          int               nb_fields)
 {
     int         opt, i;
@@ -71,7 +71,7 @@ void melissa_get_fields (int               argc,
     optind = 1;
     do
     {
-        opt = getopt (argc, argv, "f:p:t:o:e:s:g:n:lhr:");
+        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:w:");
         switch (opt) {
         case 'f':
             /* get the first token */
@@ -124,8 +124,54 @@ void add_fields (melissa_field_t *fields,
         for (i=0; i<data_size; i++)
         {
             fields[j].stats_data[i].is_valid = 0;
+            fields[j].stats_data[i].vect_size = 0;
         }
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fields
+ *
+ * This function returns a field id given its name
+ *
+ *******************************************************************************
+ *
+ * @param[in] fields[]
+ * Melissa field array
+ *
+ * @param[in] nb_fields
+ * number of fields
+ *
+ * @param[in] *field_name
+ * name of the field to find
+ *
+ * @retval field_id
+ * the field id
+ *
+ *******************************************************************************/
+
+int get_field_id(melissa_field_t fields[],
+                 int             nb_fields,
+                 char*           field_name)
+{
+    int field_id;
+    if (fields != NULL)
+    {
+        for (field_id=0; field_id<nb_fields; field_id++)
+        {
+            if (strncmp(fields[field_id].name, field_name, MAX_FIELD_NAME) == 0)
+            {
+                return field_id;
+            }
+        }
+    }
+    else
+    {
+        fprintf (stderr, "ERROR: wrong field name (get_field_id)\n");
+    }
+    return -1;
 }
 
 /**
@@ -137,7 +183,7 @@ void add_fields (melissa_field_t *fields,
  *
  *******************************************************************************
  *
- * @param[in] *fields
+ * @param[in] fields[]
  * Melissa field array
  *
  * @param[in] nb_fields
@@ -151,21 +197,18 @@ void add_fields (melissa_field_t *fields,
  *
  *******************************************************************************/
 
-melissa_data_t* get_data_ptr (melissa_field_t *fields,
-                              int              nb_fields,
-                              char*            field_name)
+melissa_data_t* get_data_ptr (melissa_field_t fields[],
+                              int             nb_fields,
+                              char*           field_name)
 {
-    int i, j;
+    int i;
     if (fields != NULL)
     {
-        for (j=0; j<nb_fields; j++)
+        for (i=0; i<nb_fields; i++)
         {
-            for (i=0; i<nb_fields; i++)
+            if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME) == 0)
             {
-                if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME) == 0)
-                {
-                    return fields[i].stats_data;
-                }
+                return fields[i].stats_data;
             }
         }
     }
@@ -196,9 +239,6 @@ melissa_data_t* get_data_ptr (melissa_field_t *fields,
  * @param[in] *options
  * Melissa options
  *
- * @param[in] *local_vect_sizes
- * local vector sises
- *
  * @param[in] *total_write_time
  * time counter
  *
@@ -222,23 +262,19 @@ melissa_data_t* get_data_ptr (melissa_field_t *fields,
  * @param[in] *options
  * Melissa options
  *
- * @param[in] *local_vect_sizes
- * local vector sises
- *
  *******************************************************************************/
 #endif // BUILD_WITH_PROBES
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
-                          melissa_options_t *options,
-                          int               *local_vect_sizes
+                          melissa_options_t *options
 #ifdef BUILD_WITH_PROBES
                           , double *total_write_time
 #endif // BUILD_WITH_PROBES
                           )
 {
     double start_write_time, end_write_time;
-    int i;
+    int i, j;
     if (fields == NULL)
     {
         return;
@@ -247,29 +283,29 @@ void finalize_field_data (melissa_field_t   *fields,
     {
         for (i=0; i<comm_data->client_comm_size; i++)
         {
-            if (comm_data->rcounts[i] > 0)
+            for (j=0; j<options->nb_fields; j++)
             {
-                finalize_stats (&fields->stats_data[i]);
+                if (fields[j].stats_data[i].vect_size > 0)
+                {
+                    finalize_stats (&fields[j].stats_data[i]);
+                }
             }
         }
 
 #ifdef BUILD_WITH_PROBES
         start_write_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-//        write_stats_bin (&(fields->stats_data),
-//                         options,
-//                         comm_data,
-//                         local_vect_sizes,
-//                         fields->name);
-        write_stats_txt (&(fields->stats_data),
+        write_stats_bin (&(fields->stats_data),
                          options,
                          comm_data,
-                         local_vect_sizes,
                          fields->name);
+//        write_stats_txt (&(fields->stats_data),
+//                         options,
+//                         comm_data,
+//                         fields->name);
 //        write_stats_ensight (&(fields->stats_data),
 //                             options,
 //                             comm_data,
-//                             local_vect_sizes,
 //                             fields->name);
 #ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();
@@ -278,9 +314,12 @@ void finalize_field_data (melissa_field_t   *fields,
 
         for (i=0; i<comm_data->client_comm_size; i++)
         {
-            if (comm_data->rcounts[i] > 0)
+            for (j=0; j<options->nb_fields; j++)
             {
-                melissa_free_data (&fields->stats_data[i]);
+                if (fields[j].stats_data[i].vect_size > 0)
+                {
+                    melissa_free_data (&fields->stats_data[i]);
+                }
             }
         }
         melissa_free (fields->stats_data);

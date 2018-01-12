@@ -109,43 +109,41 @@ int main( int argc, char **argv )
   int fcomm;
   struct timeb tp;
   int coupling = 1;
-  int sample_id = 0;
-  int sobol_rank = 0;
+  int simu_id = 0;
+  int *appnum, statinfo;
   char *field_name = "heat";
 
   MPI_Init(&argc, &argv);
 
-  // The program now takes at least 3 parameter:
-  // - the simulation rank inside the simulation group (sobol_group)
-  // - the the group rank in the study (sample_id)
+  // The program now takes at least 2 parameter:
+  // - the simulation id given by the launcher
   // - the initial temperature
 
-  if (argc < 4)
+  if (argc < 3)
   {
       fprintf (stderr, "Missing parameter");
       return -1;
   }
-  sobol_rank = (int)strtol(argv[1], NULL, 10);
-  sample_id = (int)strtol(argv[2], NULL, 10);
-  param[0] = strtod(argv[3], NULL);
+  simu_id = (int)strtol(argv[1], NULL, 10);
 
+  // The initial temperature is stored in param[0]
   // The four next optional parameters are the boundary temperatures
-  for (n=0; n<4; n++)
+  for (n=0; n<5; n++)
   {
-    param[n+1] = 0;
-    if (argc > n+4)
+    param[n] = 0;
+    if (argc > n+2)
     {
-       param[n+1] = strtod(argv[n+4], NULL);
+       param[n] = strtod(argv[n+2], NULL);
     }
   }
 
-  // The new MPI communicator is build by splitting MPI_COMM_WORLD by rank inside the group.
+  // The new MPI communicator is build by splitting MPI_COMM_WORLD by simulations inside the group.
   // In the case of a single simulation group, this is equivalent to MPI_Comm_dup.
-  MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, &comm);
+  MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &appnum, &statinfo);
+  MPI_Comm_split(MPI_COMM_WORLD, *appnum, me, &comm);
   MPI_Comm_rank(comm, &me);
   MPI_Comm_size(comm, &np);
   fcomm = MPI_Comm_c2f(comm);
-
 
   // Init timer
   ftime(&tp);
@@ -187,7 +185,7 @@ int main( int argc, char **argv )
 
   // melissa_init is the first Melissa function to call, and it is called only once by each process in comm.
   // It mainly contacts the server.
-  melissa_init (&vect_size, &np, &me, &sobol_rank, &sample_id, &comm, &coupling);
+  melissa_init (field_name, &vect_size, &np, &me, &simu_id, &comm, &coupling);
 
   // main loop:
   for(n=1; n<=nmax; n++)
@@ -199,11 +197,11 @@ int main( int argc, char **argv )
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon, &i1, &in, &np, &me, &next, &previous, &fcomm);
     // The result is u
     // melissa_send is called at each iteration to send u to the server.
-    melissa_send (&n, field_name, u, &me, &sobol_rank, &sample_id);
+    melissa_send (&n, field_name, u, &me, &simu_id);
   }
 
   // write results on disk
-  finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &sample_id);
+  finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &simu_id);
 
   // melissa_finalize closes the connexion with the server.
   // No Melissa function should be called after melissa_finalize.

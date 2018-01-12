@@ -32,13 +32,13 @@ GLOBAL_OPTIONS['user_name'] = "user"
 GLOBAL_OPTIONS['working_directory'] = "/home/user/melissa_study"
 
 STUDY_OPTIONS = {}
-STUDY_OPTIONS['nb_parameters'] = 5
-STUDY_OPTIONS['sampling_size'] = 10
-STUDY_OPTIONS['nb_time_steps'] = 100
+STUDY_OPTIONS['nb_parameters'] = 5                  # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 10                 # initial number of parameter sets
+STUDY_OPTIONS['nb_time_steps'] = 100                # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
-STUDY_OPTIONS['field_names'] = ["field1", "field2"]
-STUDY_OPTIONS['server_timeout'] = 600
-STUDY_OPTIONS['simulation_timeout'] = 400
+STUDY_OPTIONS['field_names'] = ["field1", "field2"] # list of field names
+STUDY_OPTIONS['simulation_timeout'] = 400           # simulations are restarted if no life sign for 400 seconds (int)
+STUDY_OPTIONS['checkpoint_interval'] = 300          # server checkpoints every 300 seconds (double)
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

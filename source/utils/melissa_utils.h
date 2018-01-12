@@ -45,6 +45,9 @@ void* melissa_malloc (size_t size);
 void* melissa_calloc (size_t num,
                       size_t size);
 
+void* melissa_realloc (void   *ptr,
+                       size_t  size);
+
 void melissa_free (void *ptr);
 
 void melissa_bind (void *socket,

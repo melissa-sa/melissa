@@ -52,8 +52,8 @@ struct comm_data_s
     int       rank;             /**< rank of the MPI process (0 if sequential)      */
     int       comm_size;        /**< size of the MPI communicator (1 if sequential) */
     int       client_comm_size; /**< size of the clients communicators              */
-    int      *rcounts;          /**< counts for receiving datas                     */
-    int      *rdispls;          /**< displacements for receiving datas              */
+//    int      *rcounts;          /**< counts for receiving datas                     */
+//    int      *rdispls;          /**< displacements for receiving datas              */
 #ifdef BUILD_WITH_MPI
     MPI_Comm  comm;             /**< MPI communicator                               */
 #endif // BUILD_WITH_MPI
@@ -88,18 +88,11 @@ struct melissa_data_s
     void (*increment_sobol)(sobol_array_t*, int, double**, int); /**< pointer to Sobol increment function                       */
     void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                            */
     int                  nb_simu;                                /**< number of simulation that have sent a message             */
-    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                            */
-//    vector_t             step_simu;                              /**< arrays of bits, size nb_groups                           */
+//    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                            */
+    vector_t             step_simu;                              /**< vector of arrays of bits, size nb_groups                           */
 };
 
 typedef struct melissa_data_s melissa_data_t; /**< type corresponding to melissa_data_s */
-
-//struct simu_status_s
-//{
-//    int            simu_id;
-//    int32_t       *step_simu;
-//    simu_status_s *next;
-//};
 
 void melissa_init_data (melissa_data_t    *data,
                         melissa_options_t *options,
@@ -109,6 +102,6 @@ void melissa_check_data (melissa_data_t *data);
 
 void melissa_free_data (melissa_data_t *data);
 
-long int mem_conso (melissa_options_t *options);
+//long int mem_conso (melissa_options_t *options);
 
 #endif // MELISSA_DATA_H

@@ -44,6 +44,7 @@ set(ALL_SRCS )
 set(ALL_INCS )
 
 option(BUILD_SHARED_LIBS ON)
+option(INSTALL_ZMQ OFF)
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
@@ -71,29 +72,27 @@ option(BUILD_EXAMPLES "Build examples" ON)
 
 # ZeroMQ #
 
-if(NOT ZMQ_DIR)
-  message(STATUS "ZeroMQ dir not found:" ${ZMQ_DIR})
-else()
-  message(STATUS "ZeroMQ directory:" ${ZMQ_DIR})
-endif()
 
-if(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-  set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
-  message(STATUS "ZeroMQ Found")
-else(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-  option(INSTALL_ZMQ "Download and install ZeroMQ" ON)
-  message(STATUS "ZeroMQ not found")
-endif(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
+#if(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
+#  set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
+#  message(STATUS "ZeroMQ Found")
+#else(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
+#  option(INSTALL_ZMQ "Download and install ZeroMQ" ON)
+#  message(STATUS "ZeroMQ not found")
+#endif(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
+
+#set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
 
 if(INSTALL_ZMQ)
   include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
   ExternalProject_Add(ZeroMQ
-    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
+#    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
+    URL https://github.com/zeromq/libzmq/releases/download/v4.2.1/zeromq-4.2.1.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
   )
   set(ZMQ_DIR ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ CACHE FORCE " ")
-  mark_as_advanced(FORCE ZMQ_DIR)
+#  mark_as_advanced(FORCE ZMQ_DIR)
   set(ZMQ_LIBRARY ${ZMQ_DIR}/lib/libzmq.so CACHE INTERNAL " ")
   set(ZMQ_INCLUDE_DIR ${ZMQ_DIR}/include CACHE INTERNAL " ")
   include_directories( ${ZMQ_INCLUDE_DIR} )
@@ -101,14 +100,33 @@ if(INSTALL_ZMQ)
                  ${ZMQ_LIBRARY} )
   set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
 else(INSTALL_ZMQ)
-  find_path(ZMQ_DIR NAMES include/zmq.h)
-  find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include CACHE INTERNAL " ")
-  find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib CACHE INTERNAL " ")
-  include_directories( ${ZMQ_INCLUDE_DIR} )
-  set(EXTRA_LIBS ${EXTRA_LIBS}
-                 ${ZMQ_LIBRARY} )
-  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
-  pkg_check_modules(ZMQ REQUIRED libzmq>=4.1.5)
+    if(NOT ZMQ_DIR)
+        pkg_check_modules(PC_ZeroMQ QUIET libzmq>=4.1.5)
+        if(NOT PC_ZeroMQ_FOUND)
+            message(FATAL_ERROR "ZeroMQ not found")
+        else()
+            set (ZMQ_DIR ${PC_ZeroMQ_LIBRARY_DIR})
+            set (ZMQ_INCLUDE_DIR ${PC_ZeroMQ_INCLUDE_DIR})
+            set (ZMQ_LIBRARY ${PC_ZeroMQ_LIBRARIES})
+            include_directories( ${ZMQ_INCLUDE_DIR} )
+            message(STATUS "ZeroMQ Found")
+            set(EXTRA_LIBS ${EXTRA_LIBS}
+                           ${ZMQ_LIBRARY} )
+        endif()
+    else(NOT ZMQ_DIR)
+        find_path(ZMQ_DIR NAMES include/zmq.h)
+        find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include ${ZMQ_DIR}/../include CACHE INTERNAL " ")
+        find_library(ZMQ_LIBRARY NAMES zmq libzmq HINTS ${ZMQ_DIR}/lib ${ZMQ_DIR}/../lib CACHE INTERNAL " ")
+        include_directories( ${ZMQ_INCLUDE_DIR} )
+        set(EXTRA_LIBS ${EXTRA_LIBS}
+                       ${ZMQ_LIBRARY} )
+        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/pkgconfig" )
+        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
+        pkg_check_modules(ZMQ QUIET libzmq>=4.1.5)
+        if(NOT ZMQ_FOUND)
+            message(FATAL_ERROR "Provided ZeroMQ dir not found:" ${ZMQ_DIR})
+        endif(NOT ZMQ_FOUND)
+    endif(NOT ZMQ_DIR)
 endif(INSTALL_ZMQ)
 
 # MPI #
@@ -289,11 +307,9 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
-# add_subdirectory(launcher.old)
+#add_subdirectory(launcher.old)
 
 add_subdirectory(launcher)
-
-# add_subdirectory(launcher_saturne)
 
 add_subdirectory(gui)
 

@@ -575,7 +575,6 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
         read_variance (&sobol_array[i].variance_a, vect_size, 1, f);
         read_variance (&sobol_array[i].variance_b, vect_size, 1, f);
         fread(&sobol_array[i].iteration, sizeof(int), 1, f);
-        fprintf (stderr, "        sobol %d, iteration %d\n",i, sobol_array[i].iteration);
     }
 }
 

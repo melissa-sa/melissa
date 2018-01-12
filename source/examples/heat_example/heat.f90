@@ -32,41 +32,39 @@ program heat
   real*8,dimension(5) :: param
   character(len=32) :: arg
   integer :: comm
-  integer :: sample_id = 0, sobol_rank = 0, coupling = 1
+  integer :: simu_id = 0, coupling = 1
+  integer(kind=MPI_ADDRESS_KIND) :: appnum
   character(len=5) :: name = C_CHAR_"heat"  !C_NULL_CHAR
 
   call mpi_init(statinfo)
 
   ! The program now takes at least 3 parameter:
-  ! - the simulation rank inside the simulation group (sobol_group)
-  ! - the the group rank in the study (sample_id)
+  ! - the simulation id given by the launcher
   ! - the initial temperature
 
   narg = iargc()
-  if (narg .lt. 4) then
+  if (narg .lt. 3) then
     print*,"Missing parameter"
     stop
   endif
 
   param(:) = 0
   call getarg(1, arg)
-  read( arg, * ) sobol_rank ! sobol rank
-  call getarg(2, arg)
-  read( arg, * ) sample_id ! sobol group
-  call getarg(3, arg)
-  read( arg, * ) param(1) ! initial temperature
+  read( arg, * ) simu_id ! simulation id
 
+  ! The initial temperature is stored in param(1)
   ! The four next optional parameters are the boundary temperatures
-  do n=5, 8
+  do n=2, 6
     if(narg .ge. n) then
-      call getarg(n-1, arg)
-      read( arg, * ) param(n-3)
+      call getarg(n, arg)
+      read( arg, * ) param(n-1)
     endif
   enddo
 
-  ! The new MPI communicator is build by splitting MPI_COMM_WORLD by rank inside the group.
+  ! The new MPI communicator is build by splitting MPI_COMM_WORLD by simulation inside the group.
   ! In the case of a single simulation group, this is equivalent to MPI_Comm_dup.
-  call MPI_Comm_split(MPI_COMM_WORLD, sobol_rank, me, comm, statinfo);
+  call MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, appnum, statinfo);
+  call MPI_Comm_split(MPI_COMM_WORLD, appnum, me, comm, statinfo);
   call mpi_comm_rank(comm, me, statinfo)
   call mpi_comm_size(comm, np, statinfo)
 
@@ -109,7 +107,7 @@ program heat
 
   ! melissa_init is the first Melissa function to call, and it is called only once by each process in comm.
   ! It mainly contacts the server.
-  call melissa_init (vect_size, np, me, sobol_rank, sample_id, comm, coupling)
+  call melissa_init (name, vect_size, np, me, simu_id, comm, coupling)
 
   ! main loop:
   do n=1, nmax
@@ -120,11 +118,11 @@ program heat
     call conjgrad(A, F, U, nx, ny, epsilon, i1, in, np, me, next, previous, comm)
     ! The result is u
     ! melissa_send is called at each iteration to send u to the server.
-    call melissa_send(n, name, u, me, sobol_rank, sample_id)
+    call melissa_send(n, name, u, me, simu_id)
   end do
 
   ! write results on disk
-  call finalize(dx, dy, nx, ny, i1, in, u, f, me, sample_id)
+  call finalize(dx, dy, nx, ny, i1, in, u, f, me, simu_id)
 
   ! melissa_finalize closes the connexion with the server.
   ! No Melissa function should be called after melissa_finalize.

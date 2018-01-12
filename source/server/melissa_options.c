@@ -40,7 +40,7 @@ static inline void stats_usage ()
     fprintf(stderr,
             " Usage:\n"
             " -p <int>       : number of parameters for the parametric study\n"
-            " -s <int>       : study sampling size\n"
+            " -s <int>       : study initial sampling size\n"
             " -t <int>       : number of time steps of the study\n"
             " -o <char*>     : operations separated by semicolons\n"
             "                  possibles values :\n"
@@ -56,6 +56,7 @@ static inline void stats_usage ()
             " -n <char*>     : Melissa Launcher node name (default: localhost)\n"
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
+            " -c <double>    : Server checkpoints intervals (seconds, default: 300)"
             " -h             : Print this message\n"
             "\n"
             );
@@ -79,7 +80,7 @@ static inline void init_options (melissa_options_t *options)
     options->nb_parameters   = 0;
     options->sampling_size   = 0;
     options->nb_simu         = 0;
-    options->nb_fields         = 0;
+    options->nb_fields       = 0;
     options->threshold       = 0.0;
     options->mean_op         = 0;
     options->variance_op     = 0;
@@ -89,6 +90,8 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
+    options->check_interval  = 300.0;
+    options->timeout_simu    = 300.0;
     sprintf (options->restart_dir, ".");
     sprintf (options->launcher_name, "localhost");
 }
@@ -130,13 +133,13 @@ static inline void get_operations (char              *name,
         exit (1);
     }
 
-    /* gjuste to be sure */
+    /* juste to be sure */
     options->mean_op         = 0;
     options->variance_op     = 0;
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
+    options->quantile_op     = 0;
     options->sobol_op        = 0;
-
     /* get the first token */
     temp_char = strtok (name, s);
 
@@ -213,11 +216,15 @@ void melissa_print_options (melissa_options_t *options)
     }
     if (options->threshold_op != 0)
         fprintf(stdout, "    threshold exceedance, with threshold = %g\n", options->threshold);
+    if (options->quantile_op != 0)
+        fprintf(stdout, "    quantiles\n");
     if (options->sobol_op != 0)
-        fprintf(stdout, "    sobol indices, max order: %d\n", options->sobol_order);
-    if (options->restart != 0)
-        fprintf(stdout, "using options.save restart file\n");
+        fprintf(stdout, "    sobol indices\n");
+//    if (options->restart != 0)
+//        fprintf(stdout, "using options.save restart file\n");
     fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
+    fprintf(stdout, "Checkpoint every %g seconds\n", options->check_interval);
+    fprintf(stdout, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
 }
 
 /**
@@ -256,7 +263,7 @@ void melissa_get_options (int                 argc,
 
     do
     {
-        opt = getopt (argc, argv, "f:p:t:o:e:s:g:n:lhr:");
+        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:w:");
 
         switch (opt) {
         case 'r':
@@ -265,15 +272,16 @@ void melissa_get_options (int                 argc,
             {
                 sprintf (options->restart_dir, ".");
             }
-            if (0 == melissa_read_options (options))
-            {
-                options->restart = 1;
-                melissa_check_options (options);
-                return;
-            }
-            fprintf (stderr, "ERROR: can not read options.save file\n");
-            stats_usage ();
-            exit (1);
+            options->restart = 1;
+//            if (0 == melissa_read_options (options))
+//            {
+//                options->restart = 1;
+//                melissa_check_options (options);
+//                return;
+//            }
+//            fprintf (stderr, "ERROR: can not read options.save file\n");
+//            stats_usage ();
+//            exit (1);
             break;
         case 'p':
             options->nb_parameters = atoi (optarg);
@@ -298,6 +306,12 @@ void melissa_get_options (int                 argc,
             break;
         case 'f':
             get_nb_fields (optarg, options);
+            break;
+        case 'c':
+            options->check_interval = atof (optarg);
+            break;
+        case 'w':
+            options->timeout_simu = atof (optarg);
             break;
         case 'h':
             stats_usage ();
@@ -399,6 +413,18 @@ void melissa_check_options (melissa_options_t  *options)
     {
         fprintf (stderr, "options->restart_dir= %s changing to .\n", options->restart_dir);
         sprintf (options->restart_dir, ".");
+    }
+
+    if (options->check_interval < 5.0)
+    {
+        fprintf (stderr, "checkpoint interval too small, changing to 5.0\n");
+        options->check_interval = 5.0;
+    }
+
+    if (options->timeout_simu < 5.0)
+    {
+        fprintf (stderr, "time before simulation timeout too small, changing to 5.0\n");
+        options->timeout_simu = 5.0;
     }
 }
 

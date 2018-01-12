@@ -54,6 +54,9 @@
  * @param[in] vect_size
  * size of the input vector
  *
+ * @param[in] max_order
+ * maximum moment order
+ *
  *******************************************************************************/
 
 void init_moments(moments_t *moments,

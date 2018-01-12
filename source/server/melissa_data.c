@@ -35,12 +35,18 @@
 
 static void melissa_alloc_data (melissa_data_t *data)
 {
-    int i;
+    int      i;
+//    int32_t* items_ptr;
 
     if (data->is_valid != 1)
     {
         fprintf (stderr, "ERROR: data structure not valid (malloc_data)\n");
         exit (1);
+    }
+
+    if (data->vect_size <= 0)
+    {
+        return;
     }
 
     data->moments = melissa_malloc (data->options->nb_time_steps * sizeof(moments_t));
@@ -95,12 +101,19 @@ static void melissa_alloc_data (melissa_data_t *data)
             data->init_sobol (&data->sobol_indices[i], data->options->nb_parameters, data->vect_size);
         }
     }
-    data->step_simu = melissa_malloc (data->options->sampling_size * sizeof(int32_t*));
+//    data->step_simu = melissa_malloc (data->options->sampling_size * sizeof(int32_t*));
+//    for (i=0; i<data->options->sampling_size; i++)
+//    {
+//        data->step_simu[i] = melissa_calloc ((data->options->nb_time_steps+31)/32, sizeof(int32_t));
+//    }
+
+    // === new === //
+    alloc_vector (&data->step_simu, data->options->sampling_size);
     for (i=0; i<data->options->sampling_size; i++)
     {
-        data->step_simu[i] = melissa_calloc ((data->options->nb_time_steps+31)/32, sizeof(int32_t*));
+        vector_set (&data->step_simu, i, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
     }
-//    alloc_bits_array_vector (&data->step_simu, data->options->sampling_size, data->options->nb_time_steps);
+    // === end new === //
 }
 
 /**
@@ -137,7 +150,6 @@ void melissa_init_data (melissa_data_t    *data,
     data->quantiles       = NULL;
 //    data->cond_means      = NULL;
     data->sobol_indices   = NULL;
-    data->step_simu       = NULL;
     melissa_check_data (data);
     melissa_alloc_data (data);
 }
@@ -237,80 +249,85 @@ void melissa_free_data (melissa_data_t *data)
         melissa_free (data->sobol_indices);
     }
 
-    for (i=0; i<data->options->sampling_size; i++)
+//    for (i=0; i<data->options->sampling_size; i++)
+//    {
+//        melissa_free (data->step_simu[i]);
+//    }
+//    melissa_free (data->step_simu);
+
+    for (i=0; i<data->step_simu.size; i++)
     {
-        melissa_free (data->step_simu[i]);
+        melissa_free(vector_get(&data->step_simu, i));
     }
-    melissa_free (data->step_simu);
-//    free_bits_array_vector (&data->step_simu);
+    free_vector (&data->step_simu);
 
     data->options = NULL;
 
     data->is_valid = 0;
 }
 
-/**
- *******************************************************************************
- *
- * @ingroup stats_data
- *
- * This function computes and displays the memory consumption of the library
- *
- *******************************************************************************
- *
- * @param[in] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
+///**
+// *******************************************************************************
+// *
+// * @ingroup stats_data
+// *
+// * This function computes and displays the memory consumption of the library
+// *
+// *******************************************************************************
+// *
+// * @param[in] *options
+// * pointer to the structure containing global options
+// *
+// *******************************************************************************/
 
-long int mem_conso (melissa_options_t *options)
-{
-    long int memory = 0;
-    long int temp_mem = 0;
+//long int mem_conso (melissa_options_t *options)
+//{
+//    long int memory = 0;
+//    long int temp_mem = 0;
 
-    if (options->mean_op != 0)
-    {
-        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-        fprintf(stdout, " --- Mean memory usage:               %ld MB\n", temp_mem);
-        memory += temp_mem;
-    }
-    if (options->variance_op != 0 && options->mean_op == 0)
-    {
-        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-        fprintf(stdout, " --- Variance memory usage:           %ld MB\n", temp_mem);
-        memory += temp_mem;
-    }
-    if (options->variance_op != 0 && options->mean_op != 0)
-    {
-        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-        fprintf(stdout, " --- Variance memory usage:           %ld MB\n", temp_mem);
-        memory += temp_mem;
-    }
-    if (options->min_and_max_op != 0)
-    {
-        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-        fprintf(stdout, " --- Min and max memory usage:        %ld MB\n", temp_mem);
-        memory += temp_mem;
-    }
-    if (options->threshold_op != 0)
-    {
-        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(int) / 1000000;
-        fprintf(stdout, " --- Threshold memory usage:          %ld MB\n", temp_mem);
-        memory += temp_mem;
-    }
-    if (options->sobol_op != 0)
-    {
-        // sobol indices
-        temp_mem  = options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-        // variances
-        temp_mem += options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-        // covariances
-        temp_mem += options->nb_parameters * 6 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-        // glob variances
-        temp_mem += 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-        fprintf(stdout, " --- Sobol indices memory usage:      %ld MB\n", temp_mem);
-        memory += temp_mem;
-    }
+//    if (options->mean_op != 0)
+//    {
+//        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
+//        fprintf(stdout, " --- Mean memory usage:               %ld MB\n", temp_mem);
+//        memory += temp_mem;
+//    }
+//    if (options->variance_op != 0 && options->mean_op == 0)
+//    {
+//        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
+//        fprintf(stdout, " --- Variance memory usage:           %ld MB\n", temp_mem);
+//        memory += temp_mem;
+//    }
+//    if (options->variance_op != 0 && options->mean_op != 0)
+//    {
+//        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
+//        fprintf(stdout, " --- Variance memory usage:           %ld MB\n", temp_mem);
+//        memory += temp_mem;
+//    }
+//    if (options->min_and_max_op != 0)
+//    {
+//        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
+//        fprintf(stdout, " --- Min and max memory usage:        %ld MB\n", temp_mem);
+//        memory += temp_mem;
+//    }
+//    if (options->threshold_op != 0)
+//    {
+//        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(int) / 1000000;
+//        fprintf(stdout, " --- Threshold memory usage:          %ld MB\n", temp_mem);
+//        memory += temp_mem;
+//    }
+//    if (options->sobol_op != 0)
+//    {
+//        // sobol indices
+//        temp_mem  = options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
+//        // variances
+//        temp_mem += options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
+//        // covariances
+//        temp_mem += options->nb_parameters * 6 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
+//        // glob variances
+//        temp_mem += 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
+//        fprintf(stdout, " --- Sobol indices memory usage:      %ld MB\n", temp_mem);
+//        memory += temp_mem;
+//    }
 //    fprintf(stdout, " --- Total memory usage:      %d MB\n", memory);
-    return memory;
-}
+//    return memory;
+//}

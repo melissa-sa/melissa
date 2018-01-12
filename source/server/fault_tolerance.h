@@ -30,41 +30,33 @@
 #include <melissa_utils.h>
 #include <vector.h>
 
-//struct field_status_s
-//{
-//    char                   name[MAX_FIELD_NAME];
-//    int32_t               *time_steps;
-//    struct field_status_s *next;
-//};
-
-typedef struct field_status_s field_status_t;
+/**
+ *******************************************************************************
+ *
+ * @struct melissa_simulation_s
+ *
+ * Structure to store simulation informations for fault tolerance
+ *
+ *******************************************************************************/
 
 struct melissa_simulation_s
 {
-    int id;
-//    field_status_t *field_status;
-//    int32_t *time_steps;
-    int status;
-    int timeout;
-    int last_message;
+    int    status;       /**< simulation status (0: no messages recieved, 1: at least one message recieved, 2: finished */
+    int    timeout;      /**< 1 if timeout detected on this simulation */
+    double last_message; /**< time of the last recieved message from this simulation */
 };
 
-typedef struct melissa_simulation_s melissa_simulation_t;
+typedef struct melissa_simulation_s melissa_simulation_t; /**< type corresponding to melissa_simulation_s */
 
-melissa_simulation_t* add_simulation(int id, int nb_time_steps);
-
-void simu_push_to(vector_t *v,
-             int       pos,
-             int       nb_time_steps);
+melissa_simulation_t* add_simulation();
 
 void free_simu_vector(vector_t v);
 
-int check_timeouts (int *simu_state, int *simu_timeouts, double *last_message_simu, int nb_simu);
+int check_timeouts (vector_t *simulations,
+                    int       timeout_simu);
 
 void send_timeouts (int       detected_timeouts,
-                    int *simu_timeouts,
-                    int       nb_simu,
-                    char*     txt_buffer,
-                    void     *python_requester);
+                    vector_t *simulations,
+                    void     *python_pusher);
 
 #endif // FAULT_TOLERANCE_H
