@@ -43,6 +43,7 @@ program heat
   ! - the initial temperature
 
   narg = iargc()
+  param(:) = 0
   if (narg .lt. 3) then
     print*,"Missing parameter"
     stop

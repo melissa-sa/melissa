@@ -253,53 +253,6 @@ def launch_simu(simulation):
 
     os.chdir(GLOBAL_OPTIONS['working_directory'])
 
-#def launch_group(group):
-#    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))):
-#        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
-#    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
-#    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
-#    command = 'mpirun '
-#    for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-#        command += ' '.join(('-n',
-#                             str(NODES_GROUP),
-#                             '../../'+EXECUTABLE,
-#                             str(group.simu_id[i]),
-#                             ' '.join(str(j) for j in group.param_set[i]),
-#                             ': '))
-#    print command[:-2]
-#    if BATCH_SCHEDULER == "local":
-#        group.job_id = subprocess.Popen(command[:-2].split()).pid
-#    else:
-#        create_run_group(group, command)
-#        if (BATCH_SCHEDULER == "Slurm"):
-#            proc = subprocess.Popen('sbatch "./run_group.sh"',
-#                                          stdout=subprocess.PIPE,
-#                                          stderr=subprocess.PIPE,
-#                                          shell=True,
-#                                          universal_newlines=True)
-#            # get the job ID
-#            (out, err) = proc.communicate()
-#            server.job_id = out.split()[-1]
-#        elif (BATCH_SCHEDULER == "CCC"):
-#            proc = subprocess.Popen('ccc_msub -r Simu'+str(group.rank)+' "./run_group.sh"',
-#                                          stdout=subprocess.PIPE,
-#                                          stderr=subprocess.PIPE,
-#                                          shell=True,
-#                                          universal_newlines=True)
-#            # get the job ID
-#            (out, err) = proc.communicate()
-#        elif (BATCH_SCHEDULER == "OAR"):
-#            proc = subprocess.Popen('oarsub -S "./run_group.sh"',
-#                                          stdout=subprocess.PIPE,
-#                                          stderr=subprocess.PIPE,
-#                                          shell=True,
-#                                          universal_newlines=True)
-#            # get the job ID
-#            (out, err) = proc.communicate()
-#            server.job_id = out.split("OAR_JOB_ID=")[1]
-
-#    os.chdir(GLOBAL_OPTIONS['working_directory'])
-
 def check_job(job):
     state = 0
     if BATCH_SCHEDULER == "local":
@@ -369,8 +322,6 @@ def kill_job(job):
         os.system("scancel "+str(job.job_id))
     elif (BATCH_SCHEDULER == "OAR"):
         os.system("oardel "+str(job.job_id))
-    elif (BATCH_SCHEDULER == "local"):
-        os.system("kill "+str(job.job_id))
 
 def heat_visu():
     if BATCH_SCHEDULER == "local":

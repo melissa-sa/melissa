@@ -241,6 +241,7 @@ class Server(Job):
         self.directory = work_dir
 
     def write_node_name(self):
+        os.chdir(self.directory)
         fichier=open("server_name.txt", "w")
         fichier.write(self.node_name)
         fichier.close()

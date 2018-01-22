@@ -38,8 +38,8 @@ STUDY_OPTIONS['nb_time_steps'] = 100                # number of timesteps, from 
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["field1", "field2"] # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 400           # simulations are restarted if no life sign for 400 seconds (int)
+STUDY_OPTIONS['server_timeout'] = 600               # server is restarted if no life sign for 400 seconds (int)
 STUDY_OPTIONS['checkpoint_interval'] = 300          # server checkpoints every 300 seconds (double)
-
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = True

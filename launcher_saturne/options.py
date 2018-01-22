@@ -24,10 +24,41 @@ import numpy as np
 import time
 import sys
 import re
-from utils import call_bash
+import subprocess
 
-BATCH_SCHEDULER = "CCC"
-xml_file_name = "bundle_3x2_f16_param.xml"
+USER_OPTIONS = {}
+RANGE_MIN_PARAM = np.zeros(6, float)
+RANGE_MAX_PARAM = np.ones(6, float)
+RANGE_MIN_PARAM[0:2] = 0.1
+RANGE_MAX_PARAM[0:2] = 0.9
+RANGE_MIN_PARAM[2:4] = 0.1
+RANGE_MAX_PARAM[2:4] = 0.9
+RANGE_MIN_PARAM[4:6] = 0.001
+RANGE_MAX_PARAM[4:6] = 0.1
+BATCH_SCHEDULER = "Slurm"
+XML_FILE_NAME = "bundle_3x2_f16_param.xml"
+
+def call_bash(string):
+    """
+        Launches subprocess and returns out and err messages
+    """
+    proc = subprocess.Popen(string,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    return{'out':remove_end_of_line(out),
+           'err':remove_end_of_line(err)}
+
+def remove_end_of_line(string):
+    """
+        remove "\n" at end of a string
+    """
+    if len(string) > 0:
+        return str(string[:len(string)-int(string[-1] == "\n")])
+    else:
+        return ""
 
 def create_coupling_parameters (nb_parameters,
                                 n_procs_weight,
@@ -183,9 +214,6 @@ def create_run_study (workdir,
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
     contenu += "STOP=0                                                             \n"
-    contenu += "# generate server name files                                       \n"
-    contenu += "cd "+workdir+"/case1/DATA                                          \n"
-    contenu += server_path+"/../utils/create_file_server_name                   \n"
     contenu += "# run Melissa                                                      \n"
     contenu += "echo  \"### Launch Melissa\"                                       \n"
     contenu += "cd $WORK_DIR                                                       \n"
@@ -263,9 +291,6 @@ def create_reboot_study (workdir,
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "WORK_DIR="+workdir+"/STATS                                         \n"
     contenu += "STOP=0                                                             \n"
-    contenu += "# generate server name files                                       \n"
-    contenu += "cd "+workdir+"/case1/DATA                                          \n"
-    contenu += server_path+"/../utils/create_file_server_name                   \n"
     contenu += "# run Melissa                                                      \n"
     contenu += "echo  \"### Launch Melissa\"                                       \n"
     contenu += "cd $WORK_DIR                                                       \n"
@@ -282,14 +307,8 @@ def create_reboot_study (workdir,
     os.system("chmod 744 reboot_study.sh")
 
 def create_runcase_sobol (workdir,
-                          nodes_saturne,
-                          proc_per_node_saturne,
-                          nb_parameters,
                           openmp_threads,
-                          saturne_path,
-                          xml_file_name,
-                          batch_scheduler,
-                          coupling = 1):
+                          saturne_path):
     # script to launch simulations
     contenu=""
     fichier=open("run_saturne.sh", "w")
@@ -298,43 +317,15 @@ def create_runcase_sobol (workdir,
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"     \n"
     contenu += "# Ensure the correct command is found:             \n"
     contenu += "export PATH="+saturne_path+"/:$PATH                \n"
-    if (coupling != 1):
-        contenu += "# wait master name                                 \n"
-        contenu += "while [ ! -f \"../DATA/master_name.txt\" ]         \n"
-        contenu += "  do                                               \n"
-        contenu += "  sleep 1s                                         \n"
-        contenu += "done                                               \n"
+    contenu += "# copy server name:                                \n"
+    contenu += "# cp "+workdir+"/server_name.txt .                 \n"
     contenu += "# Run command:                                     \n"
-    contenu += "\code_saturne run --param "+xml_file_name+"        \n"
+    contenu += "\code_saturne run --param "+XML_FILE_NAME+"        \n"
     contenu += "date +\"%d/%m/%y %T\"                              \n"
     contenu += "exit $?                                            \n"
     fichier.write(contenu)
     fichier.close()
     os.system("chmod 744 run_saturne.sh")
-    # script to launch master simulation
-    contenu=""
-    fichier=open("run_saturne_master.sh", "w")
-    contenu += "#!/bin/bash                                                \n"
-    contenu += "date +\"%d/%m/%y %T\"                                      \n"
-    contenu += "cd ..                                                      \n"
-    if (coupling != 1):
-        contenu += "# generate master name file                                \n"
-        contenu += "cd ../rank0/DATA                                           \n"
-        contenu += server_path+"/../utils/create_file_master_name           \n"
-        contenu += "cd ..                                                      \n"
-        for j in range(nb_parameters+1):
-            contenu += "cp ./DATA/master_name.txt ../rank"+str(j+1)+"/DATA \n"
-    contenu += "cd ./SCRIPTS                                               \n"
-    contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"             \n"
-    contenu += "# Ensure the correct command is found:                     \n"
-    contenu += "export PATH="+saturne_path+"/:$PATH                        \n"
-    contenu += "# Run command:                                             \n"
-    contenu += "\code_saturne run --param "+xml_file_name+"                \n"
-    contenu += "date +\"%d/%m/%y %T\"                                      \n"
-    contenu += "exit $?                                                    \n"
-    fichier.write(contenu)
-    fichier.close()
-    os.system("chmod 744 run_saturne_master.sh")
 
 def create_runcase (workdir,
                     nodes_saturne,
@@ -342,10 +333,9 @@ def create_runcase (workdir,
                     openmp_threads,
                     saturne_path,
                     walltime_saturne,
-                    xml_file_name,
                     batch_scheduler):
     contenu=""
-    fichier=open("run_saturne_master.sh", "w")
+    fichier=open("run_saturne.sh", "w")
     contenu += "#!/bin/bash                                                        \n"
     if (batch_scheduler == "Slurm"):
         contenu += "#SBATCH -N "+str(nodes_saturne)+"                                  \n"
@@ -375,19 +365,19 @@ def create_runcase (workdir,
     contenu += "export OMP_NUM_THREADS="+str(openmp_threads)+"                     \n"
     contenu += "export PATH="+saturne_path+"/:$PATH                                \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "\code_saturne run --param "+xml_file_name+"                        \n"
+    contenu += "\code_saturne run --param "+XML_FILE_NAME+"                        \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "exit $?                                                            \n"
     fichier.write(contenu)
     fichier.close()
-    os.system("chmod 744 run_saturne_master.sh")
+    os.system("chmod 744 run_saturne.sh")
 
 
 def draw_param_set():
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
     for i in range(STUDY_OPTIONS['nb_parameters']):
-        param_set[i] = np.random.uniform(STUDY_OPTIONS['range_min_param'][i],
-                                         STUDY_OPTIONS['range_max_param'][i])
+        param_set[i] = np.random.uniform(RANGE_MIN_PARAM[i],
+                                         RANGE_MAX_PARAM[i])
     return param_set
 
 def check_job(job):
@@ -414,62 +404,7 @@ def cancel_job(job):
     elif (BATCH_SCHEDULER == "local"):
         call_bash("kill "+str(job.job_id))
 
-def create_simu(simu):
-    workdir = GLOBAL_OPTIONS['working_directory']
-    os.chdir(workdir)
-
-    if (simu.rank > 0):
-        parameters = str(simu.rank)+":"+str(simu.rank)
-        casedir = workdir+"/group"+str(simu.rank)+"/rank"+str(simu.rank)
-    else:
-        parameters = "0:"+str(simu.rank)
-        casedir = workdir+"/group"+str(simu.rank)+"/rank0"
-#    os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
-    if (simu.rank > 0):
-        os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
-    else:
-        os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne_master.sh "+casedir+"/SCRIPTS/runcase")
-    # modif xml file
-    os.chdir(casedir+"/DATA")
-    fichier=open(workdir+"/case1/DATA/"+xml_file_name, "r")
-    contenu = ""
-    for line in fichier:
-        if not("melissa" in line):
-            contenu += line
-        else:
-            contenu += re.sub('options=".*"','options="'+parameters+'"',line)
-    fichier.close()
-    fichier = open(xml_file_name, 'w')
-    fichier.write(contenu)
-    fichier.close()
-    os.chdir(casedir+"/SRC")
-    #modif fortran routine
-    fichier = open(workdir+'/case1/SRC/cs_user_boundary_conditions.f90', 'r')
-    contenu = ""
-    for line in fichier:
-        if ("param_intensite_haut=" in line):
-            contenu += 'param_intensite_haut='+str(simu.param_set[0])+'\n'
-        elif ("param_intensite_bas=" in line):
-            contenu += 'param_intensite_bas='+str(simu.param_set[1])+'\n'
-        elif ("param_largeur_haut=" in line):
-            contenu += 'param_largeur_haut='+str(simu.param_set[2])+'\n'
-        elif ("param_largeur_bas=" in line):
-            contenu += 'param_largeur_bas='+str(simu.param_set[3])+'\n'
-        elif ("param_duree_injection_haut=" in line):
-            contenu += 'param_duree_injection_haut='+str(simu.param_set[4])+'\n'
-        elif ("param_duree_injection_bas=" in line):
-            contenu += 'param_duree_injection_bas='+str(simu.param_set[5])+'\n'
-        else:
-            contenu += line
-    fichier.close()
-    fichier = open('cs_user_boundary_conditions.f90', 'w')
-    fichier.write(contenu)
-    fichier.close()
-    os.system("cp "+workdir+"/case1/SRC/cs_user_mesh.c "+casedir+"/SRC/cs_user_mesh.c")
-    return 0
-
-
-def create_group(group):
+def create_simu(group):
     workdir = GLOBAL_OPTIONS['working_directory']
     os.chdir(workdir)
     if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(group.rank))):
@@ -483,30 +418,64 @@ def create_group(group):
 #        create_case_str
         os.system(create_case_str)
 
-    # Only works for Sobol
-    for simu in range(len(group.param_set)):
-        if (simu > 0):
-            parameters = str(simu)+":"+str(group.rank)
+    if MELISSA_STATS['sobol_indices']:
+        # Only works for Sobol
+        for simu in range(len(group.param_set)):
             casedir = workdir+"/group"+str(group.rank)+"/rank"+str(simu)
-        else:
-            parameters = "0:"+str(group.rank)
-            casedir = workdir+"/group"+str(group.rank)+"/rank0"
-    #    os.system("cp "+workdir+"/case1/DATA/server_name.txt "+casedir+"/DATA")
-        if (simu > 0):
             os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
-        else:
-            os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne_master.sh "+casedir+"/SCRIPTS/runcase")
+            # modif xml file
+            os.chdir(casedir+"/DATA")
+            fichier=open(workdir+"/case1/DATA/"+XML_FILE_NAME, "r")
+            contenu = ""
+            for line in fichier:
+                if not("melissa" in line):
+                    contenu += line
+                else:
+                    contenu += re.sub('options=".*"','options="'+str(group.simu_id[simu])+'"',line)
+            fichier.close()
+            fichier = open(XML_FILE_NAME, 'w')
+            fichier.write(contenu)
+            fichier.close()
+            os.chdir(casedir+"/SRC")
+            #modif fortran routine
+            fichier = open(workdir+'/case1/SRC/cs_user_boundary_conditions.f90', 'r')
+            contenu = ""
+            for line in fichier:
+                if ("param_intensite_haut=" in line):
+                    contenu += 'param_intensite_haut='+str(group.param_set[simu][0])+'\n'
+                elif ("param_intensite_bas=" in line):
+                    contenu += 'param_intensite_bas='+str(group.param_set[simu][1])+'\n'
+                elif ("param_largeur_haut=" in line):
+                    contenu += 'param_largeur_haut='+str(group.param_set[simu][2])+'\n'
+                elif ("param_largeur_bas=" in line):
+                    contenu += 'param_largeur_bas='+str(group.param_set[simu][3])+'\n'
+                elif ("param_duree_injection_haut=" in line):
+                    contenu += 'param_duree_injection_haut='+str(group.param_set[simu][4])+'\n'
+                elif ("param_duree_injection_bas=" in line):
+                    contenu += 'param_duree_injection_bas='+str(group.param_set[simu][5])+'\n'
+                else:
+                    contenu += line
+            fichier.close()
+            fichier = open('cs_user_boundary_conditions.f90', 'w')
+            fichier.write(contenu)
+            fichier.close()
+            os.system("cp "+workdir+"/case1/SRC/cs_user_mesh.c "+casedir+"/SRC/cs_user_mesh.c")
+
+    else:
+
+        casedir = workdir+"/group"+str(group.simu_id)+"/rank0"
+        os.system("cp "+workdir+"/case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
         # modif xml file
         os.chdir(casedir+"/DATA")
-        fichier=open(workdir+"/case1/DATA/"+xml_file_name, "r")
+        fichier=open(workdir+"/case1/DATA/"+XML_FILE_NAME, "r")
         contenu = ""
         for line in fichier:
             if not("melissa" in line):
                 contenu += line
             else:
-                contenu += re.sub('options=".*"','options="'+parameters+'"',line)
+                contenu += re.sub('options=".*"','options="'+str(group.id)+'"',line)
         fichier.close()
-        fichier = open(xml_file_name, 'w')
+        fichier = open(XML_FILE_NAME, 'w')
         fichier.write(contenu)
         fichier.close()
         os.chdir(casedir+"/SRC")
@@ -515,17 +484,17 @@ def create_group(group):
         contenu = ""
         for line in fichier:
             if ("param_intensite_haut=" in line):
-                contenu += 'param_intensite_haut='+str(group.param_set[simu][0])+'\n'
+                contenu += 'param_intensite_haut='+str(group.param_set[0])+'\n'
             elif ("param_intensite_bas=" in line):
-                contenu += 'param_intensite_bas='+str(group.param_set[simu][1])+'\n'
+                contenu += 'param_intensite_bas='+str(group.param_set[1])+'\n'
             elif ("param_largeur_haut=" in line):
-                contenu += 'param_largeur_haut='+str(group.param_set[simu][2])+'\n'
+                contenu += 'param_largeur_haut='+str(group.param_set[2])+'\n'
             elif ("param_largeur_bas=" in line):
-                contenu += 'param_largeur_bas='+str(group.param_set[simu][3])+'\n'
+                contenu += 'param_largeur_bas='+str(group.param_set[3])+'\n'
             elif ("param_duree_injection_haut=" in line):
-                contenu += 'param_duree_injection_haut='+str(group.param_set[simu][4])+'\n'
+                contenu += 'param_duree_injection_haut='+str(group.param_set[4])+'\n'
             elif ("param_duree_injection_bas=" in line):
-                contenu += 'param_duree_injection_bas='+str(group.param_set[simu][5])+'\n'
+                contenu += 'param_duree_injection_bas='+str(group.param_set[5])+'\n'
             else:
                 contenu += line
         fichier.close()
@@ -553,13 +522,8 @@ def create_study():
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/case1/SCRIPTS")
     if MELISSA_STATS['sobol_indices']:
         create_runcase_sobol (GLOBAL_OPTIONS['working_directory'],
-                              SIMULATIONS_OPTIONS['nb_nodes'],
-                              SIMULATIONS_OPTIONS['nb_proc'],
-                              STUDY_OPTIONS['nb_parameters'],
                               2,
-                              SIMULATIONS_OPTIONS['path'],
-                              xml_file_name,
-                              BATCH_SCHEDULER)
+                              SIMULATIONS_OPTIONS['path'])
     else:
         create_runcase (GLOBAL_OPTIONS['working_directory'],
                         SIMULATIONS_OPTIONS['nb_nodes'],
@@ -567,15 +531,11 @@ def create_study():
                         2,
                         SIMULATIONS_OPTIONS['path'],
                         SIMULATIONS_OPTIONS['walltime'],
-                        xml_file_name,
                         BATCH_SCHEDULER)
 
-def launch_simulation(simu):
+def launch_simu(simu):
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
     if MELISSA_STATS['sobol_indices']:
-        for j in range(STUDY_OPTIONS['nb_parameters']+2):
-            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank"+str(j)
-            os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         create_coupling_parameters (STUDY_OPTIONS['nb_parameters'],
                                     "None",
                                     SIMULATIONS_OPTIONS['nb_nodes'] * SIMULATIONS_OPTIONS['nb_proc'],
@@ -588,8 +548,6 @@ def launch_simulation(simu):
             simu.job_id = int(call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1])
 
     else:
-        casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank0"
-        os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         os.chdir("./rank0/SCRIPTS")
         if (BATCH_SCHEDULER == "Slurm"):
             simu.job_id = int(call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1])
@@ -648,17 +606,8 @@ def restart_server(server):
     os.chdir(GLOBAL_OPTIONS['working_directory'])
 
 def restart_simu(simu):
-    if (BATCH_SCHEDULER == "Slurm" or BATCH_SCHEDULER == "CCC"):
-        os.system("scancel "+str(simu.job_id))
-    elif (BATCH_SCHEDULER == "OAR"):
-        os.system("oardel "+str(simu.job_id))
-    elif (BATCH_SCHEDULER == "OAR"):
-        os.system("kill "+str(simu.job_id))
     os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
     if MELISSA_STATS['sobol_indices']:
-        for j in range(STUDY_OPTIONS['nb_parameters']+2):
-            casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank"+str(j)
-            os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         output = "Reboot simulation group "+str(simu.rank)+"\n"
         if (BATCH_SCHEDULER == "Slurm"):
             simu.job_id = call_bash('sbatch "../STATS/run_cas_couple.sh" --exclusive --job-name=Saturnes'+str(simu.rank))['out'].split()[-1]
@@ -667,45 +616,42 @@ def restart_simu(simu):
         elif (BATCH_SCHEDULER == "OAR"):
             simu.job_id = call_bash('oarsub -S "../STATS/run_cas_couple.sh" -n Saturnes'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
     else:
-        casedir = GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank)+"/rank0"
-        os.system("cp "+GLOBAL_OPTIONS['working_directory']+"/case1/DATA/server_name.txt "+casedir+"/DATA")
         output = "Reboot simulation "+str(simu.rank)+"\n"
         os.chdir("./rank0/SCRIPTS")
         if (BATCH_SCHEDULER == "Slurm"):
-            simu_job_id[simu_id] = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1]
+            simu.job_id = call_bash('sbatch "./runcase" --exclusive --job-name=Saturne'+str(simu.rank))['out'].split()[-1]
         elif (BATCH_SCHEDULER == "CCC"):
-            simu_job_id[simu_id] = call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "./runcase"')['out'].split()[-1]
+            simu.job_id = call_bash('ccc_msub -r Saturne'+str(simu.rank)+' "./runcase"')['out'].split()[-1]
         elif (BATCH_SCHEDULER == "OAR"):
-            simu_job_id[simu_id] = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
+            simu.job_id = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
         elif (BATCH_SCHEDULER == "local"):
-            simu_job_id[simu_id] = call_bash('./runcase & echo $!')['out']
+            simu.job_id = call_bash('./runcase & echo $!')['out']
     os.chdir(GLOBAL_OPTIONS['working_directory'])
     print output
 
 def check_scheduler_load():
-
-    if (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
-        while (int(call_bash("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l")['out']) >= 250):
-            time.sleep(20)
-
+    if BATCH_SCHEDULER == "local":
+#        try:
+#            subprocess.check_output(["pidof",EXECUTABLE])
+#            return False
+#        except:
+        return True
+    elif (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
+        proc = subprocess.Popen("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        running_jobs = int(out)
+        return running_jobs < 250
 
 GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['home_path'] = "/ccc/cont003/home/gen10064/terrazth"
 GLOBAL_OPTIONS['user_name'] = "terrazth"
 GLOBAL_OPTIONS['working_directory'] = "/ccc/scratch/cont003/gen10064/terrazth/etude_plantage"
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 6
-STUDY_OPTIONS['range_min_param'] = np.zeros(STUDY_OPTIONS['nb_parameters'],
-                                            float)
-STUDY_OPTIONS['range_max_param'] = np.ones(STUDY_OPTIONS['nb_parameters'],
-                                           float)
-STUDY_OPTIONS['range_max_param'][0:2] = 0.1
-STUDY_OPTIONS['range_max_param'][0:2] = 0.9
-STUDY_OPTIONS['range_max_param'][2:4] = 0.1
-STUDY_OPTIONS['range_max_param'][2:4] = 0.9
-STUDY_OPTIONS['range_max_param'][4:6] = 0.001
-STUDY_OPTIONS['range_max_param'][4:6] = 0.1
 STUDY_OPTIONS['sampling_size'] = 1000
 STUDY_OPTIONS['nb_time_steps'] = 100
 STUDY_OPTIONS['threshold_value'] = 0.4
@@ -737,11 +683,8 @@ MELISSA_STATS['sobol_indices'] = True
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = create_study
 USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
-if MELISSA_STATS['sobol_indices']:
-    USER_FUNCTIONS['create_group'] = create_group
-else:
-    USER_FUNCTIONS['create_group'] = create_simu
-USER_FUNCTIONS['launch_group'] = launch_simulation
+USER_FUNCTIONS['create_group'] = create_simu
+USER_FUNCTIONS['launch_group'] = launch_simu
 USER_FUNCTIONS['launch_server'] = launch_server
 USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_group_job'] = check_job
