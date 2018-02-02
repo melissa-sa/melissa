@@ -26,3 +26,6 @@ install(FILES melissa_api_no_mpi.h DESTINATION include)
 
 configure_file(melissa_api.f90 melissa_api.f90 COPYONLY)
 install(FILES melissa_api.f90 DESTINATION include)
+
+configure_file(melissa_api.f melissa_api.f COPYONLY)
+install(FILES melissa_api.f DESTINATION include)
