@@ -24,7 +24,7 @@
      & SIMU_ID,
      & COMM,
      & COUPLING)
-     & BIND(C, NAME = 'MELISSA_INIT_F')
+     & BIND(C, NAME = 'melissa_init_f')
           USE ISO_C_BINDING, ONLY: C_INT, C_CHAR
           CHARACTER(KIND=C_CHAR),DIMENSION(*) :: FIELD_NAME
           INTEGER(KIND=C_INT) :: LOCAL_VECT_SIZE
