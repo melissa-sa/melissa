@@ -169,7 +169,7 @@ int get_field_id(melissa_field_t fields[],
     }
     else
     {
-        fprintf (stderr, "ERROR: wrong field name (get_field_id)\n");
+        fprintf (stderr, "WARNING: wrong field name (get_field_id)\n");
     }
     return -1;
 }
@@ -295,14 +295,14 @@ void finalize_field_data (melissa_field_t   *fields,
 #ifdef BUILD_WITH_PROBES
         start_write_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-        write_stats_bin (&(fields->stats_data),
-                         options,
-                         comm_data,
-                         fields->name);
-//        write_stats_txt (&(fields->stats_data),
+//        write_stats_bin (&(fields->stats_data),
 //                         options,
 //                         comm_data,
 //                         fields->name);
+        write_stats_txt (&(fields->stats_data),
+                         options,
+                         comm_data,
+                         fields->name);
 //        write_stats_ensight (&(fields->stats_data),
 //                             options,
 //                             comm_data,

@@ -30,7 +30,7 @@ from shutil import copyfile
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'
-EXECUTABLE='heatc'
+EXECUTABLE='heatf'
 BATCH_SCHEDULER = "local"
 WALLTIME_SERVER = 600
 NODES_SERVER = 3
@@ -143,7 +143,6 @@ def launch_server(server):
     if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
         os.mkdir(GLOBAL_OPTIONS['working_directory'])
     os.chdir(GLOBAL_OPTIONS['working_directory'])
-    create_run_server(server)
     if BATCH_SCHEDULER == "local":
         server.job_id = subprocess.Popen(('mpirun ' +
                                           ' -n '+str(NODES_SERVER) +
@@ -152,6 +151,7 @@ def launch_server(server):
                                           server.cmd_opt +
                                           ' &').split()).pid
     else:
+        create_run_server(server)
         if (BATCH_SCHEDULER == "Slurm"):
             proc = subprocess.Popen('sbatch "./run_server.sh"',
                                           stdout=subprocess.PIPE,
@@ -458,7 +458,7 @@ STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of th
 STUDY_OPTIONS['sampling_size'] = 6          # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100        # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
-STUDY_OPTIONS['field_names'] = ["heat"]     # list of field names
+STUDY_OPTIONS['field_names'] = ["heat1"]     # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
 

@@ -108,7 +108,7 @@ struct field_data_s
 typedef struct field_data_s field_data_t; /**< type corresponding to field_data_s */
 
 static global_data_t global_data;
-static field_data_t field_data;
+static field_data_t *field_data;
 static char *node_names;
 
 #ifdef BUILD_WITH_PROBES
@@ -135,6 +135,15 @@ static field_data_t* get_field_data(field_data_t *data,
     return data;
 }
 
+static field_data_t* get_last_field(field_data_t *data)
+{
+    if (data->next != NULL)
+    {
+        return get_last_field(data->next);
+    }
+    return data;
+}
+
 static void free_field_data(field_data_t *data)
 {
     if (data != NULL)
@@ -142,7 +151,6 @@ static void free_field_data(field_data_t *data)
         if (data->next != NULL)
         {
             free_field_data(data->next);
-            melissa_free (data->next);
         }
         melissa_free (data->server_vect_size);
         melissa_free (data->send_counts);
@@ -159,6 +167,7 @@ static void free_field_data(field_data_t *data)
             }
             free(data->data_pusher);
         }
+        melissa_free (data);
     }
 }
 
@@ -385,7 +394,7 @@ void melissa_init (const char *field_name,
     char          *master_node_names = NULL;
     void          *master_requester = NULL;
     static int     first_init = 1;
-    field_data_t  *comm_ptr = NULL;
+    field_data_t  *field_data_ptr = NULL;
     zmq_msg_t      msg;
     char          *buf_ptr = NULL;
 
@@ -408,8 +417,13 @@ void melissa_init (const char *field_name,
 
             if (file == NULL)
             {
-                strcpy (server_node_name, "localhost");
-                fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
+                file = fopen("../server_name.txt", "r");
+
+                if (file == NULL)
+                {
+                    strcpy (server_node_name, "localhost");
+                    fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
+                }
             }
         }
 
@@ -448,19 +462,23 @@ void melissa_init (const char *field_name,
         buf_ptr += 3 * sizeof(int);
     }
 
-    // bcast infos
+    // init data structure
     if (first_init != 0)
     {
-        memcpy (field_data.name, field_name, MPI_MAX_PROCESSOR_NAME);
-        comm_ptr = &field_data;
+        field_data = melissa_malloc(sizeof (field_data_t));
+        memcpy (field_data->name, field_name, MPI_MAX_PROCESSOR_NAME);
+        field_data->next = NULL;
+        field_data_ptr = field_data;
     }
-    else
-    {
-        comm_ptr = get_field_data(&field_data, field_name);
-        if (comm_ptr == NULL)
+    else{
+        field_data_ptr = get_field_data(field_data, field_name);
+        if (field_data_ptr == NULL)
         {
-            comm_ptr = melissa_malloc(sizeof (field_data_t));
-            memcpy (comm_ptr->name, field_name, MPI_MAX_PROCESSOR_NAME);
+            field_data_ptr = get_last_field (field_data);
+            field_data_ptr->next = melissa_malloc(sizeof (field_data_t));
+            field_data_ptr = field_data_ptr->next;
+            memcpy (field_data_ptr->name, field_name, MPI_MAX_PROCESSOR_NAME);
+            field_data_ptr->next = NULL;
         }
         else
         {
@@ -468,9 +486,11 @@ void melissa_init (const char *field_name,
             return;
         }
     }
-    comm_ptr->global_vect_size = 0;
-    comm_ptr->local_vect_sizes = malloc(*comm_size * sizeof(int));
 
+    field_data_ptr->global_vect_size = 0;
+    field_data_ptr->local_vect_sizes = malloc(*comm_size * sizeof(int));
+
+    // bcast infos
 #ifdef BUILD_WITH_MPI
     if (*comm_size > 1)
     {
@@ -479,17 +499,17 @@ void melissa_init (const char *field_name,
             MPI_Bcast(global_data.rinit_tab, 3, MPI_INT, 0, *comm);
         }
         i = *local_vect_size;
-        MPI_Allgather(&i, 1, MPI_INT, comm_ptr->local_vect_sizes, 1, MPI_INT, *comm);
+        MPI_Allgather(&i, 1, MPI_INT, field_data_ptr->local_vect_sizes, 1, MPI_INT, *comm);
         for (i=0; i<*comm_size; i++)
         {
-            comm_ptr->global_vect_size += comm_ptr->local_vect_sizes[i];
+            field_data_ptr->global_vect_size += field_data_ptr->local_vect_sizes[i];
         }
     }
     else
 #endif // BUILD_WITH_MPI
     {
-        comm_ptr->local_vect_sizes[0]  = *local_vect_size;
-        comm_ptr->global_vect_size = *local_vect_size;
+        field_data_ptr->local_vect_sizes[0]  = *local_vect_size;
+        field_data_ptr->global_vect_size = *local_vect_size;
     }
 
     if (first_init != 0)
@@ -511,20 +531,20 @@ void melissa_init (const char *field_name,
         node_names = malloc (global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
     }
 
-    comm_ptr->server_vect_size = calloc (global_data.nb_proc_server, sizeof(int));
+    field_data_ptr->server_vect_size = calloc (global_data.nb_proc_server, sizeof(int));
 
     for (i=0; i<global_data.nb_proc_server; i++)
     {
-        comm_ptr->server_vect_size[i] = comm_ptr->global_vect_size / global_data.nb_proc_server;
-        if (i < comm_ptr->global_vect_size % global_data.nb_proc_server)
-            comm_ptr->server_vect_size[i] += 1;
+        field_data_ptr->server_vect_size[i] = field_data_ptr->global_vect_size / global_data.nb_proc_server;
+        if (i < field_data_ptr->global_vect_size % global_data.nb_proc_server)
+            field_data_ptr->server_vect_size[i] += 1;
     }
 
-    comm_ptr->send_counts = calloc (global_data.nb_proc_server, sizeof(int));
-    comm_ptr->sdispls     = calloc (global_data.nb_proc_server, sizeof(int));
+    field_data_ptr->send_counts = calloc (global_data.nb_proc_server, sizeof(int));
+    field_data_ptr->sdispls     = calloc (global_data.nb_proc_server, sizeof(int));
 
     comm_n_to_m_init (&global_data,
-                      comm_ptr,
+                      field_data_ptr,
                       *rank);
 
     if (*rank == 0 && first_init != 0)
@@ -629,27 +649,27 @@ void melissa_init (const char *field_name,
 
     // end sobol only //
 
-    comm_ptr->data_pusher = NULL;
+    field_data_ptr->data_pusher = NULL;
     if (global_data.sobol_rank == 0)
     {
-        comm_ptr->data_pusher = malloc (comm_ptr->local_nb_messages * sizeof(void*));
+        field_data_ptr->data_pusher = malloc (field_data_ptr->local_nb_messages * sizeof(void*));
 
         j = 0;
-        for (i=0; i<comm_ptr->total_nb_messages; i++)
+        for (i=0; i<field_data_ptr->total_nb_messages; i++)
         {
-            if (*rank == comm_ptr->push_rank[i])
+            if (*rank == field_data_ptr->push_rank[i])
             {
-                comm_ptr->data_pusher[j] = zmq_socket (global_data.context, ZMQ_PUSH);
-                zmq_setsockopt (comm_ptr->data_pusher[j], ZMQ_SNDHWM, &comm_ptr->local_nb_messages, sizeof(int));
-                zmq_setsockopt (comm_ptr->data_pusher[j], ZMQ_LINGER, &linger, sizeof(int));
-                port_no = 100 + comm_ptr->pull_rank[i];
-                sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * comm_ptr->pull_rank[i]], port_no);
-                melissa_connect (comm_ptr->data_pusher[j], port_name);
+                field_data_ptr->data_pusher[j] = zmq_socket (global_data.context, ZMQ_PUSH);
+                zmq_setsockopt (field_data_ptr->data_pusher[j], ZMQ_SNDHWM, &field_data_ptr->local_nb_messages, sizeof(int));
+                zmq_setsockopt (field_data_ptr->data_pusher[j], ZMQ_LINGER, &linger, sizeof(int));
+                port_no = 100 + field_data_ptr->pull_rank[i];
+                sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * field_data_ptr->pull_rank[i]], port_no);
+                melissa_connect (field_data_ptr->data_pusher[j], port_name);
                 j += 1;
             }
         }
 
-        if (j != comm_ptr->local_nb_messages)
+        if (j != field_data_ptr->local_nb_messages)
         {
             fprintf (stderr, "Warning: wrong number of data pusher ports");
         }
@@ -866,7 +886,7 @@ void melissa_send (const int  *time_step,
     int   buff_size;
     char *buff_ptr;
     int local_vect_size;
-    field_data_t  *comm_ptr = NULL;
+    field_data_t  *field_data_ptr = NULL;
 //    MPI_Request *request;
 //    MPI_Status *status;
 
@@ -874,13 +894,13 @@ void melissa_send (const int  *time_step,
     start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
-    comm_ptr = get_field_data(&field_data, field_name);
-    if (comm_ptr == NULL)
+    field_data_ptr = get_field_data(field_data, field_name);
+    if (field_data_ptr == NULL)
     {
         fprintf (stderr, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
         return;
     }
-    local_vect_size = comm_ptr->local_vect_sizes[*rank];
+    local_vect_size = field_data_ptr->local_vect_sizes[*rank];
 
     if (global_data.sobol == 1)
     {
@@ -943,14 +963,14 @@ void melissa_send (const int  *time_step,
     {
         zmq_msg_t msg;
         j = 0;
-        for (i=0; i<comm_ptr->total_nb_messages; i++)
+        for (i=0; i<field_data_ptr->total_nb_messages; i++)
         {
-            if (*rank == comm_ptr->push_rank[i] && global_data.sobol_rank == 0)
+            if (*rank == field_data_ptr->push_rank[i] && global_data.sobol_rank == 0)
             {
-                buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + comm_ptr->send_counts[comm_ptr->pull_rank[i]] * sizeof(double);
+                buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
                 if (global_data.sobol == 1)
                 {
-                    buff_size += comm_ptr->send_counts[comm_ptr->pull_rank[i]] * (global_data.nb_parameters + 1) * sizeof(double);
+                    buff_size += field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * (global_data.nb_parameters + 1) * sizeof(double);
                 }
                 global_data.buffer = malloc (buff_size);
                 buff_ptr = global_data.buffer;
@@ -962,22 +982,22 @@ void melissa_send (const int  *time_step,
                 buff_ptr += sizeof(int);
                 memcpy(buff_ptr, rank, sizeof(int));
                 buff_ptr += sizeof(int);
-                memcpy(buff_ptr, &comm_ptr->send_counts[comm_ptr->pull_rank[i]], sizeof(int));
+                memcpy(buff_ptr, &field_data_ptr->send_counts[field_data_ptr->pull_rank[i]], sizeof(int));
                 buff_ptr += sizeof(int);
                 memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
                 buff_ptr += MAX_FIELD_NAME * sizeof(char);
-                memcpy (buff_ptr, &send_vect[comm_ptr->sdispls[comm_ptr->pull_rank[i]]], comm_ptr->send_counts[comm_ptr->pull_rank[i]] * sizeof(double));
+                memcpy (buff_ptr, &send_vect[field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]], field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
                 if (global_data.sobol == 1)
                 {
                     for (k=1; k<global_data.nb_parameters + 2; k++)
                     {
-                        buff_ptr += comm_ptr->send_counts[comm_ptr->pull_rank[i]] * sizeof(double);
-                        memcpy (buff_ptr, &global_data.buffer_sobol[k*local_vect_size + comm_ptr->sdispls[comm_ptr->pull_rank[i]]],
-                                comm_ptr->send_counts[comm_ptr->pull_rank[i]] * sizeof(double));
+                        buff_ptr += field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
+                        memcpy (buff_ptr, &global_data.buffer_sobol[k*local_vect_size + field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]],
+                                field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
                     }
                 }
                 zmq_msg_init_data (&msg, global_data.buffer, buff_size, my_free, NULL);
-                ret = zmq_msg_send (&msg, comm_ptr->data_pusher[j], 0);
+                ret = zmq_msg_send (&msg, field_data_ptr->data_pusher[j], 0);
                 if (ret == -1)
                 {
                     ret = errno;
@@ -1058,7 +1078,7 @@ void melissa_finalize (void)
     }
 #endif
     free (node_names);
-    free_field_data(&field_data);
+    free_field_data(field_data);
     if (global_data.sobol == 1 && global_data.coupling == 0)
     {
         zmq_close (global_data.sobol_requester[0]);
