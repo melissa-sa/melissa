@@ -275,6 +275,7 @@ class Server(Job):
         """
         os.chdir(self.directory)
         logging.info('launch server')
+        logging.info('server options: '+self.cmd_opt)
         if Job.usr_func['launch_server']:
             Job.usr_func['launch_server'](self)
         else:

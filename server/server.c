@@ -574,8 +574,7 @@ int main (int argc, char **argv)
 
     if (end_signal == 0)
     {
-
-    melissa_free (buff_tab_ptr);
+        melissa_free (buff_tab_ptr);
     }
 
     if (comm_data.rank == 0)

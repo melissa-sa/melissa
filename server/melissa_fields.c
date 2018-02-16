@@ -295,22 +295,26 @@ void finalize_field_data (melissa_field_t   *fields,
 #ifdef BUILD_WITH_PROBES
         start_write_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
-//        write_stats_bin (&(fields->stats_data),
-//                         options,
-//                         comm_data,
-//                         fields->name);
-        write_stats_txt (&(fields->stats_data),
-                         options,
-                         comm_data,
-                         fields->name);
-//        write_stats_ensight (&(fields->stats_data),
+        for (j=0; j<options->nb_fields; j++)
+        {
+//            write_stats_bin (&(fields[j].stats_data),
 //                             options,
 //                             comm_data,
-//                             fields->name);
+//                             fields[j].name);
+            write_stats_txt (&(fields[j].stats_data),
+                             options,
+                             comm_data,
+                             fields[j].name);
+//            write_stats_ensight (&(fields[j].stats_data),
+//                                 options,
+//                                 comm_data,
+//                                 fields[j].name);
+        }
 #ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();
         *total_write_time += end_write_time - start_write_time;
 #endif // BUILD_WITH_PROBES
+
 
         for (i=0; i<comm_data->client_comm_size; i++)
         {
@@ -318,11 +322,11 @@ void finalize_field_data (melissa_field_t   *fields,
             {
                 if (fields[j].stats_data[i].vect_size > 0)
                 {
-                    melissa_free_data (&fields->stats_data[i]);
+                    melissa_free_data (&fields[j].stats_data[i]);
                 }
+                melissa_free (fields[j].stats_data);
             }
         }
-        melissa_free (fields->stats_data);
     }
     return;
 }
