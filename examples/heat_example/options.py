@@ -345,7 +345,7 @@ def heat_visu():
 
         if (MELISSA_STATS['mean']):
             fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_mean.'+nb_time_steps
+            file_name = 'results.heat1_mean.'+nb_time_steps
             file=open(file_name)
             value = 0
             for line in file:
@@ -358,7 +358,7 @@ def heat_visu():
 
         if (MELISSA_STATS['variance']):
             fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_variance.'+nb_time_steps
+            file_name = 'results.heat1_variance.'+nb_time_steps
             file=open(file_name)
             value = 0
             for line in file:
@@ -371,7 +371,7 @@ def heat_visu():
 
         if (MELISSA_STATS['min']):
             fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_min.'+nb_time_steps
+            file_name = 'results.heat1_min.'+nb_time_steps
             file=open(file_name)
             value = 0
             for line in file:
@@ -384,7 +384,7 @@ def heat_visu():
 
         if (MELISSA_STATS['max']):
             fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_max.'+nb_time_steps
+            file_name = 'results.heat1_max.'+nb_time_steps
             file=open(file_name)
             value = 0
             for line in file:
@@ -397,7 +397,7 @@ def heat_visu():
 
         if (MELISSA_STATS['threshold_exceedance']):
             fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_threshold.'+nb_time_steps
+            file_name = 'results.heat1_threshold.'+nb_time_steps
             file=open(file_name)
             value = 0
             for line in file:
@@ -410,7 +410,7 @@ def heat_visu():
 
         if (MELISSA_STATS['quantile']):
             fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_quantile.'+nb_time_steps
+            file_name = 'results.heat1_quantile.'+nb_time_steps
             file=open(file_name)
             value = 0
             for line in file:
@@ -424,7 +424,7 @@ def heat_visu():
         if (MELISSA_STATS['sobol_indices']):
             for param in range(STUDY_OPTIONS['nb_parameters']):
                 fig.append(plt.figure(len(fig)))
-                file_name = 'results.heat_sobol'+str(param)+'.'+nb_time_steps
+                file_name = 'results.heat1_sobol'+str(param)+'.'+nb_time_steps
                 file=open(file_name)
                 value = 0
                 for line in file:
@@ -436,7 +436,7 @@ def heat_visu():
                 file.close()
             for param in range(STUDY_OPTIONS['nb_parameters']):
                 fig.append(plt.figure(len(fig)))
-                file_name = 'results.heat_sobol_tot'+str(param)+'.'+nb_time_steps
+                file_name = 'results.heat1_sobol_tot'+str(param)+'.'+nb_time_steps
                 file=open(file_name)
                 value = 0
                 for line in file:
@@ -469,7 +469,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantile'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

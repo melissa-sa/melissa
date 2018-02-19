@@ -316,16 +316,16 @@ void finalize_field_data (melissa_field_t   *fields,
 #endif // BUILD_WITH_PROBES
 
 
-        for (i=0; i<comm_data->client_comm_size; i++)
+        for (j=0; j<options->nb_fields; j++)
         {
-            for (j=0; j<options->nb_fields; j++)
+            for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if (fields[j].stats_data[i].vect_size > 0)
                 {
                     melissa_free_data (&fields[j].stats_data[i]);
                 }
-                melissa_free (fields[j].stats_data);
             }
+            melissa_free (fields[j].stats_data);
         }
     }
     return;

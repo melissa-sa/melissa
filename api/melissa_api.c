@@ -403,6 +403,13 @@ void melissa_init (const char *field_name,
     global_data.coupling = *coupling;
     total_comm_time = 0.0;
     total_bytes_sent = 0;
+    if (first_init != 0)
+    {
+        global_data.buff_size = 0;
+        global_data.context = zmq_ctx_new ();
+        global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
+        global_data.sobol_requester = NULL;
+    }
 
     // get main server node name
     if (*rank == 0 && first_init != 0)
@@ -433,13 +440,6 @@ void melissa_init (const char *field_name,
 
         global_data.rinit_tab[0] = 0;
         global_data.rinit_tab[1] = 1;
-        if (first_init != 0)
-        {
-            global_data.buff_size = 0;
-            global_data.context = zmq_ctx_new ();
-            global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
-            global_data.sobol_requester = NULL;
-        }
         zmq_msg_init_size (&msg, 2 * sizeof(int));
         buf_ptr = zmq_msg_data (&msg);
         memcpy (buf_ptr, comm_size, sizeof(int));
@@ -916,7 +916,7 @@ void melissa_send (const int  *time_step,
             {
                 for (i=0; i<global_data.nb_parameters + 1; i++)
                 {
-                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
+                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[(i+1)*local_vect_size], local_vect_size * sizeof(double), 0);
                 }
             }
             else // *sobol_rank != 0
