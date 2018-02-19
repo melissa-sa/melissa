@@ -603,8 +603,6 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
                              );
     }
-//    melissa_free (comm_data.rcounts);
-//    melissa_free (comm_data.rdispls);
     melissa_free (first_send);
     free_simu_vector (simulations);
 

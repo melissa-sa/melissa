@@ -92,6 +92,7 @@ typedef struct global_data_s global_data_t; /**< type corresponding to global_da
 struct field_data_s
 {
     char                  name[MPI_MAX_PROCESSOR_NAME]; /**< The field name                                             */
+    int                   id;                           /**< The field id                                               */
     int                   global_vect_size;             /**< global field size                                          */
     int                  *server_vect_size;             /**< local vect size for the library                            */
     int                  *local_vect_sizes;             /**< local vector size                                          */
@@ -398,9 +399,6 @@ void melissa_init (const char *field_name,
     zmq_msg_t      msg;
     char          *buf_ptr = NULL;
 
-    global_data.context = zmq_ctx_new ();
-    global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
-    global_data.sobol_requester = NULL;
 //    global_data.sobol_rank = *sobol_rank;
     global_data.coupling = *coupling;
     total_comm_time = 0.0;
@@ -435,7 +433,13 @@ void melissa_init (const char *field_name,
 
         global_data.rinit_tab[0] = 0;
         global_data.rinit_tab[1] = 1;
-        global_data.buff_size    = 0;
+        if (first_init != 0)
+        {
+            global_data.buff_size = 0;
+            global_data.context = zmq_ctx_new ();
+            global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
+            global_data.sobol_requester = NULL;
+        }
         zmq_msg_init_size (&msg, 2 * sizeof(int));
         buf_ptr = zmq_msg_data (&msg);
         memcpy (buf_ptr, comm_size, sizeof(int));
@@ -468,6 +472,7 @@ void melissa_init (const char *field_name,
         field_data = melissa_malloc(sizeof (field_data_t));
         memcpy (field_data->name, field_name, MPI_MAX_PROCESSOR_NAME);
         field_data->next = NULL;
+        field_data->id = 0;
         field_data_ptr = field_data;
     }
     else{
@@ -476,6 +481,7 @@ void melissa_init (const char *field_name,
         {
             field_data_ptr = get_last_field (field_data);
             field_data_ptr->next = melissa_malloc(sizeof (field_data_t));
+            field_data_ptr->next->id = field_data_ptr->id + 1;
             field_data_ptr = field_data_ptr->next;
             memcpy (field_data_ptr->name, field_name, MPI_MAX_PROCESSOR_NAME);
             field_data_ptr->next = NULL;
@@ -489,6 +495,7 @@ void melissa_init (const char *field_name,
 
     field_data_ptr->global_vect_size = 0;
     field_data_ptr->local_vect_sizes = malloc(*comm_size * sizeof(int));
+    field_data_ptr->data_pusher = NULL;
 
     // bcast infos
 #ifdef BUILD_WITH_MPI
@@ -646,10 +653,8 @@ void melissa_init (const char *field_name,
             }
         }
     }
-
     // end sobol only //
 
-    field_data_ptr->data_pusher = NULL;
     if (global_data.sobol_rank == 0)
     {
         field_data_ptr->data_pusher = malloc (field_data_ptr->local_nb_messages * sizeof(void*));
@@ -700,7 +705,7 @@ void melissa_init (const char *field_name,
                 global_data.sobol_requester = malloc ((global_data.nb_parameters + 1) * sizeof(void*));
                 for (i=0; i<global_data.nb_parameters + 1; i++)
                 {
-                    global_data.sobol_requester[i] = zmq_socket (global_data.context, ZMQ_REP);
+                    global_data.sobol_requester[i] = zmq_socket (global_data.context, ZMQ_PULL);
                     if (0 == strcmp(master_node_name, "localhost"))
                     {
                         sprintf (port_name, "tcp://*:4%d", 100 + (global_data.sample_id * *comm_size * (global_data.nb_parameters+1) + *rank * (global_data.nb_parameters+1) + i));
@@ -726,7 +731,7 @@ void melissa_init (const char *field_name,
             //
             //
             global_data.sobol_requester = malloc (sizeof(void*));
-            global_data.sobol_requester[0] = zmq_socket (global_data.context, ZMQ_REQ);
+            global_data.sobol_requester[0] = zmq_socket (global_data.context, ZMQ_PUSH);
             if (0 == strcmp(master_node_name, "localhost"))
             {
                 sprintf (port_name, "tcp://%s:4%d", master_node_name, 100 + (global_data.sample_id * *comm_size * (global_data.nb_parameters+1) + *rank * (global_data.nb_parameters+1) + global_data.sobol_rank - 1));
@@ -882,10 +887,10 @@ void melissa_send (const int  *time_step,
                    const int  *rank,
                    const int  *simu_id)
 {
-    int   i=0, j, k, ret;
+    int   i=0, j=0, k, ret;
     int   buff_size;
     char *buff_ptr;
-    int local_vect_size;
+    int local_vect_size = 0;
     field_data_t  *field_data_ptr = NULL;
 //    MPI_Request *request;
 //    MPI_Status *status;
@@ -909,38 +914,15 @@ void melissa_send (const int  *time_step,
             // gather data from other ranks of the sobol group
             if (global_data.sobol_rank == 0)
             {
-                zmq_pollitem_t items [global_data.nb_parameters + 1];
                 for (i=0; i<global_data.nb_parameters + 1; i++)
                 {
-                    items[i].socket = global_data.sobol_requester[i];
-                    items[i].fd = 0;
-                    items[i].events = ZMQ_POLLIN;
-                    items[i].revents = 0;
-                }
-                j=0;
-                //recv data from other ranks of the sobol group
-                while (j<global_data.nb_parameters + 1)
-                {
-                    zmq_poll (items, global_data.nb_parameters + 1, -1);
-                    for (i=0; i<global_data.nb_parameters + 1; i++)
-                    {
-                        if (items[i].revents & ZMQ_POLLIN)
-                        {
-                            zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
-                            j += 1;
-                        }
-                    }
-                }
-                for (i=0; i<global_data.nb_parameters + 1; i++)
-                {
-                    zmq_send (global_data.sobol_requester[i], &i, sizeof(int), 0);
+                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[i*local_vect_size], local_vect_size * sizeof(double), 0);
                 }
             }
             else // *sobol_rank != 0
             {
                 //send data to rank 0 of the sobol group
                 zmq_send (global_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
-                zmq_recv (global_data.sobol_requester[0], &j, sizeof(int), 0);
 #ifdef BUILD_WITH_PROBES
                 total_bytes_sent += local_vect_size * sizeof(double);
 #endif // BUILD_WITH_PROBES
@@ -957,7 +939,6 @@ void melissa_send (const int  *time_step,
             total_bytes_sent += local_vect_size * sizeof(double);
         }
     }
-
 
     if (global_data.sobol_rank == 0)
     {
