@@ -23,14 +23,12 @@ import time
 import numpy as np
 import subprocess
 import getpass
-from matplotlib import pyplot as plt
-from matplotlib import cm
 from shutil import copyfile
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'
-EXECUTABLE='heatc'
+EXECUTABLE='heatf'
 BATCH_SCHEDULER = "local"
 WALLTIME_SERVER = 600
 NODES_SERVER = 3
@@ -143,7 +141,6 @@ def launch_server(server):
     if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
         os.mkdir(GLOBAL_OPTIONS['working_directory'])
     os.chdir(GLOBAL_OPTIONS['working_directory'])
-    create_run_server(server)
     if BATCH_SCHEDULER == "local":
         server.job_id = subprocess.Popen(('mpirun ' +
                                           ' -n '+str(NODES_SERVER) +
@@ -152,6 +149,7 @@ def launch_server(server):
                                           server.cmd_opt +
                                           ' &').split()).pid
     else:
+        create_run_server(server)
         if (BATCH_SCHEDULER == "Slurm"):
             proc = subprocess.Popen('sbatch "./run_server.sh"',
                                           stdout=subprocess.PIPE,
@@ -253,53 +251,6 @@ def launch_simu(simulation):
 
     os.chdir(GLOBAL_OPTIONS['working_directory'])
 
-#def launch_group(group):
-#    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))):
-#        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
-#    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(group.rank))
-#    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
-#    command = 'mpirun '
-#    for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-#        command += ' '.join(('-n',
-#                             str(NODES_GROUP),
-#                             '../../'+EXECUTABLE,
-#                             str(group.simu_id[i]),
-#                             ' '.join(str(j) for j in group.param_set[i]),
-#                             ': '))
-#    print command[:-2]
-#    if BATCH_SCHEDULER == "local":
-#        group.job_id = subprocess.Popen(command[:-2].split()).pid
-#    else:
-#        create_run_group(group, command)
-#        if (BATCH_SCHEDULER == "Slurm"):
-#            proc = subprocess.Popen('sbatch "./run_group.sh"',
-#                                          stdout=subprocess.PIPE,
-#                                          stderr=subprocess.PIPE,
-#                                          shell=True,
-#                                          universal_newlines=True)
-#            # get the job ID
-#            (out, err) = proc.communicate()
-#            server.job_id = out.split()[-1]
-#        elif (BATCH_SCHEDULER == "CCC"):
-#            proc = subprocess.Popen('ccc_msub -r Simu'+str(group.rank)+' "./run_group.sh"',
-#                                          stdout=subprocess.PIPE,
-#                                          stderr=subprocess.PIPE,
-#                                          shell=True,
-#                                          universal_newlines=True)
-#            # get the job ID
-#            (out, err) = proc.communicate()
-#        elif (BATCH_SCHEDULER == "OAR"):
-#            proc = subprocess.Popen('oarsub -S "./run_group.sh"',
-#                                          stdout=subprocess.PIPE,
-#                                          stderr=subprocess.PIPE,
-#                                          shell=True,
-#                                          universal_newlines=True)
-#            # get the job ID
-#            (out, err) = proc.communicate()
-#            server.job_id = out.split("OAR_JOB_ID=")[1]
-
-#    os.chdir(GLOBAL_OPTIONS['working_directory'])
-
 def check_job(job):
     state = 0
     if BATCH_SCHEDULER == "local":
@@ -369,134 +320,7 @@ def kill_job(job):
         os.system("scancel "+str(job.job_id))
     elif (BATCH_SCHEDULER == "OAR"):
         os.system("oardel "+str(job.job_id))
-    elif (BATCH_SCHEDULER == "local"):
-        os.system("kill "+str(job.job_id))
 
-def heat_visu():
-    if BATCH_SCHEDULER == "local":
-        os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example/STATS')
-        fig = list()
-        nb_time_steps = str(STUDY_OPTIONS['nb_time_steps'])
-        matrix = np.zeros((100,100))
-
-#        for i in range(STUDY_OPTIONS['sampling_size']):
-#            fig.append(plt.figure(len(fig)))
-#            file_name = 'sol000_0000'+str(i)+'.dat'
-#            file=open(file_name)
-#            value = 0
-#            for line in file:
-#                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0][54:])
-#                value += 1
-#            plt.pcolor(matrix,cmap=cm.coolwarm)
-#            plt.colorbar().set_label('Temperature')
-#            fig[len(fig)-1].show()
-#            file.close()
-
-        if (MELISSA_STATS['mean']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_mean.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Means')
-            fig[len(fig)-1].show()
-            file.close()
-
-        if (MELISSA_STATS['variance']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_variance.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Variances')
-            fig[len(fig)-1].show()
-            file.close()
-
-        if (MELISSA_STATS['min']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_min.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Minimum')
-            fig[len(fig)-1].show()
-            file.close()
-
-        if (MELISSA_STATS['max']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_max.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Maximum')
-            fig[len(fig)-1].show()
-            file.close()
-
-        if (MELISSA_STATS['threshold_exceedance']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_threshold.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = int(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Threshold exceedance')
-            fig[len(fig)-1].show()
-            file.close()
-
-        if (MELISSA_STATS['quantile']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat_quantile.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Quantiles')
-            fig[len(fig)-1].show()
-            file.close()
-
-        if (MELISSA_STATS['sobol_indices']):
-            for param in range(STUDY_OPTIONS['nb_parameters']):
-                fig.append(plt.figure(len(fig)))
-                file_name = 'results.heat_sobol'+str(param)+'.'+nb_time_steps
-                file=open(file_name)
-                value = 0
-                for line in file:
-                    matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                    value += 1
-                plt.pcolor(matrix,cmap=cm.coolwarm)
-                plt.colorbar().set_label('Sobol\'s indices '+str(param))
-                fig[len(fig)-1].show()
-                file.close()
-            for param in range(STUDY_OPTIONS['nb_parameters']):
-                fig.append(plt.figure(len(fig)))
-                file_name = 'results.heat_sobol_tot'+str(param)+'.'+nb_time_steps
-                file=open(file_name)
-                value = 0
-                for line in file:
-                    matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                    value += 1
-                plt.pcolor(matrix,cmap=cm.coolwarm)
-                plt.colorbar().set_label('Total order Sobol\'s indices '+str(param))
-                fig[len(fig)-1].show()
-                file.close()
-
-        raw_input()
 
 GLOBAL_OPTIONS = {}
 GLOBAL_OPTIONS['user_name'] = USERNAME
@@ -504,10 +328,10 @@ GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example/
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 6          # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 3          # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100        # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
-STUDY_OPTIONS['field_names'] = ["heat"]     # list of field names
+STUDY_OPTIONS['field_names'] = ["heat1"]     # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
 

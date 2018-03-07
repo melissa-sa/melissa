@@ -34,7 +34,7 @@ program heat
   integer :: comm
   integer :: simu_id = 0, coupling = 1
   integer(kind=MPI_ADDRESS_KIND) :: appnum
-  character(len=5) :: name = C_CHAR_"heat"  !C_NULL_CHAR
+  character(len=5) :: name = C_CHAR_"heat1"  !C_NULL_CHAR
 
   call mpi_init(statinfo)
 
@@ -43,6 +43,7 @@ program heat
   ! - the initial temperature
 
   narg = iargc()
+  param(:) = 0
   if (narg .lt. 3) then
     print*,"Missing parameter"
     stop

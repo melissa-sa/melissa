@@ -97,27 +97,25 @@ static inline void init_options (melissa_options_t *options)
 }
 
 static inline void get_nb_fields (char               *name,
-                 melissa_options_t  *options)
+                                  melissa_options_t  *options)
 {
-    const char  s[2] = ":";
-    char       *temp_char;
+    int i, len;
 
-    if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
+    if (name == NULL || strncmp(&name[0],"-",1) == 0 || strncmp(&name[0],":",1) == 0)
     {
         stats_usage ();
         exit (1);
     }
 
-    /* get the first token */
-    temp_char = strtok (name, s);
-
-    /* walk through other tokens */
-    while( temp_char != NULL )
+    i=0;
+    len = strlen(name);
+    options->nb_fields = 1;
+    for (i = 0; i < len; i++)
     {
-
-        options->nb_fields += 1;
-
-        temp_char = strtok (NULL, s);
+        if (strncmp(&name[i],":",1) == 0)
+        {
+            options->nb_fields += 1;
+        }
     }
 }
 

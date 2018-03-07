@@ -21,7 +21,7 @@ if(BUILD_WITH_FLOWVR)
 endif(BUILD_WITH_FLOWVR)
 
 add_executable(server ${SERVER_SRC} ${SERVER_H} server.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(server ${EXTRA_LIBS} melissa_stats)
+target_link_libraries(server ${EXTRA_LIBS} ${ZMQ_LIBRARY} melissa_stats)
 
 #add_executable(server_sofiia ${SERVER_SRC} ${SERVER_H} server_sofiia.c $<TARGET_OBJECTS:melissa_utils>)
 #target_link_libraries(server_sofiia ${EXTRA_LIBS} melissa_stats)

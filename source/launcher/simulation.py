@@ -241,6 +241,7 @@ class Server(Job):
         self.directory = work_dir
 
     def write_node_name(self):
+        os.chdir(self.directory)
         fichier=open("server_name.txt", "w")
         fichier.write(self.node_name)
         fichier.close()
@@ -274,6 +275,7 @@ class Server(Job):
         """
         os.chdir(self.directory)
         logging.info('launch server')
+        logging.info('server options: '+self.cmd_opt)
         if Job.usr_func['launch_server']:
             Job.usr_func['launch_server'](self)
         else:

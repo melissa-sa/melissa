@@ -367,8 +367,18 @@ int main (int argc, char **argv)
             buf_ptr += sizeof(int);
             field_name_ptr = buf_ptr;
 
+            if (time_step > melissa_options.nb_time_steps || time_step < 1)
+            {
+                fprintf (stderr, "WARNING: bad time stamp (field %s)\n", field_name_ptr);
+                continue;
+            }
+
 //======================== NEW ========================
             field_id = get_field_id(fields, melissa_options.nb_fields, field_name_ptr);
+            if (field_id == -1)
+            {
+                continue;
+            }
             if (first_send[field_id*comm_data.client_comm_size+client_rank] == 0)
             {
                 local_nb_messages += 1;
@@ -564,8 +574,7 @@ int main (int argc, char **argv)
 
     if (end_signal == 0)
     {
-
-    melissa_free (buff_tab_ptr);
+        melissa_free (buff_tab_ptr);
     }
 
     if (comm_data.rank == 0)
@@ -586,19 +595,14 @@ int main (int argc, char **argv)
 
     if (end_signal == 0)
     {
-        for (i=0; i< melissa_options.nb_fields; i++)
-        {
-            finalize_field_data (&fields[i],
-                                 &comm_data,
-                                 &melissa_options
+        finalize_field_data (fields,
+                             &comm_data,
+                             &melissa_options
 #ifdef BUILD_WITH_PROBES
-                                 , &total_write_time
+                             , &total_write_time
 #endif // BUILD_WITH_PROBES
-                                 );
-        }
+                             );
     }
-//    melissa_free (comm_data.rcounts);
-//    melissa_free (comm_data.rdispls);
     melissa_free (first_send);
     free_simu_vector (simulations);
 
