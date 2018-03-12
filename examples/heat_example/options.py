@@ -208,7 +208,7 @@ def launch_simu(simulation):
                                               universal_newlines=True)
                 # get the job ID
                 (out, err) = proc.communicate()
-                server.job_id = out.split()[-1]
+                simulation.job_id = out.split()[-1]
             elif (BATCH_SCHEDULER == "CCC"):
                 proc = subprocess.Popen('ccc_msub -r Simu'+str(simulation.rank)+' "./run_group.sh"',
                                               stdout=subprocess.PIPE,
@@ -225,7 +225,7 @@ def launch_simu(simulation):
                                               universal_newlines=True)
                 # get the job ID
                 (out, err) = proc.communicate()
-                server.job_id = out.split("OAR_JOB_ID=")[1]
+                simulation.job_id = out.split("OAR_JOB_ID=")[1]
 
 
     else:

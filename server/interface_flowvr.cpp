@@ -21,83 +21,60 @@
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
-extern "C" {
-#include "server.h"
-#include "melissa_io.h"
-#include "compute_stats.h"
-#include "melissa_options.h"
-#include "melissa_data.h"
-#include "melissa_utils.h"
-}
+#include <zmq.h>
 
 #ifndef MAX_FIELD_NAME
 #define MAX_FIELD_NAME 128
 #endif
 
-class MelissaInputPort : public flowvr::InputPort
+#ifndef BUILD_WITH_MPI
+typedef int MPI_Comm; /**< Convert MPI_Comm to int when built without MPI */
+#endif // BUILD_WITH_MPI
+
+class MelissaDataPort : public flowvr::InputPort
 {
 public:
-  MelissaInputPort(const char* name="Melissa", int size=1)
+  MelissaDataPort(const char* name="MelissaData")
     : InputPort(name),
       StampT("T",flowvr::TypeInt::create()),
-      StampRank("Rank",flowvr::TypeInt::create()),
-      StampParam("Param",flowvr::TypeArray::create(size,flowvr::TypeInt::create())),
+      StampSobolRank("SobolRank",flowvr::TypeInt::create()),
+      StampSampleID("SampleID",flowvr::TypeInt::create()),
+      StampSize("Size",flowvr::TypeInt::create()),
       StampName("Name",flowvr::TypeString::create())
   {
-    stamps->add(&StampT); // add the stamp T to the stamps list for this port
-    stamps->add(&StampRank); // add the stamp Rank to the stamps list for this port
-    stamps->add(&StampParam); // add the stamp Param to the stamps list for this port
-    stamps->add(&StampName); // add the stamp Name to the stamps list for this port
+      stamps->add(&StampT); // add the stamp T to the stamps list for this port
+      stamps->add(&StampSobolRank);
+      stamps->add(&StampSampleID);
+      stamps->add(&StampSize);
+      stamps->add(&StampName);
   }
   flowvr::StampInfo StampT;
-  flowvr::StampInfo StampRank;
-  flowvr::StampInfo StampParam;
+  flowvr::StampInfo StampSobolRank;
+  flowvr::StampInfo StampSampleID;
+  flowvr::StampInfo StampSize;
   flowvr::StampInfo StampName;
 };
 
 int main(int argc, char** argv)
 {
-    melissa_data_t     melissa_data;
-    melissa_options_t  melissa_options;
-    int              iteration, nb_iterations;
     int              time_step;
     double          *in_vect;
-    int             *parameters;
-    int              i;
-    int              opt;
-    int              client_rank;
-    std::string      field_name;
+    int              msg_size;
+    int              vect_size;
+    int              comm_size;
+    int              sobol_rank;
+    int              sample_id;
+    const int       *coupling;
+    int              rank = 0;
+    std::string      name;
+    char             field_name[MAX_FIELD_NAME];
+    zmq_msg_t        msg;
+    char            *buff_ptr=NULL;
 
-    melissa_get_options (argc, argv, &melissa_options);
-    melissa_print_options (&melissa_options);
-    do
-    {
-        opt = getopt (argc, argv, "p:t:o:e:s:h:n");
-        switch (opt) {
-        case 'n':
-            melissa_data.vect_size = atoi (optarg);
-        default:
-            break;
-        }
-
-    } while (opt != -1);
-    melissa_data.vect_size = 17;
-    init_data (&melissa_data, &melissa_options, melissa_data.vect_size);
-    in_vect    = (double*)malloc (melissa_data.vect_size * sizeof(double));
-    parameters = (int*)   malloc (melissa_options.nb_parameters * sizeof(int));
-
-    nb_iterations = melissa_options.nb_time_steps * melissa_options.nb_simu ;
-
-//    MelissaInputPort port_vector("in_vect",melissa_data.nb_parameters);
-//    flowvr::InputPort port_vector("in_vect");
-//    flowvr::StampInfo StampT("T",flowvr::TypeInt::create());
-//    flowvr::StampInfo StampParam("Param",flowvr::TypeArray::create(melissa_data.nb_parameters,flowvr::TypeInt::create()));
-//    port_vector.stamps->add(&StampT);
-//    port_vector.stamps->add(&StampParam);
-
-    MelissaInputPort port_vector("in_vect", melissa_options.nb_parameters);
+    MelissaDataPort port("data");
     std::vector<flowvr::Port*> ports;
-    ports.push_back(&port_vector);
+    ports.push_back(&port);
+
 
     flowvr::ModuleAPI* flowvr = flowvr::initModule(ports);
     if (flowvr == NULL)
@@ -108,53 +85,38 @@ int main(int argc, char** argv)
     while (flowvr->wait())
     {
         // Get Messages
-        flowvr::Message vect;
-        flowvr->get(&port_vector,vect);
+        flowvr::Message m;
+        flowvr->get(&port,m);
 
         // Read stamps
-        vect.stamps.isValid(port_vector.StampT);
-        vect.stamps.read(port_vector.StampT,time_step);
-//        vect.stamps.read(port_vector.StampRank,client_rank);
-        for (i=0; i<melissa_options.nb_parameters; i++)
-            vect.stamps.read(port_vector.StampParam[i],parameters[i]);
-        vect.stamps.read(port_vector.StampName,field_name);
-
-        // Print stamps
-        printf("parameters");
-        for (i=0; i<melissa_options.nb_parameters; i++)
-            printf(" %d", parameters[i]);
-        printf("\n");
-        printf("t = %d\n", time_step);
-
-        // Read data
-        memcpy(in_vect, vect.data.readAccess(), melissa_data.vect_size * sizeof(double));
-
-        // TODO find an other way to end the loop
-//        if(time_step > melissa_options.nb_time_steps)
-//        {
-//            break;
-//        }
-
-        printf("t = %d, client rank = %d\n", time_step, client_rank);
-        printf(" parameters");
-        for (i=0; i<melissa_options.nb_parameters; i++)
-            printf(" %d", parameters[i]);
-        printf("\n");
-
-        // Compute stats
-        compute_stats (&melissa_data, time_step-1, 1, &in_vect);
-        iteration++;
-        if (iteration >= nb_iterations)
+        m.stamps.isValid(port.StampT);
+        m.stamps.read(port.StampT,time_step);
+        if (time_step > 0)
         {
-            break;
+            m.stamps.read(port.StampSobolRank,sobol_rank);
+            m.stamps.read(port.StampSampleID,sample_id);
+            m.stamps.read(port.StampSize,vect_size);
+            m.stamps.read(port.StampName,name);
+            strcpy(field_name, name.c_str());
         }
+        msg_size = m.data.getSize();
+        zmq_msg_init_size (&msg, msg_size + 4 * sizeof(int) + MAX_FIELD_NAME);
+        buff_ptr = (char*)zmq_msg_data (&msg);
+        memcpy(buff_ptr, &time_step, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy(buff_ptr, &sobol_rank, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy(buff_ptr, &sample_id, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy(buff_ptr, &rank, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy(buff_ptr, &vect_size, sizeof(int));
+        buff_ptr += sizeof(int);
+        memcpy (buff_ptr, field_name, MAX_FIELD_NAME);
+        buff_ptr += MAX_FIELD_NAME;
+        memcpy (buff_ptr, m.data.readAccess(), msg_size);
+        zmq_msg_send (&msg, ?????, 0);
     }
-
-    finalize_stats (&melissa_data);
-
-    free_data (&melissa_data);
-    free (in_vect);
-    free (parameters);
 
     flowvr->close();
 

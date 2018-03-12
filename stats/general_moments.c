@@ -101,9 +101,9 @@ void increment_moments (moments_t *moments,
     int i;
     double m1, m2, m3, m4;
     // gammas
-#pragma omp parallel for schedule(static)
     if (moments->max_order > 0)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             moments->gamma1[i] += in_vect[i];
@@ -111,6 +111,7 @@ void increment_moments (moments_t *moments,
     }
     if (moments->max_order > 1)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             moments->gamma2[i] += pow(in_vect[i], 2);
@@ -118,6 +119,7 @@ void increment_moments (moments_t *moments,
     }
     if (moments->max_order > 2)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             moments->gamma3[i] += pow(in_vect[i], 3);
@@ -125,6 +127,7 @@ void increment_moments (moments_t *moments,
     }
     if (moments->max_order > 3)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             moments->gamma4[i] += pow(in_vect[i], 4);
@@ -188,9 +191,9 @@ void update_moments (moments_t *moments1,
     int i;
     double m1, m2, m3, m4;
     // gammas
-#pragma omp parallel for schedule(static)
     if (updated_moments->max_order > 0)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             updated_moments->gamma1[i] = moments1->gamma1[i] + moments2->gamma1[i];
@@ -198,6 +201,7 @@ void update_moments (moments_t *moments1,
     }
     if (updated_moments->max_order > 1)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             updated_moments->gamma2[i] = moments1->gamma2[i] + moments2->gamma2[i];
@@ -205,6 +209,7 @@ void update_moments (moments_t *moments1,
     }
     if (updated_moments->max_order > 2)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             updated_moments->gamma3[i] = moments1->gamma3[i] + moments2->gamma3[i];
@@ -212,6 +217,7 @@ void update_moments (moments_t *moments1,
     }
     if (updated_moments->max_order > 3)
     {
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             updated_moments->gamma4[i] = moments1->gamma4[i] + moments2->gamma4[i];

@@ -253,6 +253,17 @@ include_directories("${PROJECT_SOURCE_DIR}/utils")
 
 add_subdirectory(utils)
 
+set(ALL_API melissa_api.c
+            melissa_api.h
+            melissa_api_no_mpi.h)
+foreach( _file ${ALL_API})
+  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/api/${_file}" )
+endforeach()
+
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
+
+add_subdirectory(api)
+
 set(STATS_C covariance.c
             variance.c
             mean.c
@@ -312,17 +323,6 @@ add_subdirectory(launcher_saturne)
 add_subdirectory(launcher_telemac2d)
 
 add_subdirectory(gui)
-
-set(ALL_API melissa_api.c
-            melissa_api.h
-            melissa_api_no_mpi.h)
-foreach( _file ${ALL_API})
-  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/api/${_file}" )
-endforeach()
-
-include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
-
-add_subdirectory(api)
 
 add_subdirectory(tests)
 
