@@ -25,10 +25,6 @@ if(BUILD_EXAMPLES_WITH_MPI)
   add_executable(heatc heat.c)
   target_link_libraries(heatc melissa_api heat_utils)
 
-  if(BUILD_WITH_FLOWVR)
-    add_executable(heat_flowvr heat_flowvr.cpp)
-    target_link_libraries(heat_flowvr melissa_api heat_utils)
-  endif(BUILD_WITH_FLOWVR)
 endif(BUILD_EXAMPLES_WITH_MPI)
 
 add_executable(heatf_no_mpi heat_no_mpi.f90 ../heat_example_base/heat_utils_no_mpi.f90)

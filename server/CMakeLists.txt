@@ -15,10 +15,10 @@
 ###################################################################
 
 
-if(BUILD_WITH_FLOWVR)
-  add_executable(interface_flowvr interface_flowvr.cpp $<TARGET_OBJECTS:melissa_utils>)
-  target_link_libraries(interface_flowvr ${EXTRA_LIBS} ${ZMQ_LIBRARY})
-endif(BUILD_WITH_FLOWVR)
+#if(BUILD_WITH_FLOWVR)
+#  add_executable(interface_flowvr interface_flowvr.cpp $<TARGET_OBJECTS:melissa_utils>)
+#  target_link_libraries(interface_flowvr ${EXTRA_LIBS} ${ZMQ_LIBRARY})
+#endif(BUILD_WITH_FLOWVR)
 
 add_executable(server ${SERVER_SRC} ${SERVER_H} server.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(server ${EXTRA_LIBS} ${ZMQ_LIBRARY} melissa_stats)

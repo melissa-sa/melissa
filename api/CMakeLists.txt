@@ -15,6 +15,11 @@
 ###################################################################
 
 
+if(BUILD_WITH_FLOWVR)
+    set(ALL_API ${ALL_API}
+                flowvr_group.cpp)
+endif(BUILD_WITH_FLOWVR)
+
 add_library(melissa_api SHARED ${ALL_API} $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(melissa_api ${ZMQ_LIBRARY} ${EXTRA_LIBS})
 target_compile_options(melissa_api BEFORE PUBLIC -fPIC)

@@ -47,6 +47,18 @@
 typedef int MPI_Comm; /**< Convert MPI_Comm to int when built without MPI */
 #endif // BUILD_WITH_MPI
 
+#ifdef BUILD_WITH_FLOWVR
+void flowvr_init();
+
+void send_to_group(void* buff,
+                   int buff_size);
+
+void recv_from_group(void* buff);
+
+void flowvr_close();
+
+#endif // BUILD_WITH_FLOWVR
+
 /**
  *******************************************************************************
  *
@@ -351,7 +363,7 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
  *
  * @ingroup melissa_api
  *
- * This function initialise connexion with the stats library
+ * This function initialise connexion with melissa server
  *
  *******************************************************************************
  *
@@ -580,6 +592,10 @@ void melissa_init (const char *field_name,
         }
         else
         {
+#ifdef BUILD_WITH_FLOWVR
+            flowvr_init();
+#else // BUILD_WITH_FLOWVR
+
             // get Sobol master node name
             if (global_data.sobol_rank == 0)
             {
@@ -651,6 +667,7 @@ void melissa_init (const char *field_name,
                 }
                 melissa_connect (master_requester, port_name);
             }
+#endif // BUILD_WITH_FLOWVR
         }
     }
     // end sobol only //
@@ -678,6 +695,7 @@ void melissa_init (const char *field_name,
         {
             fprintf (stderr, "Warning: wrong number of data pusher ports");
         }
+#ifndef BUILD_WITH_FLOWVR
         if (global_data.coupling == 0 && first_init != 0)
         {
             if (global_data.sobol == 1)
@@ -718,7 +736,9 @@ void melissa_init (const char *field_name,
                 }
             }
         }
+#endif // BUILD_WITH_FLOWVR
     }
+#ifndef BUILD_WITH_FLOWVR
     else // if *sobol_rank != 0
     {
         if (global_data.coupling == 0 && first_init != 0)
@@ -743,13 +763,16 @@ void melissa_init (const char *field_name,
             melissa_connect (global_data.sobol_requester[0], port_name);
         }
     }
+#endif // BUILD_WITH_FLOWVR
     if (first_init != 0)
     {
         zmq_close (global_data.connexion_requester);
+#ifndef BUILD_WITH_FLOWVR
         if (global_data.coupling == 0)
         {
             zmq_close (master_requester);
         }
+#endif // BUILD_WITH_FLOWVR
     }
     if (global_data.sobol)
     {
@@ -914,15 +937,23 @@ void melissa_send (const int  *time_step,
             // gather data from other ranks of the sobol group
             if (global_data.sobol_rank == 0)
             {
+#ifdef BUILD_WITH_FLOWVR
+                recv_from_group ((void*)global_data.buffer_sobol);
+#else // BUILD_WITH_FLOWVR
                 for (i=0; i<global_data.nb_parameters + 1; i++)
                 {
                     zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[(i+1)*local_vect_size], local_vect_size * sizeof(double), 0);
                 }
+#endif // BUILD_WITH_FLOWVR
             }
             else // *sobol_rank != 0
             {
                 //send data to rank 0 of the sobol group
+#ifdef BUILD_WITH_FLOWVR
+                send_to_group (send_vect, local_vect_size * sizeof(double));
+#else // BUILD_WITH_FLOWVR
                 zmq_send (global_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
+#endif // BUILD_WITH_FLOWVR
 #ifdef BUILD_WITH_PROBES
                 total_bytes_sent += local_vect_size * sizeof(double);
 #endif // BUILD_WITH_PROBES
@@ -1046,18 +1077,21 @@ void melissa_finalize (void)
 {
     int i;
 
-#ifndef COUPLING
     if (global_data.sobol_rank == 0)
     {
         if (global_data.sobol == 1 && global_data.coupling == 0)
         {
+#ifdef BUILD_WITH_FLOWVR
+            flowvr_close();
+#else // BUILD_WITH_FLOWVR
             for (i=1; i<global_data.nb_parameters+1; i++)
             {
                 zmq_close (global_data.sobol_requester[i]);
             }
+#endif // BUILD_WITH_FLOWVR
         }
     }
-#endif
+
     free (node_names);
     free_field_data(field_data);
     if (global_data.sobol == 1 && global_data.coupling == 0)
@@ -1065,9 +1099,7 @@ void melissa_finalize (void)
         zmq_close (global_data.sobol_requester[0]);
     }
     zmq_ctx_term (global_data.context);
-#ifndef ZEROCOPY
-//    free(global_data.buffer);
-#endif // ZEROCOPY
+
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)
     {
         free(global_data.buffer_sobol);

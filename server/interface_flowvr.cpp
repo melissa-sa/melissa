@@ -115,7 +115,7 @@ int main(int argc, char** argv)
         memcpy (buff_ptr, field_name, MAX_FIELD_NAME);
         buff_ptr += MAX_FIELD_NAME;
         memcpy (buff_ptr, m.data.readAccess(), msg_size);
-        zmq_msg_send (&msg, ?????, 0);
+//        zmq_msg_send (&msg, ?????, 0);
     }
 
     flowvr->close();
