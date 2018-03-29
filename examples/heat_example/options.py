@@ -29,6 +29,7 @@ from shutil import copyfile
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'
+BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'
 EXECUTABLE='heatf'
 BATCH_SCHEDULER = "local"
@@ -191,7 +192,7 @@ def launch_simu(simulation):
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
-                                 '../../'+EXECUTABLE,
+                                 '@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
@@ -238,13 +239,13 @@ def launch_simu(simulation):
                 command = ' '.join(('mpirun',
                                      '-n',
                                      str(NODES_GROUP),
-                                     '../../'+EXECUTABLE,
+                                     '@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
                                      str(simulation.simu_id),
                                      ' '.join(str(i) for i in simulation.param_set)))
                 print command
                 simulation.job_id = subprocess.Popen(command.split()).pid
             else:
-                command = ' '.join(('./'+executable,
+                command = ' '.join(('@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
                                     str(0),
                                     str(simulation.rank),
                                     ' '.join(str(i) for i in simulation.param_set)))
@@ -325,7 +326,7 @@ def kill_job(job):
 
 def heat_visu():
     if BATCH_SCHEDULER == "local":
-        os.chdir('@CMAKE_BINARY_DIR@/examples/heat_example/STATS')
+        os.chdir('@CMAKE_INSTALL_PREFIX@/examples/heat_example/STATS')
         fig = list()
         nb_time_steps = str(STUDY_OPTIONS['nb_time_steps'])
         matrix = np.zeros((100,100))
@@ -451,7 +452,7 @@ def heat_visu():
 
 GLOBAL_OPTIONS = {}
 GLOBAL_OPTIONS['user_name'] = USERNAME
-GLOBAL_OPTIONS['working_directory'] = '@CMAKE_BINARY_DIR@/examples/heat_example/STATS'
+GLOBAL_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/examples/heat_example/STATS'
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of the study

@@ -23,7 +23,7 @@ endif(BUILD_WITH_FLOWVR)
 add_library(melissa_api SHARED ${ALL_API} $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(melissa_api ${ZMQ_LIBRARY} ${EXTRA_LIBS})
 target_compile_options(melissa_api BEFORE PUBLIC -fPIC)
-install(TARGETS melissa_api DESTINATION lib)
+install(TARGETS melissa_api LIBRARY DESTINATION lib)
 
 if(BUILD_WITH_MPI)
     install(FILES melissa_api.h DESTINATION include)

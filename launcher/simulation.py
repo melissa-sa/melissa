@@ -235,7 +235,7 @@ class Server(Job):
         self.first_job_id = ''
 #        self.create_options()
         self.lock = RLock()
-        self.path = '@CMAKE_BINARY_DIR@/server'
+        self.path = '@CMAKE_INSTALL_PREFIX@/bin'
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir

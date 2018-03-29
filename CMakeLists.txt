@@ -88,9 +88,9 @@ if(INSTALL_ZMQ)
 #    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
     URL https://github.com/zeromq/libzmq/releases/download/v4.2.1/zeromq-4.2.1.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}/ZeroMQ
   )
-  set(ZMQ_DIR ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ CACHE FORCE " ")
+  set(ZMQ_DIR ${CMAKE_INSTALL_PREFIX}/ZeroMQ CACHE FORCE " ")
 #  mark_as_advanced(FORCE ZMQ_DIR)
   set(ZMQ_STATIC_LIBRARY ${ZMQ_DIR}/lib/libzmq-static.a CACHE INTERNAL " ")
   set(ZMQ_LIBRARY ${ZMQ_DIR}/lib/libzmq.so CACHE INTERNAL " ")

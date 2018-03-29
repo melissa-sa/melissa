@@ -938,7 +938,7 @@ void melissa_send (const int  *time_step,
             if (global_data.sobol_rank == 0)
             {
 #ifdef BUILD_WITH_FLOWVR
-                recv_from_group ((void*)global_data.buffer_sobol);
+                recv_from_group ((void*)&global_data.buffer_sobol[local_vect_size]);
 #else // BUILD_WITH_FLOWVR
                 for (i=0; i<global_data.nb_parameters + 1; i++)
                 {

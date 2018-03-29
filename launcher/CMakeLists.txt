@@ -24,5 +24,5 @@ file(GLOB
 
 foreach( _file ${LAUNCHER_SRC})
     configure_file(${_file} ${_file} @ONLY)
-    install(FILES ${_file} DESTINATION launcher)
+    install(FILES ${CMAKE_BINARY_DIR}/launcher/${_file} DESTINATION launcher)
 endforeach()

@@ -31,14 +31,14 @@ from ctypes import cdll, create_string_buffer
 #from options import STUDY_OPTIONS as stdy_opt
 #from options import MELISSA_STATS as ml_stats
 #from options import USER_FUNCTIONS as usr_func
-imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher/simulation.py')
+imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
 from simulation import Group
 from simulation import SobolGroup
 from simulation import Job
 
-get_message = cdll.LoadLibrary('@CMAKE_BINARY_DIR@/utils/libget_message.so')
+get_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/launcher/libget_message.so')
 
 # Jobs and executions status
 from simulation import NOT_SUBMITTED

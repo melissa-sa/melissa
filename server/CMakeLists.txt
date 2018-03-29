@@ -22,6 +22,7 @@
 
 add_executable(server ${SERVER_SRC} ${SERVER_H} server.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(server ${EXTRA_LIBS} ${ZMQ_LIBRARY} melissa_stats)
+INSTALL(TARGETS server RUNTIME DESTINATION bin)
 
 #add_executable(server_sofiia ${SERVER_SRC} ${SERVER_H} server_sofiia.c $<TARGET_OBJECTS:melissa_utils>)
 #target_link_libraries(server_sofiia ${EXTRA_LIBS} melissa_stats)

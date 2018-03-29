@@ -15,25 +15,36 @@
 ###################################################################
 
 
- configure_file(options.py options.py @ONLY)
- configure_file(heat_base.c heat_base.c COPYONLY)
- configure_file(heat_base.f90 heat_base.f90 COPYONLY)
+configure_file(options.py options_base.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/options_base.py DESTINATION examples/heat_example)
+configure_file(heat_base.c heat_base.c COPYONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_base.c DESTINATION examples/heat_example/src)
+configure_file(heat_base.f90 heat_base.f90 COPYONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_base.f90 DESTINATION examples/heat_example/src)
+configure_file(heat_base.f90 heat_ulits.f90 COPYONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_ulits.f90 DESTINATION examples/heat_example/src)
+configure_file(heat_base.f90 heat_ulits_no_mpi.f90 COPYONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_ulits_no_mpi.f90 DESTINATION examples/heat_example/src)
 
- if(BUILD_WITH_MPI)
+if(BUILD_WITH_MPI)
    add_library(heat_utils heat_utils.f90)
    target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
    target_link_libraries(heat_utils ${EXAMPLES_LIBS})
+   install(TARGETS heat_utils ARCHIVE DESTINATION examples/heat_example/lib)
 
    add_executable(heatf_base heat_base.f90)
    target_link_libraries(heatf_base ${EXAMPLES_LIBS} heat_utils)
+   install(TARGETS heatf_base RUNTIME DESTINATION examples/heat_example/bin)
 
    add_executable(heatc_base heat_base.c)
    target_link_libraries(heatc_base ${EXAMPLES_LIBS} heat_utils)
- endif(BUILD_WITH_MPI)
+   install(TARGETS heatc_base RUNTIME DESTINATION examples/heat_example/bin)
+endif(BUILD_WITH_MPI)
 
- add_library(heat_utils_no_mpi heat_utils_no_mpi.f90)
- target_compile_options(heat_utils_no_mpi BEFORE PUBLIC -fPIC)
- target_link_libraries(heat_utils_no_mpi ${EXAMPLES_LIBS})
+add_library(heat_utils_no_mpi heat_utils_no_mpi.f90)
+target_compile_options(heat_utils_no_mpi BEFORE PUBLIC -fPIC)
+target_link_libraries(heat_utils_no_mpi ${EXAMPLES_LIBS})
+install(TARGETS heat_utils_no_mpi ARCHIVE DESTINATION examples/heat_example/lib)
 
- add_test(TestHeatcBase ./heatc_base 5)
- add_test(TestHeatfBase ./heatf_base 5)
+add_test(TestHeatcBase ./heatc_base 5)
+add_test(TestHeatfBase ./heatf_base 5)
