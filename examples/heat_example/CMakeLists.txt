@@ -45,4 +45,4 @@ add_executable(heatc_no_mpi heat_no_mpi.c)
 target_link_libraries(heatc_no_mpi melissa_api heat_utils_no_mpi)
 install(TARGETS heatc_no_mpi RUNTIME DESTINATION examples/heat_example/bin)
 
-add_test(TestHeatc python ../../launcher/melissa_launcher.py .)
+add_test(TestHeatc python ${CMAKE_INSTALL_PREFIX}/launcher/melissa_launcher.py ${CMAKE_INSTALL_PREFIX}/examples/heat_example)

@@ -26,3 +26,12 @@ foreach( _file ${LAUNCHER_SRC})
     configure_file(${_file} ${_file} @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/launcher/${_file} DESTINATION launcher)
 endforeach()
+install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
+        DESTINATION launcher
+        PERMISSIONS OWNER_WRITE
+                    OWNER_READ
+                    OWNER_EXECUTE
+                    GROUP_READ
+                    GROUP_EXECUTE
+                    WORLD_READ
+                    WORLD_EXECUTE)

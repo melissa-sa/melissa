@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 ###################################################################
 #                            Melissa                              #
 #-----------------------------------------------------------------#
@@ -20,7 +22,7 @@
     Main module of Melissa Launcher.
 
     usage:
-    pyton melissa_launcher.py path/to/options.py
+    melissa_launcher.py path/to/options.py
 """
 
 import os

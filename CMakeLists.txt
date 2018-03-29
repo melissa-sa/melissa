@@ -330,6 +330,10 @@ if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif(BUILD_EXAMPLES)
 
+# set environement variables
+configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL_PREFIX})
+
 if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
     message(FATAL_ERROR "Doxygen needed to build the documentation. Please install it correctly")
