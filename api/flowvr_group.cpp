@@ -1,7 +1,7 @@
 
 #include "flowvr/module.h"
 
-void FlowVRInit();
+void FlowVRInit(int *comm_size, int *rank);
 
 void SendToGroup(void* buff,
                  int buff_size);
@@ -13,9 +13,9 @@ void FlowVRClose();
 std::vector<flowvr::Port*> ports;
 flowvr::ModuleAPI*         module;
 
-extern "C" void flowvr_init()
+extern "C" void flowvr_init(int *comm_size, int *rank)
 {
-    FlowVRInit();
+    FlowVRInit(comm_size, rank);
     return;
 }
 
@@ -64,8 +64,11 @@ public:
 };
 MelissaOutPort OutPort("MelissaOut");
 
-void FlowVRInit()
+void FlowVRInit(int *comm_size, int *rank)
 {
+#ifdef BUILD_WITH_MPI
+    flowvr::Parallel::init(*rank, *comm_size);
+#endif // BUILD_WITH_MPI
     module = flowvr::initModule(ports);
     if (module == NULL)
     {

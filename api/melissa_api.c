@@ -48,7 +48,7 @@ typedef int MPI_Comm; /**< Convert MPI_Comm to int when built without MPI */
 #endif // BUILD_WITH_MPI
 
 #ifdef BUILD_WITH_FLOWVR
-void flowvr_init();
+void flowvr_init(int *comm_size, int *rank);
 
 void send_to_group(void* buff,
                    int buff_size);
@@ -56,7 +56,6 @@ void send_to_group(void* buff,
 void recv_from_group(void* buff);
 
 void flowvr_close();
-
 #endif // BUILD_WITH_FLOWVR
 
 /**
@@ -593,7 +592,7 @@ void melissa_init (const char *field_name,
         else
         {
 #ifdef BUILD_WITH_FLOWVR
-            flowvr_init();
+            flowvr_init(comm_size, rank);
 #else // BUILD_WITH_FLOWVR
 
             // get Sobol master node name
