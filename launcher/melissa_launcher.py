@@ -36,6 +36,7 @@ def main():
         Import options from command line, and launch Melissa study
     """
     cwd = os.getcwd()
+    sys.path.append('@CMAKE_INSTALL_PREFIX@/share/launcher')
     if len(sys.argv) == 2:
         options_path = sys.argv[1]
     else:
@@ -49,7 +50,7 @@ def main():
         from options import STUDY_OPTIONS as stdy_opt
         from options import MELISSA_STATS as ml_stats
         from options import USER_FUNCTIONS as usr_func
-        from @CMAKE_INSTALL_PREFIX@/share/launcher/study import Study
+        from study import Study
         melissa_study = Study(glob_opt, stdy_opt, ml_stats, usr_func)
         melissa_study.run()
 

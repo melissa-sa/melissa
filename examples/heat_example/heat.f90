@@ -32,7 +32,7 @@ program heat
   real*8,dimension(5) :: param
   character(len=32) :: arg
   integer :: comm
-  integer :: simu_id = 0, coupling = 0
+  integer :: simu_id = 0, coupling = 1
   integer(kind=MPI_ADDRESS_KIND) :: appnum
   character(len=5) :: name = C_CHAR_"heat1"  !C_NULL_CHAR
 

@@ -63,25 +63,57 @@ if BUILD_WITH_FLOWVR == "ON":
           self.ports["endIt"] = list( self.endIt)
 
     def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
-        merge = [FilterMerge("merge"+str(i)) for i in range(nb_proc_simu)]
-        merge_endit = FilterSignalAnd("merge_endit")
-
-        group = [Simu(executable+" "+args[i], "simu"+str(i), nb_proc_simu) for i in range(nb_parameters+2)]
-
-        presignal = FilterPreSignal("presignal", nb = 1)
-        merge_endit.getPort("out").link(presignal.getPort('in'))
-
-        for j, simu in enumerate(group):
-            if j == 0:
-                for i, processus in enumerate(simu.processus):
-                    merge[i].getPort("out").link(processus.getPort("MelissaIn"))
-                    processus.getPort("endIt").link(merge_endit.newInputPort())
-            else:
-                for i, processus in enumerate(simu.processus):
-                    processus.getPort("MelissaOut").link(merge[i].newInputPort())
-                presignal.getPort('out').link(simu.getPort("beginIt"))
-
-        app.generate_xml("group"+str(group_id))
+        content = ""
+        file=open("create_group"+str(group_id)+".py", "w")
+        content += "import sys                                                                                                                  \n"
+        content += "from flowvrapp import *                                                                                                     \n"
+        content += "from filters import *                                                                                                       \n"
+        content += "                                                                                                                            \n"
+        content += "class Simu(Composite):                                                                                                      \n"
+        content += "    def __init__(self, cmdline, prefix, np):                                                                                \n"
+        content += "      Composite.__init__(self)                                                                                              \n"
+        content += "      localhosts = ','.join('localhost' for i in range(np))                                                                 \n"
+        content += "      putrun = FlowvrRunMPI(cmdline, hosts = localhosts, prefix = prefix, mpistack = 'openmpi')                             \n"
+        content += "                                                                                                                            \n"
+        content += "      self.processus = []                                                                                                   \n"
+        content += "      self.beginIt = []                                                                                                     \n"
+        content += "      self.endIt = []                                                                                                       \n"
+        content += "      for i in range(np):                                                                                                   \n"
+        content += "          self.processus.append(Module(prefix + '/' + str(i), run = putrun))                                                \n"
+        content += "          self.processus[i].addPort('MelissaOut', direction = 'out')                                                        \n"
+        content += "          self.processus[i].addPort('MelissaIn', direction = 'in')                                                          \n"
+        content += "          self.beginIt.append(self.processus[i].getPort('beginIt'))                                                         \n"
+        content += "          self.endIt.append(self.processus[i].getPort('endIt'))                                                             \n"
+        content += "                                                                                                                            \n"
+        content += "      self.ports['beginIt'] = list( self.beginIt)                                                                           \n"
+        content += "      self.ports['endIt'] = list( self.endIt)                                                                               \n"
+        content += "                                                                                                                            \n"
+        content += "executable = '"+str(executable)+"'                                                                                          \n"
+        content += "args = "+str(args)+"                                                                                                        \n"
+        content += "group_id = "+str(group_id)+"                                                                                                \n"
+        content += "nb_proc_simu = "+str(nb_proc_simu)+"                                                                                        \n"
+        content += "nb_parameters = "+str(nb_proc_simu)+"                                                                                       \n"
+        content += "merge = [FilterMerge('group'+str(group_id)+'merge'+str(i)) for i in range(nb_proc_simu)]                                    \n"
+        content += "merge_endit = FilterSignalAnd('group'+str(group_id)+'merge_endit')                                                          \n"
+        content += "                                                                                                                            \n"
+        content += "group = [Simu(executable+' '+args[i], 'group'+str(group_id)+'simu'+str(i), nb_proc_simu) for i in range(nb_parameters+2)]   \n"
+        content += "                                                                                                                            \n"
+        content += "presignal = FilterPreSignal('group'+str(group_id)+'presignal', nb = 1)                                                      \n"
+        content += "merge_endit.getPort('out').link(presignal.getPort('in'))                                                                    \n"
+        content += "                                                                                                                            \n"
+        content += "for j, simu in enumerate(group):                                                                                            \n"
+        content += "    if j == 0:                                                                                                              \n"
+        content += "        for i, processus in enumerate(simu.processus):                                                                      \n"
+        content += "            merge[i].getPort('out').link(processus.getPort('MelissaIn'))                                                    \n"
+        content += "            processus.getPort('endIt').link(merge_endit.newInputPort())                                                     \n"
+        content += "    else:                                                                                                                   \n"
+        content += "        for i, processus in enumerate(simu.processus):                                                                      \n"
+        content += "            processus.getPort('MelissaOut').link(merge[i].newInputPort())                                                   \n"
+        content += "        presignal.getPort('out').link(simu.getPort('beginIt'))                                                              \n"
+        content += "                                                                                                                            \n"
+        content += "app.generate_xml('group'+str(group_id))                                                                                     \n"
+        file.write(content)
+        file.close()
 
 def create_run_server(server):
     # signal handler definition
@@ -92,91 +124,91 @@ def create_run_server(server):
     signal_handler+="killall -USR1 melissa_server          \n"
     signal_handler+="wait %1                               \n"
     signal_handler+="}                                     \n"
-    contenu = ""
-    fichier=open("run_server.sh", "w")
-    contenu += "#!/bin/bash                                                        \n"
+    content = ""
+    file=open("run_server.sh", "w")
+    content += "#!/bin/bash                                                        \n"
     if (BATCH_SCHEDULER == "Slurm"):
-        contenu += "#SBATCH -N "+str(NODES_SERVER)+"                                   \n"
-        contenu += "#SBATCH --ntasks-per-node=14                                       \n"
-        contenu += "#SBATCH --mem=0                                                    \n"
-        contenu += "#SBATCH --time="+str(WALLTIME_SERVER)+"                            \n"
-        contenu += "#SBATCH -o melissa.%j.log                                          \n"
-        contenu += "#SBATCH -e melissa.%j.err                                          \n"
-        contenu += "#SBATCH --job-name=Melissa                                         \n"
-        contenu += "#SBATCH --signal=B:SIGUSR2@300                                     \n"
-        contenu += "module load openmpi/2.0.1                                          \n"
-        contenu += "module load ifort/2017                                             \n"
+        content += "#SBATCH -N "+str(NODES_SERVER)+"                                   \n"
+        content += "#SBATCH --ntasks-per-node=14                                       \n"
+        content += "#SBATCH --mem=0                                                    \n"
+        content += "#SBATCH --time="+str(WALLTIME_SERVER)+"                            \n"
+        content += "#SBATCH -o melissa.%j.log                                          \n"
+        content += "#SBATCH -e melissa.%j.err                                          \n"
+        content += "#SBATCH --job-name=Melissa                                         \n"
+        content += "#SBATCH --signal=B:SIGUSR2@300                                     \n"
+        content += "module load openmpi/2.0.1                                          \n"
+        content += "module load ifort/2017                                             \n"
     elif (BATCH_SCHEDULER == "OAR"):
-        contenu += "#OAR -l nodes="+str(NODES_SERVER)+",walltime="+str(WALLTIME_SERVER)+ "\n"
-        contenu += "#OAR -O melissa.%jobid%.log                                        \n"
-        contenu += "#OAR -E melissa.%jobid%.err                                        \n"
-        contenu += "#OAR -n Melissa                                                    \n"
-        contenu += "#OAR --checkpoint 300                                              \n"
-        contenu += "#OAR --signal=SIGUSR2                                              \n"
-        contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
-        contenu += "ulimit -s unlimited                                                \n"
-        contenu += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
+        content += "#OAR -l nodes="+str(NODES_SERVER)+",walltime="+str(WALLTIME_SERVER)+ "\n"
+        content += "#OAR -O melissa.%jobid%.log                                        \n"
+        content += "#OAR -E melissa.%jobid%.err                                        \n"
+        content += "#OAR -n Melissa                                                    \n"
+        content += "#OAR --checkpoint 300                                              \n"
+        content += "#OAR --signal=SIGUSR2                                              \n"
+        content += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
+        content += "ulimit -s unlimited                                                \n"
+        content += "export OMPI_MCA_orte_rsh_agent=oarsh                               \n"
     elif (BATCH_SCHEDULER == "CCC"):
-        contenu += "#MSUB -n "+str(NODES_SERVER*16)+"                                  \n"
-        contenu += "#MSUB -o melissa.%I.log                                            \n"
-        contenu += "#MSUB -e melissa.%I.err                                            \n"
-        contenu += "#MSUB -T "+str(WALLTIME_SERVER)+"                                  \n"
-        contenu += "#MSUB -A gen10064                                                  \n"
-        contenu += "#MSUB -r Melissa                                                   \n"
-        contenu += "#MSUB -q standard                                                  \n"
-        contenu += "#MSUB --signal=B:SIGUSR2@300                                       \n"
-    contenu += signal_handler
-    contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "STOP=0                                                             \n"
-    contenu += "# run Melissa                                                      \n"
-    contenu += "echo  \"### Launch Melissa\"                                       \n"
+        content += "#MSUB -n "+str(NODES_SERVER*16)+"                                  \n"
+        content += "#MSUB -o melissa.%I.log                                            \n"
+        content += "#MSUB -e melissa.%I.err                                            \n"
+        content += "#MSUB -T "+str(WALLTIME_SERVER)+"                                  \n"
+        content += "#MSUB -A gen10064                                                  \n"
+        content += "#MSUB -r Melissa                                                   \n"
+        content += "#MSUB -q standard                                                  \n"
+        content += "#MSUB --signal=B:SIGUSR2@300                                       \n"
+    content += signal_handler
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += "STOP=0                                                             \n"
+    content += "# run Melissa                                                      \n"
+    content += "echo  \"### Launch Melissa\"                                       \n"
     if (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
-        contenu += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
-        contenu += "cd stats${SLURM_JOB_ID}.resu                                       \n"
+        content += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
+        content += "cd stats${SLURM_JOB_ID}.resu                                       \n"
     elif (BATCH_SCHEDULER == "OAR"):
-        contenu += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
-        contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
-    contenu += "trap handler USR2                                                  \n"
-    contenu += "mpirun "+server.path+"/melissa_server "+server.cmd_opt+" &         \n"
-    contenu += "wait %1                                                            \n"
-    contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "cd ..                                                              \n"
-    fichier.write(contenu)
-    fichier.close()
+        content += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
+        content += "cd stats${OAR_JOB_ID}.resu                                         \n"
+    content += "trap handler USR2                                                  \n"
+    content += "mpirun "+server.path+"/melissa_server "+server.cmd_opt+" &         \n"
+    content += "wait %1                                                            \n"
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += "cd ..                                                              \n"
+    file.write(content)
+    file.close()
     os.system("chmod 744 run_server.sh")
 
 def create_run_group(simulation, command):
-    contenu = ""
-    fichier=open("run_group.sh", "w")
-    contenu += "#!/bin/bash                                                        \n"
+    content = ""
+    file=open("run_group.sh", "w")
+    content += "#!/bin/bash                                                        \n"
     if (BATCH_SCHEDULER == "Slurm"):
-        contenu += "#SBATCH -N "+str(NODES_GROUP)+"                                    \n"
-        contenu += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
-        contenu += "#SBATCH --partition=cn                                             \n"
-        contenu += "#SBATCH --time="+str(WALLTIME_SIMU)+"                              \n"
-        contenu += "#SBATCH -o simu.%j.log                                          \n"
-        contenu += "#SBATCH -e simu.%j.err                                          \n"
-        contenu += "module load openmpi/2.0.1                                          \n"
-        contenu += "module load ifort/2017                                             \n"
+        content += "#SBATCH -N "+str(NODES_GROUP)+"                                    \n"
+        content += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
+        content += "#SBATCH --partition=cn                                             \n"
+        content += "#SBATCH --time="+str(WALLTIME_SIMU)+"                              \n"
+        content += "#SBATCH -o simu.%j.log                                          \n"
+        content += "#SBATCH -e simu.%j.err                                          \n"
+        content += "module load openmpi/2.0.1                                          \n"
+        content += "module load ifort/2017                                             \n"
     elif (BATCH_SCHEDULER == "OAR"):
-        contenu += "#OAR -l nodes="+str(NODES_GROUP)+",walltime="+str(WALLTIME_SIMU)+ "\n"
-        contenu += "#OAR -O simu.%jobid%.log                                        \n"
-        contenu += "#OAR -E simu.%jobid%.err                                        \n"
-        contenu += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
-        contenu += "ulimit -s unlimited                                                \n"
+        content += "#OAR -l nodes="+str(NODES_GROUP)+",walltime="+str(WALLTIME_SIMU)+ "\n"
+        content += "#OAR -O simu.%jobid%.log                                        \n"
+        content += "#OAR -E simu.%jobid%.err                                        \n"
+        content += "module load openmpi/1.8.5_gcc-4.4.6                                \n"
+        content += "ulimit -s unlimited                                                \n"
     elif (BATCH_SCHEDULER == "CCC"):
-        contenu += "#MSUB -n "+str(16*NODES_GROUP)+"                \n"
-        contenu += "#MSUB -o simu.%I.log                                                               \n"
-        contenu += "#MSUB -e simu.%I.err                                                               \n"
-        contenu += "#MSUB -T "+str(WALLTIME_SIMU)+"                                                       \n"
-        contenu += "#MSUB -A gen10064                                                                     \n"
-        contenu += "#MSUB -q standard                                                                     \n"
-    contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += command + "\n"
-    contenu += "date +\"%d/%m/%y %T\"                                              \n"
-    contenu += "exit $?                                                            \n"
-    fichier.write(contenu)
-    fichier.close()
+        content += "#MSUB -n "+str(16*NODES_GROUP)+"                \n"
+        content += "#MSUB -o simu.%I.log                                                               \n"
+        content += "#MSUB -e simu.%I.err                                                               \n"
+        content += "#MSUB -T "+str(WALLTIME_SIMU)+"                                                       \n"
+        content += "#MSUB -A gen10064                                                                     \n"
+        content += "#MSUB -q standard                                                                     \n"
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += command + "\n"
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += "exit $?                                                            \n"
+    file.write(content)
+    file.close()
     os.system("chmod 744 run_group.sh")
 
 def draw_param_set():
@@ -238,23 +270,24 @@ def launch_simu(simulation):
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
-                                 '@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
+                                 '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         print command[:-2]
         if BATCH_SCHEDULER == "local":
-            if BUILD_WITH_FLOWVR == 'ON':
-                args = []
-                for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-                    args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
-                create_flowvr_group('@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
-                                    args,
-                                    simulation.rank,
-                                    int(NODES_GROUP),
-                                    STUDY_OPTIONS['nb_parameters'])
-#                simulation.job_id = subprocess.Popen('export PATH=/home/tterraz/Programmes/FlowVR/flowvr-ex/install:$PATH & source /home/tterraz/Programmes/FlowVR/flowvr-ex/install/bin/flowvr-suite-config.sh & flowvr group'+str(simulation.rank)).pid
-            else:
+#            if BUILD_WITH_FLOWVR == 'ON':
+#                args = []
+#                for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+#                    args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
+#                create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+#                                    args,
+#                                    simulation.rank,
+#                                    int(NODES_GROUP),
+#                                    STUDY_OPTIONS['nb_parameters'])
+#                os.system('python create_group'+str(simulation.rank)+'.py')
+#                simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+#            else:
                 simulation.job_id = subprocess.Popen(command[:-2].split()).pid
         else:
             create_run_group(simulation, command)
@@ -296,13 +329,13 @@ def launch_simu(simulation):
                 command = ' '.join(('mpirun',
                                      '-n',
                                      str(NODES_GROUP),
-                                     '@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
+                                     '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
                                      str(simulation.simu_id),
                                      ' '.join(str(i) for i in simulation.param_set)))
                 print command
                 simulation.job_id = subprocess.Popen(command.split()).pid
             else:
-                command = ' '.join(('@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
+                command = ' '.join(('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
                                     str(0),
                                     str(simulation.rank),
                                     ' '.join(str(i) for i in simulation.param_set)))
@@ -383,7 +416,7 @@ def kill_job(job):
 
 def heat_visu():
     if BATCH_SCHEDULER == "local":
-        os.chdir('@CMAKE_INSTALL_PREFIX@/examples/heat_example/STATS')
+        os.chdir('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS')
         fig = list()
         nb_time_steps = str(STUDY_OPTIONS['nb_time_steps'])
         matrix = np.zeros((100,100))
@@ -509,7 +542,7 @@ def heat_visu():
 
 GLOBAL_OPTIONS = {}
 GLOBAL_OPTIONS['user_name'] = USERNAME
-GLOBAL_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/examples/heat_example/STATS'
+GLOBAL_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS'
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of the study

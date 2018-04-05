@@ -1077,27 +1077,30 @@ void melissa_finalize (void)
 {
     int i;
 
+#ifdef BUILD_WITH_FLOWVR
+    if (global_data.sobol == 1 && global_data.coupling == 0)
+    {
+        flowvr_close();
+    }
+#else // BUILD_WITH_FLOWVR
     if (global_data.sobol_rank == 0)
     {
         if (global_data.sobol == 1 && global_data.coupling == 0)
         {
-#ifdef BUILD_WITH_FLOWVR
-            flowvr_close();
-#else // BUILD_WITH_FLOWVR
             for (i=1; i<global_data.nb_parameters+1; i++)
             {
                 zmq_close (global_data.sobol_requester[i]);
             }
-#endif // BUILD_WITH_FLOWVR
         }
     }
 
-    free (node_names);
-    free_field_data(field_data);
     if (global_data.sobol == 1 && global_data.coupling == 0)
     {
         zmq_close (global_data.sobol_requester[0]);
     }
+#endif // BUILD_WITH_FLOWVR
+    free (node_names);
+    free_field_data(field_data);
     zmq_ctx_term (global_data.context);
 
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)
