@@ -44,7 +44,7 @@ def launch_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/server ' +
+                                      '/melissa_server ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
     os.chdir(GLOBAL_OPTIONS['working_directory'])

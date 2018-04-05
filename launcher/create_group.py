@@ -28,26 +28,27 @@ if BUILD_WITH_FLOWVR == "ON":
 class Simu(Composite):
     def __init__(self, cmdline, prefix, np):
       Composite.__init__(self)
-      putrun = FlowvrRunMPI(cmdline, hosts = "", prefix = prefix, mpistack = "openmpi")
+      localhosts = ','.join("localhost" for i in range(np))
+      putrun = FlowvrRunMPI(cmdline, hosts = localhosts, prefix = prefix, mpistack = "openmpi")
 
       self.processus = []
       for i in range(np):
           self.processus.append(Module(prefix + "/" + str(i), run = putrun))
-          self.processus[i].addPort("output", direction = 'out')
-          self.processus[i].addPort("input", direction = 'in')
+          self.processus[i].addPort("MelissaOut", direction = 'out')
+          self.processus[i].addPort("MelissaIn", direction = 'in')
 
-def create_flowvr_group(executable, group_id, nb_proc_simu, nb_parameters):
+def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
     merge = [FilterMerge("merge"+str(i)) for i in range(nb_proc_simu)]
 
-    group = [Simu(executable, "simu"+str(i), nb_proc_simu) for i in range(nb_parameters+2)]
+    group = [Simu(executable+" "+args[i], "simu"+str(i), nb_proc_simu) for i in range(nb_parameters+2)]
 
     for j, simu in enumerate(group):
         if j == 0:
             for i, processus in enumerate(simu.processus):
-                merge[i].getPort("out").link(processus.getPort("input"))
+                merge[i].getPort("out").link(processus.getPort("MelissaIn"))
         else:
             for i, processus in enumerate(simu.processus):
-                processus.getPort("output").link(merge[i].newInputPort())
+                processus.getPort("MelissaOut").link(merge[i].newInputPort())
 
     app.generate_xml("group"+str(group_id))
 

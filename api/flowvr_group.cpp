@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include "flowvr/module.h"
 
 void FlowVRInit(int *comm_size, int *rank);
@@ -38,45 +39,47 @@ extern "C" void flowvr_close()
     return;
 }
 
-class MelissaInPort : public flowvr::InputPort
-{
-public:
-  MelissaInPort(const char* name="MelissaData")
-    : InputPort(name),
-      StampSobolRank("SobolRank",flowvr::TypeInt::create())
-  {
-      stamps->add(&StampSobolRank);
-  }
-  flowvr::StampInfo StampSobolRank;
-};
-MelissaInPort InPort("MelissaIn");
+//class MelissaInPort : public flowvr::InputPort
+//{
+//public:
+//  MelissaInPort(const char* name="MelissaData")
+//    : InputPort(name),
+//      StampSobolRank("SobolRank",flowvr::TypeInt::create())
+//  {
+//      stamps->add(&StampSobolRank);
+//  }
+//  flowvr::StampInfo StampSobolRank;
+//};
+//MelissaInPort InPort("MelissaIn");
+flowvr::InputPort InPort("MelissaIn");
 
-class MelissaOutPort : public flowvr::OutputPort
-{
-public:
-  MelissaOutPort(const char* name="MelissaData")
-    : OutputPort(name),
-      StampSobolRank("SobolRank",flowvr::TypeInt::create())
-  {
-      stamps->add(&StampSobolRank);
-  }
-  flowvr::StampInfo StampSobolRank;
-};
-MelissaOutPort OutPort("MelissaOut");
+//class MelissaOutPort : public flowvr::OutputPort
+//{
+//public:
+//  MelissaOutPort(const char* name="MelissaData")
+//    : OutputPort(name),
+//      StampSobolRank("SobolRank",flowvr::TypeInt::create())
+//  {
+//      stamps->add(&StampSobolRank);
+//  }
+//  flowvr::StampInfo StampSobolRank;
+//};
+//MelissaOutPort OutPort("MelissaOut");
+flowvr::OutputPort OutPort("MelissaOut");
 
 void FlowVRInit(int *comm_size, int *rank)
 {
 #ifdef BUILD_WITH_MPI
     flowvr::Parallel::init(*rank, *comm_size);
 #endif // BUILD_WITH_MPI
+    ports.push_back(&OutPort);
+    ports.push_back(&InPort);
     module = flowvr::initModule(ports);
     if (module == NULL)
     {
         // do something
         exit (1);
     }
-    ports.push_back(&OutPort);
-    ports.push_back(&InPort);
 
     return;
 }
@@ -84,6 +87,7 @@ void FlowVRInit(int *comm_size, int *rank)
 void SendToGroup(void* buff,
                  int   buff_size)
 {
+    module->wait();
     flowvr::MessageWrite       m;
 
     m.data = module->alloc(buff_size);
@@ -100,7 +104,7 @@ void RecvFromGroup(void* buff)
 
     module->wait();
     module->get(&InPort,m);
-    m.stamps.isValid(InPort.StampSobolRank);
+//    m.stamps.isValid(InPort.StampSobolRank);
 //    m.stamps.read(port.StampSobolRank,sobol_rank);
     msg_size = m.data.getSize();
     memcpy (buff, m.data.readAccess(), msg_size);

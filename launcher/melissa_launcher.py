@@ -49,7 +49,7 @@ def main():
         from options import STUDY_OPTIONS as stdy_opt
         from options import MELISSA_STATS as ml_stats
         from options import USER_FUNCTIONS as usr_func
-        from study import Study
+        from @CMAKE_INSTALL_PREFIX@/share/launcher/study import Study
         melissa_study = Study(glob_opt, stdy_opt, ml_stats, usr_func)
         melissa_study.run()
 

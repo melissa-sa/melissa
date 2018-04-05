@@ -265,7 +265,7 @@ void melissa_get_options (int                 argc,
 
         switch (opt) {
         case 'r':
-            sprintf (options->restart_dir, optarg);
+            sprintf (options->restart_dir, "%s", optarg);
             if (strlen(options->restart_dir) < 1)
             {
                 sprintf (options->restart_dir, ".");
@@ -300,7 +300,7 @@ void melissa_get_options (int                 argc,
             // learning
             break;
         case 'n':
-            sprintf (options->launcher_name, optarg);
+            sprintf (options->launcher_name, "%s", optarg);
             break;
         case 'f':
             get_nb_fields (optarg, options);

@@ -38,13 +38,58 @@ NODES_SERVER = 3
 WALLTIME_SIMU = 300
 NODES_GROUP = 2
 
+
+if BUILD_WITH_FLOWVR == "ON":
+    from flowvrapp import *
+    from filters import *
+
+    class Simu(Composite):
+        def __init__(self, cmdline, prefix, np):
+          Composite.__init__(self)
+          localhosts = ','.join("localhost" for i in range(np))
+          putrun = FlowvrRunMPI(cmdline, hosts = localhosts, prefix = prefix, mpistack = "openmpi")
+
+          self.processus = []
+          self.beginIt = []
+          self.endIt = []
+          for i in range(np):
+              self.processus.append(Module(prefix + "/" + str(i), run = putrun))
+              self.processus[i].addPort("MelissaOut", direction = 'out')
+              self.processus[i].addPort("MelissaIn", direction = 'in')
+              self.beginIt.append(self.processus[i].getPort("beginIt"))
+              self.endIt.append(self.processus[i].getPort("endIt"))
+
+          self.ports["beginIt"] = list( self.beginIt)
+          self.ports["endIt"] = list( self.endIt)
+
+    def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
+        merge = [FilterMerge("merge"+str(i)) for i in range(nb_proc_simu)]
+        merge_endit = FilterSignalAnd("merge_endit")
+
+        group = [Simu(executable+" "+args[i], "simu"+str(i), nb_proc_simu) for i in range(nb_parameters+2)]
+
+        presignal = FilterPreSignal("presignal", nb = 1)
+        merge_endit.getPort("out").link(presignal.getPort('in'))
+
+        for j, simu in enumerate(group):
+            if j == 0:
+                for i, processus in enumerate(simu.processus):
+                    merge[i].getPort("out").link(processus.getPort("MelissaIn"))
+                    processus.getPort("endIt").link(merge_endit.newInputPort())
+            else:
+                for i, processus in enumerate(simu.processus):
+                    processus.getPort("MelissaOut").link(merge[i].newInputPort())
+                presignal.getPort('out').link(simu.getPort("beginIt"))
+
+        app.generate_xml("group"+str(group_id))
+
 def create_run_server(server):
     # signal handler definition
     signal_handler="handler() {                            \n"
     signal_handler+="echo \"### CLEAN-UP TIME !!!\"        \n"
     signal_handler+="STOP=1                                \n"
     signal_handler+="sleep 1                               \n"
-    signal_handler+="killall -USR1 server                  \n"
+    signal_handler+="killall -USR1 melissa_server          \n"
     signal_handler+="wait %1                               \n"
     signal_handler+="}                                     \n"
     contenu = ""
@@ -92,7 +137,7 @@ def create_run_server(server):
         contenu += "mkdir stats${OAR_JOB_ID}.resu                                      \n"
         contenu += "cd stats${OAR_JOB_ID}.resu                                         \n"
     contenu += "trap handler USR2                                                  \n"
-    contenu += "mpirun "+server.path+"/server "+server.cmd_opt+" &                 \n"
+    contenu += "mpirun "+server.path+"/melissa_server "+server.cmd_opt+" &         \n"
     contenu += "wait %1                                                            \n"
     contenu += "date +\"%d/%m/%y %T\"                                              \n"
     contenu += "cd ..                                                              \n"
@@ -145,10 +190,11 @@ def launch_server(server):
         os.mkdir(GLOBAL_OPTIONS['working_directory'])
     os.chdir(GLOBAL_OPTIONS['working_directory'])
     if BATCH_SCHEDULER == "local":
+        print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
         server.job_id = subprocess.Popen(('mpirun ' +
                                           ' -n '+str(NODES_SERVER) +
                                           ' ' + server.path +
-                                          '/server ' +
+                                          '/melissa_server ' +
                                           server.cmd_opt +
                                           ' &').split()).pid
     else:
@@ -198,7 +244,18 @@ def launch_simu(simulation):
                                  ': '))
         print command[:-2]
         if BATCH_SCHEDULER == "local":
-            simulation.job_id = subprocess.Popen(command[:-2].split()).pid
+            if BUILD_WITH_FLOWVR == 'ON':
+                args = []
+                for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+                    args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
+                create_flowvr_group('@CMAKE_INSTALL_PREFIX@/examples/heat_example/bin/'+EXECUTABLE,
+                                    args,
+                                    simulation.rank,
+                                    int(NODES_GROUP),
+                                    STUDY_OPTIONS['nb_parameters'])
+#                simulation.job_id = subprocess.Popen('export PATH=/home/tterraz/Programmes/FlowVR/flowvr-ex/install:$PATH & source /home/tterraz/Programmes/FlowVR/flowvr-ex/install/bin/flowvr-suite-config.sh & flowvr group'+str(simulation.rank)).pid
+            else:
+                simulation.job_id = subprocess.Popen(command[:-2].split()).pid
         else:
             create_run_group(simulation, command)
             if (BATCH_SCHEDULER == "Slurm"):
@@ -485,7 +542,6 @@ USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_group_job'] = check_job
 USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
-#USER_FUNCTIONS['check_scheduler_load'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job
 USER_FUNCTIONS['postprocessing'] = None
