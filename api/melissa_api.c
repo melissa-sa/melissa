@@ -949,7 +949,6 @@ void melissa_send (const int  *time_step,
             {
                 //send data to rank 0 of the sobol group
 #ifdef BUILD_WITH_FLOWVR
-                fprintf (stdout, "send timestep (%d)\n", *time_step );
                 send_to_group (send_vect, local_vect_size * sizeof(double));
 #else // BUILD_WITH_FLOWVR
                 zmq_send (global_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
