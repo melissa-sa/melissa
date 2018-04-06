@@ -83,7 +83,7 @@ struct global_data_s
     char    *buffer;              /**< buffer used to send data to the library                    */
     double  *buffer_sobol;        /**< buffer used to store data on sobol rank 0                  */
     int      buff_size;           /**< size of sobol buffer                                       */
-    int      coupling;            /**< coupled simulations or not                                 */
+    int      coupling;            /**< coupling method                                            */
     MPI_Comm comm_sobol;          /**< inter-groups communicator                                  */
 };
 
@@ -582,19 +582,27 @@ void melissa_init (const char *field_name,
     // sobol only part //
     if (global_data.sobol == 1 && first_init != 0)
     {
-        // split MPI_COMM_WORLD for coupled simulations
-        if (global_data.coupling != 0)
+        switch (global_data.coupling)
         {
+        case MELISSA_COUPLING_MPI:
 #ifdef BUILD_WITH_MPI
+            // split MPI_COMM_WORLD for coupled simulations
             MPI_Comm_split(MPI_COMM_WORLD, *rank, global_data.sobol_rank, &global_data.comm_sobol);
+#else // BUILD_WITH_MPI
+            fprintf (stderr, "ERROR: Build with MPI to use MPI coupling");
+            exit;
 #endif // BUILD_WITH_MPI
-        }
-        else
-        {
+            break;
+
+        case MELISSA_COUPLING_FLOWVR:
 #ifdef BUILD_WITH_FLOWVR
             flowvr_init(comm_size, rank);
 #else // BUILD_WITH_FLOWVR
+            fprintf (stderr, "ERROR: Build with FlowVR to use FlowVR coupling");
+#endif // BUILD_WITH_FLOWVR
+            break;
 
+        case MELISSA_COUPLING_ZMQ:
             // get Sobol master node name
             if (global_data.sobol_rank == 0)
             {
@@ -666,7 +674,9 @@ void melissa_init (const char *field_name,
                 }
                 melissa_connect (master_requester, port_name);
             }
-#endif // BUILD_WITH_FLOWVR
+        default:
+            fprintf (stderr, "ERROR: bad coupling parameter");
+            exit;
         }
     }
     // end sobol only //
@@ -694,8 +704,7 @@ void melissa_init (const char *field_name,
         {
             fprintf (stderr, "Warning: wrong number of data pusher ports");
         }
-#ifndef BUILD_WITH_FLOWVR
-        if (global_data.coupling == 0 && first_init != 0)
+        if (global_data.coupling == MELISSA_COUPLING_ZMQ && first_init != 0)
         {
             if (global_data.sobol == 1)
             {
@@ -735,12 +744,10 @@ void melissa_init (const char *field_name,
                 }
             }
         }
-#endif // BUILD_WITH_FLOWVR
     }
-#ifndef BUILD_WITH_FLOWVR
     else // if *sobol_rank != 0
     {
-        if (global_data.coupling == 0 && first_init != 0)
+        if (global_data.coupling == MELISSA_COUPLING_ZMQ && first_init != 0)
         {
             //
             // ask master node name here
@@ -762,16 +769,13 @@ void melissa_init (const char *field_name,
             melissa_connect (global_data.sobol_requester[0], port_name);
         }
     }
-#endif // BUILD_WITH_FLOWVR
     if (first_init != 0)
     {
         zmq_close (global_data.connexion_requester);
-#ifndef BUILD_WITH_FLOWVR
-        if (global_data.coupling == 0)
+        if (global_data.coupling == MELISSA_COUPLING_FLOWVR)
         {
             zmq_close (master_requester);
         }
-#endif // BUILD_WITH_FLOWVR
     }
     if (global_data.sobol)
     {
@@ -931,43 +935,43 @@ void melissa_send (const int  *time_step,
 
     if (global_data.sobol == 1)
     {
-        if (global_data.coupling == 0)
+        switch (global_data.coupling)
         {
+        case MELISSA_COUPLING_FLOWVR:
             // gather data from other ranks of the sobol group
             if (global_data.sobol_rank == 0)
             {
-#ifdef BUILD_WITH_FLOWVR
                 recv_from_group ((void*)&global_data.buffer_sobol[local_vect_size]);
-#else // BUILD_WITH_FLOWVR
-                for (i=0; i<global_data.nb_parameters + 1; i++)
-                {
-                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[(i+1)*local_vect_size], local_vect_size * sizeof(double), 0);
-                }
-#endif // BUILD_WITH_FLOWVR
             }
             else // *sobol_rank != 0
             {
                 //send data to rank 0 of the sobol group
-#ifdef BUILD_WITH_FLOWVR
                 send_to_group (send_vect, local_vect_size * sizeof(double));
-#else // BUILD_WITH_FLOWVR
-                zmq_send (global_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
-#endif // BUILD_WITH_FLOWVR
-#ifdef BUILD_WITH_PROBES
-                total_bytes_sent += local_vect_size * sizeof(double);
-#endif // BUILD_WITH_PROBES
             }
-        }
-        else
-        {
-#ifdef BUILD_WITH_MPI
-            MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, global_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
+            break;
 
-#else // BUILD_WITH_MPI
-            memcpy (global_data.buffer_sobol, send_vect, MPI_MAX_PROCESSOR_NAME);
-#endif // BUILD_WITH_MPI
-            total_bytes_sent += local_vect_size * sizeof(double);
+        case MELISSA_COUPLING_ZMQ:
+            if (global_data.sobol_rank == 0)
+            {
+                for (i=0; i<global_data.nb_parameters + 1; i++)
+                {
+                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[(i+1)*local_vect_size], local_vect_size * sizeof(double), 0);
+                }
+            }
+            else // *sobol_rank != 0
+            {
+                //send data to rank 0 of the sobol group
+                zmq_send (global_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
+            }
+            break;
+
+        case MELISSA_COUPLING_MPI:
+            MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, global_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
+            break;
         }
+#ifdef BUILD_WITH_PROBES
+        total_bytes_sent += local_vect_size * sizeof(double);
+#endif // BUILD_WITH_PROBES
     }
 
     if (global_data.sobol_rank == 0)
@@ -1076,28 +1080,22 @@ void melissa_finalize (void)
 {
     int i;
 
-#ifdef BUILD_WITH_FLOWVR
-    if (global_data.sobol == 1 && global_data.coupling == 0)
+    if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_FLOWVR)
     {
         flowvr_close();
     }
-#else // BUILD_WITH_FLOWVR
-    if (global_data.sobol_rank == 0)
+    if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_ZMQ)
     {
-        if (global_data.sobol == 1 && global_data.coupling == 0)
+        if (global_data.sobol_rank == 0)
         {
             for (i=1; i<global_data.nb_parameters+1; i++)
             {
                 zmq_close (global_data.sobol_requester[i]);
             }
         }
-    }
-
-    if (global_data.sobol == 1 && global_data.coupling == 0)
-    {
         zmq_close (global_data.sobol_requester[0]);
     }
-#endif // BUILD_WITH_FLOWVR
+
     free (node_names);
     free_field_data(field_data);
     zmq_ctx_term (global_data.context);

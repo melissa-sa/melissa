@@ -71,3 +71,9 @@ subroutine melissa_finalize() bind(c, name = 'melissa_finalize')
 end subroutine melissa_finalize
 
 end interface
+
+integer, parameter :: MELISSA_COUPLING_NONE = 0
+integer, parameter :: MELISSA_COUPLING_ZMQ = 0
+integer, parameter :: MELISSA_COUPLING_DEFAULT = MELISSA_COUPLING_ZMQ
+integer, parameter :: MELISSA_COUPLING_MPI = 1
+integer, parameter :: MELISSA_COUPLING_FLOWVR = 2

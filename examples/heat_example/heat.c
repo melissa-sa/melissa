@@ -108,7 +108,7 @@ int main( int argc, char **argv )
   MPI_Comm comm;
   int fcomm;
   struct timeb tp;
-  int coupling = 0;
+  int coupling = MELISSA_COUPLING_MPI;
   int simu_id = 0;
   int *appnum, statinfo;
   char *field_name = "heat";

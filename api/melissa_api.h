@@ -27,9 +27,14 @@
 #ifndef MELISSA_API_H
 #define MELISSA_API_H
 
-
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
+
+#define MELISSA_COUPLING_NONE 0    /**< No coupling */
+#define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
+#define MELISSA_COUPLING_ZMQ 0     /**< ZeroMQ coupling */
+#define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
+#define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
 
 void melissa_init(const char *field_name,
                   const int  *local_vect_size,

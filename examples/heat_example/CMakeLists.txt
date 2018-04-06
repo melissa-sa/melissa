@@ -15,6 +15,12 @@
 ###################################################################
 
 
+find_python_module(matplotlib)
+#if (PY_MATPLOTLIB)
+#  set(HEAT_VISU "heat_visu")
+#else (PY_MATPLOTLIB)
+  set(HEAT_VISU "None")
+#endif (PY_MATPLOTLIB)
 configure_file(options.py options.py @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/options.py DESTINATION share/examples/heat_example)
 configure_file(heat.c heat.c COPYONLY)

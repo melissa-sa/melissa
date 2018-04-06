@@ -276,18 +276,18 @@ def launch_simu(simulation):
                                  ': '))
         print command[:-2]
         if BATCH_SCHEDULER == "local":
-            if BUILD_WITH_FLOWVR == 'ON':
-                args = []
-                for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-                    args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
-                create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
-                                    args,
-                                    simulation.rank,
-                                    int(NODES_GROUP),
-                                    STUDY_OPTIONS['nb_parameters'])
-                os.system('python create_group'+str(simulation.rank)+'.py')
-                simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
-            else:
+#            if BUILD_WITH_FLOWVR == 'ON':
+#                args = []
+#                for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+#                    args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
+#                create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+#                                    args,
+#                                    simulation.rank,
+#                                    int(NODES_GROUP),
+#                                    STUDY_OPTIONS['nb_parameters'])
+#                os.system('python create_group'+str(simulation.rank)+'.py')
+#                simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+#            else:
                 simulation.job_id = subprocess.Popen(command[:-2].split()).pid
         else:
             create_run_group(simulation, command)
@@ -577,5 +577,5 @@ USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job
-USER_FUNCTIONS['postprocessing'] = heat_visu
+USER_FUNCTIONS['postprocessing'] = @HEAT_VISU@
 USER_FUNCTIONS['finalize'] = None
