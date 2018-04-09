@@ -39,81 +39,18 @@ WALLTIME_SIMU = 300
 NODES_GROUP = 2
 
 
-if BUILD_WITH_FLOWVR == "ON":
-    from flowvrapp import *
-    from filters import *
-
-    class Simu(Composite):
-        def __init__(self, cmdline, prefix, np):
-          Composite.__init__(self)
-          localhosts = ','.join("localhost" for i in range(np))
-          putrun = FlowvrRunMPI(cmdline, hosts = localhosts, prefix = prefix, mpistack = "openmpi")
-
-          self.processus = []
-          self.beginIt = []
-          self.endIt = []
-          for i in range(np):
-              self.processus.append(Module(prefix + "/" + str(i), run = putrun))
-              self.processus[i].addPort("MelissaOut", direction = 'out')
-              self.processus[i].addPort("MelissaIn", direction = 'in')
-              self.beginIt.append(self.processus[i].getPort("beginIt"))
-              self.endIt.append(self.processus[i].getPort("endIt"))
-
-          self.ports["beginIt"] = list( self.beginIt)
-          self.ports["endIt"] = list( self.endIt)
-
-    def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
-        content = ""
-        file=open("create_group"+str(group_id)+".py", "w")
-        content += "import sys                                                                                                                  \n"
-        content += "from flowvrapp import *                                                                                                     \n"
-        content += "from filters import *                                                                                                       \n"
-        content += "                                                                                                                            \n"
-        content += "class Simu(Composite):                                                                                                      \n"
-        content += "    def __init__(self, cmdline, prefix, np):                                                                                \n"
-        content += "      Composite.__init__(self)                                                                                              \n"
-        content += "      localhosts = ','.join('localhost' for i in range(np))                                                                 \n"
-        content += "      putrun = FlowvrRunMPI(cmdline, hosts = localhosts, prefix = prefix, mpistack = 'openmpi')                             \n"
-        content += "                                                                                                                            \n"
-        content += "      self.processus = []                                                                                                   \n"
-        content += "      self.beginIt = []                                                                                                     \n"
-        content += "      self.endIt = []                                                                                                       \n"
-        content += "      for i in range(np):                                                                                                   \n"
-        content += "          self.processus.append(Module(prefix + '/' + str(i), run = putrun))                                                \n"
-        content += "          self.processus[i].addPort('MelissaOut', direction = 'out')                                                        \n"
-        content += "          self.processus[i].addPort('MelissaIn', direction = 'in')                                                          \n"
-        content += "          self.beginIt.append(self.processus[i].getPort('beginIt'))                                                         \n"
-        content += "          self.endIt.append(self.processus[i].getPort('endIt'))                                                             \n"
-        content += "                                                                                                                            \n"
-        content += "      self.ports['beginIt'] = list( self.beginIt)                                                                           \n"
-        content += "      self.ports['endIt'] = list( self.endIt)                                                                               \n"
-        content += "                                                                                                                            \n"
-        content += "executable = '"+str(executable)+"'                                                                                          \n"
-        content += "args = "+str(args)+"                                                                                                        \n"
-        content += "group_id = "+str(group_id)+"                                                                                                \n"
-        content += "nb_proc_simu = "+str(nb_proc_simu)+"                                                                                        \n"
-        content += "nb_parameters = "+str(nb_parameters)+"                                                                                      \n"
-        content += "merge = [FilterMerge('group'+str(group_id)+'merge'+str(i)) for i in range(nb_proc_simu)]                                    \n"
-        content += "merge_endit = FilterSignalAnd('group'+str(group_id)+'merge_endit')                                                          \n"
-        content += "                                                                                                                            \n"
-        content += "group = [Simu(executable+' '+args[i], 'group'+str(group_id)+'simu'+str(i), nb_proc_simu) for i in range(nb_parameters+2)]   \n"
-        content += "                                                                                                                            \n"
-        content += "presignal = FilterPreSignal('group'+str(group_id)+'presignal', nb = 1)                                                      \n"
-        content += "merge_endit.getPort('out').link(presignal.getPort('in'))                                                                    \n"
-        content += "                                                                                                                            \n"
-        content += "for j, simu in enumerate(group):                                                                                            \n"
-        content += "    if j == 0:                                                                                                              \n"
-        content += "        for i, processus in enumerate(simu.processus):                                                                      \n"
-        content += "            merge[i].getPort('out').link(processus.getPort('MelissaIn'))                                                    \n"
-        content += "            processus.getPort('endIt').link(merge_endit.newInputPort())                                                     \n"
-        content += "    else:                                                                                                                   \n"
-        content += "        for i, processus in enumerate(simu.processus):                                                                      \n"
-        content += "            processus.getPort('MelissaOut').link(merge[i].newInputPort())                                                   \n"
-        content += "        presignal.getPort('out').link(simu.getPort('beginIt'))                                                              \n"
-        content += "                                                                                                                            \n"
-        content += "app.generate_xml('group'+str(group_id))                                                                                     \n"
-        file.write(content)
-        file.close()
+def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
+    content = ""
+    file=open("@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/scripts/flowvr_group.py", "r")
+    content = file.read().substitute(args=str(args),
+                                     group_id=str(group_id),
+                                     np_simu=str(nb_proc_simu),
+                                     nb_param=str(nb_parameters),
+                                     executable=str(executable))
+    file.close()
+    file=open("create_group"+str(group_id)+".py", "w")
+    file.write(content)
+    file.close()
 
 def create_run_server(server):
     # signal handler definition

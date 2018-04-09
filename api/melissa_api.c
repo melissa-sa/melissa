@@ -599,6 +599,7 @@ void melissa_init (const char *field_name,
             flowvr_init(comm_size, rank);
 #else // BUILD_WITH_FLOWVR
             fprintf (stderr, "ERROR: Build with FlowVR to use FlowVR coupling");
+            exit;
 #endif // BUILD_WITH_FLOWVR
             break;
 
@@ -937,6 +938,7 @@ void melissa_send (const int  *time_step,
     {
         switch (global_data.coupling)
         {
+#ifdef BUILD_WITH_FLOWVR
         case MELISSA_COUPLING_FLOWVR:
             // gather data from other ranks of the sobol group
             if (global_data.sobol_rank == 0)
@@ -949,6 +951,7 @@ void melissa_send (const int  *time_step,
                 send_to_group (send_vect, local_vect_size * sizeof(double));
             }
             break;
+#endif // BUILD_WITH_FLOWVR
 
         case MELISSA_COUPLING_ZMQ:
             if (global_data.sobol_rank == 0)
@@ -1080,10 +1083,12 @@ void melissa_finalize (void)
 {
     int i;
 
+#ifdef BUILD_WITH_FLOWVR
     if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_FLOWVR)
     {
         flowvr_close();
     }
+#endif // BUILD_WITH_FLOWVR
     if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_ZMQ)
     {
         if (global_data.sobol_rank == 0)
