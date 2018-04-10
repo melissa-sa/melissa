@@ -179,6 +179,7 @@ STUDY_OPTIONS['field_names'] = ["WATER_DEPTH_____",
                                 "VELOCITY_V______"]     # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_ZMQ"
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

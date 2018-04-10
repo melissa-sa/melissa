@@ -108,32 +108,38 @@ int main( int argc, char **argv )
   MPI_Comm comm;
   int fcomm;
   struct timeb tp;
-  int coupling = MELISSA_COUPLING_MPI;
+  int coupling = MELISSA_COUPLING_DEFAULT;
   int simu_id = 0;
   int *appnum, statinfo;
-  char *field_name = "heat";
+  char *field_name = "heat1";
 
   MPI_Init(&argc, &argv);
 
-  // The program now takes at least 2 parameter:
+  // The program now takes at least 3 parameter:
   // - the simulation id given by the launcher
+  // - The coupling method for Sobol' groups
   // - the initial temperature
 
-  if (argc < 3)
+  if (argc < 4)
   {
       fprintf (stderr, "Missing parameter");
       return -1;
   }
   simu_id = (int)strtol(argv[1], NULL, 10);
+  coupling = (int)strtol(argv[2], NULL, 10);
+  if (coupling != MELISSA_COUPLING_ZMQ && coupling != MELISSA_COUPLING_MPI && coupling != MELISSA_COUPLING_FLOWVR)
+  {
+    coupling = MELISSA_COUPLING_DEFAULT;
+  }
 
   // The initial temperature is stored in param[0]
   // The four next optional parameters are the boundary temperatures
   for (n=0; n<5; n++)
   {
     param[n] = 0;
-    if (argc > n+2)
+    if (argc > n+3)
     {
-       param[n] = strtod(argv[n+2], NULL);
+       param[n] = strtod(argv[n+3], NULL);
     }
   }
 
@@ -213,6 +219,9 @@ int main( int argc, char **argv )
 
   fprintf(stdout, "Calcul time: %g sec\n", t2-t1);
   fprintf(stdout, "Final time step: %g\n", t);
+
+  free(u);
+  free(f);
 
   MPI_Finalize();
 

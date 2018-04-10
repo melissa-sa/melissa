@@ -31,7 +31,7 @@ USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'.upper()
-EXECUTABLE='heatf'
+EXECUTABLE='heatc'
 BATCH_SCHEDULER = "local"
 WALLTIME_SERVER = 600
 NODES_SERVER = 3
@@ -208,7 +208,7 @@ def launch_simu(simulation):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
                                  '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]),
+                                 str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         print command[:-2]
@@ -482,13 +482,14 @@ GLOBAL_OPTIONS['user_name'] = USERNAME
 GLOBAL_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS'
 
 STUDY_OPTIONS = {}
-STUDY_OPTIONS['nb_parameters'] = 5          # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 6          # initial number of parameter sets
-STUDY_OPTIONS['nb_time_steps'] = 100        # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
+STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
-STUDY_OPTIONS['field_names'] = ["heat1"]     # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
+STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
+STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 30          # server checkpoints every 30 seconds
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

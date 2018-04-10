@@ -39,6 +39,7 @@ STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["field1", "field2"]
 STUDY_OPTIONS['server_timeout'] = 600
 STUDY_OPTIONS['simulation_timeout'] = 400
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_DEFAULT"
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

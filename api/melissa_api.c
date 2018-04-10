@@ -863,23 +863,31 @@ void melissa_init_f (const char *field_name,
  * @param[in] *simu_id
  * ID of the calling simulation
  *
+ * @param[in] *coupling
+ * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
+ *
  *******************************************************************************/
 
 void melissa_init_no_mpi (const char *field_name,
                           const int  *vect_size,
-                          const int  *simu_id)
+                          const int  *simu_id,
+                          const int  *coupling)
 {
     int rank = 0;
     int comm_size = 1;
-    int coupling = 0;
     MPI_Comm comm = 0;
+    if (*coupling == MELISSA_COUPLING_MPI)
+    {
+        fprintf (stderr, "ERROR: MPI coupling not available in melissa_init_no_mpi");
+        exit;
+    }
     melissa_init (field_name,
                   vect_size,
                   &comm_size,
                   &rank,
                   simu_id,
                   &comm,
-                  &coupling);
+                  coupling);
 }
 
 /**

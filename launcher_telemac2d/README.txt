@@ -18,7 +18,8 @@ Between "CALL CHECK_CALL" and "FIRST_VAR = .FALSE.", add:
             IF(MELISSA.and.(TIMESTEP.ne.0))THEN
                 IF(TIMESTEP .eq. 1)THEN
                 CALL MELISSA_INIT(VAR_NAME(1:16)//C_NULL_CHAR,N,
-     &                            NCSIZE,IPID,SIMU_ID,COMM,0)
+     &                            NCSIZE,IPID,SIMU_ID,
+     &                            COMM,MELISSA_COUPLING_ZMQ)
                 ENDIF
                 CALL MELISSA_SEND(TIMESTEP,VAR_NAME(1:16)//C_NULL_CHAR,
      &                            BVARSOR%ADR(I)%P%R,IPID,SIMU_ID)

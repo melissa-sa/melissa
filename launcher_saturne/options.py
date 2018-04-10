@@ -659,6 +659,7 @@ STUDY_OPTIONS['nb_fields'] = 1
 STUDY_OPTIONS['field_names'] = ["scalar1"]
 STUDY_OPTIONS['simulation_timeout'] = 300
 STUDY_OPTIONS['checkpoint_interval'] = 300
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI"
 
 SERVER_OPTIONS = {}
 SERVER_OPTIONS['walltime'] = '3600'
