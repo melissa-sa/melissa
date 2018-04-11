@@ -19,6 +19,10 @@
     Heat example user defined functions for local execution
 """
 
+EXECUTABLE='heatc'
+NODES_SERVER = 3
+NODES_GROUP = 2
+
 def launch_server(server):
     if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
         os.mkdir(GLOBAL_OPTIONS['working_directory'])
@@ -33,13 +37,34 @@ def launch_server(server):
     os.chdir(GLOBAL_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
+    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
-        launch_sobol_simu(simulation)
+        command = 'mpirun '
+        for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+            command += ' '.join(('-n',
+                                 str(NODES_GROUP),
+                                 '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+                                 str(simulation.simu_id[i]), str(simulation.coupling),
+                                 ' '.join(str(j) for j in simulation.param_set[i]),
+                                 ': '))
+        print command[:-2]
+#        if BUILD_WITH_FLOWVR == 'ON':
+#            args = []
+#            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+#                args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
+#            create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+#                                args,
+#                                simulation.rank,
+#                                int(NODES_GROUP),
+#                                STUDY_OPTIONS['nb_parameters'])
+#            os.system('python create_group'+str(simulation.rank)+'.py')
+#            simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+#        else:
+        simulation.job_id = subprocess.Popen(command[:-2].split()).pid
     else:
-        if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-            os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-        os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-        copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
         if BUILD_EXAMPLES_WITH_MPI == 'ON':
             command = ' '.join(('mpirun',
                                  '-n',
