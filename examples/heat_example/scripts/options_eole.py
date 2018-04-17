@@ -83,9 +83,9 @@ def create_run_group(simulation, command):
     os.system("chmod 744 run_group.sh")
 
 def launch_server(server):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
-        os.mkdir(GLOBAL_OPTIONS['working_directory'])
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
     create_run_server(server)
     proc = subprocess.Popen('sbatch "./run_server.sh"',
                                   stdout=subprocess.PIPE,
@@ -95,13 +95,13 @@ def launch_server(server):
     # get the job ID
     (out, err) = proc.communicate()
     server.job_id = out.split()[-1]
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
         command = 'mpirun '
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
@@ -128,7 +128,7 @@ def launch_simu(simulation):
     # get the job ID
     (out, err) = proc.communicate()
     simulation.job_id = out.split()[-1]
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 
 def check_job(job):
@@ -152,7 +152,7 @@ def check_job(job):
     job.job_status = state
 
 def check_load():
-    proc = subprocess.Popen("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l",
+    proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             shell=True,

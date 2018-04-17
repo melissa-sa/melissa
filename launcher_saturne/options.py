@@ -405,9 +405,9 @@ def cancel_job(job):
         call_bash("kill "+str(job.job_id))
 
 def create_simu(group):
-    workdir = GLOBAL_OPTIONS['working_directory']
+    workdir = STUDY_OPTIONS['working_directory']
     os.chdir(workdir)
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(group.rank))):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))):
         create_case_str = SIMULATIONS_OPTIONS['path'] + \
                 "/code_saturne create --noref -s group" + \
                 str(group.rank) + \
@@ -505,11 +505,11 @@ def create_simu(group):
     return 0
 
 def create_study():
-    if not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS"):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
+    if not os.path.isdir(STUDY_OPTIONS['working_directory']+"/STATS"):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
     if MELISSA_STATS['sobol_indices']:
-        create_run_coupling (GLOBAL_OPTIONS['working_directory'],
+        create_run_coupling (STUDY_OPTIONS['working_directory'],
                              SIMULATIONS_OPTIONS['nb_nodes'],
                              SIMULATIONS_OPTIONS['nb_proc'],
                              STUDY_OPTIONS['nb_parameters'],
@@ -517,15 +517,15 @@ def create_study():
                              SIMULATIONS_OPTIONS['path'],
                              SIMULATIONS_OPTIONS['walltime'],
                              BATCH_SCHEDULER)
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/case1/SCRIPTS")):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/case1/SCRIPTS")
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/case1/SCRIPTS")
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/case1/SCRIPTS")):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/case1/SCRIPTS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/case1/SCRIPTS")
     if MELISSA_STATS['sobol_indices']:
-        create_runcase_sobol (GLOBAL_OPTIONS['working_directory'],
+        create_runcase_sobol (STUDY_OPTIONS['working_directory'],
                               2,
                               SIMULATIONS_OPTIONS['path'])
     else:
-        create_runcase (GLOBAL_OPTIONS['working_directory'],
+        create_runcase (STUDY_OPTIONS['working_directory'],
                         SIMULATIONS_OPTIONS['nb_nodes'],
                         SIMULATIONS_OPTIONS['nb_proc'],
                         2,
@@ -534,7 +534,7 @@ def create_study():
                         BATCH_SCHEDULER)
 
 def launch_simu(simu):
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simu.rank))
     if MELISSA_STATS['sobol_indices']:
         create_coupling_parameters (STUDY_OPTIONS['nb_parameters'],
                                     "None",
@@ -558,11 +558,11 @@ def launch_simu(simu):
 
 
 def launch_server(server):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/STATS")):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/STATS")):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
     options = server.cmd_opt
-    create_run_study (GLOBAL_OPTIONS['working_directory'],
+    create_run_study (STUDY_OPTIONS['working_directory'],
                       SERVER_OPTIONS['nb_nodes'],
                       1,
                       server.path,
@@ -570,19 +570,19 @@ def launch_server(server):
                       '',
                       options,
                       BATCH_SCHEDULER)
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
     if (BATCH_SCHEDULER == "Slurm"):
         server.job_id = call_bash('sbatch "./run_study.sh"')['out'].split()[-1]
     elif (BATCH_SCHEDULER == "CCC"):
         server.job_id = call_bash('ccc_msub -r Melissa "./run_study.sh"')['out'].split()[-1]
     elif (BATCH_SCHEDULER == "OAR"):
         server.job_id = call_bash('oarsub -S "./run_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 
 def restart_server(server):
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/STATS")
-    create_reboot_study(GLOBAL_OPTIONS['working_directory'],
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    create_reboot_study(STUDY_OPTIONS['working_directory'],
                         SERVER_OPTIONS['nb_nodes'],
                         1,
                         server.path,
@@ -603,10 +603,10 @@ def restart_server(server):
         server.job_id = call_bash('ccc_msub -r Melissa "./reboot_study.sh"')['out'].split()[-1]
     elif (BATCH_SCHEDULER == "OAR"):
         server.job_id = call_bash('oarsub -S "./reboot_study.sh" --project=avido')['out'].split("OAR_JOB_ID=")[1]
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def restart_simu(simu):
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simu.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simu.rank))
     if MELISSA_STATS['sobol_indices']:
         output = "Reboot simulation group "+str(simu.rank)+"\n"
         if (BATCH_SCHEDULER == "Slurm"):
@@ -626,7 +626,7 @@ def restart_simu(simu):
             simu.job_id = call_bash('oarsub -S "./runcase" -n Saturne'+str(simu.rank)+' --project=avido')['out'].split("OAR_JOB_ID=")[1]
         elif (BATCH_SCHEDULER == "local"):
             simu.job_id = call_bash('./runcase & echo $!')['out']
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
     print output
 
 def check_scheduler_load():
@@ -637,7 +637,7 @@ def check_scheduler_load():
 #        except:
         return True
     elif (BATCH_SCHEDULER == "Slurm") or (BATCH_SCHEDULER == "CCC"):
-        proc = subprocess.Popen("squeue -u "+GLOBAL_OPTIONS['user_name']+" | wc -l",
+        proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 shell=True,
@@ -646,11 +646,9 @@ def check_scheduler_load():
         running_jobs = int(out)
         return running_jobs < 250
 
-GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['user_name'] = "terrazth"
-GLOBAL_OPTIONS['working_directory'] = "/ccc/scratch/cont003/gen10064/terrazth/etude_plantage"
-
 STUDY_OPTIONS = {}
+STUDY_OPTIONS['user_name'] = "terrazth"
+STUDY_OPTIONS['working_directory'] = "/ccc/scratch/cont003/gen10064/terrazth/etude_plantage"
 STUDY_OPTIONS['nb_parameters'] = 6
 STUDY_OPTIONS['sampling_size'] = 1000
 STUDY_OPTIONS['nb_time_steps'] = 100

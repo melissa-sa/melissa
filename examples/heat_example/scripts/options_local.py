@@ -24,9 +24,9 @@ NODES_SERVER = 3
 NODES_GROUP = 2
 
 def launch_server(server):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
-        os.mkdir(GLOBAL_OPTIONS['working_directory'])
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
     print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
@@ -34,13 +34,13 @@ def launch_server(server):
                                       '/melissa_server ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
         command = 'mpirun '
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
@@ -79,7 +79,7 @@ def launch_simu(simulation):
                                 ' '.join(str(i) for i in simulation.param_set)))
         print command
         simulation.job_id = subprocess.Popen(command.split()).pid
-        os.chdir(GLOBAL_OPTIONS['working_directory'])
+        os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
     state = 0

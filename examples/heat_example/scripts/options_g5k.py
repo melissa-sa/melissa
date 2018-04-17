@@ -63,9 +63,9 @@ def create_run_server(server):
     os.system("chmod 744 run_server.sh")
 
 def launch_server(server):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
-        os.mkdir(GLOBAL_OPTIONS['working_directory'])
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
     create_run_server(server)
     proc = subprocess.Popen('oarsub -S "./run_server.sh"',
                                   stdout=subprocess.PIPE,
@@ -75,13 +75,13 @@ def launch_server(server):
     # get the job ID
     (out, err) = proc.communicate()
     server.job_id = out.split("OAR_JOB_ID=")[1]
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(GLOBAL_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
         command = 'mpirun '
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
@@ -102,7 +102,7 @@ def launch_simu(simulation):
         simulation.job_id = subprocess.Popen(command.split()).pid
     print command[:-2]
     create_run_group(simulation, command)
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
     state = 0

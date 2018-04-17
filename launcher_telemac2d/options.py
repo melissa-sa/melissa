@@ -38,20 +38,20 @@ def draw_param_set():
     return param_set
 
 def launch_server(server):
-    if (not os.path.isdir(GLOBAL_OPTIONS['working_directory'])):
-        os.mkdir(GLOBAL_OPTIONS['working_directory'])
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
                                       '/melissa_server ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
     
     
 def create_simu(group):
-    workdir = GLOBAL_OPTIONS['working_directory']
+    workdir = STUDY_OPTIONS['working_directory']
     os.chdir(workdir)
     contenu = ""
     fichier = open(workdir + "/t2d_gouttedo.cas", 'r')
@@ -126,20 +126,20 @@ def create_simu(group):
 def launch_simu(simulation):
     if MELISSA_STATS['sobol_indices']:
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-            os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
-            shutil.copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+            os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
+            shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
             command = 'telemac2d.py t2d_gouttedo.cas'
             print command
             simulation.job_id = subprocess.Popen(command.split()).pid
 
     else:
-        os.chdir(GLOBAL_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank0")
-        shutil.copyfile(GLOBAL_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank0")
+        shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
         command = 'telemac2d.py t2d_gouttedo.cas'
         print command
         simulation.job_id = subprocess.Popen(command.split()).pid
 
-    os.chdir(GLOBAL_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
     state = 0
@@ -165,11 +165,9 @@ def kill_job(job):
 def convert_to_serafin():
     os.system('./melissa_to_serafin')
         
-GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['user_name'] = getpass.getuser()
-GLOBAL_OPTIONS['working_directory'] = '/home/tterraz/Programmes/telemac-mascaret/v7p2r0/barracuda/examples/telemac2d/gouttedo_melissa'
-
 STUDY_OPTIONS = {}
+STUDY_OPTIONS['user_name'] = getpass.getuser()
+STUDY_OPTIONS['working_directory'] = '/home/tterraz/Programmes/telemac-mascaret/v7p2r0/barracuda/examples/telemac2d/gouttedo_melissa'
 STUDY_OPTIONS['nb_parameters'] = 3          # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 150        # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 20        # number of timesteps, from Melissa point of view

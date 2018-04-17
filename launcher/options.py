@@ -27,11 +27,9 @@ def draw_param_set():
         param_set[i] = np.random.uniform(0, 1)
     return param_set
 
-GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['user_name'] = "user"
-GLOBAL_OPTIONS['working_directory'] = "/home/user/melissa_study"
 
 STUDY_OPTIONS = {}
+STUDY_OPTIONS['working_directory'] = "/home/user/melissa_study"
 STUDY_OPTIONS['nb_parameters'] = 5                      # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 10                     # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100                    # number of timesteps, from Melissa point of view
@@ -41,6 +39,7 @@ STUDY_OPTIONS['simulation_timeout'] = 400               # simulations are restar
 STUDY_OPTIONS['server_timeout'] = 600                   # server is restarted if no life sign for 400 seconds (int)
 STUDY_OPTIONS['checkpoint_interval'] = 300              # server checkpoints every 300 seconds (double)
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_DEFAULT"  # option for Sobol' simulation groups coupling
+
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = True
