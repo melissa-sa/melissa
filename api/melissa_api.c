@@ -675,6 +675,7 @@ void melissa_init (const char *field_name,
                 }
                 melissa_connect (master_requester, port_name);
             }
+            break;
         default:
             fprintf (stderr, "ERROR: bad coupling parameter");
             exit;
@@ -773,7 +774,7 @@ void melissa_init (const char *field_name,
     if (first_init != 0)
     {
         zmq_close (global_data.connexion_requester);
-        if (global_data.coupling == MELISSA_COUPLING_FLOWVR)
+        if (global_data.coupling == MELISSA_COUPLING_ZMQ)
         {
             zmq_close (master_requester);
         }
@@ -1109,9 +1110,9 @@ void melissa_finalize (void)
         zmq_close (global_data.sobol_requester[0]);
     }
 
-    free (node_names);
     free_field_data(field_data);
     zmq_ctx_term (global_data.context);
+    free (node_names);
 
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)
     {

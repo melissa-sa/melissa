@@ -62,10 +62,6 @@ def draw_param_set():
         param_set[i] = np.random.uniform(0, 1)
     return param_set
 
-GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['user_name'] = USERNAME
-GLOBAL_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS'
-
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS'
