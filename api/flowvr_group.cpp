@@ -92,7 +92,6 @@ void SendToGroup(void* buff,
 
     m.data = module->alloc(buff_size);
     memcpy(m.data.writeAccess(),buff,buff_size);
-    fprintf (stderr, "send %d elements\n", buff_size/sizeof(double));
     module->put(&OutPort,m);
 
     return;
@@ -108,7 +107,6 @@ void RecvFromGroup(void* buff)
 //    m.stamps.isValid(InPort.StampSobolRank);
 //    m.stamps.read(port.StampSobolRank,sobol_rank);
     msg_size = m.data.getSize();
-    fprintf (stderr, "recv %d elements\n", msg_size/sizeof(double));
     memcpy (buff, m.data.readAccess(), msg_size);
 
     return;

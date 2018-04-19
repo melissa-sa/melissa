@@ -317,8 +317,6 @@ add_subdirectory(launcher)
 
 add_subdirectory(launcher_saturne)
 
-add_subdirectory(launcher_telemac2d)
-
 add_subdirectory(gui)
 
 add_subdirectory(tests)

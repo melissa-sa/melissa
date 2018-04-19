@@ -29,7 +29,7 @@ class Simu(Composite):
     def __init__(self, cmdline, prefix, np):
       Composite.__init__(self)
       localhosts = ','.join("localhost" for i in range(np))
-      putrun = FlowvrRunMPI(cmdline, hosts = localhosts, prefix = prefix, mpistack = "openmpi")
+      putrun = FlowvrRunSSHMultiple(cmdline, hosts = localhosts, prefix = prefix)
 
       self.processus = []
       self.beginIt = []
@@ -44,10 +44,15 @@ class Simu(Composite):
       self.ports["beginIt"] = list( self.beginIt)
       self.ports["endIt"] = list( self.endIt)
 
+args = ${args}
+group_id = ${group_id}
+nb_proc_simu = ${np_simu}
+nb_parameters = ${nb_param}
+
 merge = [FilterMerge("group"+str(group_id)+"merge"+str(i)) for i in range(nb_proc_simu)]
 merge_endit = FilterSignalAnd("group"+str(group_id)+"merge_endit")
 
-group = [Simu(executable+" "+args[i], "group"+str(group_id)+"simu"+str(i), nb_proc_simu) for i in range(nb_parameters+2)]
+group = [Simu("${executable}"+" "+args[i], "group"+str(group_id)+"simu"+str(i), nb_proc_simu) for i in range(nb_parameters+2)]
 
 presignal = FilterPreSignal("group"+str(group_id)+"presignal", nb = 1)
 merge_endit.getPort("out").link(presignal.getPort('in'))

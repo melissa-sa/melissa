@@ -27,8 +27,23 @@ import subprocess
 import getpass
 from matplotlib import pyplot as plt
 from matplotlib import cm
+from string import Template
 
 NODES_SERVER = 1
+NODES_GROUP = 1
+
+def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
+    content = ""
+    file=open(STUDY_OPTIONS['working_directory']+"/create_group.py", "r")
+    content = Template(file.read()).substitute(args=str(args),
+                                     group_id=str(group_id),
+                                     np_simu=str(nb_proc_simu),
+                                     nb_param=str(nb_parameters),
+                                     executable=str(executable))
+    file.close()
+    file=open("create_group"+str(group_id)+".py", "w")
+    file.write(content)
+    file.close()
 
 def draw_param_set():
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
@@ -86,7 +101,7 @@ def create_simu(group):
             contenu = ""
             for line in fichier:
                 if ("H%R(IPOIN)" in line):
-                    contenu += '        H%R(IPOIN) = 2.4D0 * ( 1.D0 + EXP(-EIKON) )+'+str(group.param_set[simu][0])+'D0\n'
+                    contenu += '        H%R(IPOIN) = 2.4D0*(1.D0 + EXP(-EIKON))+'+str(group.param_set[simu][0])+'D0\n'
                 elif ("EIKON=(" in line):
                     contenu += '        EIKON=( (X(IPOIN)-'+str(round(group.param_set[simu][1],4))+'D0)**2+(Y(IPOIN)-'+str(round(group.param_set[simu][2],4))+'D0)**2)/4.D0\n'
                 elif ("MELISSA =" in line):
@@ -124,13 +139,28 @@ def create_simu(group):
 
 
 def launch_simu(simulation):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+    shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
-        for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-            os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
-            shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
-            command = 'telemac2d.py t2d_gouttedo.cas'
-            print command
-            simulation.job_id = subprocess.Popen(command.split()).pid
+       if STUDY_OPTIONS['coupling'] == "MELISSA_COUPLING_FLOWVR":
+           args = ['./rank'+str(i)+'/t2d_gouttedo.cas' for i in range(STUDY_OPTIONS['nb_parameters'] + 2)]
+           create_flowvr_group('telemac2d.py',
+                               args,
+                               simulation.rank,
+                               int(NODES_GROUP),
+                               STUDY_OPTIONS['nb_parameters'])
+           os.system('python create_group'+str(simulation.rank)+'.py')
+           os.system('flowvrd &')
+           simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+       else:
+            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+                os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
+                shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+                command = 'telemac2d.py t2d_gouttedo.cas'
+                print command
+                simulation.job_id = subprocess.Popen(command.split()).pid
 
     else:
         os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank0")
@@ -156,6 +186,8 @@ def check_load():
         subprocess.check_output(["pidof","out_user_fortran"])
         return False
     except:
+        os.system('flowvr-kill')
+        os.system('killall flowvrd')
         return True
 
 def kill_job(job):
@@ -164,20 +196,27 @@ def kill_job(job):
     
 def convert_to_serafin():
     os.system('./melissa_to_serafin')
+    
+def postrocessing():
+    os.system('flowvr-kill')
+    os.system('killall flowvrd')
+    shutil.rmtree('./group*')
+    os.system('melissa_to_serafin')
+    
         
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = getpass.getuser()
-STUDY_OPTIONS['working_directory'] = '/home/tterraz/Programmes/telemac-mascaret/v7p2r0/barracuda/examples/telemac2d/gouttedo_melissa'
+STUDY_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/droplet_example'
 STUDY_OPTIONS['nb_parameters'] = 3          # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 150        # initial number of parameter sets
-STUDY_OPTIONS['nb_time_steps'] = 20        # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['sampling_size'] = 15         # initial number of parameter sets
+STUDY_OPTIONS['nb_time_steps'] = 20         # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["WATER_DEPTH_____",
                                 "VELOCITY_U______",
                                 "VELOCITY_V______"]     # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
-STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_ZMQ"
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_FLOWVR"
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
@@ -204,5 +243,5 @@ USER_FUNCTIONS['restart_group'] = None
 #USER_FUNCTIONS['check_scheduler_load'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job
-USER_FUNCTIONS['postprocessing'] = None
+USER_FUNCTIONS['postprocessing'] = postrocessing
 USER_FUNCTIONS['finalize'] = None
