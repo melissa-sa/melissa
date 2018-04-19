@@ -43,7 +43,7 @@ file(GLOB
      )
 
 foreach( _file ${USR_F})
-    install(FILES ${CMAKE_BINARY_DIR}/examples/droplet_example/${_file} DESTINATION share/examples/droplet_example/user_fortran)
+    install(FILES ${_file} DESTINATION share/examples/droplet_example/user_fortran)
 endforeach()
 
 add_executable(melissa_to_serafin melissa_to_serafin.f)
