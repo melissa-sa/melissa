@@ -198,17 +198,18 @@ def convert_to_serafin():
     os.system('./melissa_to_serafin')
     
 def postrocessing():
+    os.chdir(STUDY_OPTIONS['working_directory'])
     os.system('flowvr-kill')
     os.system('killall flowvrd')
+    os.system('./melissa_to_serafin')
     shutil.rmtree('./group*')
-    os.system('melissa_to_serafin')
     
         
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = getpass.getuser()
 STUDY_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/droplet_example'
 STUDY_OPTIONS['nb_parameters'] = 3          # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 15         # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 10         # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 20         # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["WATER_DEPTH_____",

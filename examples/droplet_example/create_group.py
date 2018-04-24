@@ -50,12 +50,12 @@ nb_proc_simu = ${np_simu}
 nb_parameters = ${nb_param}
 
 merge = [FilterMerge("group"+str(group_id)+"merge"+str(i)) for i in range(nb_proc_simu)]
-merge_endit = FilterSignalAnd("group"+str(group_id)+"merge_endit")
+and_endit = FilterSignalAnd("group"+str(group_id)+"and_endit")
 
 group = [Simu("${executable}"+" "+args[i], "group"+str(group_id)+"simu"+str(i), nb_proc_simu) for i in range(nb_parameters+2)]
 
 presignal = FilterPreSignal("group"+str(group_id)+"presignal", nb = 1)
-merge_endit.getPort("out").link(presignal.getPort('in'))
+and_endit.getPort("out").link(presignal.getPort('in'))
 
 for j, simu in enumerate(group):
     if j == 0:
