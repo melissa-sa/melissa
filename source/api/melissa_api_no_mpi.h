@@ -25,9 +25,16 @@
 #ifndef MELISSA_API_NO_MPI_H
 #define MELISSA_API_NO_MPI_H
 
+#define MELISSA_COUPLING_NONE 0    /**< No coupling */
+#define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
+#define MELISSA_COUPLING_ZMQ 0     /**< ZeroMQ coupling */
+#define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
+#define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
+
 void melissa_init_no_mpi(const char *field_name,
                          const int  *vect_size,
-                         const int  *simu_id);
+                         const int  *simu_id,
+                         const int  *coupling);
 
 void melissa_send_no_mpi(const int  *time_step,
                          const char *field_name,

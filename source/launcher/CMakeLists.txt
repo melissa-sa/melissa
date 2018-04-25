@@ -24,4 +24,15 @@ file(GLOB
 
 foreach( _file ${LAUNCHER_SRC})
     configure_file(${_file} ${_file} @ONLY)
+    install(FILES ${CMAKE_BINARY_DIR}/launcher/${_file} DESTINATION share/launcher)
 endforeach()
+install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
+        DESTINATION bin
+        PERMISSIONS OWNER_WRITE
+                    OWNER_READ
+                    OWNER_EXECUTE
+                    GROUP_READ
+                    GROUP_EXECUTE
+                    WORLD_READ
+                    WORLD_EXECUTE
+        RENAME melissa_launcher)

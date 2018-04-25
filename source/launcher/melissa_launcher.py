@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 ###################################################################
 #                            Melissa                              #
 #-----------------------------------------------------------------#
@@ -20,7 +22,7 @@
     Main module of Melissa Launcher.
 
     usage:
-    pyton melissa_launcher.py path/to/options.py
+    melissa_launcher.py path/to/options.py
 """
 
 import os
@@ -34,6 +36,7 @@ def main():
         Import options from command line, and launch Melissa study
     """
     cwd = os.getcwd()
+    sys.path.append('@CMAKE_INSTALL_PREFIX@/share/launcher')
     if len(sys.argv) == 2:
         options_path = sys.argv[1]
     else:
@@ -43,12 +46,11 @@ def main():
         print "ERROR no Melissa Launcher options file given"
     else:
         imp.load_source("options", options_path+"/options.py")
-        from options import GLOBAL_OPTIONS as glob_opt
         from options import STUDY_OPTIONS as stdy_opt
         from options import MELISSA_STATS as ml_stats
         from options import USER_FUNCTIONS as usr_func
         from study import Study
-        melissa_study = Study(glob_opt, stdy_opt, ml_stats, usr_func)
+        melissa_study = Study(stdy_opt, ml_stats, usr_func)
         melissa_study.run()
 
 if __name__ == '__main__':

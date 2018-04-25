@@ -27,11 +27,9 @@ def draw_param_set():
         param_set[i] = np.random.uniform(0, 1)
     return param_set
 
-GLOBAL_OPTIONS = {}
-GLOBAL_OPTIONS['user_name'] = "user"
-GLOBAL_OPTIONS['working_directory'] = "/home/user/study"
-
 STUDY_OPTIONS = {}
+STUDY_OPTIONS['user_name'] = "user"
+STUDY_OPTIONS['working_directory'] = "/home/user/study"
 STUDY_OPTIONS['nb_parameters'] = 5
 STUDY_OPTIONS['sampling_size'] = 10
 STUDY_OPTIONS['nb_time_steps'] = 100
@@ -39,6 +37,7 @@ STUDY_OPTIONS['threshold_value'] = 0.7
 STUDY_OPTIONS['field_names'] = ["field1", "field2"]
 STUDY_OPTIONS['server_timeout'] = 600
 STUDY_OPTIONS['simulation_timeout'] = 400
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_DEFAULT"
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

@@ -38,6 +38,11 @@ WAITING = 0
 RUNNING = 1
 FINISHED = 2
 TIMEOUT = 4
+COUPLING_DICT = {"MELISSA_COUPLING_NONE":0,
+                 "MELISSA_COUPLING_DEFAULT":0,
+                 "MELISSA_COUPLING_ZMQ":0,
+                 "MELISSA_COUPLING_MPI":1,
+                 "MELISSA_COUPLING_FLOWVR":2}
 
 class Job(object):
     """
@@ -91,6 +96,7 @@ class Group(Job):
         self.nb_restarts = 0
         self.status = NOT_SUBMITTED
         self.lock = RLock()
+        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
         Group.nb_groups += 1
 
 #    @classmethod
@@ -143,6 +149,7 @@ class SingleSimuGroup(Group):
         self.rank = Group.nb_groups-1
         self.simu_id = self.rank
         self.param_set = numpy.copy(param_set)
+        self.coupling = 0
 
     def restart(self):
         """
@@ -235,7 +242,7 @@ class Server(Job):
         self.first_job_id = ''
 #        self.create_options()
         self.lock = RLock()
-        self.path = '@CMAKE_BINARY_DIR@/server'
+        self.path = '@CMAKE_INSTALL_PREFIX@/bin'
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir

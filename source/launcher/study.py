@@ -27,18 +27,18 @@ import imp
 import numpy as np
 import logging
 from ctypes import cdll, create_string_buffer
-#from options import GLOBAL_OPTIONS as glob_opt
+#from options import GLOBAL_OPTIONS as stdy_opt
 #from options import STUDY_OPTIONS as stdy_opt
 #from options import MELISSA_STATS as ml_stats
 #from options import USER_FUNCTIONS as usr_func
-imp.load_source('simulation', '@CMAKE_BINARY_DIR@/launcher/simulation.py')
+imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
 from simulation import Group
 from simulation import SobolGroup
 from simulation import Job
 
-get_message = cdll.LoadLibrary('@CMAKE_BINARY_DIR@/utils/libget_message.so')
+get_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/share/launcher/libget_message.so')
 
 # Jobs and executions status
 from simulation import NOT_SUBMITTED
@@ -143,7 +143,7 @@ class Study(object):
     """
         Study class, containing instances of the threads
     """
-    def __init__(self, glob_opt, stdy_opt, ml_stats, usr_func):
+    def __init__(self, stdy_opt, ml_stats, usr_func):
         self.groups = list()
         self.nb_groups = stdy_opt['sampling_size']
         if ml_stats['sobol_indices']:
@@ -152,7 +152,7 @@ class Study(object):
             self.sobol = False
         self.messenger = Messenger()
         self.state_checker = StateChecker()
-        self.glob_opt = glob_opt
+        self.stdy_opt = stdy_opt
         self.stdy_opt = stdy_opt
         self.ml_stats = ml_stats
         self.usr_func = usr_func
@@ -166,15 +166,15 @@ class Study(object):
         """
 #        global server
 #        global groups
-        if not os.path.isdir(self.glob_opt['working_directory']):
-            os.mkdir(self.glob_opt['working_directory'])
-        os.chdir(self.glob_opt['working_directory'])
+        if not os.path.isdir(self.stdy_opt['working_directory']):
+            os.mkdir(self.stdy_opt['working_directory'])
+        os.chdir(self.stdy_opt['working_directory'])
         if self.check_options() > 0:
             return -1
         self.create_group_list()
         create_study(self.usr_func)
         logging.info('submit server')
-        server.set_path(self.glob_opt['working_directory'])
+        server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
         server.launch()
         self.messenger.start()

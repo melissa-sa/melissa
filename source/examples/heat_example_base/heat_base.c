@@ -192,6 +192,9 @@ int main( int argc, char **argv )
 
   fprintf(stdout, "Calcul time: %g sec\n", t2-t1);
 
+  free(u);
+  free(f);
+
   MPI_Finalize();
 
   return 0;

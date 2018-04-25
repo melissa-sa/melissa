@@ -377,6 +377,10 @@ int main (int argc, char **argv)
             field_id = get_field_id(fields, melissa_options.nb_fields, field_name_ptr);
             if (field_id == -1)
             {
+                if (time_step == 0 && client_rank == 0)
+                {
+                    fprintf (stderr, "WARNING: not computing field %s\n", field_name_ptr);
+                }
                 continue;
             }
             if (first_send[field_id*comm_data.client_comm_size+client_rank] == 0)
