@@ -26,6 +26,7 @@ import getpass
 import imp
 from matplotlib import pyplot as plt
 from matplotlib import cm
+from string import Template
 from shutil import copyfile
 
 imp.load_source("options", "./scripts/options_local.py")
@@ -46,7 +47,7 @@ NODES_GROUP = 2
 def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
     content = ""
     file=open("@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/scripts/flowvr_group.py", "r")
-    content = file.read().substitute(args=str(args),
+    content = Template(file.read()).substitute(args=str(args),
                                      group_id=str(group_id),
                                      np_simu=str(nb_proc_simu),
                                      nb_param=str(nb_parameters),

@@ -50,20 +50,20 @@ def launch_simu(simulation):
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
-        print command[:-2]
-#        if BUILD_WITH_FLOWVR == 'ON':
-#            args = []
-#            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-#                args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
-#            create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
-#                                args,
-#                                simulation.rank,
-#                                int(NODES_GROUP),
-#                                STUDY_OPTIONS['nb_parameters'])
-#            os.system('python create_group'+str(simulation.rank)+'.py')
-#            simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
-#        else:
-        simulation.job_id = subprocess.Popen(command[:-2].split()).pid
+        if BUILD_WITH_FLOWVR == 'ON' and STUDY_OPTIONS['coupling'] == 'MELISSA_COUPLING_FLOWVR':
+            args = []
+            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+                args.append(str(simulation.simu_id[i])+" "+ str(simulation.coupling)+" "+' '.join(str(j) for j in simulation.param_set[i]))
+            create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+                                args,
+                                simulation.rank,
+                                int(NODES_GROUP),
+                                STUDY_OPTIONS['nb_parameters'])
+            os.system('python create_group'+str(simulation.rank)+'.py')
+            simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+        else:
+            print command[:-2]
+            simulation.job_id = subprocess.Popen(command[:-2].split()).pid
     else:
         if BUILD_EXAMPLES_WITH_MPI == 'ON':
             command = ' '.join(('mpirun',

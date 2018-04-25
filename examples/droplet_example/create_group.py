@@ -61,7 +61,7 @@ for j, simu in enumerate(group):
     if j == 0:
         for i, processus in enumerate(simu.processus):
             merge[i].getPort("out").link(processus.getPort("MelissaIn"))
-            processus.getPort("endIt").link(merge_endit.newInputPort())
+            processus.getPort("endIt").link(and_endit.newInputPort())
     else:
         for i, processus in enumerate(simu.processus):
             processus.getPort("MelissaOut").link(merge[i].newInputPort())
