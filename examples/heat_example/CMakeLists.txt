@@ -18,7 +18,7 @@
 add_subdirectory(src)
 add_subdirectory(scripts)
 
-find_python_module(matplotlib)
+#find_python_module(matplotlib)
 #if (PY_MATPLOTLIB)
 #  set(HEAT_VISU "heat_visu")
 #else (PY_MATPLOTLIB)

@@ -107,7 +107,7 @@ void increment_quantile (quantile_t *quantile,
 #pragma omp parallel for schedule(static) private(temp)
         for (i=0; i<vect_size; i++)
         {
-            gamma = quantile->increment*(0.9/(nmax-1)) - 0.9/(nmax-1) +0.1;
+            gamma = quantile->increment*(0.95/(nmax-1)) - 0.95/(nmax-1) +0.1;
             if (quantile->quantile[i] >= in_vect[i])
             {
                 temp = 1 - quantile->alpha;
