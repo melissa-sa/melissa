@@ -47,6 +47,8 @@ struct melissa_options_s
     int                  threshold_op;       /**< 1 if the user needs to compute threshold exceedance, 0 otherwise */
     double               threshold;          /**< threshold used to compute threshold exceedance                   */
     int                  quantile_op;        /**< 1 if the user needs to compute quantiles, 0 otherwise            */
+    int                  nb_quantiles;       /**< number of quantile fields                                        */
+    double              *quantile_order;     /**< array of quantile orders                                         */
     int                  sobol_op;           /**< 1 if the user needs to compute sobol indices, 0 otherwise        */
     int                  sobol_order;        /**< max order of the computes sobol indices                          */
 //    int                  global_vect_size;   /**< global size of input vector                                      */

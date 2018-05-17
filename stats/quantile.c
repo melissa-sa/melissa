@@ -49,7 +49,7 @@
  * size of the quantile vector
  *
  * @param[in] alpha
- * alpha parameter of the algotithm
+ * the quantile order
  *
  *******************************************************************************/
 
@@ -107,7 +107,7 @@ void increment_quantile (quantile_t *quantile,
 #pragma omp parallel for schedule(static) private(temp)
         for (i=0; i<vect_size; i++)
         {
-            gamma = quantile->increment*(0.95/(nmax-1)) - 0.95/(nmax-1) +0.1;
+            gamma = quantile->increment*(quantile->alpha/(nmax-1)) - quantile->alpha/(nmax-1) +0.1;
             if (quantile->quantile[i] >= in_vect[i])
             {
                 temp = 1 - quantile->alpha;
@@ -147,22 +147,29 @@ void increment_quantile (quantile_t *quantile,
  * @param[in] nb_time_steps
  * number of time_steps of the study
  *
+ * @param[in] nb_quantiles
+ * number of quantile values
+ *
  * @param[in] f
  * file descriptor
  *
  *******************************************************************************/
 
-void save_quantile(quantile_t *quantiles,
-                   int         vect_size,
-                   int         nb_time_steps,
-                   FILE*       f)
+void save_quantile(quantile_t **quantiles,
+                   int          vect_size,
+                   int          nb_time_steps,
+                   int          nb_quantiles,
+                   FILE*        f)
 {
-    int i;
+    int i, j;
     for (i=0; i<nb_time_steps; i++)
     {
-        fwrite(quantiles[i].quantile, sizeof(double), vect_size, f);
-        fwrite(&quantiles[i].increment, sizeof(int), 1, f);
-        fwrite(&quantiles[i].alpha, sizeof(double), 1, f);
+        for (j=0; j<nb_quantiles; j++)
+        {
+            fwrite(quantiles[i][j].quantile, sizeof(double), vect_size, f);
+            fwrite(&quantiles[i][j].increment, sizeof(int), 1, f);
+            fwrite(&quantiles[i][j].alpha, sizeof(double), 1, f);
+        }
     }
 }
 
@@ -184,22 +191,29 @@ void save_quantile(quantile_t *quantiles,
  * @param[in] nb_time_steps
  * number of time_steps of the study
  *
+ * @param[in] nb_quantiles
+ * number of quantile values
+ *
  * @param[in] f
  * file descriptor
  *
  *******************************************************************************/
 
-void read_quantile(quantile_t *quantiles,
-                   int         vect_size,
-                   int         nb_time_steps,
-                   FILE*       f)
+void read_quantile(quantile_t **quantiles,
+                   int          vect_size,
+                   int          nb_time_steps,
+                   int          nb_quantiles,
+                   FILE*        f)
 {
-    int i;
+    int i, j;
     for (i=0; i<nb_time_steps; i++)
     {
-        fread(quantiles[i].quantile, sizeof(double), vect_size, f);
-        fread(&quantiles[i].increment, sizeof(int), 1, f);
-        fread(&quantiles[i].alpha, sizeof(double), 1, f);
+        for (j=0; j<nb_quantiles; j++)
+        {
+            fread(quantiles[i][j].quantile, sizeof(double), vect_size, f);
+            fread(&quantiles[i][j].increment, sizeof(int), 1, f);
+            fread(&quantiles[i][j].alpha, sizeof(double), 1, f);
+        }
     }
 }
 

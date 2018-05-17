@@ -171,18 +171,19 @@ def heat_visu():
         fig[len(fig)-1].show()
         file.close()
 
-    if (MELISSA_STATS['quantile']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_quantile.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Quantiles')
-        fig[len(fig)-1].show()
-        file.close()
+    if (MELISSA_STATS['quantiles']):
+        for val in STUDY_OPTIONS['quantile_values']:
+            fig.append(plt.figure(len(fig)))
+            file_name = 'results.heat1_quantile'+str(val)+'.'+nb_time_steps
+            file=open(file_name)
+            value = 0
+            for line in file:
+                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+                value += 1
+            plt.pcolor(matrix,cmap=cm.coolwarm)
+            plt.colorbar().set_label('Quantiles'+str(val))
+            fig[len(fig)-1].show()
+            file.close()
 
     if (MELISSA_STATS['sobol_indices']):
         for param in range(STUDY_OPTIONS['nb_parameters']):

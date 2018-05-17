@@ -101,7 +101,14 @@ void compute_stats (melissa_data_t  *data,
 
     if (data->options->quantile_op == 1)
     {
-        increment_quantile (&(data->quantiles[time_step]), data->options->sampling_size, in_vect_tab[0], data->vect_size);
+        int i;
+        for (i=0; i<data->options->nb_quantiles; i++)
+        {
+            increment_quantile (&(data->quantiles[time_step][i]),
+                                data->options->sampling_size,
+                                in_vect_tab[0],
+                                data->vect_size);
+        }
     }
 
     if (data->options->sobol_op != 1)
@@ -156,7 +163,14 @@ void compute_stats (melissa_data_t  *data,
 
         if (data->options->quantile_op == 1)
         {
-            increment_quantile (&(data->quantiles[time_step]), data->options->sampling_size, in_vect_tab[1], data->vect_size);
+            int i;
+            for (i=0; i<data->options->nb_quantiles; i++)
+            {
+                increment_quantile (&(data->quantiles[time_step][i]),
+                                    data->options->sampling_size,
+                                    in_vect_tab[1],
+                                    data->vect_size);
+            }
         }
     }
     set_bit(data->step_simu.items[group_id], time_step);

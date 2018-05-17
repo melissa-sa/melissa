@@ -177,7 +177,7 @@ void save_stats (melissa_data_t *data,
             }
             if (data[i].options->quantile_op != 0)
             {
-                save_quantile(data[i].quantiles, data[i].vect_size, data[i].options->nb_time_steps, f);
+                save_quantile(data[i].quantiles, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_quantiles, f);
             }
             if (data[i].options->sobol_op != 0)
             {
@@ -253,7 +253,7 @@ void read_saved_stats (melissa_data_t *data,
         }
         if (data[client_rank].options->quantile_op != 0)
         {
-            read_quantile(data[client_rank].quantiles, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
+            read_quantile(data[client_rank].quantiles, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_quantiles, f);
         }
         if (data[client_rank].options->sobol_op != 0)
         {
@@ -673,32 +673,36 @@ void write_stats_bin (melissa_data_t    **data,
 
     if (options->quantile_op == 1)
     {
-        for (t=0; t<options->nb_time_steps; t++)
+        int value;
+        for (value=0; value<options->nb_quantiles; value++)
         {
-            sprintf(file_name, "%s_quantile_%.*d", field, max_size_time, (int)t+1);
-#ifdef BUILD_WITH_MPI
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            temp_offset = 0;
-#else // BUILD_WITH_MPI
-            f = fopen(file_name, "wb");
-#endif // BUILD_WITH_MPI
-            for (i=0; i<comm_data->client_comm_size; i++)
+            for (t=0; t<options->nb_time_steps; t++)
             {
-                if ((*data)[i].vect_size > 0)
+                sprintf(file_name, "%s_quantile%g_%.*d", field, options->quantile_order[value], max_size_time, (int)t+1);
+#ifdef BUILD_WITH_MPI
+                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
+                temp_offset = 0;
+#else // BUILD_WITH_MPI
+                f = fopen(file_name, "wb");
+#endif // BUILD_WITH_MPI
+                for (i=0; i<comm_data->client_comm_size; i++)
                 {
+                    if ((*data)[i].vect_size > 0)
+                    {
 #ifdef BUILD_WITH_MPI
-                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].quantiles[t].quantile, (*data)[i].vect_size, MPI_DOUBLE, &status);
-                    temp_offset += (*data)[i].vect_size;
+                        MPI_File_write_at (f, offset + temp_offset, (*data)[i].quantiles[t][value].quantile, (*data)[i].vect_size, MPI_DOUBLE, &status);
+                        temp_offset += (*data)[i].vect_size;
 #else // BUILD_WITH_MPI
-                    fwrite((*data)[i].quantiles[t].quantile, sizeof(double), (*data)[i].vect_size, f);
+                        fwrite((*data)[i].quantiles[t].quantile, sizeof(double), (*data)[i].vect_size, f);
 #endif // BUILD_WITH_MPI
+                    }
                 }
-            }
 #ifdef BUILD_WITH_MPI
-            MPI_File_close (&f);
+                MPI_File_close (&f);
 #else // BUILD_WITH_MPI
-            fclose(f);
+                fclose(f);
 #endif // BUILD_WITH_MPI
+            }
         }
     }
 
@@ -1860,41 +1864,45 @@ void write_stats_txt (melissa_data_t    **data,
 
     if (options->quantile_op == 1)
     {
-        for (t=0; t<options->nb_time_steps; t++)
+        int value;
+        for (value=0; value<options->nb_quantiles; value++)
         {
-            sprintf(file_name, "results.%s_quantile.%.*d", field, max_size_time, (int)t+1);
-            for (i=0; i<comm_data->client_comm_size; i++)
+            for (t=0; t<options->nb_time_steps; t++)
             {
-                if ((*data)[i].vect_size > 0)
+                sprintf(file_name, "results.%s_quantile%g.%.*d", field, options->quantile_order[value], max_size_time, (int)t+1);
+                for (i=0; i<comm_data->client_comm_size; i++)
                 {
-                    memcpy(&d_buffer[temp_offset], (*data)[i].quantiles[t].quantile, (*data)[i].vect_size*sizeof(double));
-                    temp_offset += (*data)[i].vect_size;
-                }
-            }
-            temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                    if ((*data)[i].vect_size > 0)
+                    {
+                        memcpy(&d_buffer[temp_offset], (*data)[i].quantiles[t][value].quantile, (*data)[i].vect_size*sizeof(double));
+                        temp_offset += (*data)[i].vect_size;
+                    }
                 }
                 temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                f = fopen(file_name, "w");
-                for (i=0; i<global_vect_size; i++)
+#ifdef BUILD_WITH_MPI
+                if (comm_data->rank == 0)
                 {
-                    fprintf (f, "%g\n", d_buffer[i]);
+                    for (j=1; j<comm_data->comm_size; j++)
+                    {
+                        temp_offset += local_vect_sizes[j-1];
+                        MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                    }
+                    temp_offset = 0;
                 }
-                fclose(f);
+                else
+                {
+                    MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+                }
+#endif // BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    f = fopen(file_name, "w");
+                    for (i=0; i<global_vect_size; i++)
+                    {
+                        fprintf (f, "%g\n", d_buffer[i]);
+                    }
+                    fclose(f);
+                }
             }
         }
     }

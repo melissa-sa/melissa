@@ -35,7 +35,7 @@
 
 static void melissa_alloc_data (melissa_data_t *data)
 {
-    int      i;
+    int      i, j;
 //    int32_t* items_ptr;
 
     if (data->is_valid != 1)
@@ -83,9 +83,15 @@ static void melissa_alloc_data (melissa_data_t *data)
 
     if (data->options->quantile_op == 1)
     {
-        data->quantiles = melissa_malloc (data->options->nb_time_steps * sizeof(quantile_t));
+        data->quantiles = melissa_malloc (data->options->nb_time_steps * sizeof(quantile_t*));
         for (i=0; i<data->options->nb_time_steps; i++)
-            init_quantile (&(data->quantiles[i]), data->vect_size, 0.95);
+        {
+            data->quantiles[i] = melissa_malloc (data->options->nb_quantiles * sizeof(quantile_t));
+            for (j=0; j<data->options->nb_quantiles; j++)
+            {
+                init_quantile (&(data->quantiles[i][j]), data->vect_size, data->options->quantile_order[j]);
+            }
+        }
     }
 
     if (data->options->sobol_op == 1)
@@ -101,19 +107,11 @@ static void melissa_alloc_data (melissa_data_t *data)
             data->init_sobol (&data->sobol_indices[i], data->options->nb_parameters, data->vect_size);
         }
     }
-//    data->step_simu = melissa_malloc (data->options->sampling_size * sizeof(int32_t*));
-//    for (i=0; i<data->options->sampling_size; i++)
-//    {
-//        data->step_simu[i] = melissa_calloc ((data->options->nb_time_steps+31)/32, sizeof(int32_t));
-//    }
-
-    // === new === //
     alloc_vector (&data->step_simu, data->options->sampling_size);
     for (i=0; i<data->options->sampling_size; i++)
     {
         vector_set (&data->step_simu, i, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
     }
-    // === end new === //
 }
 
 /**
@@ -194,7 +192,7 @@ void melissa_check_data (melissa_data_t *data)
 
 void melissa_free_data (melissa_data_t *data)
 {
-    int i;
+    int i, j;
 
     if (data->is_valid != 1)
     {
@@ -233,7 +231,11 @@ void melissa_free_data (melissa_data_t *data)
     if (data->options->quantile_op == 1)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
-            free_quantile (&(data->quantiles[i]));
+        {
+            for (j=0; j<data->options->nb_quantiles; j++)
+                free_quantile (&(data->quantiles[i][j]));
+            melissa_free (data->quantiles[i]);
+        }
         melissa_free (data->quantiles);
     }
     for (i=0; i<data->options->nb_time_steps; i++)

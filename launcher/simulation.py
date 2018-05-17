@@ -266,10 +266,16 @@ class Server(Job):
         if field_str == '':
             logging.error('error bad option: no field name given')
             return
+        if Job.ml_stats['quantiles']:
+            quantile_str = ':'.join([str(x) for x in Job.stdy_opt['quantile_values']])
+            if quantile_str == '':
+                logging.error('error bad option: no quantile value given')
+                return
         self.cmd_opt = ' '.join(('-o', op_str,
                                  '-p', str(Job.stdy_opt['nb_parameters']),
                                  '-s', str(Job.stdy_opt['sampling_size']),
                                  '-t', str(Job.stdy_opt['nb_time_steps']),
+                                 '-q', quantile_str,
                                  '-e', str(Job.stdy_opt['threshold_value']),
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),
                                  '-w', str(Job.stdy_opt['simulation_timeout']),

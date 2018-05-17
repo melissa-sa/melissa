@@ -53,6 +53,7 @@ static inline void stats_usage ()
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
+            " -q <char*>     : quantile values separated by semicolons\n"
             " -n <char*>     : Melissa Launcher node name (default: localhost)\n"
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
@@ -87,6 +88,7 @@ static inline void init_options (melissa_options_t *options)
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
     options->quantile_op     = 0;
+    options->nb_quantiles    = 0;
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
@@ -116,6 +118,55 @@ static inline void get_nb_fields (char               *name,
         {
             options->nb_fields += 1;
         }
+    }
+}
+
+static inline void get_nb_quantiles (char               *name,
+                                     melissa_options_t  *options)
+{
+    int i, len;
+
+    if (name == NULL || strncmp(&name[0],"-",1) == 0 || strncmp(&name[0],":",1) == 0)
+    {
+        stats_usage ();
+        exit (1);
+    }
+
+    i=0;
+    len = strlen(name);
+    options->nb_quantiles = 1;
+    for (i = 0; i < len; i++)
+    {
+        if (strncmp(&name[i],":",1) == 0)
+        {
+            options->nb_quantiles += 1;
+        }
+    }
+    options->quantile_order = melissa_calloc (options->nb_quantiles, sizeof(double));
+}
+
+static inline void get_quantile_orders (char              *name,
+                                        melissa_options_t *options)
+{
+    const char  s[2] = ":";
+    char       *temp_char;
+    int         i=0;
+
+    if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
+    {
+        stats_usage ();
+        exit (1);
+    }
+
+    /* get the first token */
+    temp_char = strtok (name, s);
+
+    /* walk through other tokens */
+    while( temp_char != NULL )
+    {
+        options->quantile_order[i] = atof(temp_char);
+        i++;
+        temp_char = strtok (NULL, s);
     }
 }
 
@@ -215,7 +266,7 @@ void melissa_print_options (melissa_options_t *options)
     if (options->threshold_op != 0)
         fprintf(stdout, "    threshold exceedance, with threshold = %g\n", options->threshold);
     if (options->quantile_op != 0)
-        fprintf(stdout, "    quantiles\n");
+        fprintf(stdout, "    quantile numbers: %d\n", options->nb_quantiles);
     if (options->sobol_op != 0)
         fprintf(stdout, "    sobol indices\n");
 //    if (options->restart != 0)
@@ -261,7 +312,7 @@ void melissa_get_options (int                 argc,
 
     do
     {
-        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:w:");
+        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:q:r:s:t:w:");
 
         switch (opt) {
         case 'r':
@@ -292,6 +343,10 @@ void melissa_get_options (int                 argc,
             break;
         case 'e':
             options->threshold = atof (optarg);
+            break;
+        case 'q':
+            get_nb_quantiles (optarg, options);
+            get_quantile_orders (optarg, options);
             break;
         case 's':
             options->sampling_size = atoi (optarg);
@@ -357,6 +412,13 @@ void melissa_check_options (melissa_options_t  *options)
         fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");
         options->mean_op = 1;
         options->variance_op = 1;
+    }
+
+    if (options->quantile_op != 0 && options->nb_quantiles < 1)
+    {
+        fprintf (stderr, "ERROR: you must provide at least 1 quantile value\n");
+        stats_usage ();
+        exit (1);
     }
 
     if (options->sampling_size < 2)
@@ -447,6 +509,7 @@ void melissa_write_options (melissa_options_t *options)
     f = fopen("options.save", "wb+");
 
     fwrite(options, sizeof(melissa_options_t), 1, f);
+    fwrite(options->quantile_order, sizeof(double), options->nb_quantiles, f);
 
     fclose(f);
 }
@@ -468,7 +531,7 @@ void melissa_write_options (melissa_options_t *options)
 int melissa_read_options (melissa_options_t *options)
 {
     FILE* f = NULL;
-    int ret = 1;
+    int ret;
     char file_name[256];
 
     sprintf (file_name, "%s/options.save", options->restart_dir);
@@ -476,10 +539,13 @@ int melissa_read_options (melissa_options_t *options)
 
     if (f != NULL)
     {
-        if (1 == fread(options, sizeof(melissa_options_t), 1, f))
-        {
-            ret = 0;
-        }
+        fread(options, sizeof(melissa_options_t), 1, f);
+        options->quantile_order = melissa_calloc (options->nb_quantiles, sizeof(double));
+        fread(options->quantile_order, sizeof(double), options->nb_quantiles, f);
+    }
+    else
+    {
+        ret = -1;
     }
 
     fclose(f);
