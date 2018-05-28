@@ -412,8 +412,10 @@ void melissa_init (const char *field_name,
 
 //    global_data.sobol_rank = *sobol_rank;
     global_data.coupling = *coupling;
+#ifdef BUILD_WITH_PROBES
     total_comm_time = 0.0;
     total_bytes_sent = 0;
+#endif // BUILD_WITH_PROBES
     if (first_init != 0)
     {
         global_data.buff_size = 0;

@@ -34,6 +34,8 @@ typedef struct cmessage_s cmessage_t;
 void create_message();
 void init_message();
 void wait_message();
+void init_message_snd();
+void send_message();
 void close_message();
 cmessage_t message;
 
@@ -44,6 +46,15 @@ void init_message()
     message.message_puller = zmq_socket (message.context, ZMQ_PULL);
     zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
     melissa_bind (message.message_puller, "tcp://*:5555");
+}
+
+void init_message_snd()
+{
+    int snd_timeout = 1000; // miliseconds
+    message.context = zmq_ctx_new ();
+    message.message_puller = zmq_socket (message.context, ZMQ_PUSH);
+    zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &snd_timeout, sizeof(int));
+    melissa_connect (message.message_puller, "tcp://localhost:5555");
 }
 
 void wait_message(char* msg)
@@ -58,6 +69,13 @@ void wait_message(char* msg)
         message.text[size] = 0;
         sprintf (msg, "%s", message.text);
     }
+}
+
+void send_message()
+{
+    char msg[255];
+    sprintf (msg, "Hello world");
+    zmq_send (message.message_puller, msg, 255, 0);
 }
 
 void close_message()

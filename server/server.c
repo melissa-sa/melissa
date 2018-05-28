@@ -165,6 +165,7 @@ int main (int argc, char **argv)
     melissa_connect (python_pusher, txt_buffer);
     if (comm_data.rank == 0)
     {
+        fprintf (stdout, "server connected to launcher\n");
         melissa_bind (init_responder, "tcp://*:2002");
         melissa_bind (connexion_responder, "tcp://*:2003");
 
@@ -182,6 +183,7 @@ int main (int argc, char **argv)
     {
         sprintf (txt_buffer, "server %s", node_name);
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+        fprintf (stdout, "server node name sent to launcher\n");
     }
 
     if (melissa_options.restart == 0)
@@ -405,7 +407,9 @@ int main (int argc, char **argv)
                 last_checkpoint_time = melissa_get_time();
                 if (melissa_options.restart == 1)
                 {
+#ifdef BUILD_WITH_PROBES
                     start_read_time = melissa_get_time();
+#endif // BUILD_WITH_PROBES
                     if (comm_data.rank == 0)
                     {
                         fprintf (stdout, "reading checkpoint files...");
@@ -416,8 +420,10 @@ int main (int argc, char **argv)
                         fprintf (stdout, " ok\n");
                     }
                     last_checkpoint_time = melissa_get_time();
+#ifdef BUILD_WITH_PROBES
                     end_read_time = melissa_get_time();
                     total_read_time += end_read_time - start_read_time;
+#endif // BUILD_WITH_PROBES
                 }
             }
             simu_ptr = simulations.items[group_id];
@@ -551,8 +557,8 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
             fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
-#endif // BUILD_WITH_PROBES
             total_save_time += end_save_time - start_save_time;
+#endif // BUILD_WITH_PROBES
             break;
         }
 
@@ -560,7 +566,8 @@ int main (int argc, char **argv)
 
         if (first_init == 0 &&
             nb_converged_fields >= melissa_options.nb_fields * local_nb_messages &&
-            melissa_options.sobol_op == 1)
+            melissa_options.sobol_op == 1 &&
+            nb_finished_simulations > 1)
         {
             sprintf (txt_buffer, "converged %d", comm_data.rank);
             zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);

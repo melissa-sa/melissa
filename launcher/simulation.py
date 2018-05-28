@@ -111,8 +111,9 @@ class Group(Job):
         """
         if Job.usr_func['create_group']:
             Job.usr_func['create_group'](self)
-        logging.warning('Warning: no \'create_group\''
-                        +' function provided')
+        else:
+            logging.warning('Warning: no \'create_group\''
+                          +' function provided')
 
     def launch(self):
         """

@@ -171,16 +171,19 @@ class Study(object):
         os.chdir(self.stdy_opt['working_directory'])
         if self.check_options() > 0:
             return -1
-        self.create_group_list()
         create_study(self.usr_func)
+        self.create_group_list()
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
         server.launch()
+        logging.debug('start messenger thread')
         self.messenger.start()
+        logging.debug('wait server start')
         server.wait_start()
         server.write_node_name()
 #        time.sleep(2)
+        logging.debug('start status checker thread')
         self.state_checker.start()
         for group in groups:
             fault_tolerance(self.stdy_opt['simulation_timeout'])

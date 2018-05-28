@@ -34,6 +34,7 @@ def create_run_server(server):
     signal_handler+="killall -USR1 melissa_server          \n"
     signal_handler+="wait %1                               \n"
     signal_handler+="}
+    content = ""
     file=open("run_server.sh", "w")
     content += "#!/bin/bash                                \n"
     content += "#SBATCH -N "+str(NODES_SERVER)+"                                   \n"
