@@ -22,7 +22,7 @@
     Main module of Melissa Launcher.
 
     usage:
-    melissa_launcher.py path/to/options.py
+    melissa_launcher path/to/options.py
 """
 
 import os

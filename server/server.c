@@ -186,7 +186,7 @@ int main (int argc, char **argv)
         fprintf (stdout, "server node name sent to launcher\n");
     }
 
-    if (melissa_options.restart == 0)
+    if (melissa_options.restart != 1)
     {
         alloc_vector (&simulations, melissa_options.sampling_size);
         for (i=0; i<melissa_options.sampling_size; i++)
@@ -197,7 +197,10 @@ int main (int argc, char **argv)
     else
     {
         // === Restart initialisation === //
-        fprintf (stdout, "reading simulation states at checkpoint time... ");
+        if (comm_data.rank == 0)
+        {
+            fprintf (stdout, "reading simulation states at checkpoint time... ");
+        }
         read_simu_states(&simulations, &melissa_options, &comm_data);
         for (i=0; i<simulations.size; i++)
         {
@@ -226,7 +229,10 @@ int main (int argc, char **argv)
             }
         }
         melissa_options.sampling_size = simulations.size;
-        fprintf (stdout, " ok \n");
+        if (comm_data.rank == 0)
+        {
+            fprintf (stdout, " ok \n");
+        }
     }
 
     // === Gather node names on node 0 === //
@@ -405,7 +411,7 @@ int main (int argc, char **argv)
             {
                 melissa_init_data (&data_ptr[client_rank], &melissa_options, recv_vect_size);
                 last_checkpoint_time = melissa_get_time();
-                if (melissa_options.restart == 1)
+                if (melissa_options.restart > 0)
                 {
 #ifdef BUILD_WITH_PROBES
                     start_read_time = melissa_get_time();
@@ -582,6 +588,12 @@ int main (int argc, char **argv)
             break;
         }
     }
+
+    for (i=0; i<melissa_options.nb_fields; i++)
+    {
+        save_stats (fields[i].stats_data, &comm_data, fields[i].name);
+    }
+    save_simu_states (&simulations, &comm_data);
 
     if (end_signal == 0)
     {

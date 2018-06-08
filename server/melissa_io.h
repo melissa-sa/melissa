@@ -37,11 +37,10 @@ void write_stats_txt(melissa_data_t    **data,
                      comm_data_t        *comm_data,
                      char               *field);
 
-//void write_stats_ensight(melissa_data_t    **data,
-//                         melissa_options_t  *options,
-//                         comm_data_t        *comm_data,
-//                         int                *local_vect_sizes,
-//                         char               *field);
+void write_stats_ensight(melissa_data_t    **data,
+                         melissa_options_t  *options,
+                         comm_data_t        *comm_data,
+                         char               *field);
 
 void write_client_data (int *client_comm_size,
                         int *client_vect_sizes);

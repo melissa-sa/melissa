@@ -312,7 +312,7 @@ void melissa_get_options (int                 argc,
 
     do
     {
-        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:q:r:s:t:w:");
+        opt = getopt (argc, argv, "c:e:f:g:hlm:n:o:p:q:r:s:t:w:");
 
         switch (opt) {
         case 'r':
@@ -331,6 +331,14 @@ void melissa_get_options (int                 argc,
 //            fprintf (stderr, "ERROR: can not read options.save file\n");
 //            stats_usage ();
 //            exit (1);
+            break;
+        case 'm':
+            sprintf (options->restart_dir, "%s", optarg);
+            if (strlen(options->restart_dir) < 1)
+            {
+                sprintf (options->restart_dir, ".");
+            }
+            options->restart = 2;
             break;
         case 'p':
             options->nb_parameters = atoi (optarg);

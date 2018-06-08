@@ -25,7 +25,9 @@ import time
 import subprocess
 import logging
 from threading import RLock
-from socket import gethostname
+#from socket import gethostname
+from ctypes import cdll, create_string_buffer
+get_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/share/launcher/libget_message.so')
 #from options import USER_FUNCTIONS as usr_func
 #from options import STUDY_OPTIONS as stdy_opt
 #from options import MELISSA_STATS as ml_stats
@@ -138,6 +140,16 @@ class Group(Job):
                           +' function provided')
             exit()
 
+    def finalize(self):
+        """
+            Finalize the group (optional)
+        """
+        if Job.usr_func['finalize_group']:
+            Job.usr_func['finalize_group'](self)
+        else:
+            pass
+
+
 class SingleSimuGroup(Group):
     """
     Single simulation group class
@@ -206,7 +218,7 @@ class SobolGroup(Group):
         self.nb_restarts += 1
         if self.nb_restarts > 4:
             logging.warning('Group ' +
-                            self.rank +
+                            str(self.rank) +
                             'crashed 5 times, drawing new parameter sets')
             logging.debug('old parameter set A: ' + str(self.param_set[0]))
             logging.debug('old parameter set B: ' + str(self.param_set[1]))
@@ -272,6 +284,8 @@ class Server(Job):
             if quantile_str == '':
                 logging.error('error bad option: no quantile value given')
                 return
+        buff = create_string_buffer('\000' * 256)
+        get_message.get_node_name(buff)
         self.cmd_opt = ' '.join(('-o', op_str,
                                  '-p', str(Job.stdy_opt['nb_parameters']),
                                  '-s', str(Job.stdy_opt['sampling_size']),
@@ -281,7 +295,7 @@ class Server(Job):
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),
                                  '-w', str(Job.stdy_opt['simulation_timeout']),
                                  '-f', field_str,
-                                 '-n', str(gethostname())))
+                                 '-n', str(buff.value)))
 
     def launch(self):
         """

@@ -71,7 +71,7 @@ void melissa_get_fields (int               argc,
     optind = 1;
     do
     {
-        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:q:r:s:t:w:");
+        opt = getopt (argc, argv, "c:e:f:g:hlm:n:o:p:q:r:s:t:w:");
         switch (opt) {
         case 'f':
             /* get the first token */
@@ -301,14 +301,14 @@ void finalize_field_data (melissa_field_t   *fields,
 //                             options,
 //                             comm_data,
 //                             fields[j].name);
-            write_stats_txt (&(fields[j].stats_data),
-                             options,
-                             comm_data,
-                             fields[j].name);
-//            write_stats_ensight (&(fields[j].stats_data),
-//                                 options,
-//                                 comm_data,
-//                                 fields[j].name);
+//            write_stats_txt (&(fields[j].stats_data),
+//                             options,
+//                             comm_data,
+//                             fields[j].name);
+            write_stats_ensight (&(fields[j].stats_data),
+                                 options,
+                                 comm_data,
+                                 fields[j].name);
         }
 #ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();
