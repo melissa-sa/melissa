@@ -261,14 +261,14 @@ void read_saved_stats (melissa_data_t *data,
         {
             data[client_rank].read_sobol(data[client_rank].sobol_indices, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
         }
-        fread(&temp_size, sizeof(int), 1, f);
-        while (temp_size > data[client_rank].step_simu.size)
+        if (data->options->restart == 1)
         {
-            vector_add(&data[client_rank].step_simu, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
-        }
-        for (j=0; j<data[client_rank].step_simu.size; j++)
-        {
-            if (data->options->restart == 1)
+            fread(&temp_size, sizeof(int), 1, f);
+            while (temp_size > data[client_rank].step_simu.size)
+            {
+                vector_add(&data[client_rank].step_simu, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
+            }
+            for (j=0; j<data[client_rank].step_simu.size; j++)
             {
                 fread(data[client_rank].step_simu.items[j], sizeof(int32_t), (data[client_rank].options->nb_time_steps+31)/32, f);
             }

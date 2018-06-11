@@ -174,7 +174,7 @@ class SingleSimuGroup(Group):
             logging.warning('Simulation ' + self.rank +
                             'crashed 5 times, drawing new parameter set')
             logging.info('old parameter set: ' + str(self.param_set))
-            self.param_set = usr_func['draw_parameter_set']()
+            self.param_set = Job.usr_func['draw_parameter_set']()
             logging.info('new parameter set: ' + str(self.param_set))
             self.nb_restarts = 0
 
@@ -222,8 +222,8 @@ class SobolGroup(Group):
                             'crashed 5 times, drawing new parameter sets')
             logging.debug('old parameter set A: ' + str(self.param_set[0]))
             logging.debug('old parameter set B: ' + str(self.param_set[1]))
-            self.param_set[0] = usr_func['draw_parameter_set']()
-            self.param_set[1] = usr_func['draw_parameter_set']()
+            self.param_set[0] = Job.usr_func['draw_parameter_set']()
+            self.param_set[1] = Job.usr_func['draw_parameter_set']()
             logging.info('new parameter set A: ' + str(self.param_set[0]))
             logging.info('new parameter set B: ' + str(self.param_set[1]))
             for i in range(len(self.param_set[0])):
@@ -332,7 +332,8 @@ class Server(Job):
         """
             Restarts the server
         """
-        self.cmd_opt += ' -r ' + self.directory
+        if not "-r" in self.cmd_opt:
+            self.cmd_opt += ' -r ' + self.directory
         os.chdir(self.directory)
         if Job.usr_func['restart_server']:
             Job.usr_func['restart_server'](self)
