@@ -125,6 +125,8 @@ endif(INSTALL_ZMQ)
 if(NOT ZMQ_FOUND)
     message(FATAL_ERROR "ZeroMQ not found:")
 else(NOT ZMQ_FOUND)
+    get_filename_component(ZMQ_LIB_DIR ${ZMQ_LIBRARY} DIRECTORY)
+    get_filename_component(ZMQ_DIR ${ZMQ_LIB_DIR} DIRECTORY)
     set(EXTRA_LIBS ${EXTRA_LIBS}
                    ${ZMQ_LIBRARIES})
 endif(NOT ZMQ_FOUND)

@@ -82,6 +82,7 @@ class StateChecker(Thread):
                             group.start_time = time.time()
                         elif s <= RUNNING and group.job_status == FINISHED:
                             logging.info('end group ' + str(group.rank))
+                            group.finalize()
         logging.info('closing state checker process')
 
 class Messenger(Thread):
@@ -169,7 +170,9 @@ class Study(object):
         if not os.path.isdir(self.stdy_opt['working_directory']):
             os.mkdir(self.stdy_opt['working_directory'])
         os.chdir(self.stdy_opt['working_directory'])
-        if self.check_options() > 0:
+        nb_errors = self.check_options()
+        if nb_errors > 0:
+            logging.error(str(nb_errors) + ' errors in options.py.')
             return -1
         create_study(self.usr_func)
         self.create_group_list()
@@ -212,14 +215,39 @@ class Study(object):
         errors = 0
         nb_parameters = self.stdy_opt['nb_parameters']
         if not self.ml_stats['sobol_indices'] and nb_parameters < 1:
-            logging.error('error bad option: nb_parameters too small')
+            logging.error('Error bad option: nb_parameters too small')
             errors += 1
         if self.ml_stats['sobol_indices'] and nb_parameters < 2:
-            logging.error('error bad option: nb_parameters too small')
+            logging.error('Error bad option: nb_parameters too small')
             errors += 1
         if self.stdy_opt['sampling_size'] < 2:
-            logging.error('error bad option: sample_size not big enough')
+            logging.error('Error bad option: sample_size not big enough')
             errors += 1
+
+        optional_func = ['create_study',
+                         'draw_parameter_set',
+                         'create_group',
+                         'restart_server',
+                         'restart_group',
+                         'check_scheduler_load',
+                         'postprocessing',
+                         'finalize']
+        mandatory_func = ['launch_server',
+                          'launch_group',
+                          'check_server_job',
+                          'check_group_job',
+                          'cancel_job']
+
+        for func_name in optional_func:
+            if not "func_name" in self.usr_func.keys():
+                self.usr_func[func_name] = None
+                logging.debug('Warning: no \''+func_name+'\' key in USER_FUNCTIONS')
+
+        for func_name in mandatory_func:
+            if not func_name in self.usr_func.keys():
+                logging.error('Error: no \''+func_name+'\' key in USER_FUNCTIONS')
+                errors += 1
+
         return errors
 
     def create_group_list(self):
@@ -279,7 +307,6 @@ def fault_tolerance(simulation_timeout):
             with group.lock:
                 if group.status <= RUNNING and group.job_status == FINISHED:
                     sleep = True
-                    break
         if sleep == True:
             time.sleep(10)
             sleep = False
@@ -295,7 +322,6 @@ def fault_tolerance(simulation_timeout):
                         logging.info("resubmit group " + str(group.rank)
                                      + " (timeout detected by launcher)")
                         group.restart()
-                        break
 #    time.sleep(1)
 
 
@@ -303,7 +329,8 @@ def create_study(usr_func):
     """
         Creates study environment
     """
-    if usr_func['create_study']:
+    if "create_study" in Job.usr_func.keys() \
+    and usr_func['create_study']:
         usr_func['create_study']()
     else:
         pass
@@ -317,16 +344,15 @@ def draw_parameter_set(usr_func, stdy_opt):
     else:
         param_set = np.zeros(stdy_opt['nb_parameters'])
         for i in range(stdy_opt['nb_parameters']):
-            param_set[i] = np.random.uniform(stdy_opt['range_min_param'][i],
-                                             stdy_opt['range_max_param'][i])
+            param_set[i] = np.random.uniform(0, 1)
     return param_set
-
 
 def check_scheduler_load(usr_func):
     """
         Return False if the load is full
     """
-    if usr_func['check_scheduler_load']:
+    if "check_scheduler_load" in Job.usr_func.keys() \
+    and usr_func['check_scheduler_load']:
         return usr_func['check_scheduler_load']()
     else:
         return True
@@ -337,7 +363,8 @@ def postprocessing(usr_func):
     """
         User defined postprocessing
     """
-    if usr_func['postprocessing']:
+    if "postprocessing" in Job.usr_func.keys() \
+    and usr_func['postprocessing']:
         usr_func['postprocessing']()
     else:
         pass
@@ -346,6 +373,9 @@ def finalize(usr_func):
     """
         User defined final step
     """
-    if usr_func['finalize']:
+    if "finalize" in Job.usr_func.keys() \
+    and usr_func['finalize']:
         usr_func['finalize']()
+    else:
+        pass
 

@@ -310,9 +310,26 @@ void melissa_get_options (int                 argc,
 
     init_options (options);
 
+    struct option longopts[] = {{ "checkintervals", required_argument, NULL, 'c' },
+                                { "treshold",       required_argument, NULL, 'e' },
+                                { "tresholds",      required_argument, NULL, 'e' },
+                                { "fieldnames",     required_argument, NULL, 'f' },
+                                { "help",           no_argument,       NULL, 'h' },
+                                { "learning",       no_argument,       NULL, 'l' },
+                                { "more",           required_argument, NULL, 'm' },
+                                { "launchername",   required_argument, NULL, 'n' },
+                                { "operations",     required_argument, NULL, 'o' },
+                                { "parameters",     required_argument, NULL, 'p' },
+                                { "quantiles",      required_argument, NULL, 'q' },
+                                { "restart",        required_argument, NULL, 'r' },
+                                { "samplingsize",   required_argument, NULL, 's' },
+                                { "timesteps",      required_argument, NULL, 't' },
+                                { "timeout",        required_argument, NULL, 'w' },
+                                { NULL,             0,                 NULL,  0  }};
+
     do
     {
-        opt = getopt (argc, argv, "c:e:f:g:hlm:n:o:p:q:r:s:t:w:");
+        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:w:", longopts, NULL);
 
         switch (opt) {
         case 'r':
@@ -322,15 +339,6 @@ void melissa_get_options (int                 argc,
                 sprintf (options->restart_dir, ".");
             }
             options->restart = 1;
-//            if (0 == melissa_read_options (options))
-//            {
-//                options->restart = 1;
-//                melissa_check_options (options);
-//                return;
-//            }
-//            fprintf (stderr, "ERROR: can not read options.save file\n");
-//            stats_usage ();
-//            exit (1);
             break;
         case 'm':
             sprintf (options->restart_dir, "%s", optarg);
@@ -377,6 +385,8 @@ void melissa_get_options (int                 argc,
         case 'h':
             stats_usage ();
             exit (0);
+        case 0:
+            break;
         case '?':
             fprintf (stderr, "Error: unknown option\n");
             stats_usage ();

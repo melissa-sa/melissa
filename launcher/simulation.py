@@ -25,12 +25,8 @@ import time
 import subprocess
 import logging
 from threading import RLock
-#from socket import gethostname
 from ctypes import cdll, create_string_buffer
 get_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/share/launcher/libget_message.so')
-#from options import USER_FUNCTIONS as usr_func
-#from options import STUDY_OPTIONS as stdy_opt
-#from options import MELISSA_STATS as ml_stats
 
 # Jobs and executions status
 
@@ -79,7 +75,8 @@ class Job(object):
         """
             Cancels a job (mandatory)
         """
-        if  Job.usr_func['cancel_job']:
+        if "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
             return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
@@ -111,7 +108,8 @@ class Group(Job):
         """
             Creates a group environment
         """
-        if Job.usr_func['create_group']:
+        if "create_group" in Job.usr_func.keys() \
+        and Job.usr_func['create_group']:
             Job.usr_func['create_group'](self)
         else:
             logging.warning('Warning: no \'create_group\''
@@ -121,7 +119,8 @@ class Group(Job):
         """
             Launches the group (mandatory)
         """
-        if Job.usr_func['launch_group']:
+        if "launch_group" in Job.usr_func.keys() \
+        and Job.usr_func['launch_group']:
             Job.usr_func['launch_group'](self)
         else:
             logging.error('Error: no \'launch_group\' function provided')
@@ -133,7 +132,8 @@ class Group(Job):
         """
             Checks the group job status (mandatory)
         """
-        if Job.usr_func['check_group_job']:
+        if "check_group_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_group_job']:
             Job.usr_func['check_group_job'](self)
         else:
             logging.error('Error: no \'check_group_job\''
@@ -144,10 +144,10 @@ class Group(Job):
         """
             Finalize the group (optional)
         """
-        if Job.usr_func['finalize_group']:
-            Job.usr_func['finalize_group'](self)
-        else:
-            pass
+
+        if "finalize_group" in Job.usr_func.keys():
+            if Job.usr_func['finalize_group']:
+                Job.usr_func['finalize_group'](self)
 
 
 class SingleSimuGroup(Group):
@@ -178,7 +178,8 @@ class SingleSimuGroup(Group):
             logging.info('new parameter set: ' + str(self.param_set))
             self.nb_restarts = 0
 
-        if Job.usr_func['restart_group']:
+        if "restart_group" in Job.usr_func.keys() \
+        and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
         else:
             logging.warning('warning: no \'restart_group\''
@@ -231,7 +232,8 @@ class SobolGroup(Group):
                 self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.nb_restarts = 0
 
-        if Job.usr_func['restart_group']:
+        if "restart_group" in Job.usr_func.keys() \
+        and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
         else:
             logging.warning('warning: no \'restart_group\''
@@ -304,7 +306,8 @@ class Server(Job):
         os.chdir(self.directory)
         logging.info('launch server')
         logging.info('server options: '+self.cmd_opt)
-        if Job.usr_func['launch_server']:
+        if "launch_server" in Job.usr_func.keys() \
+        and Job.usr_func['launch_server']:
             Job.usr_func['launch_server'](self)
         else:
             logging.error('Error: no \'launch_server\' function provided')
@@ -335,7 +338,8 @@ class Server(Job):
         if not "-r" in self.cmd_opt:
             self.cmd_opt += ' -r ' + self.directory
         os.chdir(self.directory)
-        if Job.usr_func['restart_server']:
+        if "restart_server" in Job.usr_func.keys() \
+        and Job.usr_func['restart_server']:
             Job.usr_func['restart_server'](self)
         else:
             logging.warning('Warning: no \'restart_server\' function provided'
@@ -351,7 +355,8 @@ class Server(Job):
         """
             Checks server job status
         """
-        if Job.usr_func['check_server_job']:
+        if "check_server_job" in Job.usr_func.keys() \
+         and Job.usr_func['check_server_job']:
             Job.usr_func['check_server_job'](self)
         else:
             logging.error('Error: no \'check_server_job\' function provided')
