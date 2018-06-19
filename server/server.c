@@ -381,7 +381,6 @@ int main (int argc, char **argv)
                 continue;
             }
 
-//======================== NEW ========================
             field_id = get_field_id(fields, melissa_options.nb_fields, field_name_ptr);
             if (field_id == -1)
             {
@@ -404,7 +403,6 @@ int main (int argc, char **argv)
                 }
                 melissa_options.sampling_size = simulations.size;
             }
-//====================== END NEW ======================
 
             data_ptr = fields[field_id].stats_data;
             if (data_ptr[client_rank].is_valid != 1)

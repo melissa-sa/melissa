@@ -157,9 +157,13 @@ class Study(object):
         self.stdy_opt = stdy_opt
         self.ml_stats = ml_stats
         self.usr_func = usr_func
-        Job.set_usr_func(usr_func)
-        Job.set_stdy_opt(stdy_opt)
-        Job.set_ml_stats(ml_stats)
+        nb_errors = self.check_options()
+        if nb_errors > 0:
+            logging.error(str(nb_errors) + ' errors in options.py.')
+            return -1
+        Job.set_usr_func(self.usr_func)
+        Job.set_stdy_opt(self.stdy_opt)
+        Job.set_ml_stats(self.ml_stats)
 
     def run(self):
         """
@@ -170,10 +174,6 @@ class Study(object):
         if not os.path.isdir(self.stdy_opt['working_directory']):
             os.mkdir(self.stdy_opt['working_directory'])
         os.chdir(self.stdy_opt['working_directory'])
-        nb_errors = self.check_options()
-        if nb_errors > 0:
-            logging.error(str(nb_errors) + ' errors in options.py.')
-            return -1
         create_study(self.usr_func)
         self.create_group_list()
         logging.info('submit server')
@@ -224,6 +224,38 @@ class Study(object):
             logging.error('Error bad option: sample_size not big enough')
             errors += 1
 
+        if 'threshold_exceedance' in self.ml_stats:
+            self.ml_stats['threshold_exceedances'] = self.ml_stats['threshold_exceedance']
+            self.ml_stats['threshold_exceedance'] = False
+
+        if 'threshold_value' in self.stdy_opt:
+            self.stdy_opt['threshold_values'] = self.stdy_opt['threshold_value']
+        elif 'threshold_value' in self.ml_stats:
+            self.stdy_opt['threshold_values'] = self.ml_stats['threshold_value']
+            self.ml_stats['threshold_value'] = False
+        elif 'threshold_values' in self.ml_stats:
+            self.stdy_opt['threshold_values'] = self.ml_stats['threshold_values']
+            self.ml_stats['threshold_values'] = False
+
+        if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
+            self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+
+        if 'quantile' in self.ml_stats:
+            self.ml_stats['quantiles'] = self.ml_stats['quantile']
+            self.ml_stats['quantile'] = False
+
+        if 'quantile_value' in self.stdy_opt:
+            self.stdy_opt['quantile_values'] = self.stdy_opt['quantile_value']
+        elif 'quantile_value' in self.ml_stats:
+            self.stdy_opt['quantile_values'] = self.ml_stats['quantile_value']
+            self.ml_stats['quantile_value'] = False
+        elif 'quantile_values' in self.ml_stats:
+            self.stdy_opt['quantile_values'] = self.ml_stats['quantile_values']
+            self.ml_stats['quantile_values'] = False
+
+        if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
+            self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+
         optional_func = ['create_study',
                          'draw_parameter_set',
                          'create_group',
@@ -239,7 +271,7 @@ class Study(object):
                           'cancel_job']
 
         for func_name in optional_func:
-            if not "func_name" in self.usr_func.keys():
+            if not func_name in self.usr_func.keys():
                 self.usr_func[func_name] = None
                 logging.debug('Warning: no \''+func_name+'\' key in USER_FUNCTIONS')
 

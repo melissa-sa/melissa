@@ -281,10 +281,17 @@ class Server(Job):
         if field_str == '':
             logging.error('error bad option: no field name given')
             return
+        quantile_str = '0'
         if Job.ml_stats['quantiles']:
             quantile_str = ':'.join([str(x) for x in Job.stdy_opt['quantile_values']])
             if quantile_str == '':
                 logging.error('error bad option: no quantile value given')
+                return
+        threshold_str = '0'
+        if Job.ml_stats['threshold_exceedances']:
+            threshold_str = ':'.join([str(x) for x in Job.stdy_opt['threshold_values']])
+            if threshold_str == '':
+                logging.error('error bad option: no threshold value given')
                 return
         buff = create_string_buffer('\000' * 256)
         get_message.get_node_name(buff)
@@ -293,7 +300,7 @@ class Server(Job):
                                  '-s', str(Job.stdy_opt['sampling_size']),
                                  '-t', str(Job.stdy_opt['nb_time_steps']),
                                  '-q', quantile_str,
-                                 '-e', str(Job.stdy_opt['threshold_value']),
+                                 '-e', threshold_str,
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),
                                  '-w', str(Job.stdy_opt['simulation_timeout']),
                                  '-f', field_str,

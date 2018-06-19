@@ -62,6 +62,8 @@ void compute_stats (melissa_data_t  *data,
                     double         **in_vect_tab,
                     const int        group_id)
 {
+    int i;
+
     if (data->is_valid != 1)
     {
         fprintf (stderr, "ERROR: data structure not valid (compute_stats)\n");
@@ -96,12 +98,16 @@ void compute_stats (melissa_data_t  *data,
 
     if (data->options->threshold_op == 1)
     {
-        update_threshold_exceedance (data->thresholds[time_step], data->options->threshold, in_vect_tab[0], data->vect_size);
+        for (i=0; i<data->options->nb_thresholds; i++)
+        {
+            update_threshold_exceedance (&(data->thresholds[time_step][i]),
+                                         in_vect_tab[0],
+                                         data->vect_size);
+        }
     }
 
     if (data->options->quantile_op == 1)
     {
-        int i;
         for (i=0; i<data->options->nb_quantiles; i++)
         {
             increment_quantile (&(data->quantiles[time_step][i]),
@@ -158,7 +164,12 @@ void compute_stats (melissa_data_t  *data,
 
         if (data->options->threshold_op == 1)
         {
-            update_threshold_exceedance (data->thresholds[time_step], data->options->threshold, in_vect_tab[1], data->vect_size);
+            for (i=0; i<data->options->nb_thresholds; i++)
+            {
+                update_threshold_exceedance (&(data->thresholds[time_step][i]),
+                                             in_vect_tab[1],
+                                             data->vect_size);
+            }
         }
 
         if (data->options->quantile_op == 1)

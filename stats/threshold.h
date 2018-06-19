@@ -25,19 +25,45 @@
 #ifndef THRESHOLD_H
 #define THRESHOLD_H
 
-void update_threshold_exceedance (int       threshold_exceedance[],
-                                  double    threshold,
-                                  double    in_vect[],
-                                  const int vect_size);
+/**
+ *******************************************************************************
+ *
+ * @ingroup stats_base
+ *
+ * @struct threshold_s
+ *
+ * Structure containing threshold exceedance arrays
+ *
+ *******************************************************************************/
 
-void save_threshold(int  **threshold_exceedance,
-                    int    vect_size,
-                    int    nb_time_steps,
-                    FILE*  f);
+struct threshold_s
+{
+    int    *threshold_exceedance; /**< threshold arrays           */
+    double  value;                /**< threshold values           */
+};
 
-void read_threshold(int  **threshold_exceedance,
-                    int    vect_size,
-                    int    nb_time_steps,
-                    FILE*  f);
+typedef struct threshold_s threshold_t; /**< type corresponding to variance_s */
+
+void init_threshold (threshold_t  *threshold,
+                     const int     vect_size,
+                     const double  value);
+
+void update_threshold_exceedance (threshold_t *threshold,
+                                  double       in_vect[],
+                                  const int    vect_size);
+
+void save_threshold(threshold_t **threshold,
+                    int           vect_size,
+                    int           nb_time_steps,
+                    int           nb_values,
+                    FILE*         f);
+
+void read_threshold(threshold_t **threshold,
+                    int           vect_size,
+                    int           nb_time_steps,
+                    int           nb_values,
+                    FILE*         f);
+
+void free_threshold(threshold_t *threshold);
 
 #endif // THRESHOLD_H

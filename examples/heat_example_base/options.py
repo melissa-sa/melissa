@@ -44,8 +44,8 @@ MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = True
 MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
-MELISSA_STATS['threshold_exceedance'] = True
-MELISSA_STATS['quantile'] = True
+MELISSA_STATS['threshold_exceedance'] = False
+MELISSA_STATS['quantile'] = False
 MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}

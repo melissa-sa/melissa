@@ -36,14 +36,40 @@
  *
  * @ingroup stats_base
  *
+ * This function initializes a threshold structure.
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] *threshold
+ * the threshold exceedance structure to initialize
+ *
+ * @param[in] value
+ * thresholds
+ *
+ * @param[in] vect_size
+ * size of the variance vector
+ *
+ *******************************************************************************/
+
+void init_threshold (threshold_t  *threshold,
+                     const int     vect_size,
+                     const double  value)
+{
+    threshold->threshold_exceedance = melissa_calloc (vect_size, sizeof(int));
+    threshold->value = value;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup stats_base
+ *
  * This function updates the number of values exceeding a given threshold
  *
  *******************************************************************************
  *
- * @param[in,out] threshold_exceedance[]
+ * @param[in,out] threshold
  * number of threshold exceedance occurences
- *
- * @param[in] threshold
  *
  * @param[in] in_vect[]
  * input vector of double values
@@ -53,19 +79,18 @@
  *
  *******************************************************************************/
 
-void update_threshold_exceedance (int       threshold_exceedance[],
-                                  double    threshold,
-                                  double    in_vect[],
-                                  const int vect_size)
+void update_threshold_exceedance (threshold_t *threshold,
+                                  double       in_vect[],
+                                  const int    vect_size)
 {
-    int     i;
+    int i;
 
 #pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
-        if (in_vect[i] > threshold)
+        if (in_vect[i] > threshold->value)
         {
-            threshold_exceedance[i] += 1;
+            threshold->threshold_exceedance[i] += 1;
         }
     }
 }
@@ -79,8 +104,8 @@ void update_threshold_exceedance (int       threshold_exceedance[],
  *
  *******************************************************************************
  *
- * @param[in] **threshold_exceedance
- * threshold exceedance array of vectors to save, size nb_time_steps
+ * @param[in] threshold
+ * threshold exceedance structure to save
  *
  * @param[in] vect_size
  * size of double vectors
@@ -88,20 +113,28 @@ void update_threshold_exceedance (int       threshold_exceedance[],
  * @param[in] nb_time_steps
  * number of time_steps of the study
  *
+ * @param[in] nb_values
+ * number of threshold
+ *
  * @param[in] f
  * file descriptor
  *
  *******************************************************************************/
 
-void save_threshold(int  **threshold_exceedance,
-                    int    vect_size,
-                    int    nb_time_steps,
-                    FILE*  f)
+void save_threshold(threshold_t **threshold,
+                    int           vect_size,
+                    int           nb_time_steps,
+                    int           nb_values,
+                    FILE*         f)
 {
-    int i;
+    int i, j;
     for (i=0; i<nb_time_steps; i++)
     {
-        fwrite(threshold_exceedance[i], sizeof(int), vect_size, f);
+        for (j=0; j<nb_values; j++)
+        {
+            fwrite(&threshold[i][j].value, sizeof(double), 1, f);
+            fwrite(threshold[i][j].threshold_exceedance, sizeof(int), vect_size, f);
+        }
     }
 }
 
@@ -114,8 +147,8 @@ void save_threshold(int  **threshold_exceedance,
  *
  *******************************************************************************
  *
- * @param[in] **threshold_exceedance
- * threshold exceedance array of vectors to read, size nb_time_steps
+ * @param[in] threshold
+ * threshold exceedance structure to read
  *
  * @param[in] vect_size
  * size of double vectors
@@ -123,19 +156,46 @@ void save_threshold(int  **threshold_exceedance,
  * @param[in] nb_time_steps
  * number of time_steps of the study
  *
+ * @param[in] nb_values
+ * number of threshold
+ *
  * @param[in] f
  * file descriptor
  *
  *******************************************************************************/
 
-void read_threshold(int  **threshold_exceedance,
-                    int    vect_size,
-                    int    nb_time_steps,
-                    FILE*  f)
+void read_threshold(threshold_t **threshold,
+                    int           vect_size,
+                    int           nb_time_steps,
+                    int           nb_values,
+                    FILE*         f)
 {
-    int i;
+    int i, j;
     for (i=0; i<nb_time_steps; i++)
     {
-        fread(threshold_exceedance[i], sizeof(int), vect_size, f);
+        for (j=0; j<nb_values; j++)
+        {
+            fread(&threshold[i][j].value, sizeof(double), 1, f);
+            fread(threshold[i][j].threshold_exceedance, sizeof(int), vect_size, f);
+        }
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup stats_base
+ *
+ * This function frees a threshold structure.
+ *
+ *******************************************************************************
+ *
+ * @param[in,out] *threshold
+ * the threshold exceedance structure to free
+ *
+ *******************************************************************************/
+
+void free_threshold (threshold_t *threshold)
+{
+    melissa_free (threshold->threshold_exceedance);
 }

@@ -175,7 +175,7 @@ void save_stats (melissa_data_t *data,
             }
             if (data[i].options->threshold_op != 0)
             {
-                save_threshold(data[i].thresholds, data[i].vect_size, data[i].options->nb_time_steps, f);
+                save_threshold(data[i].thresholds, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_thresholds, f);
             }
             if (data[i].options->quantile_op != 0)
             {
@@ -251,7 +251,7 @@ void read_saved_stats (melissa_data_t *data,
         }
         if (data[client_rank].options->threshold_op != 0)
         {
-            read_threshold(data[client_rank].thresholds, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
+            read_threshold(data[client_rank].thresholds, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_thresholds, f);
         }
         if (data[client_rank].options->quantile_op != 0)
         {
@@ -447,7 +447,7 @@ void write_stats_bin (melissa_data_t    **data,
 
     max_size_time=floor(log10(options->nb_time_steps))+1;
 
-    // ================= first test =============== //
+    // ============================================ //
     //                                              //
     // Communicate local vect size to every process //
     //                                              //
@@ -1226,64 +1226,68 @@ void write_stats_ensight (melissa_data_t    **data,
 
     if (options->threshold_op == 1)
     {
-        time_value = 0;
-        for (t=0; t<options->nb_time_steps; t++)
+        int value;
+        for (value=0; value<options->nb_thresholds; value++)
         {
-            time_value += 0.0012;
-            sprintf(file_name, "results.%s_threshold.%.*d", field, max_size_time,(int) t+1);
-            temp_offset = 0;
-            for (i=0; i<comm_data->client_comm_size; i++)
+            time_value = 0;
+            for (t=0; t<options->nb_time_steps; t++)
             {
-                if ((*data)[i].vect_size > 0)
-                {
-                    for (j=0; j<(*data)[i].vect_size; j++)
-                    {
-                        s_buffer[j + offset + temp_offset] = (float)(*data)[i].thresholds[t][j];
-                    }
-                    temp_offset += (*data)[i].vect_size;
-                }
-            }
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
+                time_value += 0.0012;
+                sprintf(file_name, "results.%s_threshold%g.%.*d", field, options->threshold[value], max_size_time,(int) t+1);
                 temp_offset = 0;
-                for (j=1; j<comm_data->comm_size; j++)
+                for (i=0; i<comm_data->client_comm_size; i++)
                 {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
+                    if ((*data)[i].vect_size > 0)
+                    {
+                        for (j=0; j<(*data)[i].vect_size; j++)
+                        {
+                            s_buffer[j + offset + temp_offset] = (float)(*data)[i].thresholds[t][value].threshold_exceedance[j];
+                        }
+                        temp_offset += (*data)[i].vect_size;
+                    }
                 }
-            }
-            else
-            {
-                MPI_Send(&s_buffer[offset], local_vect_sizes[comm_data->rank], MPI_FLOAT, 0, comm_data->rank+121, comm_data->comm);
-            }
+#ifdef BUILD_WITH_MPI
+                if (comm_data->rank == 0)
+                {
+                    temp_offset = 0;
+                    for (j=1; j<comm_data->comm_size; j++)
+                    {
+                        temp_offset += local_vect_sizes[j-1];
+                        MPI_Recv (&s_buffer[temp_offset], local_vect_sizes[j], MPI_FLOAT, j, j+121, comm_data->comm, &status);
+                    }
+                }
+                else
+                {
+                    MPI_Send(&s_buffer[offset], local_vect_sizes[comm_data->rank], MPI_FLOAT, 0, comm_data->rank+121, comm_data->comm);
+                }
 #endif // BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                f = fopen(file_name, "w");
-                sprintf(c_buffer, "%s_threshold (time values: %d, %g)", field, (int)t, time_value);
-                strncpy(c_buffer2, c_buffer, 80);
-                for (i=strlen(c_buffer); i < 80; i++)
-                  c_buffer2[i] = ' ';
-                c_buffer2[80] = '\0';
-                fwrite (c_buffer2, sizeof(char), 80, f);
-                n = 1;
-                sprintf(c_buffer, "part");
-                strncpy(c_buffer2, c_buffer, 80);
-                for (i=strlen(c_buffer); i < 80; i++)
-                  c_buffer2[i] = ' ';
-                c_buffer2[80] = '\0';
-                fwrite (c_buffer2, sizeof(char), 80, f);
-                fwrite (&n, sizeof(int32_t), 1, f);
-                sprintf(c_buffer, "hexa8");
-                strncpy(c_buffer2, c_buffer, 80);
-                for (i=strlen(c_buffer); i < 80; i++)
-                  c_buffer2[i] = ' ';
-                c_buffer2[80] = '\0';
-                fwrite (c_buffer2, sizeof(char), 80, f);
-                fwrite (s_buffer, sizeof(float), global_vect_size, f);
+                if (comm_data->rank == 0)
+                {
+                    f = fopen(file_name, "w");
+                    sprintf(c_buffer, "%s_threshold (time values: %d, %g)", field, (int)t, time_value);
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                        c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    n = 1;
+                    sprintf(c_buffer, "part");
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                        c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    fwrite (&n, sizeof(int32_t), 1, f);
+                    sprintf(c_buffer, "hexa8");
+                    strncpy(c_buffer2, c_buffer, 80);
+                    for (i=strlen(c_buffer); i < 80; i++)
+                        c_buffer2[i] = ' ';
+                    c_buffer2[80] = '\0';
+                    fwrite (c_buffer2, sizeof(char), 80, f);
+                    fwrite (s_buffer, sizeof(float), global_vect_size, f);
 
-                fclose(f);
+                    fclose(f);
+                }
             }
         }
     }

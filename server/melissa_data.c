@@ -49,9 +49,9 @@ static void melissa_alloc_data (melissa_data_t *data)
         return;
     }
 
-    data->moments = melissa_malloc (data->options->nb_time_steps * sizeof(moments_t));
-    for (i=0; i<data->options->nb_time_steps; i++)
-        init_moments (&(data->moments[i]), data->vect_size, 4);
+//    data->moments = melissa_malloc (data->options->nb_time_steps * sizeof(moments_t));
+//    for (i=0; i<data->options->nb_time_steps; i++)
+//        init_moments (&(data->moments[i]), data->vect_size, 4);
 
     if (data->options->mean_op == 1 && data->options->variance_op == 0)
     {
@@ -76,9 +76,15 @@ static void melissa_alloc_data (melissa_data_t *data)
 
     if (data->options->threshold_op == 1)
     {
-        data->thresholds = melissa_malloc (data->options->nb_time_steps * sizeof(int*));
+        data->thresholds = melissa_malloc (data->options->nb_time_steps * sizeof(threshold_t*));
         for (i=0; i<data->options->nb_time_steps; i++)
-            data->thresholds[i] = melissa_calloc (data->vect_size, sizeof(int));
+        {
+            data->thresholds[i] = melissa_calloc (data->options->nb_thresholds, sizeof(threshold_t));
+            for (j=0; j<data->options->nb_thresholds; j++)
+            {
+                init_threshold (&(data->thresholds[i][j]), data->vect_size, data->options->threshold[j]);
+            }
+        }
     }
 
     if (data->options->quantile_op == 1)
@@ -224,7 +230,13 @@ void melissa_free_data (melissa_data_t *data)
     if (data->options->threshold_op == 1)
     {
         for (i=0; i<data->options->nb_time_steps; i++)
+        {
+            for (j=0; j<data->options->nb_thresholds; j++)
+            {
+                free_threshold (&(data->thresholds[i][j]));
+            }
             melissa_free (data->thresholds[i]);
+        }
         melissa_free (data->thresholds);
     }
 
@@ -233,14 +245,17 @@ void melissa_free_data (melissa_data_t *data)
         for (i=0; i<data->options->nb_time_steps; i++)
         {
             for (j=0; j<data->options->nb_quantiles; j++)
+            {
                 free_quantile (&(data->quantiles[i][j]));
+            }
             melissa_free (data->quantiles[i]);
         }
         melissa_free (data->quantiles);
     }
-    for (i=0; i<data->options->nb_time_steps; i++)
-        free_moments (&(data->moments[i]));
-    melissa_free (data->moments);
+
+//    for (i=0; i<data->options->nb_time_steps; i++)
+//        free_moments (&(data->moments[i]));
+//    melissa_free (data->moments);
 
     if (data->options->sobol_op == 1)
     {
@@ -250,12 +265,6 @@ void melissa_free_data (melissa_data_t *data)
         }
         melissa_free (data->sobol_indices);
     }
-
-//    for (i=0; i<data->options->sampling_size; i++)
-//    {
-//        melissa_free (data->step_simu[i]);
-//    }
-//    melissa_free (data->step_simu);
 
     for (i=0; i<data->step_simu.size; i++)
     {

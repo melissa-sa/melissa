@@ -78,7 +78,7 @@ struct melissa_data_s
     mean_t              *means;                                  /**< array of mean structures, size nb_time_steps                    */
     variance_t          *variances;                              /**< array of variance structures, size nb_time_steps                */
     min_max_t           *min_max;                                /**< array of min and max structures, size nb_time_steps             */
-    int                **thresholds;                             /**< array of threshold exceedance vectors, size nb_time_steps       */
+    threshold_t        **thresholds;                             /**< array of threshold exceedance structures                        */
     quantile_t         **quantiles;                              /**< array of quantile structures, size nb_time_steps * nb_quantiles */
     moments_t           *moments;                                /**< array of genera moment structures, size nb_time_steps           */
     sobol_array_t       *sobol_indices;                          /**< array of sobol array structures, size nb_time_steps             */
