@@ -36,8 +36,41 @@
 #include "general_moments.h"
 #include "mean.h"
 #include "variance.h"
-#include "covariance.h"
 #include "melissa_utils.h"
+
+static inline void increment_moments_mean (double    *mean,
+                                           double    *in_vect,
+                                           const int  vect_size,
+                                           const int  increment,
+                                           const int  power)
+{
+    int     i;
+    double temp;
+
+#pragma omp parallel for schedule(static) private(temp)
+    for (i=0; i<vect_size; i++)
+    {
+        temp = mean[i];
+        mean[i] = temp + (pow(in_vect[i], power) - temp)/increment;
+    }
+}
+
+static inline void update_moments_mean (double    *m1,
+                                        double    *m2,
+                                        double    *m3,
+                                        const int  increment2,
+                                        const int  increment3,
+                                        const int  vect_size)
+{
+    int    i;
+    double delta;
+
+#pragma omp parallel for schedule(static) private(delta)
+    for (i=0; i<vect_size; i++)
+    {
+        delta = (m2[i] - m1[i]);
+        m3[i] = m1[i] + increment2 * delta / increment3;
+    }}
 
 /**
  *******************************************************************************
@@ -60,15 +93,15 @@
  *******************************************************************************/
 
 void init_moments(moments_t *moments,
-                  double     vect_size,
+                  const int  vect_size,
                   const int  max_order)
 {
-    moments->gamma1 = melissa_calloc(vect_size, sizeof(double));
-    moments->gamma2 = melissa_calloc(vect_size, sizeof(double));
+    moments->m1 = melissa_calloc(vect_size, sizeof(double));
+    moments->m2 = melissa_calloc(vect_size, sizeof(double));
     moments->theta2 = melissa_calloc(vect_size, sizeof(double));
-    moments->gamma3 = melissa_calloc(vect_size, sizeof(double));
+    moments->m3 = melissa_calloc(vect_size, sizeof(double));
     moments->theta3 = melissa_calloc(vect_size, sizeof(double));
-    moments->gamma4 = melissa_calloc(vect_size, sizeof(double));
+    moments->m4 = melissa_calloc(vect_size, sizeof(double));
     moments->theta4 = melissa_calloc(vect_size, sizeof(double));
     moments->increment = 0;
     moments->max_order = max_order;
@@ -99,41 +132,48 @@ void increment_moments (moments_t *moments,
                         const int  vect_size)
 {
     int i;
-    double m1, m2, m3, m4;
-    // gammas
-    if (moments->max_order > 0)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            moments->gamma1[i] += in_vect[i];
-        }
-    }
-    if (moments->max_order > 1)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            moments->gamma2[i] += pow(in_vect[i], 2);
-        }
-    }
-    if (moments->max_order > 2)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            moments->gamma3[i] += pow(in_vect[i], 3);
-        }
-    }
-    if (moments->max_order > 3)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            moments->gamma4[i] += pow(in_vect[i], 4);
-        }
-    }
+//    double m1, m2, m3, m4;
+//    // gammas
+//    if (moments->max_order > 0)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            moments->gamma1[i] += in_vect[i];
+//        }
+//    }
+//    if (moments->max_order > 1)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            moments->gamma2[i] += pow(in_vect[i], 2);
+//        }
+//    }
+//    if (moments->max_order > 2)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            moments->gamma3[i] += pow(in_vect[i], 3);
+//        }
+//    }
+//    if (moments->max_order > 3)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            moments->gamma4[i] += pow(in_vect[i], 4);
+//        }
+//    }
     moments->increment += 1;
+
+    //means
+    increment_moments_mean(moments->m1, in_vect, vect_size, moments->increment, 1);
+    increment_moments_mean(moments->m2, in_vect, vect_size, moments->increment, 2);
+    increment_moments_mean(moments->m3, in_vect, vect_size, moments->increment, 3);
+    increment_moments_mean(moments->m4, in_vect, vect_size, moments->increment, 4);
+
     // thetas
     if (moments->increment > 1)
     {
@@ -142,19 +182,22 @@ void increment_moments (moments_t *moments,
         {
             if (moments->max_order > 1)
             {
-                m1 = moments->gamma1[i]/(moments->increment);
-                m2 = moments->gamma2[i]/(moments->increment);
-                moments->theta2[i] = m2 - pow(m1, 2);
+//                m1 = moments->gamma1[i]/(moments->increment);
+//                m2 = moments->gamma2[i]/(moments->increment);
+//                moments->theta2[i] = m2 - pow(m1, 2);
+                moments->theta2[i] = moments->m2[i] - pow(moments->m1[i], 2);
             }
             if (moments->max_order > 2)
             {
-                m3 = moments->gamma3[i]/(moments->increment);
-                moments->theta3[i] = m3 - 3*m1*m2 + 2*pow(m1, 3);
+//                m3 = moments->gamma3[i]/(moments->increment);
+//                moments->theta3[i] = m3 - 3*m1*m2 + 2*pow(m1, 3);
+                moments->theta3[i] = moments->m3[i] - 3*moments->m1[i]*moments->m2[i] + 2*pow(moments->m1[i], 3);
             }
             if (moments->max_order > 3)
             {
-                m4 = moments->gamma4[i]/(moments->increment);
-                moments->theta4[i] = m4 - 4*m1*m3 + 6*pow(m1, 2)*m2 - 3*pow(m1, 4);
+//                m4 = moments->gamma4[i]/(moments->increment);
+//                moments->theta4[i] = m4 - 4*m1*m3 + 6*pow(m1, 2)*m2 - 3*pow(m1, 4);
+                moments->theta4[i] = moments->m4[i] - 4*moments->m1[i]*moments->m3[i] + 6*pow(moments->m1[i], 2)*moments->m2[i] - 3*pow(moments->m1[i], 4);
             }
         }
     }
@@ -189,60 +232,90 @@ void update_moments (moments_t *moments1,
                      const int  vect_size)
 {
     int i;
-    double m1, m2, m3, m4;
-    // gammas
-    if (updated_moments->max_order > 0)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            updated_moments->gamma1[i] = moments1->gamma1[i] + moments2->gamma1[i];
-        }
-    }
-    if (updated_moments->max_order > 1)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            updated_moments->gamma2[i] = moments1->gamma2[i] + moments2->gamma2[i];
-        }
-    }
-    if (updated_moments->max_order > 2)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            updated_moments->gamma3[i] = moments1->gamma3[i] + moments2->gamma3[i];
-        }
-    }
-    if (updated_moments->max_order > 3)
-    {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            updated_moments->gamma4[i] = moments1->gamma4[i] + moments2->gamma4[i];
-        }
-    }
+//    double m1, m2, m3, m4;
+//     // gammas
+//    if (updated_moments->max_order > 0)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            updated_moments->gamma1[i] = moments1->gamma1[i] + moments2->gamma1[i];
+//        }
+//    }
+//    if (updated_moments->max_order > 1)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            updated_moments->gamma2[i] = moments1->gamma2[i] + moments2->gamma2[i];
+//        }
+//    }
+//    if (updated_moments->max_order > 2)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            updated_moments->gamma3[i] = moments1->gamma3[i] + moments2->gamma3[i];
+//        }
+//    }
+//    if (updated_moments->max_order > 3)
+//    {
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            updated_moments->gamma4[i] = moments1->gamma4[i] + moments2->gamma4[i];
+//        }
+//    }
     updated_moments->increment = moments1->increment + moments2->increment;
+
+    //means
+    update_moments_mean (moments1->m1,
+                         moments2->m1,
+                         updated_moments->m1,
+                         moments2->increment,
+                         updated_moments->increment,
+                         vect_size);
+    update_moments_mean (moments1->m2,
+                         moments2->m2,
+                         updated_moments->m2,
+                         moments2->increment,
+                         updated_moments->increment,
+                         vect_size);
+    update_moments_mean (moments1->m3,
+                         moments2->m3,
+                         updated_moments->m3,
+                         moments2->increment,
+                         updated_moments->increment,
+                         vect_size);
+    update_moments_mean (moments1->m4,
+                         moments2->m4,
+                         updated_moments->m4,
+                         moments2->increment,
+                         updated_moments->increment,
+                         vect_size);
+
     // thetas
 #pragma omp parallel for schedule(static) private(m1, m2, m3, m4)
     for (i=0; i<vect_size; i++)
     {
         if (updated_moments->max_order > 1)
         {
-            m1 = updated_moments->gamma1[i]/(updated_moments->increment);
-            m2 = updated_moments->gamma2[i]/(updated_moments->increment);
-            updated_moments->theta2[i] = m2 - pow(m1, 2);
+//            m1 = updated_moments->gamma1[i]/(updated_moments->increment);
+//            m2 = updated_moments->gamma2[i]/(updated_moments->increment);
+//            updated_moments->theta2[i] = m2 - pow(m1, 2);
+            updated_moments->theta2[i] = updated_moments->m2[i] - pow(updated_moments->m1[i], 2);
         }
         if (updated_moments->max_order > 2)
         {
-            m3 = updated_moments->gamma3[i]/(updated_moments->increment);
-            updated_moments->theta3[i] = m3 - 3*m1*m2 + 2*pow(m1, 3);
+//            m3 = updated_moments->gamma3[i]/(updated_moments->increment);
+//            updated_moments->theta3[i] = m3 - 3*m1*m2 + 2*pow(m1, 3);
+            updated_moments->theta3[i] = updated_moments->m3[i] - 3*updated_moments->m1[i]*updated_moments->m2[i] + 2*pow(updated_moments->m1[i], 3);
         }
         if (updated_moments->max_order > 3)
         {
-            m4 = updated_moments->gamma4[i]/(updated_moments->increment);
-            updated_moments->theta4[i] = m4 - 4*m1*m3 + 6*pow(m1, 2)*m2 - 3*pow(m1, 4);
+//            m4 = updated_moments->gamma4[i]/(updated_moments->increment);
+//            updated_moments->theta4[i] = m4 - 4*m1*m3 + 6*pow(m1, 2)*m2 - 3*pow(m1, 4);
+            updated_moments->theta4[i] = updated_moments->m4[i] - 4*updated_moments->m1[i]*updated_moments->m3[i] + 6*pow(updated_moments->m1[i], 2)*updated_moments->m2[i] - 3*pow(updated_moments->m1[i], 4);
         }
     }
 }
@@ -278,10 +351,10 @@ void save_moments(moments_t *moments,
     int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        fwrite(moments[i].gamma1, sizeof(double), vect_size, f);
-        fwrite(moments[i].gamma2, sizeof(double), vect_size, f);
-        fwrite(moments[i].gamma3, sizeof(double), vect_size, f);
-        fwrite(moments[i].gamma4, sizeof(double), vect_size, f);
+        fwrite(moments[i].m1, sizeof(double), vect_size, f);
+        fwrite(moments[i].m2, sizeof(double), vect_size, f);
+        fwrite(moments[i].m3, sizeof(double), vect_size, f);
+        fwrite(moments[i].m4, sizeof(double), vect_size, f);
         fwrite(&moments[i].increment, sizeof(int), 1, f);
         fwrite(&moments[i].max_order, sizeof(int), 1, f);
     }
@@ -318,10 +391,10 @@ void read_moments(moments_t *moments,
     int i;
     for (i=0; i<nb_time_steps; i++)
     {
-        fread(moments[i].gamma1, sizeof(double), vect_size, f);
-        fread(moments[i].gamma2, sizeof(double), vect_size, f);
-        fread(moments[i].gamma3, sizeof(double), vect_size, f);
-        fread(moments[i].gamma4, sizeof(double), vect_size, f);
+        fread(moments[i].m1, sizeof(double), vect_size, f);
+        fread(moments[i].m2, sizeof(double), vect_size, f);
+        fread(moments[i].m3, sizeof(double), vect_size, f);
+        fread(moments[i].m4, sizeof(double), vect_size, f);
         fread(&moments[i].increment, sizeof(int), 1, f);
         fread(&moments[i].max_order, sizeof(int), 1, f);
     }
@@ -355,7 +428,8 @@ void compute_mean (moments_t *moments,
 #pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
-        mean[i] = moments->gamma1[i] / moments->increment;
+//        mean[i] = moments->gamma1[i] / moments->increment;
+        mean[i] = moments->m1[i];
     }
 }
 
@@ -471,11 +545,11 @@ void compute_kurtosis (moments_t *moments,
 
 void free_moments (moments_t *moments)
 {
-    melissa_free (moments->gamma1);
-    melissa_free (moments->gamma2);
+    melissa_free (moments->m1);
+    melissa_free (moments->m2);
+    melissa_free (moments->m3);
+    melissa_free (moments->m4);
     melissa_free (moments->theta2);
-    melissa_free (moments->gamma3);
     melissa_free (moments->theta3);
-    melissa_free (moments->gamma4);
     melissa_free (moments->theta4);
 }

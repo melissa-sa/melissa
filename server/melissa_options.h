@@ -43,6 +43,8 @@ struct melissa_options_s
     int                  nb_fields;          /**< nb of fields of the simulations                                  */
     int                  mean_op;            /**< 1 if the user needs to compute the means, 0 otherwise.           */
     int                  variance_op;        /**< 1 if the user needs to compute the variances, 0 otherwise.       */
+    int                  skewness_op;        /**< 1 if the user needs to compute the skewness, 0 otherwise.        */
+    int                  kurtosis_op;        /**< 1 if the user needs to compute the kurtosis, 0 otherwise.        */
     int                  min_and_max_op;     /**< 1 if the user needs to compute min and max, 0 otherwise.         */
     int                  threshold_op;       /**< 1 if the user needs to compute threshold exceedance, 0 otherwise */
     int                  nb_thresholds;      /**< number of threshold exceedance to compute                        */

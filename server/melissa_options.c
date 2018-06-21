@@ -46,6 +46,8 @@ static inline void stats_usage ()
             "                  possibles values :\n"
             "                  mean\n"
             "                  variance\n"
+            "                  skewness\n"
+            "                  kurtosis\n"
             "                  min\n"
             "                  max\n"
             "                  threshold_exceedance\n"
@@ -85,6 +87,8 @@ static inline void init_options (melissa_options_t *options)
     options->nb_thresholds   = 0;
     options->mean_op         = 0;
     options->variance_op     = 0;
+    options->skewness_op     = 0;
+    options->kurtosis_op     = 0;
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
     options->quantile_op     = 0;
@@ -234,6 +238,8 @@ static inline void get_operations (char              *name,
     /* juste to be sure */
     options->mean_op         = 0;
     options->variance_op     = 0;
+    options->skewness_op     = 0;
+    options->kurtosis_op     = 0;
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
     options->quantile_op     = 0;
@@ -254,6 +260,14 @@ static inline void get_operations (char              *name,
                  || 0 == strcmp(temp_char, "var"))
         {
             options->variance_op = 1;
+        }
+        else if (0 == strcmp(temp_char, "skewness"))
+        {
+            options->skewness_op = 1;
+        }
+        else if (0 == strcmp(temp_char, "kurtosis"))
+        {
+            options->kurtosis_op = 1;
         }
         else if (0 == strcmp(temp_char, "min") || 0 == strcmp(temp_char, "max")
                  || 0 == strcmp(temp_char, "minimum") || 0 == strcmp(temp_char, "maximum"))
@@ -310,6 +324,10 @@ void melissa_print_options (melissa_options_t *options)
         fprintf(stdout, "    mean\n");
     if (options->variance_op != 0)
         fprintf(stdout, "    variance\n");
+    if (options->skewness_op != 0)
+        fprintf(stdout, "    skewness\n");
+    if (options->kurtosis_op != 0)
+        fprintf(stdout, "    kurtosis\n");
     if (options->min_and_max_op != 0)
     {
         fprintf(stdout, "    min\n");
@@ -475,6 +493,8 @@ void melissa_check_options (melissa_options_t  *options)
     // check consistency
     if (options->mean_op == 0 &&
         options->variance_op == 0 &&
+        options->kurtosis_op == 0 &&
+        options->skewness_op == 0 &&
         options->min_and_max_op == 0 &&
         options->threshold_op == 0 &&
         options->quantile_op == 0 &&

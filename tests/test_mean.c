@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     {
         if (fabs((my_mean.mean[i] - ref_mean[i])/ref_mean[i]) > 10E-12)
         {
-            fprintf (stdout, "mean failed (noment mean = %g, ref mean = %g, i=%d)\n", my_moments.gamma1[i]/my_moments.increment, ref_mean[i], i);
+            fprintf (stdout, "mean failed (noment mean = %g, ref mean = %g, i=%d)\n", my_moments.m1[i], ref_mean[i], i);
             ret = 1;
         }
     }
