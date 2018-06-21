@@ -39,16 +39,12 @@
 
 struct moments_s
 {
-    double *m1;        /**< mean1[vect_size] */
-    double *m2;        /**< mean1[vect_size] */
-    double *m3;        /**< mean3[vect_size] */
-    double *m4;        /**< mean4[vect_size] */
-//    double *gamma1;    /**< gamma1[vect_size] */
-//    double *gamma2;    /**< gamma2[vect_size] */
+    double *m1;        /**< mean1[vect_size]  */
+    double *m2;        /**< mean1[vect_size]  */
+    double *m3;        /**< mean3[vect_size]  */
+    double *m4;        /**< mean4[vect_size]  */
     double *theta2;    /**< theta2[vect_size] */
-//    double *gamma3;    /**< gamma3[vect_size] */
     double *theta3;    /**< theta3[vect_size] */
-//    double *gamma4;    /**< gamma4[vect_size] */
     double *theta4;    /**< theta4[vect_size] */
     int     increment; /**< increment         */
     int     max_order; /**< max moment order  */

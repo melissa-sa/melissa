@@ -152,7 +152,6 @@ void melissa_init_data (melissa_data_t    *data,
     data->min_max         = NULL;
     data->thresholds      = NULL;
     data->quantiles       = NULL;
-//    data->cond_means      = NULL;
     data->sobol_indices   = NULL;
     melissa_check_data (data);
     melissa_alloc_data (data);
