@@ -145,6 +145,10 @@ void increment_moments (moments_t *moments,
 {
     int i;
     moments->increment += 1;
+    if (moments->max_order < 1)
+    {
+        return;
+    }
 
     //means
     increment_moments_mean(moments->m1, in_vect, vect_size, moments->increment, 1);
@@ -214,6 +218,10 @@ void update_moments (moments_t *moments1,
     int i;
 
     updated_moments->increment = moments1->increment + moments2->increment;
+    if (updated_moments->max_order < 1)
+    {
+        return;
+    }
 
     //means
     update_moments_mean (moments1->m1,
@@ -526,12 +534,12 @@ void free_moments (moments_t *moments)
         melissa_free (moments->m2);
         melissa_free (moments->theta2);
     }
-    if (moments->max_order > 1)
+    if (moments->max_order > 2)
     {
         melissa_free (moments->m3);
         melissa_free (moments->theta3);
     }
-    if (moments->max_order > 1)
+    if (moments->max_order > 3)
     {
         melissa_free (moments->m4);
         melissa_free (moments->theta4);

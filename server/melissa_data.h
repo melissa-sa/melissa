@@ -75,8 +75,8 @@ struct melissa_data_s
     int                  vect_size;                              /**< local size of input vectors                                     */
     melissa_options_t   *options;                                /**< pointer to an option structure                                  */
     int                  is_valid;                               /**< 1 if the structure has been checked                             */
-    mean_t              *means;                                  /**< array of mean structures, size nb_time_steps                    */
-    variance_t          *variances;                              /**< array of variance structures, size nb_time_steps                */
+//    mean_t              *means;                                  /**< array of mean structures, size nb_time_steps                    */
+//    variance_t          *variances;                              /**< array of variance structures, size nb_time_steps                */
     min_max_t           *min_max;                                /**< array of min and max structures, size nb_time_steps             */
     threshold_t        **thresholds;                             /**< array of threshold exceedance structures                        */
     quantile_t         **quantiles;                              /**< array of quantile structures, size nb_time_steps * nb_quantiles */
@@ -88,7 +88,6 @@ struct melissa_data_s
     void (*increment_sobol)(sobol_array_t*, int, double**, int); /**< pointer to Sobol increment function                             */
     void (*free_sobol)(sobol_array_t*, int);                     /**< pointer to Sobol free function                                  */
     int                  nb_simu;                                /**< number of simulation that have sent a message                   */
-//    int32_t            **step_simu;                              /**< arrays of bits, size nb_groups                                  */
     vector_t             step_simu;                              /**< vector of arrays of bits, size nb_groups                        */
 };
 

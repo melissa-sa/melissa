@@ -49,23 +49,45 @@ static void melissa_alloc_data (melissa_data_t *data)
         return;
     }
 
-//    data->moments = melissa_malloc (data->options->nb_time_steps * sizeof(moments_t));
-//    for (i=0; i<data->options->nb_time_steps; i++)
-//        init_moments (&(data->moments[i]), data->vect_size, 4);
+    data->moments = melissa_malloc (data->options->nb_time_steps * sizeof(moments_t));
 
-    if (data->options->mean_op == 1 && data->options->variance_op == 0)
+    if (data->options->kurtosis_op == 1)
     {
-        data->means = melissa_malloc (data->options->nb_time_steps * sizeof(mean_t));
-        for (i=0; i<data->options->nb_time_steps; i++)
-            init_mean (&(data->means[i]), data->vect_size);
+        j = 4;
+    }
+    else if (data->options->skewness_op == 1)
+    {
+        j = 3;
+    }
+    else if (data->options->variance_op == 1)
+    {
+        j = 2;
+    }
+    else if (data->options->mean_op == 1)
+    {
+        j = 1;
+    }
+    else
+    {
+        j = 0;
     }
 
-    if (data->options->variance_op == 1)
-    {
-        data->variances = melissa_malloc (data->options->nb_time_steps * sizeof(variance_t));
-        for (i=0; i<data->options->nb_time_steps; i++)
-            init_variance (&(data->variances[i]), data->vect_size);
-    }
+    for (i=0; i<data->options->nb_time_steps; i++)
+        init_moments (&(data->moments[i]), data->vect_size, j);
+
+//    if (data->options->mean_op == 1 && data->options->variance_op == 0)
+//    {
+//        data->means = melissa_malloc (data->options->nb_time_steps * sizeof(mean_t));
+//        for (i=0; i<data->options->nb_time_steps; i++)
+//            init_mean (&(data->means[i]), data->vect_size);
+//    }
+
+//    if (data->options->variance_op == 1)
+//    {
+//        data->variances = melissa_malloc (data->options->nb_time_steps * sizeof(variance_t));
+//        for (i=0; i<data->options->nb_time_steps; i++)
+//            init_variance (&(data->variances[i]), data->vect_size);
+//    }
 
     if (data->options->min_and_max_op == 1)
     {
@@ -147,8 +169,8 @@ void melissa_init_data (melissa_data_t    *data,
     data->vect_size       = vect_size;
     data->options         = options;
     data->is_valid        = 0;
-    data->means           = NULL;
-    data->variances       = NULL;
+//    data->means           = NULL;
+//    data->variances       = NULL;
     data->min_max         = NULL;
     data->thresholds      = NULL;
     data->quantiles       = NULL;
@@ -205,19 +227,23 @@ void melissa_free_data (melissa_data_t *data)
         exit (1);
     }
 
-    if (data->options->mean_op == 1 && data->options->variance_op == 0)
-    {
-        for (i=0; i<data->options->nb_time_steps; i++)
-            free_mean (&(data->means[i]));
-        melissa_free (data->means);
-    }
+    for (i=0; i<data->options->nb_time_steps; i++)
+        free_moments (&(data->moments[i]));
+    melissa_free (data->moments);
 
-    if (data->options->variance_op == 1)
-    {
-        for (i=0; i<data->options->nb_time_steps; i++)
-            free_variance (&(data->variances[i]));
-        melissa_free (data->variances);
-    }
+//    if (data->options->mean_op == 1 && data->options->variance_op == 0)
+//    {
+//        for (i=0; i<data->options->nb_time_steps; i++)
+//            free_mean (&(data->means[i]));
+//        melissa_free (data->means);
+//    }
+
+//    if (data->options->variance_op == 1)
+//    {
+//        for (i=0; i<data->options->nb_time_steps; i++)
+//            free_variance (&(data->variances[i]));
+//        melissa_free (data->variances);
+//    }
 
     if (data->options->min_and_max_op == 1)
     {
@@ -251,10 +277,6 @@ void melissa_free_data (melissa_data_t *data)
         }
         melissa_free (data->quantiles);
     }
-
-//    for (i=0; i<data->options->nb_time_steps; i++)
-//        free_moments (&(data->moments[i]));
-//    melissa_free (data->moments);
 
     if (data->options->sobol_op == 1)
     {

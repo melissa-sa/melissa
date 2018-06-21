@@ -301,14 +301,14 @@ void finalize_field_data (melissa_field_t   *fields,
 //                             options,
 //                             comm_data,
 //                             fields[j].name);
-//            write_stats_txt (&(fields[j].stats_data),
-//                             options,
-//                             comm_data,
-//                             fields[j].name);
-            write_stats_ensight (&(fields[j].stats_data),
-                                 options,
-                                 comm_data,
-                                 fields[j].name);
+            write_stats_txt (&(fields[j].stats_data),
+                             options,
+                             comm_data,
+                             fields[j].name);
+//            write_stats_ensight (&(fields[j].stats_data),
+//                                 options,
+//                                 comm_data,
+//                                 fields[j].name);
         }
 #ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();

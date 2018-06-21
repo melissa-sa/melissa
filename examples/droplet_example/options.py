@@ -101,7 +101,7 @@ def create_simu(group):
             contenu = ""
             for line in fichier:
                 if ("H%R(IPOIN)" in line):
-                    contenu += '        H%R(IPOIN) = 2.4D0*(1.D0 + EXP(-EIKON))+'+str(group.param_set[simu][0])+'D0\n'
+                    contenu += '        H%R(IPOIN)=2.4D0*(1.D0+EXP(-EIKON))+'+str(group.param_set[simu][0])+'D0\n'
                 elif ("EIKON=(" in line):
                     contenu += '        EIKON=( (X(IPOIN)-'+str(round(group.param_set[simu][1],4))+'D0)**2+(Y(IPOIN)-'+str(round(group.param_set[simu][2],4))+'D0)**2)/4.D0\n'
                 elif ("MELISSA =" in line):
@@ -122,7 +122,7 @@ def create_simu(group):
         fichier = open(casedir + "/user_fortran/condin.f", 'r')
         for line in fichier:
             if ("H%R(IPOIN)" in line):
-                contenu += '        H%R(IPOIN) = 2.4D0 * ( 1.D0 + EXP(-EIKON) )+'+str(group.param_set[0])+'D0\n'
+                contenu += '        H%R(IPOIN)=2.4D0*(1.D0+EXP(-EIKON))+'+str(group.param_set[0])+'D0\n'
             elif ("EIKON=(" in line):
                 contenu += '        EIKON=( (X(IPOIN)-'+str(round(group.param_set[1],4))+'D0)**2+(Y(IPOIN)-'+str(round(group.param_set[2],4))+'D0)**2)/4.D0\n'
             elif ("MELISSA =" in line):
@@ -226,7 +226,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantile'] = False
-MELISSA_STATS['sobol_indices'] = True
+MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
