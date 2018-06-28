@@ -350,7 +350,6 @@ void read_simu_states(vector_t          *simu,
     int                   i, size, max_size;
     melissa_simulation_t *simu_ptr;
     MPI_Request          *request;
-    MPI_Status            status;
 
     sprintf(file_name, "%s/simu_%d.data", options->restart_dir, comm_data->rank);
     f = fopen(file_name, "rb");
@@ -379,16 +378,12 @@ void read_simu_states(vector_t          *simu,
         simu_ptr = vector_get(simu, i);
         fread(&simu_ptr->status, sizeof(int), 1, f);
 #ifdef BUILD_WITH_MPI
-        MPI_Iallreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm, &request[i]);
+        MPI_Allreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm);
     }
     for (i=size; i<max_size; i++)
     {
         simu_ptr = vector_get(simu, i);
-        MPI_Iallreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm, &request[i]);
-    }
-    for (i=0; i<max_size; i++)
-    {
-        MPI_Wait(&request[i], &status);
+        MPI_Allreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm);
 #endif // BUILD_WITH_MPI
     }
     melissa_free (request);
@@ -1742,6 +1737,88 @@ void write_stats_txt (melissa_data_t    **data,
                 if ((*data)[i].vect_size > 0)
                 {
                     memcpy(&d_buffer[temp_offset], (*data)[i].moments[t].theta2, (*data)[i].vect_size*sizeof(double));
+                    temp_offset += (*data)[i].vect_size;
+                }
+            }
+            temp_offset = 0;
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j-1];
+                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                }
+                temp_offset = 0;
+            }
+            else
+            {
+                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<global_vect_size; i++)
+                {
+                    fprintf (f, "%g\n", d_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+    }
+
+    if (options->skewness_op == 1)
+    {
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_squewness.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if ((*data)[i].vect_size > 0)
+                {
+                    compute_skewness (&(*data)[i].moments[t], &d_buffer[temp_offset], (*data)[i].vect_size);
+                    temp_offset += (*data)[i].vect_size;
+                }
+            }
+            temp_offset = 0;
+#ifdef BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                for (j=1; j<comm_data->comm_size; j++)
+                {
+                    temp_offset += local_vect_sizes[j-1];
+                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                }
+                temp_offset = 0;
+            }
+            else
+            {
+                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            }
+#endif // BUILD_WITH_MPI
+            if (comm_data->rank == 0)
+            {
+                f = fopen(file_name, "w");
+                for (i=0; i<global_vect_size; i++)
+                {
+                    fprintf (f, "%g\n", d_buffer[i]);
+                }
+                fclose(f);
+            }
+        }
+    }
+
+    if (options->kurtosis_op == 1)
+    {
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_kurtosis.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if ((*data)[i].vect_size > 0)
+                {
+                    compute_kurtosis (&(*data)[i].moments[t], &d_buffer[temp_offset], (*data)[i].vect_size);
                     temp_offset += (*data)[i].vect_size;
                 }
             }
