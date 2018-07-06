@@ -79,7 +79,7 @@ def launch_simu(simulation):
                                 ' '.join(str(i) for i in simulation.param_set)))
         print command
         simulation.job_id = subprocess.Popen(command.split()).pid
-        os.chdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
     state = 0
@@ -129,6 +129,32 @@ def heat_visu():
             value += 1
         plt.pcolor(matrix,cmap=cm.coolwarm)
         plt.colorbar().set_label('Variances')
+        fig[len(fig)-1].show()
+        file.close()
+
+    if (MELISSA_STATS['skewness']):
+        fig.append(plt.figure(len(fig)))
+        file_name = 'results.heat1_skewness.'+nb_time_steps
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Skewness')
+        fig[len(fig)-1].show()
+        file.close()
+
+    if (MELISSA_STATS['kurtosis']):
+        fig.append(plt.figure(len(fig)))
+        file_name = 'results.heat1_kurtosis.'+nb_time_steps
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Kurtosis')
         fig[len(fig)-1].show()
         file.close()
 

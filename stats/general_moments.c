@@ -168,7 +168,7 @@ void increment_moments (moments_t *moments,
     // thetas
     if (moments->increment > 1)
     {
-#pragma omp parallel for schedule(static) private(m1, m2, m3, m4)
+#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             if (moments->max_order > 1)
@@ -259,7 +259,7 @@ void update_moments (moments_t *moments1,
     }
 
     // thetas
-#pragma omp parallel for schedule(static) private(m1, m2, m3, m4)
+#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         if (updated_moments->max_order > 1)

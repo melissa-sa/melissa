@@ -52,10 +52,63 @@ def draw_param_set():
     param_set[2] = np.random.uniform(5.05, 15.05)
     return param_set
 
-def launch_server(server):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
-        os.mkdir(STUDY_OPTIONS['working_directory'])
+def create_run_server_slurm(server):
+    # signal handler definition
+    signal_handler="handler() {                            \n"
+    signal_handler+="echo \"### CLEAN-UP TIME !!!\"        \n"
+    signal_handler+="STOP=1                                \n"
+    signal_handler+="sleep 1                               \n"
+    signal_handler+="killall -USR1 melissa_server          \n"
+    signal_handler+="wait %1                               \n"
+    signal_handler+="}                                     \n"
+    content=""
+    file=open("run_server.sh", "w")
+    content += "#!/bin/bash                                                        \n"
+    content += "#SBATCH -N "+str(NODES_SERVER)+"                                   \n"
+    content += "#SBATCH --time="+str(WALLTIME_SERVER)+"                            \n"
+    content += "#SBATCH --ntasks-per-node="+str(PROC_PER_NODE)+"                   \n"
+    content += "#SBATCH -o melissa.%j.log                                          \n"
+    content += "#SBATCH -e melissa.%j.err                                          \n"
+    content += "#SBATCH --job-name=Melissa                                         \n"
+    content += "#SBATCH --signal=B:SIGUSR2@30                                      \n"
+    content += "source ~/.bashrc                                                   \n"
+    content += signal_handler
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += "STOP=0                                                             \n"
+    content += "# run Melissa                                                      \n"
+    content += "echo  \"### Launch Melissa\"                                       \n"
+    content += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
+    content += "cd stats${SLURM_JOB_ID}.resu                                       \n"
+    content += "trap handler USR2                                                  \n"
+    content += "mpirun "+server.path+"/melissa_server "+server.cmd_opt+" &         \n"
+    content += "wait %1                                                            \n"
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += "cd ..                                                              \n"
+    file.write(content)
+    file.close()
+    os.system("chmod 744 run_server.sh")
+
+def launch_server_slurm(server):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/STATS")):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    create_run_server_slurm(server)
+    proc = subprocess.Popen('sbatch --exclusive "./run_server.sh"',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+    # get the job ID
+    (out, err) = proc.communicate()
+    print "out: " + out +", err: "+err
+    server.job_id = out.split()[-1]
+    print "server job id: "+server.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])
+
+def launch_server(server):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/STATS")):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
@@ -171,6 +224,70 @@ def launch_simu(simulation):
 
     os.chdir(STUDY_OPTIONS['working_directory'])
 
+def launch_simu_slurm(simulation):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+    shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    if MELISSA_STATS['sobol_indices']:
+        contenu = ""
+        fichier = open("run_telemac", 'w')
+        contenu += "#!/bin/bash\n"
+        contenu += "#SBATCH --constraint=HSW24\n"
+        contenu += "#SBATCH -N 1\n"
+        contenu += "#SBATCH --time=10:00\n"
+        contenu += "#SBATCH --ntasks-per-node=24\n"
+        contenu += "#SBATCH -o telemac.%j.log\n"
+        contenu += "#SBATCH -e telemac.%j.err\n"
+        contenu += "#SBATCH --job-name=test_Telemac\n"
+        contenu += "source ~/.bashrc\n"
+        contenu += "source /scratch/cnt0027/ima0366/tterraz/telemac/barracuda/configs/pysource.sh\n"
+        contenu += "date +\"%d/%m/%y %T\"\n"
+        for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+            if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(i))):
+                os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(i))
+            os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
+            shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+            contenu += "cd rank"+str(i)+"\n"
+            contenu += "telemac2d.py --mpi t2d_gouttedo.cas &\n"
+            contenu += "cd ..\n"
+        contenu += "wait %1\n"
+        contenu += "date +\"%d/%m/%y %T\"\n"
+        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+        fichier.write(contenu)
+        fichier.close()
+    else:
+        contenu = ""
+        if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0")):
+            os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0")
+        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0")
+        fichier = open("run_telemac", 'w')
+        contenu += "#!/bin/bash\n"
+        contenu += "#SBATCH --constraint=HSW24\n"
+        contenu += "#SBATCH -N 1\n"
+        contenu += "#SBATCH --time=10:00\n"
+        contenu += "#SBATCH --ntasks-per-node=24\n"
+        contenu += "#SBATCH -o telemac.%j.log\n"
+        contenu += "#SBATCH -e telemac.%j.err\n"
+        contenu += "#SBATCH --job-name=test_Telemac\n"
+        contenu += "source ~/.bashrc\n"
+        contenu += "source /scratch/cnt0027/ima0366/tterraz/telemac/barracuda/configs/pysource.sh\n"
+        contenu += "date +\"%d/%m/%y %T\"\n"
+        contenu += "telemac2d.py --mpi t2d_gouttedo.cas\n"
+        contenu += "date +\"%d/%m/%y %T\"\n"
+        fichier.write(contenu)
+        fichier.close()
+        shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    proc = subprocess.Popen("sbatch run_telemac",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    simulation.job_id = int(out.split()[-1])
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+
 def check_job(job):
     state = 0
     try:
@@ -193,7 +310,41 @@ def check_load():
 def kill_job(job):
     print 'killing job ...'
     os.system('kill '+str(job.job_id))
-    
+
+def check_job_slurm(job):
+    state = 0
+    proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    if (not "PENDING" in out):
+        state = 1
+        proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        if (not "RUNNING" in out):
+            state = 2
+    job.job_status = state
+
+def check_load_slurm():
+    proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    running_jobs = int(out)
+    return running_jobs < 100
+
+def kill_job_slurm(job):
+    print 'killing job ...'
+    os.system("scancel "+str(job.job_id))
+
 def convert_to_serafin():
     os.system('./melissa_to_serafin')
     

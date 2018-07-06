@@ -22,7 +22,7 @@ add_subdirectory(scripts)
 #if (PY_MATPLOTLIB)
 #  set(HEAT_VISU "heat_visu")
 #else (PY_MATPLOTLIB)
-  set(HEAT_VISU "None")
+set(HEAT_VISU "None")
 #endif (PY_MATPLOTLIB)
 
 configure_file(options.py options.py @ONLY)
