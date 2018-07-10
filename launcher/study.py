@@ -97,7 +97,8 @@ class Messenger(Thread):
 #        global groups
 #        global server
         last_server = 0
-        get_message.init_message()
+        get_message.init_context()
+        get_message.bind_message_rcv()
         while self.running_study:
             buff = create_string_buffer('\000' * 256)
             get_message.wait_message(buff)
@@ -129,12 +130,17 @@ class Messenger(Thread):
                                  str(server.node_name) + '; '+
                                  'Melissa Server job id: ' +
                                  str(server.job_id))
+                buff.value = str(server.node_name)
+                get_message.connect_message_snd(buff)
 
             if last_server > 0:
                 if (time.time() - last_server) > 100:
                     logging.info('server timeout\n')
                     with server.lock:
                         server.status = TIMEOUT
+            buff.value = 'hello server'+'\000'
+            get_message.send_message(buff)
+
 
         get_message.close_message()
         logging.info('closing messenger thread')

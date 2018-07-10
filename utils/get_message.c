@@ -25,24 +25,29 @@
 #include <zmq.h>
 #include "melissa_utils.h"
 
+#define PORT_NUMBER 5555
+
 struct cmessage_s
 {
     char text[256];
     void *context;
     void *message_puller;
-    zmq_msg_t msg;
+    void *message_pusher;
 };
 
 typedef struct cmessage_s cmessage_t;
 
 void get_node_name (char *node_name);
-void create_message();
-void init_message();
+void init_context();
+void bind_message_rcv();
+void bind_message_snd();
+void connect_message_rcv(char* node_name);
+void connect_message_snd(char* node_name);
 void wait_message(char* msg);
-void init_message_snd();
-void send_message();
+void send_message(char* msg);
 void close_message();
 cmessage_t message;
+
 
 void get_node_name (char *node_name)
 {
@@ -77,22 +82,52 @@ void get_node_name (char *node_name)
     }
 }
 
-void init_message()
+void init_context ()
 {
-    int rcv_timeout = 1000; // miliseconds
     message.context = zmq_ctx_new ();
-    message.message_puller = zmq_socket (message.context, ZMQ_PULL);
-    zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
-    melissa_bind (message.message_puller, "tcp://*:5555");
 }
 
-void init_message_snd()
+void bind_message_rcv()
+{
+    int rcv_timeout = 1000; // miliseconds
+    char name[255];
+    message.message_puller = zmq_socket (message.context, ZMQ_PULL);
+    zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
+    sprintf (name, "tcp://*:%d", PORT_NUMBER);
+    melissa_bind (message.message_puller, name);
+}
+
+void connect_message_rcv(char* node_name)
+{
+    int rcv_timeout = 1000; // miliseconds
+    char name[255];
+    message.message_puller = zmq_socket (message.context, ZMQ_PULL);
+    zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
+    sprintf (name, "tcp://%s:%d", node_name, PORT_NUMBER+1);
+    melissa_connect (message.message_puller, name);
+}
+
+void bind_message_snd()
 {
     int snd_timeout = 1000; // miliseconds
-    message.context = zmq_ctx_new ();
-    message.message_puller = zmq_socket (message.context, ZMQ_PUSH);
-    zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &snd_timeout, sizeof(int));
-    melissa_connect (message.message_puller, "tcp://localhost:5555");
+    char name[255];
+    message.message_pusher = zmq_socket (message.context, ZMQ_PUSH);
+    zmq_setsockopt (message.message_pusher, ZMQ_SNDTIMEO, &snd_timeout, sizeof(int));
+    zmq_setsockopt (message.message_pusher, ZMQ_LINGER, &snd_timeout, sizeof(int));
+    sprintf (name, "tcp://*:%d", PORT_NUMBER);
+    melissa_bind (message.message_pusher, name);
+}
+
+void connect_message_snd(char* node_name)
+{
+    int snd_timeout = 1000; // miliseconds
+    char name[255];
+    message.message_pusher = zmq_socket (message.context, ZMQ_PUSH);
+    zmq_setsockopt (message.message_pusher, ZMQ_SNDTIMEO, &snd_timeout, sizeof(int));
+    zmq_setsockopt (message.message_pusher, ZMQ_LINGER, &snd_timeout, sizeof(int));
+    sprintf (name, "tcp://%s:%d", node_name, PORT_NUMBER+1);
+    fprintf (stdout, "connecting launcher to %s\n", name);
+    melissa_connect (message.message_pusher, name);
 }
 
 void wait_message(char* msg)
@@ -109,15 +144,15 @@ void wait_message(char* msg)
     }
 }
 
-void send_message()
+void send_message(char* msg)
 {
-    char msg[255];
-    sprintf (msg, "Hello world");
-    zmq_send (message.message_puller, msg, 255, 0);
+    sprintf (message.text, "%s", msg);
+    zmq_send (message.message_pusher, message.text, 255, 0);
 }
 
 void close_message()
 {
     zmq_close (message.message_puller);
+    zmq_close (message.message_pusher);
     zmq_ctx_term (message.context);
 }

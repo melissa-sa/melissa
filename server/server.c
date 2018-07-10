@@ -65,6 +65,7 @@ int main (int argc, char **argv)
     void                 *connexion_responder = zmq_socket (context, ZMQ_REP);
     void                 *init_responder = zmq_socket (context, ZMQ_REP);
     void                 *data_puller = zmq_socket (context, ZMQ_PULL);
+    void                 *python_puller = zmq_socket (context, ZMQ_PULL);
     void                 *python_pusher = zmq_socket (context, ZMQ_PUSH);
     int                   first_init;
     int                  *first_send;
@@ -157,7 +158,7 @@ int main (int argc, char **argv)
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     melissa_bind (data_puller, txt_buffer);
 
-    // === Open launcher port === //
+    // === Open launcher ports === //
 
     sprintf (txt_buffer, "tcp://%s:5555", melissa_options.launcher_name);
     i = 10000; // linger
@@ -168,6 +169,9 @@ int main (int argc, char **argv)
         fprintf (stdout, "server connected to launcher\n");
         melissa_bind (init_responder, "tcp://*:2002");
         melissa_bind (connexion_responder, "tcp://*:2003");
+
+        zmq_setsockopt (python_puller, ZMQ_LINGER, &i, sizeof(int));
+        melissa_bind (python_puller, "tcp://*:5556");
 
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
         first_init = 2;
@@ -243,10 +247,6 @@ int main (int argc, char **argv)
     memcpy (node_names, node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
 
-//    sinit_tab[0] = comm_data.comm_size;
-//    sinit_tab[1] = melissa_options.sobol_op;
-//    sinit_tab[2] = melissa_options.nb_parameters;
-
     // =================== //
     // ===  Main loop  === //
     // =================== //
@@ -257,16 +257,17 @@ int main (int argc, char **argv)
         start_wait_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
         zmq_pollitem_t items [] = {
+            { python_puller, 0, ZMQ_POLLIN, 0 },
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
             { data_puller, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 2, 100);
+        zmq_poll (items, 3, 100);
 #ifdef BUILD_WITH_PROBES
         end_wait_time = melissa_get_time();
         total_wait_time += end_wait_time - start_wait_time;
 #endif // BUILD_WITH_PROBES
 
-        // === If no message on the connexion port === //
+        // === check clients timeouts === //
 
         if (comm_data.rank == 0)
         {
@@ -284,9 +285,22 @@ int main (int argc, char **argv)
             }
         }
 
-        // === If message on the connexion port === //
+        // === If message on the python port === //
 
         if (items[0].revents & ZMQ_POLLIN)
+        {
+            char text[256];
+            int size = zmq_recv (python_puller, text, 255, 0);
+            if (size > 1)
+            {
+                text[size] = 0;
+                fprintf (stdout, "recieved \"%s\" from launcher\n", text);
+            }
+        }
+
+        // === If message on the connexion port === //
+
+        if (items[1].revents & ZMQ_POLLIN)
         {
             if (comm_data.rank == 0)
             {
@@ -350,7 +364,7 @@ int main (int argc, char **argv)
 
         // === Data reception and statistics computation === //
 
-        if (items[1].revents & ZMQ_POLLIN)
+        if (items[2].revents & ZMQ_POLLIN)
         {
 #ifdef BUILD_WITH_PROBES
             start_comm_time = melissa_get_time();
@@ -676,6 +690,7 @@ int main (int argc, char **argv)
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
     }
     zmq_close (python_pusher);
+    zmq_close (python_puller);
     zmq_ctx_term (context);
 
 #ifdef BUILD_WITH_MPI
