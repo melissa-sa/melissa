@@ -20,3 +20,4 @@ set(EXAMPLES_LIBS ${EXTRA_LIBS}
 
 add_subdirectory(heat_example_base)
 add_subdirectory(heat_example)
+add_subdirectory(droplet_example)

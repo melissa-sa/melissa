@@ -65,6 +65,7 @@ int main (int argc, char **argv)
     void                 *connexion_responder = zmq_socket (context, ZMQ_REP);
     void                 *init_responder = zmq_socket (context, ZMQ_REP);
     void                 *data_puller = zmq_socket (context, ZMQ_PULL);
+    void                 *python_puller = zmq_socket (context, ZMQ_PULL);
     void                 *python_pusher = zmq_socket (context, ZMQ_PUSH);
     int                   first_init;
     int                  *first_send;
@@ -100,6 +101,8 @@ int main (int argc, char **argv)
     int                   detected_timeouts;
     int                   nb_finished_simulations = 0;
     double                last_checkpoint_time = 0.0;
+    double                last_msg_launcher;
+    const double          timeout_launcher = 50;
     vector_t              simulations;
     melissa_simulation_t *simu_ptr;
 
@@ -157,7 +160,7 @@ int main (int argc, char **argv)
     zmq_setsockopt (data_puller, ZMQ_RCVHWM, &nb_bufferized_messages, sizeof(int));
     melissa_bind (data_puller, txt_buffer);
 
-    // === Open launcher port === //
+    // === Open launcher ports === //
 
     sprintf (txt_buffer, "tcp://%s:5555", melissa_options.launcher_name);
     i = 10000; // linger
@@ -165,10 +168,15 @@ int main (int argc, char **argv)
     melissa_connect (python_pusher, txt_buffer);
     if (comm_data.rank == 0)
     {
+        fprintf (stdout, "server connected to launcher\n");
         melissa_bind (init_responder, "tcp://*:2002");
         melissa_bind (connexion_responder, "tcp://*:2003");
 
+        zmq_setsockopt (python_puller, ZMQ_LINGER, &i, sizeof(int));
+        melissa_bind (python_puller, "tcp://*:5556");
+
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
+        last_msg_launcher = melissa_get_time();
         first_init = 2;
     }
     else
@@ -182,9 +190,10 @@ int main (int argc, char **argv)
     {
         sprintf (txt_buffer, "server %s", node_name);
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+        fprintf (stdout, "server node name sent to launcher\n");
     }
 
-    if (melissa_options.restart == 0)
+    if (melissa_options.restart != 1)
     {
         alloc_vector (&simulations, melissa_options.sampling_size);
         for (i=0; i<melissa_options.sampling_size; i++)
@@ -195,7 +204,10 @@ int main (int argc, char **argv)
     else
     {
         // === Restart initialisation === //
-        fprintf (stdout, "reading simulation states at checkpoint time... ");
+        if (comm_data.rank == 0)
+        {
+            fprintf (stdout, "reading simulation states at checkpoint time... ");
+        }
         read_simu_states(&simulations, &melissa_options, &comm_data);
         for (i=0; i<simulations.size; i++)
         {
@@ -224,7 +236,10 @@ int main (int argc, char **argv)
             }
         }
         melissa_options.sampling_size = simulations.size;
-        fprintf (stdout, " ok \n");
+        if (comm_data.rank == 0)
+        {
+            fprintf (stdout, " ok \n");
+        }
     }
 
     // === Gather node names on node 0 === //
@@ -234,10 +249,6 @@ int main (int argc, char **argv)
 #else // BUILD_WITH_MPI
     memcpy (node_names, node_name, MPI_MAX_PROCESSOR_NAME);
 #endif // BUILD_WITH_MPI
-
-//    sinit_tab[0] = comm_data.comm_size;
-//    sinit_tab[1] = melissa_options.sobol_op;
-//    sinit_tab[2] = melissa_options.nb_parameters;
 
     // =================== //
     // ===  Main loop  === //
@@ -249,21 +260,23 @@ int main (int argc, char **argv)
         start_wait_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
         zmq_pollitem_t items [] = {
+            { python_puller, 0, ZMQ_POLLIN, 0 },
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
             { data_puller, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 2, 100);
+        zmq_poll (items, 3, 100);
 #ifdef BUILD_WITH_PROBES
         end_wait_time = melissa_get_time();
         total_wait_time += end_wait_time - start_wait_time;
 #endif // BUILD_WITH_PROBES
 
-        // === If no message on the connexion port === //
+        // === check timeouts === //
 
         if (comm_data.rank == 0)
         {
             if (last_timeout_check + 20 < melissa_get_time())
             {
+                // === check simulations timeouts === //
                 detected_timeouts = check_timeouts(&simulations,
                                                    melissa_options.timeout_simu);
                 last_timeout_check = melissa_get_time();
@@ -273,12 +286,27 @@ int main (int argc, char **argv)
                                    &simulations,
                                    python_pusher);
                 }
+                // === check launcher timeouts === //
+                if (last_msg_launcher + timeout_launcher < melissa_get_time())
+                {
+                    fprintf (stderr, "Server detected Launcher timeout\n");
+                    // trigger something
+                }
             }
+        }
+
+        // === If message on the python port === //
+
+        if (items[0].revents & ZMQ_POLLIN)
+        {
+            char text[256];
+            zmq_recv (python_puller, text, 255, 0);
+            last_msg_launcher = melissa_get_time();
         }
 
         // === If message on the connexion port === //
 
-        if (items[0].revents & ZMQ_POLLIN)
+        if (items[1].revents & ZMQ_POLLIN)
         {
             if (comm_data.rank == 0)
             {
@@ -342,7 +370,7 @@ int main (int argc, char **argv)
 
         // === Data reception and statistics computation === //
 
-        if (items[1].revents & ZMQ_POLLIN)
+        if (items[2].revents & ZMQ_POLLIN)
         {
 #ifdef BUILD_WITH_PROBES
             start_comm_time = melissa_get_time();
@@ -373,7 +401,6 @@ int main (int argc, char **argv)
                 continue;
             }
 
-//======================== NEW ========================
             field_id = get_field_id(fields, melissa_options.nb_fields, field_name_ptr);
             if (field_id == -1)
             {
@@ -396,16 +423,17 @@ int main (int argc, char **argv)
                 }
                 melissa_options.sampling_size = simulations.size;
             }
-//====================== END NEW ======================
 
             data_ptr = fields[field_id].stats_data;
             if (data_ptr[client_rank].is_valid != 1)
             {
                 melissa_init_data (&data_ptr[client_rank], &melissa_options, recv_vect_size);
                 last_checkpoint_time = melissa_get_time();
-                if (melissa_options.restart == 1)
+                if (melissa_options.restart > 0)
                 {
+#ifdef BUILD_WITH_PROBES
                     start_read_time = melissa_get_time();
+#endif // BUILD_WITH_PROBES
                     if (comm_data.rank == 0)
                     {
                         fprintf (stdout, "reading checkpoint files...");
@@ -416,8 +444,10 @@ int main (int argc, char **argv)
                         fprintf (stdout, " ok\n");
                     }
                     last_checkpoint_time = melissa_get_time();
+#ifdef BUILD_WITH_PROBES
                     end_read_time = melissa_get_time();
                     total_read_time += end_read_time - start_read_time;
+#endif // BUILD_WITH_PROBES
                 }
             }
             simu_ptr = simulations.items[group_id];
@@ -551,8 +581,8 @@ int main (int argc, char **argv)
 #ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
             fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
-#endif // BUILD_WITH_PROBES
             total_save_time += end_save_time - start_save_time;
+#endif // BUILD_WITH_PROBES
             break;
         }
 
@@ -560,7 +590,8 @@ int main (int argc, char **argv)
 
         if (first_init == 0 &&
             nb_converged_fields >= melissa_options.nb_fields * local_nb_messages &&
-            melissa_options.sobol_op == 1)
+            melissa_options.sobol_op == 1 &&
+            nb_finished_simulations > 1)
         {
             sprintf (txt_buffer, "converged %d", comm_data.rank);
             zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
@@ -575,6 +606,12 @@ int main (int argc, char **argv)
             break;
         }
     }
+
+    for (i=0; i<melissa_options.nb_fields; i++)
+    {
+        save_stats (fields[i].stats_data, &comm_data, fields[i].name);
+    }
+    save_simu_states (&simulations, &comm_data);
 
     if (end_signal == 0)
     {
@@ -659,6 +696,7 @@ int main (int argc, char **argv)
         zmq_send(python_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
     }
     zmq_close (python_pusher);
+    zmq_close (python_puller);
     zmq_ctx_term (context);
 
 #ifdef BUILD_WITH_MPI

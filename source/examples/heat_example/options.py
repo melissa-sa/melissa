@@ -26,6 +26,7 @@ import getpass
 import imp
 from matplotlib import pyplot as plt
 from matplotlib import cm
+from string import Template
 from shutil import copyfile
 
 imp.load_source("options", "./scripts/options_local.py")
@@ -38,7 +39,7 @@ BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'.upper()
 EXECUTABLE='heatc'
 BATCH_SCHEDULER = "local"
 WALLTIME_SERVER = 600
-NODES_SERVER = 3
+NODES_SERVER = 5
 WALLTIME_SIMU = 300
 NODES_GROUP = 2
 
@@ -46,7 +47,7 @@ NODES_GROUP = 2
 def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
     content = ""
     file=open("@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/scripts/flowvr_group.py", "r")
-    content = file.read().substitute(args=str(args),
+    content = Template(file.read()).substitute(args=str(args),
                                      group_id=str(group_id),
                                      np_simu=str(nb_proc_simu),
                                      nb_param=str(nb_parameters),
@@ -66,21 +67,24 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 10                 # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
-STUDY_OPTIONS['threshold_value'] = 0.7
+STUDY_OPTIONS['threshold_values'] = 0.7
+STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 30          # server checkpoints every 30 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = True
+MELISSA_STATS['skewness'] = True
+MELISSA_STATS['kurtosis'] = True
 MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
-MELISSA_STATS['threshold_exceedance'] = False
-MELISSA_STATS['quantile'] = True
+MELISSA_STATS['threshold_exceedance'] = True
+MELISSA_STATS['quantiles'] = True
 MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}

@@ -47,6 +47,7 @@ melissa_simulation_t* add_simulation()
     simu->status = 0;
     simu->timeout = 0;
     simu->last_message = 0.0;
+    sprintf (simu->job_id, "0");
 
     return simu;
 }

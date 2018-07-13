@@ -46,6 +46,8 @@ static inline void stats_usage ()
             "                  possibles values :\n"
             "                  mean\n"
             "                  variance\n"
+            "                  skewness\n"
+            "                  kurtosis\n"
             "                  min\n"
             "                  max\n"
             "                  threshold_exceedance\n"
@@ -53,6 +55,7 @@ static inline void stats_usage ()
             "                  sobol_indices\n"
             "                  (default: mean:variance)\n"
             " -e <double>    : threshold value for threshold exceedance computaion\n"
+            " -q <char*>     : quantile values separated by semicolons\n"
             " -n <char*>     : Melissa Launcher node name (default: localhost)\n"
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
@@ -81,12 +84,15 @@ static inline void init_options (melissa_options_t *options)
     options->sampling_size   = 0;
     options->nb_simu         = 0;
     options->nb_fields       = 0;
-    options->threshold       = 0.0;
+    options->nb_thresholds   = 0;
     options->mean_op         = 0;
     options->variance_op     = 0;
+    options->skewness_op     = 0;
+    options->kurtosis_op     = 0;
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
     options->quantile_op     = 0;
+    options->nb_quantiles    = 0;
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
@@ -119,6 +125,104 @@ static inline void get_nb_fields (char               *name,
     }
 }
 
+static inline void get_nb_thresholds (char               *name,
+                                      melissa_options_t  *options)
+{
+    int i, len;
+
+    if (name == NULL || strncmp(&name[0],"-",1) == 0 || strncmp(&name[0],":",1) == 0)
+    {
+        stats_usage ();
+        exit (1);
+    }
+
+    i=0;
+    len = strlen(name);
+    options->nb_thresholds = 1;
+    for (i = 0; i < len; i++)
+    {
+        if (strncmp(&name[i],":",1) == 0)
+        {
+            options->nb_thresholds += 1;
+        }
+    }
+    options->threshold = melissa_calloc (options->nb_thresholds, sizeof(double));
+}
+
+static inline void get_nb_quantiles (char               *name,
+                                     melissa_options_t  *options)
+{
+    int i, len;
+
+    if (name == NULL || strncmp(&name[0],"-",1) == 0 || strncmp(&name[0],":",1) == 0)
+    {
+        stats_usage ();
+        exit (1);
+    }
+
+    i=0;
+    len = strlen(name);
+    options->nb_quantiles = 1;
+    for (i = 0; i < len; i++)
+    {
+        if (strncmp(&name[i],":",1) == 0)
+        {
+            options->nb_quantiles += 1;
+        }
+    }
+    options->quantile_order = melissa_calloc (options->nb_quantiles, sizeof(double));
+}
+
+static inline void get_thresholds (char              *name,
+                                   melissa_options_t *options)
+{
+    const char  s[2] = ":";
+    char       *temp_char;
+    int         i=0;
+
+    if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
+    {
+        stats_usage ();
+        exit (1);
+    }
+
+    /* get the first token */
+    temp_char = strtok (name, s);
+
+    /* walk through other tokens */
+    while( temp_char != NULL )
+    {
+        options->threshold[i] = atof(temp_char);
+        i++;
+        temp_char = strtok (NULL, s);
+    }
+}
+
+static inline void get_quantile_orders (char              *name,
+                                        melissa_options_t *options)
+{
+    const char  s[2] = ":";
+    char       *temp_char;
+    int         i=0;
+
+    if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
+    {
+        stats_usage ();
+        exit (1);
+    }
+
+    /* get the first token */
+    temp_char = strtok (name, s);
+
+    /* walk through other tokens */
+    while( temp_char != NULL )
+    {
+        options->quantile_order[i] = atof(temp_char);
+        i++;
+        temp_char = strtok (NULL, s);
+    }
+}
+
 static inline void get_operations (char              *name,
                                    melissa_options_t *options)
 {
@@ -134,6 +238,8 @@ static inline void get_operations (char              *name,
     /* juste to be sure */
     options->mean_op         = 0;
     options->variance_op     = 0;
+    options->skewness_op     = 0;
+    options->kurtosis_op     = 0;
     options->min_and_max_op  = 0;
     options->threshold_op    = 0;
     options->quantile_op     = 0;
@@ -150,15 +256,26 @@ static inline void get_operations (char              *name,
         {
             options->mean_op = 1;
         }
-        else if (0 == strcmp(temp_char, "variance") || 0 == strcmp(temp_char, "variances") || 0 == strcmp(temp_char, "var"))
+        else if (0 == strcmp(temp_char, "variance") || 0 == strcmp(temp_char, "variances")
+                 || 0 == strcmp(temp_char, "var"))
         {
             options->variance_op = 1;
         }
-        else if (0 == strcmp(temp_char, "min") || 0 == strcmp(temp_char, "max"))
+        else if (0 == strcmp(temp_char, "skewness"))
+        {
+            options->skewness_op = 1;
+        }
+        else if (0 == strcmp(temp_char, "kurtosis"))
+        {
+            options->kurtosis_op = 1;
+        }
+        else if (0 == strcmp(temp_char, "min") || 0 == strcmp(temp_char, "max")
+                 || 0 == strcmp(temp_char, "minimum") || 0 == strcmp(temp_char, "maximum"))
         {
             options->min_and_max_op = 1;
         }
-        else if (0 == strcmp(temp_char, "threshold") || 0 == strcmp(temp_char, "threshold_exceedance"))
+        else if (0 == strcmp(temp_char, "threshold") || 0 == strcmp(temp_char, "threshold_exceedance")
+                 || 0 == strcmp(temp_char, "thresholds") || 0 == strcmp(temp_char, "threshold_exceedances"))
         {
             options->threshold_op = 1;
         }
@@ -207,15 +324,19 @@ void melissa_print_options (melissa_options_t *options)
         fprintf(stdout, "    mean\n");
     if (options->variance_op != 0)
         fprintf(stdout, "    variance\n");
+    if (options->skewness_op != 0)
+        fprintf(stdout, "    skewness\n");
+    if (options->kurtosis_op != 0)
+        fprintf(stdout, "    kurtosis\n");
     if (options->min_and_max_op != 0)
     {
         fprintf(stdout, "    min\n");
         fprintf(stdout, "    max\n");
     }
     if (options->threshold_op != 0)
-        fprintf(stdout, "    threshold exceedance, with threshold = %g\n", options->threshold);
+        fprintf(stdout, "    threshold exceedance (%d values)\n", options->nb_thresholds);
     if (options->quantile_op != 0)
-        fprintf(stdout, "    quantiles\n");
+        fprintf(stdout, "    quantiles (%d values)\n", options->nb_quantiles);
     if (options->sobol_op != 0)
         fprintf(stdout, "    sobol indices\n");
 //    if (options->restart != 0)
@@ -259,9 +380,27 @@ void melissa_get_options (int                 argc,
 
     init_options (options);
 
+    struct option longopts[] = {{ "checkintervals", required_argument, NULL, 'c' },
+                                { "treshold",       required_argument, NULL, 'e' },
+                                { "tresholds",      required_argument, NULL, 'e' },
+                                { "fieldnames",     required_argument, NULL, 'f' },
+                                { "help",           no_argument,       NULL, 'h' },
+                                { "learning",       no_argument,       NULL, 'l' },
+                                { "more",           required_argument, NULL, 'm' },
+                                { "launchername",   required_argument, NULL, 'n' },
+                                { "operations",     required_argument, NULL, 'o' },
+                                { "parameters",     required_argument, NULL, 'p' },
+                                { "quantile",       required_argument, NULL, 'q' },
+                                { "quantiles",      required_argument, NULL, 'q' },
+                                { "restart",        required_argument, NULL, 'r' },
+                                { "samplingsize",   required_argument, NULL, 's' },
+                                { "timesteps",      required_argument, NULL, 't' },
+                                { "timeout",        required_argument, NULL, 'w' },
+                                { NULL,             0,                 NULL,  0  }};
+
     do
     {
-        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:w:");
+        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:w:", longopts, NULL);
 
         switch (opt) {
         case 'r':
@@ -271,15 +410,14 @@ void melissa_get_options (int                 argc,
                 sprintf (options->restart_dir, ".");
             }
             options->restart = 1;
-//            if (0 == melissa_read_options (options))
-//            {
-//                options->restart = 1;
-//                melissa_check_options (options);
-//                return;
-//            }
-//            fprintf (stderr, "ERROR: can not read options.save file\n");
-//            stats_usage ();
-//            exit (1);
+            break;
+        case 'm':
+            sprintf (options->restart_dir, "%s", optarg);
+            if (strlen(options->restart_dir) < 1)
+            {
+                sprintf (options->restart_dir, ".");
+            }
+            options->restart = 2;
             break;
         case 'p':
             options->nb_parameters = atoi (optarg);
@@ -291,7 +429,12 @@ void melissa_get_options (int                 argc,
             get_operations (optarg, options);
             break;
         case 'e':
-            options->threshold = atof (optarg);
+            get_nb_thresholds (optarg, options);
+            get_thresholds (optarg, options);
+            break;
+        case 'q':
+            get_nb_quantiles (optarg, options);
+            get_quantile_orders (optarg, options);
             break;
         case 's':
             options->sampling_size = atoi (optarg);
@@ -314,6 +457,8 @@ void melissa_get_options (int                 argc,
         case 'h':
             stats_usage ();
             exit (0);
+        case 0:
+            break;
         case '?':
             fprintf (stderr, "Error: unknown option\n");
             stats_usage ();
@@ -348,6 +493,8 @@ void melissa_check_options (melissa_options_t  *options)
     // check consistency
     if (options->mean_op == 0 &&
         options->variance_op == 0 &&
+        options->kurtosis_op == 0 &&
+        options->skewness_op == 0 &&
         options->min_and_max_op == 0 &&
         options->threshold_op == 0 &&
         options->quantile_op == 0 &&
@@ -357,6 +504,20 @@ void melissa_check_options (melissa_options_t  *options)
         fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");
         options->mean_op = 1;
         options->variance_op = 1;
+    }
+
+    if (options->threshold_op != 0 && options->nb_thresholds < 1)
+    {
+        fprintf (stderr, "ERROR: you must provide at least 1 threshold value\n");
+        stats_usage ();
+        exit (1);
+    }
+
+    if (options->quantile_op != 0 && options->nb_quantiles < 1)
+    {
+        fprintf (stderr, "ERROR: you must provide at least 1 quantile value\n");
+        stats_usage ();
+        exit (1);
     }
 
     if (options->sampling_size < 2)
@@ -447,6 +608,14 @@ void melissa_write_options (melissa_options_t *options)
     f = fopen("options.save", "wb+");
 
     fwrite(options, sizeof(melissa_options_t), 1, f);
+    if (options->threshold_op)
+    {
+        fwrite(options->threshold, sizeof(double), options->nb_thresholds, f);
+    }
+    if (options->quantile_op)
+    {
+        fwrite(options->quantile_order, sizeof(double), options->nb_quantiles, f);
+    }
 
     fclose(f);
 }
@@ -468,7 +637,7 @@ void melissa_write_options (melissa_options_t *options)
 int melissa_read_options (melissa_options_t *options)
 {
     FILE* f = NULL;
-    int ret = 1;
+    int ret;
     char file_name[256];
 
     sprintf (file_name, "%s/options.save", options->restart_dir);
@@ -476,10 +645,21 @@ int melissa_read_options (melissa_options_t *options)
 
     if (f != NULL)
     {
-        if (1 == fread(options, sizeof(melissa_options_t), 1, f))
+        fread(options, sizeof(melissa_options_t), 1, f);
+        if (options->threshold_op)
         {
-            ret = 0;
+            options->threshold = melissa_calloc (options->nb_thresholds, sizeof(double));
+            fread(options->threshold, sizeof(double), options->nb_thresholds, f);
         }
+        if (options->quantile_op)
+        {
+            options->quantile_order = melissa_calloc (options->nb_quantiles, sizeof(double));
+            fread(options->quantile_order, sizeof(double), options->nb_quantiles, f);
+        }
+    }
+    else
+    {
+        ret = -1;
     }
 
     fclose(f);

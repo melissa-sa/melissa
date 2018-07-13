@@ -57,15 +57,17 @@ void increment_quantile (quantile_t *quantile,
                          double      in_vect[],
                          const int   vect_size);
 
-void save_quantile(quantile_t *quantile,
-                   int         vect_size,
-                   int         nb_time_steps,
-                   FILE*       f);
+void save_quantile(quantile_t **quantile,
+                   int          vect_size,
+                   int          nb_time_steps,
+                   int          nb_quantiles,
+                   FILE*        f);
 
-void read_quantile(quantile_t *quantile,
-                   int         vect_size,
-                   int         nb_time_steps,
-                   FILE*       f);
+void read_quantile(quantile_t **quantile,
+                   int          vect_size,
+                   int          nb_time_steps,
+                   int          nb_quantiles,
+                   FILE*        f);
 
 void free_quantile(quantile_t *quantile);
 

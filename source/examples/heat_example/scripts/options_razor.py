@@ -16,14 +16,38 @@
 
 
 """
-    User defined scripts for Eole supercomputer
+    User defined options module
 """
+import os
+import time
+import numpy as np
+import subprocess
+import getpass
+import imp
+from matplotlib import pyplot as plt
+from matplotlib import cm
+from shutil import copyfile
 
-WALLTIME_SERVER = 8:00:00
-NODES_SERVER = 32
-WALLTIME_SIMU = 20:00
-NODES_GROUP = 32
+from options import *
+
 EXECUTABLE='heatc'
+
+# PARALLEL SERVER PBS CONFIGURATION
+WALLTIME_SERVER = '30:00'
+NODES_SERVER = 1
+CPUS_PER_NODE_SERVER = 1
+QUEUE_SERVER = 'PBS_QUEUE1'
+TOT_CPUS_SERVER = NODES_SERVER * CPUS_PER_NODE_SERVER
+# PARALLEL RUNNER PBS CONFIGURATION
+WALLTIME_GROUP = '10:00'
+NODES_GROUP = 1
+CPUS_PER_NODE_GROUP = 1
+QUEUE_GROUP = 'PBS_QUEUE1'
+TOT_CPUS_GROUP = NODES_GROUP * CPUS_PER_NODE_GROUP
+
+"""
+    User defined scripts for Razor cluster
+"""
 
 def create_run_server(server):
     # signal handler definition
@@ -33,29 +57,32 @@ def create_run_server(server):
     signal_handler+="sleep 1                               \n"
     signal_handler+="killall -USR1 melissa_server          \n"
     signal_handler+="wait %1                               \n"
-    signal_handler+="}
+    signal_handler+="}                                     \n"
     content = ""
     file=open("run_server.sh", "w")
     content += "#!/bin/bash                                \n"
-    content += "#SBATCH -N "+str(NODES_SERVER)+"                                   \n"
-    content += "#SBATCH --ntasks-per-node=14                                       \n"
-    content += "#SBATCH --mem=0                                                    \n"
-    content += "#SBATCH --time="+str(WALLTIME_SERVER)+"                            \n"
-    content += "#SBATCH -o melissa.%j.log                                          \n"
-    content += "#SBATCH -e melissa.%j.err                                          \n"
-    content += "#SBATCH --job-name=Melissa                                         \n"
-    content += "#SBATCH --signal=B:SIGUSR2@300                                     \n"
-    content += "module load openmpi/2.0.1                                          \n"
-    content += "module load ifort/2017                                             \n"
+    content += "#PBS -S /bin/bash                                               \n"
+    content += "#PBS -N MelissaServer                                           \n"
+    content += "#PBS -l select="+str(NODES_SERVER)+":ncpus="+str(CPUS_PER_NODE_SERVER)+":mpiprocs="+str(CPUS_PER_NODE_SERVER)+" \n"
+    content += "#PBS -q "+str(QUEUE_SERVER)+"                                   \n"
+    content += "#PBS -l walltime="+str(WALLTIME_SERVER)+"                       \n"
+#    content += "#PBS -l place=scatter:excl                                      \n"
+#    content += "#PBS -o melissa.server.${PBS_JOBID}.log                         \n"
+#    content += "#PBS -e melissa.server.${PBS_JOBID}.err                         \n"
+    content += "module purge                                                    \n"
+#    content += "module load use.own                                             \n"
+    content += "module load melissa/0.3                                         \n"
+    content += "echo Working directory of job ${PBS_JOBID} is ${PBS_O_WORKDIR}  \n"
+    content += "cd ${PBS_O_WORKDIR}                                             \n"
     content += signal_handler
     content += "date +\"%d/%m/%y %T\"                                              \n"
     content += "STOP=0                                                             \n"
     content += "# run Melissa                                                      \n"
     content += "echo  \"### Launch Melissa\"                                       \n"
-    content += "mkdir stats${SLURM_JOB_ID}.resu                                    \n"
-    content += "cd stats${SLURM_JOB_ID}.resu                                       \n"
+    content += "mkdir stats${PBS_JOBID}.resu                                    \n"
+    content += "cd stats${PBS_JOBID}.resu                                       \n"
     content += "trap handler USR2                                                  \n"
-    content += "mpirun "+server.path+"/melissa_server "+server.cmd_opt+" &         \n"
+    content += "mpirun -n "+str(TOT_CPUS_SERVER)+" "+server.path+"/melissa_server "+server.cmd_opt+" & \n"
     content += "wait %1                                                            \n"
     content += "date +\"%d/%m/%y %T\"                                              \n"
     content += "cd ..                                                              \n"
@@ -66,15 +93,20 @@ def create_run_server(server):
 def create_run_group(simulation, command):
     content = ""
     file=open("run_group.sh", "w")
-    content += "#!/bin/bash                                                        \n"
-    content += "#SBATCH -N "+str(NODES_GROUP)+"                                    \n"
-    content += "#SBATCH --wckey=P11UK:AVIDO                                        \n"
-    content += "#SBATCH --partition=cn                                             \n"
-    content += "#SBATCH --time="+str(WALLTIME_SIMU)+"                              \n"
-    content += "#SBATCH -o simu.%j.log                                             \n"
-    content += "#SBATCH -e simu.%j.err                                             \n"
-    content += "module load openmpi/2.0.1                                          \n"
-    content += "module load ifort/2017                                             \n"
+    content += "#!/bin/bash                                \n"
+    content += "#PBS -S /bin/bash                                               \n"
+    content += "#PBS -N MelissaRunner                                           \n"
+    content += "#PBS -l select="+str(NODES_GROUP)+":ncpus="+str(CPUS_PER_NODE_GROUP)+":mpiprocs="+str(CPUS_PER_NODE_GROUP)+" \n"
+    content += "#PBS -q "+str(QUEUE_GROUP)+"                                    \n"
+    content += "#PBS -l walltime="+str(WALLTIME_GROUP)+"                        \n"
+#    content += "#PBS -l place=scatter:excl                                      \n"
+#    content += "#PBS -o melissa.simu.${PBS_JOBID}.log                           \n"
+#    content += "#PBS -e melissa.simu.${PBS_JOBID}.err                           \n"
+    content += "echo Working directory of job ${PBS_JOBID} is ${PBS_O_WORKDIR}  \n"
+    content += "cd ${PBS_O_WORKDIR}                                             \n"
+    content += "module purge                                                    \n"
+#    content += "module load use.own                                             \n"
+    content += "module load melissa/0.3                                         \n"
     content += "date +\"%d/%m/%y %T\"                                              \n"
     content += command + "                                                         \n"
     content += "date +\"%d/%m/%y %T\"                                              \n"
@@ -88,17 +120,14 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
     create_run_server(server)
-    proc = subprocess.Popen('sbatch "./run_server.sh"',
+    proc = subprocess.Popen('qsub "./run_server.sh"',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
                                   universal_newlines=True)
     # get the job ID
     (out, err) = proc.communicate()
-    if size(out.split()) > 0:
-        server.job_id = out.split()[-1]
-    else:
-        print err
+    server.job_id = out.split()[-1]
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
@@ -106,71 +135,59 @@ def launch_simu(simulation):
         os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
     os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
     copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    os.system("chmod 744 server_name.txt")
     if MELISSA_STATS['sobol_indices']:
         command = 'mpirun '
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
-                                 str(NODES_GROUP),
-                                 '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+                                 str(TOT_CPUS_GROUP),
+                                 'PATH_TO_MELISSA/install/share/examples/heat_example/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
     else:
         command = ' '.join(('mpirun',
                              '-n',
-                             str(NODES_GROUP),
-                             '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+                             str(TOT_CPUS_GROUP),
+                             'PATH_TO_MELISSA/install/share/examples/heat_example/bin/'+EXECUTABLE,
                              str(simulation.simu_id), str(simulation.coupling),
                              ' '.join(str(i) for i in simulation.param_set)))
     print command[:-2]
     create_run_group(simulation, command)
-    proc = subprocess.Popen('ccc_msub -r Simu'+str(simulation.rank)+' "./run_group.sh"',
+    proc = subprocess.Popen('qsub "./run_group.sh"',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
                                   universal_newlines=True)
     # get the job ID
     (out, err) = proc.communicate()
-    if size(out.split()) > 0:
-        simulation.job_id = out.split()[-1]
-    else:
-        print err
+    simulation.job_id = out.split()[-1]
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 
 def check_job(job):
     state = 0
-    proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+    proc = subprocess.Popen("qstat "+str(job.job_id)+" | tail -n1 | awk '{print $5}'",
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             shell=True,
                             universal_newlines=True)
     (out, err) = proc.communicate()
-    if (not "PENDING" in out):
+    if (not "Q" in out):
         state = 1
-        proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+        proc = subprocess.Popen("qstat "+str(job.job_id)+" | tail -n1 | awk '{print $5}'",
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 shell=True,
                                 universal_newlines=True)
         (out, err) = proc.communicate()
-        if (not "RUNNING" in out):
+        if (not "R" in out):
             state = 2
     job.job_status = state
 
-def check_load():
-    proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            shell=True,
-                            universal_newlines=True)
-    (out, err) = proc.communicate()
-    running_jobs = int(out)
-    return running_jobs < 250
-
 def kill_job(job):
     print 'killing job ...'
-    os.system("scancel "+str(job.job_id))
+    os.system("qdel "+str(job.job_id))
 
 def heat_visu():
     pass

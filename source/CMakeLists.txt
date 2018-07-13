@@ -18,6 +18,7 @@ project(Melissa C CXX Fortran)
 
 cmake_minimum_required(VERSION 3.2.2)
 include(CTest)
+include(FindPackageHandleStandardArgs)
 
 function(find_python_module module)
         string(TOUPPER ${module} module_upper)
@@ -50,7 +51,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   # Set install directory to ../install
-  set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/../install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)
+  get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
+  set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 find_package(PkgConfig REQUIRED)
@@ -91,11 +93,12 @@ endif(BUILD_EXAMPLES)
 
 #set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
 
+
 if(INSTALL_ZMQ)
   include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
   ExternalProject_Add(ZeroMQ
 #    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
-    URL https://github.com/zeromq/libzmq/releases/download/v4.2.1/zeromq-4.2.1.tar.gz
+    URL https://github.com/zeromq/libzmq/archive/v4.2.2.tar.gz
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}/ZeroMQ
   )
@@ -104,35 +107,29 @@ if(INSTALL_ZMQ)
   set(ZMQ_STATIC_LIBRARY ${ZMQ_DIR}/lib/libzmq-static.a CACHE INTERNAL " ")
   set(ZMQ_LIBRARY ${ZMQ_DIR}/lib/libzmq.so CACHE INTERNAL " ")
   set(ZMQ_INCLUDE_DIR ${ZMQ_DIR}/include CACHE INTERNAL " ")
-  include_directories( ${ZMQ_INCLUDE_DIR} )
+  set ( ZMQ_LIBRARIES ${ZMQ_LIBRARY} )
+  set ( ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR} )
+  include_directories( ${ZMQ_INCLUDE_DIRS} )
   set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
+  find_package_handle_standard_args ( ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
 else(INSTALL_ZMQ)
-    if(NOT ZMQ_DIR)
-        pkg_check_modules(PC_ZeroMQ QUIET libzmq>=4.1.5)
-        if(NOT PC_ZeroMQ_FOUND)
-            message(FATAL_ERROR "ZeroMQ not found")
-        else()
-            set (ZMQ_DIR ${PC_ZeroMQ_LIBRARY_DIR})
-            set (ZMQ_INCLUDE_DIR ${PC_ZeroMQ_INCLUDE_DIR})
-            find_library(ZMQ_STATIC_LIBRARY NAMES libzmq-static.a HINTS ${ZMQ_DIR}/lib ${ZMQ_DIR}/../lib CACHE INTERNAL " ")
-            find_library(ZMQ_LIBRARY NAMES libzmq.so HINTS ${ZMQ_DIR}/lib ${ZMQ_DIR}/../lib CACHE INTERNAL " ")
-            include_directories( ${ZMQ_INCLUDE_DIR} )
-            message(STATUS "ZeroMQ Found")
-        endif()
-    else(NOT ZMQ_DIR)
-        find_path(ZMQ_DIR NAMES include/zmq.h)
-        find_path(ZMQ_INCLUDE_DIR NAMES zmq.h HINTS ${ZMQ_DIR}/include ${ZMQ_DIR}/../include CACHE INTERNAL " ")
-        find_library(ZMQ_STATIC_LIBRARY NAMES libzmq-static.a HINTS ${ZMQ_DIR}/lib ${ZMQ_DIR}/../lib CACHE INTERNAL " ")
-        find_library(ZMQ_LIBRARY NAMES libzmq.so HINTS ${ZMQ_DIR}/lib ${ZMQ_DIR}/../lib CACHE INTERNAL " ")
-        include_directories( ${ZMQ_INCLUDE_DIR} )
-        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/pkgconfig" )
-        set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
-        pkg_check_modules(ZMQ QUIET libzmq>=4.1.5)
-        if(NOT ZMQ_FOUND)
-            message(FATAL_ERROR "Provided ZeroMQ dir not found:" ${ZMQ_DIR})
-        endif(NOT ZMQ_FOUND)
-    endif(NOT ZMQ_DIR)
+    find_path ( ZMQ_INCLUDE_DIR zmq.h )
+    find_library ( ZMQ_LIBRARY NAMES zmq )
+    set ( ZMQ_LIBRARIES ${ZMQ_LIBRARY} )
+    set ( ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR} )
+    include_directories( ${ZMQ_INCLUDE_DIRS} )
+    # handle the QUIETLY and REQUIRED arguments and set ZMQ_FOUND to TRUE
+    # if all listed variables are TRUE
+    find_package_handle_standard_args ( ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
 endif(INSTALL_ZMQ)
+if(NOT ZMQ_FOUND)
+    message(FATAL_ERROR "ZeroMQ not found:")
+else(NOT ZMQ_FOUND)
+    get_filename_component(ZMQ_LIB_DIR ${ZMQ_LIBRARY} DIRECTORY)
+    get_filename_component(ZMQ_DIR ${ZMQ_LIB_DIR} DIRECTORY)
+    set(EXTRA_LIBS ${EXTRA_LIBS}
+                   ${ZMQ_LIBRARIES})
+endif(NOT ZMQ_FOUND)
 
 # MPI #
 
@@ -311,10 +308,13 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
+#add_subdirectory(launcher.old)
+
 add_subdirectory(launcher)
 
+#add_subdirectory(launcher_saturne)
 
-add_subdirectory(gui)
+#add_subdirectory(gui)
 
 add_subdirectory(tests)
 

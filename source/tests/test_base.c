@@ -114,16 +114,17 @@ void i_print_vector (int       in_vect[],
 
 int main (int argc, char **argv)
 {
-    double     *tableau = NULL;
-    mean_t      my_mean;
-    variance_t  my_variance;
-    min_max_t   my_min_and_max;
-    int        *my_threshold_exceedance = NULL, *my_temp_exceedance = NULL;
-    double     *temp_variance = NULL;
-    int         i, j;
-    int         n = 500; // n expériences
-    int         vect_size = 50000; // size points de l'espace
-    int         rank = 0;
+    double      *tableau = NULL;
+    mean_t       my_mean;
+    variance_t   my_variance;
+    min_max_t    my_min_and_max;
+    threshold_t  my_threshold_exceedance;
+    int         *my_temp_exceedance = NULL;
+    double      *temp_variance = NULL;
+    int          i, j;
+    int          n = 500; // n expériences
+    int          vect_size = 50000; // size points de l'espace
+    int          rank = 0;
 
 #ifdef BUILD_WITH_MPI
 
@@ -137,9 +138,9 @@ int main (int argc, char **argv)
     init_mean (&my_mean, vect_size);
     init_variance (&my_variance, vect_size);
     init_min_max (&my_min_and_max, vect_size);
+    init_threshold (&my_threshold_exceedance, vect_size, 500.0);
     tableau                 = calloc (vect_size, sizeof(double));
     temp_variance           = calloc (vect_size, sizeof(double));
-    my_threshold_exceedance = calloc (vect_size, sizeof(int));
     my_temp_exceedance      = calloc (vect_size, sizeof(int));
 //    tab_ptr = tableau;
 //    for (j=0; j<vect_size; j++, tab_ptr++)
@@ -156,7 +157,7 @@ int main (int argc, char **argv)
         increment_mean (&my_mean, tableau, vect_size);
         increment_variance (&my_variance, tableau, vect_size);
         min_and_max (&my_min_and_max, tableau, vect_size);
-        update_threshold_exceedance (my_threshold_exceedance, 500.0, tableau, vect_size);
+        update_threshold_exceedance (&my_threshold_exceedance, tableau, vect_size);
 
         for (j=0; j<vect_size; j++)
         {
@@ -230,8 +231,8 @@ int main (int argc, char **argv)
     if(rank == 0) memcpy (my_min_and_max.min, tableau,  vect_size*sizeof(double));
     MPI_Reduce (my_min_and_max.max, tableau, vect_size, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if(rank == 0) memcpy (my_min_and_max.max, tableau,  vect_size*sizeof(double));
-    MPI_Reduce (my_threshold_exceedance, my_temp_exceedance, vect_size, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if(rank == 0) memcpy (my_threshold_exceedance, my_temp_exceedance,  vect_size*sizeof(int));
+    MPI_Reduce (my_threshold_exceedance.threshold_exceedance, my_temp_exceedance, vect_size, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    if(rank == 0) memcpy (my_threshold_exceedance.threshold_exceedance, my_temp_exceedance,  vect_size*sizeof(int));
 
 
 //    if(rank == 0)
@@ -267,9 +268,9 @@ int main (int argc, char **argv)
     free_mean (&my_mean);
     free_variance (&my_variance);
     free_min_max (&my_min_and_max);
+    free_threshold(&my_threshold_exceedance);
     free (tableau);
     free (temp_variance);
-    free (my_threshold_exceedance);
     free (my_temp_exceedance);
 
 #ifdef BUILD_WITH_MPI

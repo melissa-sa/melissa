@@ -50,20 +50,20 @@ def launch_simu(simulation):
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
-        print command[:-2]
-#        if BUILD_WITH_FLOWVR == 'ON':
-#            args = []
-#            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-#                args.append(str(simulation.simu_id[i])+" "+' '.join(str(j) for j in simulation.param_set[i]))
-#            create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
-#                                args,
-#                                simulation.rank,
-#                                int(NODES_GROUP),
-#                                STUDY_OPTIONS['nb_parameters'])
-#            os.system('python create_group'+str(simulation.rank)+'.py')
-#            simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
-#        else:
-        simulation.job_id = subprocess.Popen(command[:-2].split()).pid
+        if BUILD_WITH_FLOWVR == 'ON' and STUDY_OPTIONS['coupling'] == 'MELISSA_COUPLING_FLOWVR':
+            args = []
+            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+                args.append(str(simulation.simu_id[i])+" "+ str(simulation.coupling)+" "+' '.join(str(j) for j in simulation.param_set[i]))
+            create_flowvr_group('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
+                                args,
+                                simulation.rank,
+                                int(NODES_GROUP),
+                                STUDY_OPTIONS['nb_parameters'])
+            os.system('python create_group'+str(simulation.rank)+'.py')
+            simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+        else:
+            print command[:-2]
+            simulation.job_id = subprocess.Popen(command[:-2].split()).pid
     else:
         if BUILD_EXAMPLES_WITH_MPI == 'ON':
             command = ' '.join(('mpirun',
@@ -79,7 +79,7 @@ def launch_simu(simulation):
                                 ' '.join(str(i) for i in simulation.param_set)))
         print command
         simulation.job_id = subprocess.Popen(command.split()).pid
-        os.chdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
     state = 0
@@ -132,6 +132,32 @@ def heat_visu():
         fig[len(fig)-1].show()
         file.close()
 
+    if (MELISSA_STATS['skewness']):
+        fig.append(plt.figure(len(fig)))
+        file_name = 'results.heat1_skewness.'+nb_time_steps
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Skewness')
+        fig[len(fig)-1].show()
+        file.close()
+
+    if (MELISSA_STATS['kurtosis']):
+        fig.append(plt.figure(len(fig)))
+        file_name = 'results.heat1_kurtosis.'+nb_time_steps
+        file=open(file_name)
+        value = 0
+        for line in file:
+            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+            value += 1
+        plt.pcolor(matrix,cmap=cm.coolwarm)
+        plt.colorbar().set_label('Kurtosis')
+        fig[len(fig)-1].show()
+        file.close()
+
     if (MELISSA_STATS['min']):
         fig.append(plt.figure(len(fig)))
         file_name = 'results.heat1_min.'+nb_time_steps
@@ -171,18 +197,19 @@ def heat_visu():
         fig[len(fig)-1].show()
         file.close()
 
-    if (MELISSA_STATS['quantile']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_quantile.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Quantiles')
-        fig[len(fig)-1].show()
-        file.close()
+    if (MELISSA_STATS['quantiles']):
+        for val in STUDY_OPTIONS['quantile_values']:
+            fig.append(plt.figure(len(fig)))
+            file_name = 'results.heat1_quantile'+str(val)+'.'+nb_time_steps
+            file=open(file_name)
+            value = 0
+            for line in file:
+                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+                value += 1
+            plt.pcolor(matrix,cmap=cm.coolwarm)
+            plt.colorbar().set_label('Quantiles'+str(val))
+            fig[len(fig)-1].show()
+            file.close()
 
     if (MELISSA_STATS['sobol_indices']):
         for param in range(STUDY_OPTIONS['nb_parameters']):

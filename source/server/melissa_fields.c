@@ -71,7 +71,7 @@ void melissa_get_fields (int               argc,
     optind = 1;
     do
     {
-        opt = getopt (argc, argv, "c:e:f:g:hln:o:p:r:s:t:w:");
+        opt = getopt (argc, argv, ":f:");
         switch (opt) {
         case 'f':
             /* get the first token */

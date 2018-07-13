@@ -21,7 +21,6 @@ target_compile_options(get_message BEFORE PUBLIC -fPIC -Wall)
 install(TARGETS get_message LIBRARY DESTINATION share/launcher)
 
 add_library(melissa_utils OBJECT ${UTILS_C} ${UTILS_H})
-add_dependencies(melissa_utils ZeroMQ)
 target_compile_options(melissa_utils BEFORE PUBLIC -fPIC)
 install(FILES ${UTILS_H} DESTINATION include)
 

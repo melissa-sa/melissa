@@ -25,10 +25,8 @@ import time
 import subprocess
 import logging
 from threading import RLock
-from socket import gethostname
-#from options import USER_FUNCTIONS as usr_func
-#from options import STUDY_OPTIONS as stdy_opt
-#from options import MELISSA_STATS as ml_stats
+from ctypes import cdll, create_string_buffer
+get_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/share/launcher/libget_message.so')
 
 # Jobs and executions status
 
@@ -77,7 +75,8 @@ class Job(object):
         """
             Cancels a job (mandatory)
         """
-        if  Job.usr_func['cancel_job']:
+        if "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
             return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
@@ -109,16 +108,19 @@ class Group(Job):
         """
             Creates a group environment
         """
-        if Job.usr_func['create_group']:
+        if "create_group" in Job.usr_func.keys() \
+        and Job.usr_func['create_group']:
             Job.usr_func['create_group'](self)
-        logging.warning('Warning: no \'create_group\''
-                        +' function provided')
+        else:
+            logging.warning('Warning: no \'create_group\''
+                          +' function provided')
 
     def launch(self):
         """
             Launches the group (mandatory)
         """
-        if Job.usr_func['launch_group']:
+        if "launch_group" in Job.usr_func.keys() \
+        and Job.usr_func['launch_group']:
             Job.usr_func['launch_group'](self)
         else:
             logging.error('Error: no \'launch_group\' function provided')
@@ -130,12 +132,23 @@ class Group(Job):
         """
             Checks the group job status (mandatory)
         """
-        if Job.usr_func['check_group_job']:
+        if "check_group_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_group_job']:
             Job.usr_func['check_group_job'](self)
         else:
             logging.error('Error: no \'check_group_job\''
                           +' function provided')
             exit()
+
+    def finalize(self):
+        """
+            Finalize the group (optional)
+        """
+
+        if "finalize_group" in Job.usr_func.keys():
+            if Job.usr_func['finalize_group']:
+                Job.usr_func['finalize_group'](self)
+
 
 class SingleSimuGroup(Group):
     """
@@ -161,11 +174,12 @@ class SingleSimuGroup(Group):
             logging.warning('Simulation ' + self.rank +
                             'crashed 5 times, drawing new parameter set')
             logging.info('old parameter set: ' + str(self.param_set))
-            self.param_set = usr_func['draw_parameter_set']()
+            self.param_set = Job.usr_func['draw_parameter_set']()
             logging.info('new parameter set: ' + str(self.param_set))
             self.nb_restarts = 0
 
-        if Job.usr_func['restart_group']:
+        if "restart_group" in Job.usr_func.keys() \
+        and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
         else:
             logging.warning('warning: no \'restart_group\''
@@ -205,12 +219,12 @@ class SobolGroup(Group):
         self.nb_restarts += 1
         if self.nb_restarts > 4:
             logging.warning('Group ' +
-                            self.rank +
+                            str(self.rank) +
                             'crashed 5 times, drawing new parameter sets')
             logging.debug('old parameter set A: ' + str(self.param_set[0]))
             logging.debug('old parameter set B: ' + str(self.param_set[1]))
-            self.param_set[0] = usr_func['draw_parameter_set']()
-            self.param_set[1] = usr_func['draw_parameter_set']()
+            self.param_set[0] = Job.usr_func['draw_parameter_set']()
+            self.param_set[1] = Job.usr_func['draw_parameter_set']()
             logging.info('new parameter set A: ' + str(self.param_set[0]))
             logging.info('new parameter set B: ' + str(self.param_set[1]))
             for i in range(len(self.param_set[0])):
@@ -218,7 +232,8 @@ class SobolGroup(Group):
                 self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.nb_restarts = 0
 
-        if Job.usr_func['restart_group']:
+        if "restart_group" in Job.usr_func.keys() \
+        and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
         else:
             logging.warning('warning: no \'restart_group\''
@@ -266,15 +281,30 @@ class Server(Job):
         if field_str == '':
             logging.error('error bad option: no field name given')
             return
+        quantile_str = '0'
+        if Job.ml_stats['quantiles']:
+            quantile_str = ':'.join([str(x) for x in Job.stdy_opt['quantile_values']])
+            if quantile_str == '':
+                logging.error('error bad option: no quantile value given')
+                return
+        threshold_str = '0'
+        if Job.ml_stats['threshold_exceedances']:
+            threshold_str = ':'.join([str(x) for x in Job.stdy_opt['threshold_values']])
+            if threshold_str == '':
+                logging.error('error bad option: no threshold value given')
+                return
+        buff = create_string_buffer('\000' * 256)
+        get_message.get_node_name(buff)
         self.cmd_opt = ' '.join(('-o', op_str,
                                  '-p', str(Job.stdy_opt['nb_parameters']),
                                  '-s', str(Job.stdy_opt['sampling_size']),
                                  '-t', str(Job.stdy_opt['nb_time_steps']),
-                                 '-e', str(Job.stdy_opt['threshold_value']),
+                                 '-q', quantile_str,
+                                 '-e', threshold_str,
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),
                                  '-w', str(Job.stdy_opt['simulation_timeout']),
                                  '-f', field_str,
-                                 '-n', str(gethostname())))
+                                 '-n', str(buff.value)))
 
     def launch(self):
         """
@@ -283,7 +313,8 @@ class Server(Job):
         os.chdir(self.directory)
         logging.info('launch server')
         logging.info('server options: '+self.cmd_opt)
-        if Job.usr_func['launch_server']:
+        if "launch_server" in Job.usr_func.keys() \
+        and Job.usr_func['launch_server']:
             Job.usr_func['launch_server'](self)
         else:
             logging.error('Error: no \'launch_server\' function provided')
@@ -311,9 +342,11 @@ class Server(Job):
         """
             Restarts the server
         """
-        self.cmd_opt += ' -r ' + self.directory
+        if not "-r" in self.cmd_opt:
+            self.cmd_opt += ' -r ' + self.directory
         os.chdir(self.directory)
-        if Job.usr_func['restart_server']:
+        if "restart_server" in Job.usr_func.keys() \
+        and Job.usr_func['restart_server']:
             Job.usr_func['restart_server'](self)
         else:
             logging.warning('Warning: no \'restart_server\' function provided'
@@ -329,7 +362,8 @@ class Server(Job):
         """
             Checks server job status
         """
-        if Job.usr_func['check_server_job']:
+        if "check_server_job" in Job.usr_func.keys() \
+         and Job.usr_func['check_server_job']:
             Job.usr_func['check_server_job'](self)
         else:
             logging.error('Error: no \'check_server_job\' function provided')
