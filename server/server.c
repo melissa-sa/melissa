@@ -101,6 +101,8 @@ int main (int argc, char **argv)
     int                   detected_timeouts;
     int                   nb_finished_simulations = 0;
     double                last_checkpoint_time = 0.0;
+    double                last_msg_launcher;
+    const double          timeout_launcher = 50;
     vector_t              simulations;
     melissa_simulation_t *simu_ptr;
 
@@ -174,6 +176,7 @@ int main (int argc, char **argv)
         melissa_bind (python_puller, "tcp://*:5556");
 
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
+        last_msg_launcher = melissa_get_time();
         first_init = 2;
     }
     else
@@ -267,12 +270,13 @@ int main (int argc, char **argv)
         total_wait_time += end_wait_time - start_wait_time;
 #endif // BUILD_WITH_PROBES
 
-        // === check clients timeouts === //
+        // === check timeouts === //
 
         if (comm_data.rank == 0)
         {
             if (last_timeout_check + 20 < melissa_get_time())
             {
+                // === check simulations timeouts === //
                 detected_timeouts = check_timeouts(&simulations,
                                                    melissa_options.timeout_simu);
                 last_timeout_check = melissa_get_time();
@@ -282,6 +286,12 @@ int main (int argc, char **argv)
                                    &simulations,
                                    python_pusher);
                 }
+                // === check launcher timeouts === //
+                if (last_msg_launcher + timeout_launcher < melissa_get_time())
+                {
+                    fprintf (stderr, "Server detected Launcher timeout\n");
+                    // trigger something
+                }
             }
         }
 
@@ -290,12 +300,8 @@ int main (int argc, char **argv)
         if (items[0].revents & ZMQ_POLLIN)
         {
             char text[256];
-            int size = zmq_recv (python_puller, text, 255, 0);
-            if (size > 1)
-            {
-                text[size] = 0;
-                fprintf (stdout, "recieved \"%s\" from launcher\n", text);
-            }
+            zmq_recv (python_puller, text, 255, 0);
+            last_msg_launcher = melissa_get_time();
         }
 
         // === If message on the connexion port === //

@@ -65,25 +65,27 @@ class StateChecker(Thread):
         self.running_study = True
 
     def run(self):
-#        global groups
-#        global server
-        while self.running_study:
-            time.sleep(1)
-            with server.lock:
-                server.check_job()
-            for group in groups:
-                with group.lock:
-                    if (group.job_status < FINISHED and
-                            group.job_status > NOT_SUBMITTED):
-                        s = copy.deepcopy(group.job_status)
-                        group.check_job()
-                        if s <= PENDING and group.job_status == RUNNING:
-                            logging.info('group ' + str(group.rank) + ' started')
-                            group.start_time = time.time()
-                        elif s <= RUNNING and group.job_status == FINISHED:
-                            logging.info('end group ' + str(group.rank))
-                            group.finalize()
-        logging.info('closing state checker process')
+        try:
+            while self.running_study:
+                time.sleep(1)
+                with server.lock:
+                    server.check_job()
+                for group in groups:
+                    with group.lock:
+                        if (group.job_status < FINISHED and
+                                group.job_status > NOT_SUBMITTED):
+                            s = copy.deepcopy(group.job_status)
+                            group.check_job()
+                            if s <= PENDING and group.job_status == RUNNING:
+                                logging.info('group ' + str(group.rank) + ' started')
+                                group.start_time = time.time()
+                            elif s <= RUNNING and group.job_status == FINISHED:
+                                logging.info('end group ' + str(group.rank))
+                                group.finalize()
+            logging.info('closing state checker process')
+        except:
+            print '=== State checker thread crashed ==='
+            return
 
 class Messenger(Thread):
     """
@@ -94,56 +96,55 @@ class Messenger(Thread):
         self.running_study = True
 
     def run(self):
-#        global groups
-#        global server
-        last_server = 0
-        get_message.init_context()
-        get_message.bind_message_rcv()
-        while self.running_study:
-            buff = create_string_buffer('\000' * 256)
-            get_message.wait_message(buff)
-            if buff.value != 'nothing':
-                logging.debug('message: '+buff.value)
-            last_server = time.time()
-            message = buff.value.split()
-            if message[0] == 'stop':
-                with server.lock:
-                    server.status = FINISHED # finished
-                    logging.info('end study')
-            elif message[0] == 'timeout':
-                if message[1] != '-1':
-                    group_id = int(message[1])
-                    logging.info('restarting group ' + str(group_id)
-                                 + ' (timeout detected by server)')
-                    with groups[group_id].lock:
-                        groups[group_id].restart()
-                        groups[group_id].job_status = PENDING
-            elif message[0] == 'group_state':
-                with groups[int(message[1])].lock:
-                    groups[int(message[1])].status = int(message[2])
-                logging.info('Group ' + message[1] + ' status: ' + message[2])
-            elif message[0] == 'server':
-                with server.lock:
-                    server.status = RUNNING
-                    server.node_name = message[1]
-                    logging.info('Melissa Server node name: ' +
-                                 str(server.node_name) + '; '+
-                                 'Melissa Server job id: ' +
-                                 str(server.job_id))
-                buff.value = str(server.node_name)
-                get_message.connect_message_snd(buff)
-
-            if last_server > 0:
-                if (time.time() - last_server) > 100:
-                    logging.info('server timeout\n')
+        try:
+            last_server = 0
+            last_msg_to_server = 0
+            while self.running_study:
+#                if np.random.rand() < 0.02: print 'r' + 1
+                buff = create_string_buffer('\000' * 256)
+                get_message.wait_message(buff)
+                if buff.value != 'nothing':
+                    logging.debug('message: '+buff.value)
+                last_server = time.time()
+                message = buff.value.split()
+                if message[0] == 'stop':
                     with server.lock:
-                        server.status = TIMEOUT
-            buff.value = 'hello server'+'\000'
-            get_message.send_message(buff)
+                        server.status = FINISHED # finished
+                        logging.info('end study')
+                elif message[0] == 'timeout':
+                    if message[1] != '-1':
+                        group_id = int(message[1])
+                        logging.info('restarting group ' + str(group_id)
+                                     + ' (timeout detected by server)')
+                        with groups[group_id].lock:
+                            groups[group_id].restart()
+                            groups[group_id].job_status = PENDING
+                elif message[0] == 'group_state':
+                    with groups[int(message[1])].lock:
+                        groups[int(message[1])].status = int(message[2])
+                    logging.info('Group ' + message[1] + ' status: ' + message[2])
+                elif message[0] == 'server':
+                    with server.lock:
+                        server.status = RUNNING
+                        server.node_name = message[1]
+                        logging.info('Melissa Server node name: ' +
+                                     str(server.node_name) + '; '+
+                                     'Melissa Server job id: ' +
+                                     str(server.job_id))
 
-
-        get_message.close_message()
-        logging.info('closing messenger thread')
+                if last_server > 0:
+                    if (time.time() - last_server) > 100:
+                        logging.info('server timeout\n')
+                        with server.lock:
+                            server.status = TIMEOUT
+                if (time.time() - last_msg_to_server) > 10:
+                    buff.value = 'hello server'+'\000'
+                    get_message.send_message(buff)
+                    last_msg_to_server = time.time()
+            logging.info('closing messenger thread')
+        except:
+            print '=== Messenger thread crashed ==='
+            return
 
 
 class Study(object):
@@ -182,6 +183,9 @@ class Study(object):
         os.chdir(self.stdy_opt['working_directory'])
         create_study(self.usr_func)
         self.create_group_list()
+        # init zmq context
+        get_message.init_context()
+        get_message.bind_message_rcv()
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
@@ -191,20 +195,21 @@ class Study(object):
         logging.debug('wait server start')
         server.wait_start()
         server.write_node_name()
-#        time.sleep(2)
+        # connect to server
+        get_message.connect_message_snd(server.node_name+'\000')
         logging.debug('start status checker thread')
         self.state_checker.start()
         for group in groups:
-            fault_tolerance(self.stdy_opt['simulation_timeout'])
+            self.fault_tolerance()
             while check_scheduler_load(self.usr_func) == False:
                 time.sleep(1)
-                fault_tolerance(self.stdy_opt['simulation_timeout'])
+                self.fault_tolerance()
             logging.info('submit group '+str(group.rank))
             group.launch()
             time.sleep(1)
         while (server.status != FINISHED
                or any([i.status != FINISHED for i in groups])):
-            fault_tolerance(self.stdy_opt['simulation_timeout'])
+            self.fault_tolerance()
             time.sleep(1)
         time.sleep(1)
         self.messenger.running_study = False
@@ -213,6 +218,8 @@ class Study(object):
         self.state_checker.join()
         postprocessing(self.usr_func)
         finalize(self.usr_func)
+        # finalize zmq context
+        get_message.close_message()
 
     def check_options(self):
         """
@@ -306,60 +313,72 @@ class Study(object):
             group.create()
         groups = self.groups
 
-def fault_tolerance(simulation_timeout):
-    """
-        Compares job status and study status, restart crashed groups
-    """
-#    global groups
-#    global server
-    sleep = False
-    with server.lock:
-        if server.status != RUNNING or server.job_status != RUNNING:
-            sleep = True
-    if sleep == True:
-        time.sleep(3)
+    def fault_tolerance(self):
+        """
+            Compares job status and study status, restart crashed groups
+        """
+
+        # check if threads are still alive
+        if not self.messenger.isAlive():
+            logging.error('Messenger thread crashed')
+            self.messenger.join()
+            self.messenger = Messenger()
+            self.messenger.start()
+        if not self.state_checker.isAlive():
+            logging.error('State checker thread crashed')
+            self.state_checker.join()
+            self.state_checker = StateChecker()
+            self.state_checker.start()
+
         sleep = False
-
-    if ((server.status != RUNNING or server.job_status != RUNNING)
-            and not all([i.status == FINISHED for i in groups])):
-        for group in groups:
-            if group.status < FINISHED and group.status > NOT_SUBMITTED:
-                with group.lock:
-                    group.cancel()
-        logging.info('resubmit server job')
-        time.sleep(1)
-        server.restart()
-        server.wait_start()
-        logging.info('server start')
-        time.sleep(1)
-        for group in groups:
-            if group.status < FINISHED and group.status > NOT_SUBMITTED:
-                with group.lock:
-                    logging.info('resubmit group ' + str(group.rank)
-                                 + ' (server crash)')
-                    group.restart()
-        time.sleep(2)
-
-    for group in groups:
-        if group.status > NOT_SUBMITTED and group.status < FINISHED:
-            with group.lock:
-                if group.status <= RUNNING and group.job_status == FINISHED:
-                    sleep = True
+        with server.lock:
+            if server.status != RUNNING or server.job_status != RUNNING:
+                sleep = True
         if sleep == True:
-            time.sleep(10)
+            time.sleep(3)
             sleep = False
-            with group.lock:
-                if group.status <= RUNNING:
-                    logging.info("resubmit group " + str(group.rank)
-                                 + " (simulation crashed)")
-                    group.restart()
-        with group.lock:
-            if group.status == WAITING:
-                if group.job_status == RUNNING:
-                    if time.time() - group.start_time > simulation_timeout:
-                        logging.info("resubmit group " + str(group.rank)
-                                     + " (timeout detected by launcher)")
+
+        if ((server.status != RUNNING or server.job_status != RUNNING)
+                and not all([i.status == FINISHED for i in groups])):
+            for group in groups:
+                if group.status < FINISHED and group.status > NOT_SUBMITTED:
+                    with group.lock:
+                        group.cancel()
+            logging.info('resubmit server job')
+            time.sleep(1)
+            server.restart()
+            server.wait_start()
+            get_message.connect_message_snd(server.node_name+'\000')
+            logging.info('server start')
+            time.sleep(1)
+            for group in groups:
+                if group.status < FINISHED and group.status > NOT_SUBMITTED:
+                    with group.lock:
+                        logging.info('resubmit group ' + str(group.rank)
+                                     + ' (server crash)')
                         group.restart()
+            time.sleep(2)
+
+        for group in groups:
+            if group.status > NOT_SUBMITTED and group.status < FINISHED:
+                with group.lock:
+                    if group.status <= RUNNING and group.job_status == FINISHED:
+                        sleep = True
+            if sleep == True:
+                time.sleep(10)
+                sleep = False
+                with group.lock:
+                    if group.status <= RUNNING:
+                        logging.info("resubmit group " + str(group.rank)
+                                     + " (simulation crashed)")
+                        group.restart()
+            with group.lock:
+                if group.status == WAITING:
+                    if group.job_status == RUNNING:
+                        if time.time() - group.start_time > self.stdy_opt['simulation_timeout']:
+                            logging.info("resubmit group " + str(group.rank)
+                                         + " (timeout detected by launcher)")
+                            group.restart()
 #    time.sleep(1)
 
 

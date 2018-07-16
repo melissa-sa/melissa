@@ -44,6 +44,7 @@ struct melissa_simulation_s
     int    status;       /**< simulation status (0: no messages recieved, 1: at least one message recieved, 2: finished */
     int    timeout;      /**< 1 if timeout detected on this simulation */
     double last_message; /**< time of the last recieved message from this simulation */
+    char   job_id[255];  /**< simulation job ID */
 };
 
 typedef struct melissa_simulation_s melissa_simulation_t; /**< type corresponding to melissa_simulation_s */
