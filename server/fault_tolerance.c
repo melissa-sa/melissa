@@ -48,6 +48,7 @@ melissa_simulation_t* add_simulation()
     simu->timeout = 0;
     simu->last_message = 0.0;
     sprintf (simu->job_id, "0");
+    simu->job_status = -1;
 
     return simu;
 }
@@ -164,5 +165,48 @@ void send_timeouts (int       detected_timeouts,
                 simu_ptr->timeout = 0;
             }
         }
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function parses messages from launcher
+ *
+ *******************************************************************************
+ *
+ * @param[in] msg message from launcher
+ * number of timeouts detected
+ *
+ * @param[in] *simulations
+ * pointer to the simulation vector
+ *
+ *******************************************************************************/
+
+void process_txt_message (char      msg[255],
+                          vector_t *simulations)
+{
+    melissa_simulation_t *simu_ptr;
+    int                   simu_id, i;
+    const char            s[2] = " ";
+    char                 *temp_char;
+
+    temp_char = strtok (msg, s);
+    if (0 == strcmp(temp_char, "job"))
+    {
+        temp_char = strtok (NULL, s);
+        simu_id = atoi(temp_char);
+        if (simu_id > simulations->size)
+        {
+            for (i=simulations->size; i<simu_id; i++)
+            {
+                vector_set (simulations, i, add_simulation());
+            }
+        }
+        simu_ptr = vector_get (simulations, simu_id);
+        temp_char = strtok (NULL, s);
+        strcpy(simu_ptr->job_id, temp_char);
     }
 }

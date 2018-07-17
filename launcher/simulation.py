@@ -96,6 +96,7 @@ class Group(Job):
         self.status = NOT_SUBMITTED
         self.lock = RLock()
         self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
+        self.rank = Group.nb_groups
         Group.nb_groups += 1
 
 #    @classmethod
@@ -127,6 +128,7 @@ class Group(Job):
             exit()
         self.job_status = PENDING
         self.status = WAITING
+        get_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
 
     def check_job(self):
         """
@@ -159,7 +161,6 @@ class SingleSimuGroup(Group):
             SingleSimuGroup constructor
         """
         Group.__init__(self)
-        self.rank = Group.nb_groups-1
         self.simu_id = self.rank
         self.param_set = numpy.copy(param_set)
         self.coupling = 0
@@ -199,7 +200,6 @@ class SobolGroup(Group):
             SobolGroup constructor
         """
         Group.__init__(self)
-        self.rank = Group.nb_groups-1
         self.param_set = list()
         self.simu_id = list()
         self.param_set.append(numpy.copy(param_set_a))

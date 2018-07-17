@@ -302,6 +302,8 @@ int main (int argc, char **argv)
             char text[256];
             zmq_recv (python_puller, text, 255, 0);
             last_msg_launcher = melissa_get_time();
+            process_txt_message(text, &simulations);
+            melissa_options.sampling_size = simulations.size;
         }
 
         // === If message on the connexion port === //

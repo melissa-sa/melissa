@@ -45,6 +45,7 @@ struct melissa_simulation_s
     int    timeout;      /**< 1 if timeout detected on this simulation */
     double last_message; /**< time of the last recieved message from this simulation */
     char   job_id[255];  /**< simulation job ID */
+    int    job_status;   /**< simulation job status */
 };
 
 typedef struct melissa_simulation_s melissa_simulation_t; /**< type corresponding to melissa_simulation_s */
@@ -59,5 +60,8 @@ int check_timeouts (vector_t *simulations,
 void send_timeouts (int       detected_timeouts,
                     vector_t *simulations,
                     void     *python_pusher);
+
+void process_txt_message (char      msg[255],
+                          vector_t *simulations);
 
 #endif // FAULT_TOLERANCE_H
