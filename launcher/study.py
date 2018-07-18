@@ -138,7 +138,7 @@ class Messenger(Thread):
                         with server.lock:
                             server.status = TIMEOUT
                 if (time.time() - last_msg_to_server) > 10:
-                    buff.value = 'hello server'+'\000'
+                    buff.value = 'hello server '+str(time.time())+'\000'
                     get_message.send_message(buff)
                     last_msg_to_server = time.time()
             logging.info('closing messenger thread')
@@ -185,7 +185,7 @@ class Study(object):
         self.create_group_list()
         # init zmq context
         get_message.init_context()
-        get_message.bind_message_rcv()
+        get_message.bind_message_rcv("5555")
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
@@ -196,7 +196,7 @@ class Study(object):
         server.wait_start()
         server.write_node_name()
         # connect to server
-        get_message.connect_message_snd(server.node_name+'\000')
+        get_message.bind_message_snd("5556")
         logging.debug('start status checker thread')
         self.state_checker.start()
         for group in groups:

@@ -371,7 +371,7 @@ void read_simu_states(vector_t          *simu,
     request = melissa_malloc(max_size * sizeof(MPI_Request));
     for (i=0; i<max_size; i++)
     {
-        vector_set (simu, i, add_simulation());
+        vector_add (simu, add_simulation());
     }
     for (i=0; i<size; i++)
     {

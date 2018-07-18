@@ -64,4 +64,8 @@ void send_timeouts (int       detected_timeouts,
 void process_txt_message (char      msg[255],
                           vector_t *simulations);
 
+
+int count_job_status(vector_t *simulations,
+                      int       job_status);
+
 #endif // FAULT_TOLERANCE_H

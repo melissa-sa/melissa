@@ -24,7 +24,7 @@
 void alloc_vector(vector_t *v, int capacity)
 {
     v->capacity = capacity;
-    v->size = capacity;
+    v->size = 0;
     v->items = melissa_calloc(v->capacity, sizeof(void *));
 }
 
@@ -52,13 +52,13 @@ void vector_add(vector_t *v, void *item)
     v->items[v->size++] = item;
 }
 
-void vector_set(vector_t *v, int index, void *item)
-{
-    if (index >= 0 && index < v->size)
-    {
-        v->items[index] = item;
-    }
-}
+//void vector_set(vector_t *v, int index, void *item)
+//{
+//    if (index >= 0 && index < v->size)
+//    {
+//        v->items[index] = item;
+//    }
+//}
 
 void *vector_get(vector_t *v, int index)
 {

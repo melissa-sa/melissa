@@ -202,11 +202,47 @@ void process_txt_message (char      msg[255],
         {
             for (i=simulations->size; i<simu_id; i++)
             {
-                vector_set (simulations, i, add_simulation());
+                vector_add (simulations, add_simulation());
             }
         }
         simu_ptr = vector_get (simulations, simu_id);
         temp_char = strtok (NULL, s);
         strcpy(simu_ptr->job_id, temp_char);
+        simu_ptr->job_status = 0;
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function counts the number of simulations in a given job status
+ *
+ *******************************************************************************
+ *
+ * @param[in] *simulations
+ * pointer to the simulation vector
+ *
+ * @param[in] job_status
+ * the job status to count
+ *
+ *******************************************************************************/
+
+int count_job_status(vector_t *simulations,
+                      int       job_status)
+{
+    melissa_simulation_t *simu_ptr;
+    int                   i;
+    int                   nb_simu = 0;
+
+    for (i=0; i<simulations->size; i++)
+    {
+        simu_ptr = vector_get (simulations, i);
+        if (simu_ptr->job_status == job_status)
+        {
+            nb_simu +=1;
+        }
+    }
+    return nb_simu;
 }
