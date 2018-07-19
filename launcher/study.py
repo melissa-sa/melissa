@@ -167,7 +167,7 @@ class Study(object):
         nb_errors = self.check_options()
         if nb_errors > 0:
             logging.error(str(nb_errors) + ' errors in options.py.')
-            return -1
+            exit()
         Job.set_usr_func(self.usr_func)
         Job.set_stdy_opt(self.stdy_opt)
         Job.set_ml_stats(self.ml_stats)
@@ -176,42 +176,46 @@ class Study(object):
         """
             Main study method
         """
-#        global server
-#        global groups
-        if not os.path.isdir(self.stdy_opt['working_directory']):
-            os.mkdir(self.stdy_opt['working_directory'])
-        os.chdir(self.stdy_opt['working_directory'])
-        create_study(self.usr_func)
-        self.create_group_list()
-        # init zmq context
-        get_message.init_context()
-        get_message.bind_message_rcv("5555")
-        logging.info('submit server')
-        server.set_path(self.stdy_opt['working_directory'])
-        server.create_options()
-        server.launch()
-        logging.debug('start messenger thread')
-        self.messenger.start()
-        logging.debug('wait server start')
-        server.wait_start()
-        server.write_node_name()
-        # connect to server
-        get_message.bind_message_snd("5556")
-        logging.debug('start status checker thread')
-        self.state_checker.start()
-        for group in groups:
-            self.fault_tolerance()
-            while check_scheduler_load(self.usr_func) == False:
-                time.sleep(1)
+        try:
+            if not os.path.isdir(self.stdy_opt['working_directory']):
+                os.mkdir(self.stdy_opt['working_directory'])
+            os.chdir(self.stdy_opt['working_directory'])
+            create_study(self.usr_func)
+            self.create_group_list()
+            # init zmq context
+            get_message.init_context()
+            get_message.bind_message_rcv("5555")
+            logging.info('submit server')
+            server.set_path(self.stdy_opt['working_directory'])
+            server.create_options()
+            server.launch()
+            logging.debug('start messenger thread')
+            self.messenger.start()
+            logging.debug('wait server start')
+            server.wait_start()
+            server.write_node_name()
+            # connect to server
+            get_message.bind_message_snd("5556")
+            logging.debug('start status checker thread')
+            self.state_checker.start()
+            for group in groups:
                 self.fault_tolerance()
-            logging.info('submit group '+str(group.rank))
-            group.launch()
+                while check_scheduler_load(self.usr_func) == False:
+                    time.sleep(1)
+                    self.fault_tolerance()
+                logging.info('submit group '+str(group.rank))
+                group.launch()
+                time.sleep(1)
+            while (server.status != FINISHED
+                   or any([i.status != FINISHED for i in groups])):
+                self.fault_tolerance()
+                time.sleep(1)
             time.sleep(1)
-        while (server.status != FINISHED
-               or any([i.status != FINISHED for i in groups])):
-            self.fault_tolerance()
-            time.sleep(1)
-        time.sleep(1)
+        except:
+            pass
+        self.stop()
+
+    def stop(self):
         self.messenger.running_study = False
         self.state_checker.running_study = False
         self.messenger.join()
@@ -388,7 +392,10 @@ def create_study(usr_func):
     """
     if "create_study" in Job.usr_func.keys() \
     and usr_func['create_study']:
-        usr_func['create_study']()
+        try:
+            usr_func['create_study']()
+        except:
+            logging.warning("Create study failed")
     else:
         pass
 
@@ -397,7 +404,11 @@ def draw_parameter_set(usr_func, stdy_opt):
         Draws a set of parameters using user defined function
     """
     if usr_func['draw_parameter_set']:
-        param_set = usr_func['draw_parameter_set']()
+        try:
+            param_set = usr_func['draw_parameter_set']()
+        except:
+            logging.error("Draw parameter set failed")
+            exit()
     else:
         param_set = np.zeros(stdy_opt['nb_parameters'])
         for i in range(stdy_opt['nb_parameters']):
@@ -410,7 +421,11 @@ def check_scheduler_load(usr_func):
     """
     if "check_scheduler_load" in Job.usr_func.keys() \
     and usr_func['check_scheduler_load']:
-        return usr_func['check_scheduler_load']()
+        try:
+            return usr_func['check_scheduler_load']()
+        except:
+            logging.warning("Check scheduler load failed")
+            return True
     else:
         return True
 
@@ -422,7 +437,10 @@ def postprocessing(usr_func):
     """
     if "postprocessing" in Job.usr_func.keys() \
     and usr_func['postprocessing']:
-        usr_func['postprocessing']()
+        try:
+            usr_func['postprocessing']()
+        except:
+            logging.warning("Postprocessing failed")
     else:
         pass
 
@@ -432,7 +450,10 @@ def finalize(usr_func):
     """
     if "finalize" in Job.usr_func.keys() \
     and usr_func['finalize']:
-        usr_func['finalize']()
+        try:
+            usr_func['finalize']()
+        except:
+            logging.warning("Finalize failed")
     else:
         pass
 
