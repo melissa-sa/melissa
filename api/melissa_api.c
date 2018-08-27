@@ -979,9 +979,11 @@ void melissa_send (const int  *time_step,
             }
             break;
 
+#ifdef BUILD_WITH_MPI
         case MELISSA_COUPLING_MPI:
             MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, global_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
             break;
+#endif // BUILD_WITH_MPI
         }
 #ifdef BUILD_WITH_PROBES
         total_bytes_sent += local_vect_size * sizeof(double);

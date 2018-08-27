@@ -176,28 +176,28 @@ class Study(object):
         """
             Main study method
         """
+        if not os.path.isdir(self.stdy_opt['working_directory']):
+            os.mkdir(self.stdy_opt['working_directory'])
+        os.chdir(self.stdy_opt['working_directory'])
+        create_study(self.usr_func)
+        self.create_group_list()
+        # init zmq context
+        get_message.init_context()
+        get_message.bind_message_rcv("5555")
+        logging.info('submit server')
+        server.set_path(self.stdy_opt['working_directory'])
+        server.create_options()
+        server.launch()
+        logging.debug('start messenger thread')
+        self.messenger.start()
+        logging.debug('wait server start')
+        server.wait_start()
+        server.write_node_name()
+        # connect to server
+        get_message.bind_message_snd("5556")
+        logging.debug('start status checker thread')
+        self.state_checker.start()
         try:
-            if not os.path.isdir(self.stdy_opt['working_directory']):
-                os.mkdir(self.stdy_opt['working_directory'])
-            os.chdir(self.stdy_opt['working_directory'])
-            create_study(self.usr_func)
-            self.create_group_list()
-            # init zmq context
-            get_message.init_context()
-            get_message.bind_message_rcv("5555")
-            logging.info('submit server')
-            server.set_path(self.stdy_opt['working_directory'])
-            server.create_options()
-            server.launch()
-            logging.debug('start messenger thread')
-            self.messenger.start()
-            logging.debug('wait server start')
-            server.wait_start()
-            server.write_node_name()
-            # connect to server
-            get_message.bind_message_snd("5556")
-            logging.debug('start status checker thread')
-            self.state_checker.start()
             for group in groups:
                 self.fault_tolerance()
                 while check_scheduler_load(self.usr_func) == False:
