@@ -17,6 +17,9 @@
 project(Melissa C CXX Fortran)
 
 cmake_minimum_required(VERSION 3.2.2)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+
 include(CTest)
 include(FindPackageHandleStandardArgs)
 
@@ -41,8 +44,11 @@ function(find_python_module module)
         find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
 
-set(ALL_SRCS )
-set(ALL_INCS )
+# The project version number.
+set(VERSION_MAJOR   0   CACHE STRING "Project major version number.")
+set(VERSION_MINOR   4   CACHE STRING "Project minor version number.")
+set(VERSION_PATCH   0   CACHE STRING "Project patch version number.")
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 
 option(INSTALL_ZMQ OFF)
 
@@ -82,54 +88,7 @@ endif(BUILD_EXAMPLES)
 
 # ZeroMQ #
 
-
-#if(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-#  set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
-#  message(STATUS "ZeroMQ Found")
-#else(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-#  option(INSTALL_ZMQ "Download and install ZeroMQ" ON)
-#  message(STATUS "ZeroMQ not found")
-#endif(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-
-#set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
-
-
-if(INSTALL_ZMQ)
-  include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
-  ExternalProject_Add(ZeroMQ
-#    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
-    URL https://github.com/zeromq/libzmq/archive/v4.2.2.tar.gz
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}/ZeroMQ
-  )
-  set(ZMQ_DIR ${CMAKE_INSTALL_PREFIX}/ZeroMQ CACHE FORCE " ")
-#  mark_as_advanced(FORCE ZMQ_DIR)
-  set(ZMQ_STATIC_LIBRARY ${ZMQ_DIR}/lib/libzmq-static.a CACHE INTERNAL " ")
-  set(ZMQ_LIBRARY ${ZMQ_DIR}/lib/libzmq.so CACHE INTERNAL " ")
-  set(ZMQ_INCLUDE_DIR ${ZMQ_DIR}/include CACHE INTERNAL " ")
-  set ( ZMQ_LIBRARIES ${ZMQ_LIBRARY} )
-  set ( ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR} )
-  include_directories( ${ZMQ_INCLUDE_DIRS} )
-  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
-  find_package_handle_standard_args ( ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
-else(INSTALL_ZMQ)
-    find_path ( ZMQ_INCLUDE_DIR zmq.h )
-    find_library ( ZMQ_LIBRARY NAMES zmq )
-    set ( ZMQ_LIBRARIES ${ZMQ_LIBRARY} )
-    set ( ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR} )
-    include_directories( ${ZMQ_INCLUDE_DIRS} )
-    # handle the QUIETLY and REQUIRED arguments and set ZMQ_FOUND to TRUE
-    # if all listed variables are TRUE
-    find_package_handle_standard_args ( ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
-endif(INSTALL_ZMQ)
-if(NOT ZMQ_FOUND)
-    message(FATAL_ERROR "ZeroMQ not found:")
-else(NOT ZMQ_FOUND)
-    get_filename_component(ZMQ_LIB_DIR ${ZMQ_LIBRARY} DIRECTORY)
-    get_filename_component(ZMQ_DIR ${ZMQ_LIB_DIR} DIRECTORY)
-    set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${ZMQ_LIBRARIES})
-endif(NOT ZMQ_FOUND)
+find_package(ZeroMQ)
 
 # MPI #
 
@@ -235,86 +194,23 @@ endif(BUILD_WITH_PROBES)
 
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
-set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c
-            ${PROJECT_SOURCE_DIR}/utils/vector.c )
-set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
-set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h
-            ${PROJECT_SOURCE_DIR}/utils/vector.h )
-set(ALL_INCS ${ALL_INCS} ${UTILS_H})
-set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h")
-
 include_directories("${PROJECT_SOURCE_DIR}/utils")
 
 add_subdirectory(utils)
-
-set(ALL_API melissa_api.c
-            melissa_api.h
-            melissa_api_no_mpi.h)
-foreach( _file ${ALL_API})
-  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/api/${_file}" )
-endforeach()
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
 
 add_subdirectory(api)
 
-set(STATS_C covariance.c
-            variance.c
-            mean.c
-            general_moments.c
-            min_max.c
-            sobol.c
-            threshold.c
-            quantile.c)
-set(ALL_SRCS ${ALL_SRCS} ${STATS_C})
-set(STATS_H covariance.h
-            variance.h
-            mean.h
-            general_moments.h
-            min_max.h
-            sobol.h
-            threshold.h
-            quantile.h)
-set(ALL_INCS ${ALL_INCS} ${STATS_H})
-foreach( _file ${STATS_C} ${STATS_H})
-  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/stats/${_file}" )
-endforeach()
-
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")
 
 add_subdirectory(stats)
-
-set(SERVER_SRC compute_stats.c
-               melissa_fields.c
-               melissa_data.c
-               melissa_io.c
-               melissa_options.c
-               server_helper.c
-               fault_tolerance.c)
-set(ALL_SRCS ${ALL_SRCS} ${SERVER_SRC})
-set(SERVER_H compute_stats.h
-             melissa_fields.h
-             melissa_data.h
-             melissa_io.h
-             melissa_options.h
-             server.h
-             fault_tolerance.h)
-set(ALL_INCS ${ALL_INCS} ${SERVER_H})
-foreach( _file ${SERVER_SRC} ${SERVER_H})
-  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/server/${_file}" )
-endforeach()
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
-#add_subdirectory(launcher.old)
-
 add_subdirectory(launcher)
-
-#add_subdirectory(launcher_saturne)
-
-#add_subdirectory(gui)
 
 add_subdirectory(tests)
 
@@ -328,7 +224,7 @@ install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL
 
 if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
-    message(FATAL_ERROR "Doxygen needed to build the documentation. Please install it correctly")
+    message(SEND_ERROR "Doxygen needed to build the documentation. Please install it correctly")
   endif(NOT DOXYGEN_FOUND)
 
   # Configure the Template Doxyfile for our project
@@ -337,6 +233,9 @@ if(BUILD_DOCUMENTATION)
                  ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
   # Add a custom target to run Doxygen when ever the project is built
   add_custom_target(docs ALL
-    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile
-    SOURCES ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
+                    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                    COMMENT "Generating API documentation with Doxygen"
+                    VERBATIM )
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/doc)
 endif(BUILD_DOCUMENTATION)

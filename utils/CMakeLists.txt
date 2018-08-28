@@ -14,9 +14,24 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+file(GLOB
+     UTILS_H
+     RELATIVE
+     ${CMAKE_CURRENT_SOURCE_DIR}
+     melissa_utils.h
+     vector.h
+     )
+
+file(GLOB
+     UTILS_C
+     RELATIVE
+     ${CMAKE_CURRENT_SOURCE_DIR}
+     melissa_utils.c
+     vector.c
+     )
 
 add_library(get_message SHARED get_message.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(get_message PUBLIC ${EXTRA_LIBS} ${ZMQ_LIBRARY})
+target_link_libraries(get_message PUBLIC ${EXTRA_LIBS} ${ZEROMQ_LIBRARIES})
 target_compile_options(get_message BEFORE PUBLIC -fPIC -Wall)
 install(TARGETS get_message LIBRARY DESTINATION share/launcher)
 

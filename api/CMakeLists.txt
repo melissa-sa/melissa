@@ -15,10 +15,6 @@
 ###################################################################
 
 
-if(BUILD_WITH_FLOWVR)
-    set(ALL_API ${ALL_API}
-                flowvr_group.cpp)
-endif(BUILD_WITH_FLOWVR)
 
 set(MELISSA_MACROS
 "#define MELISSA_COUPLING_NONE 0
@@ -26,6 +22,19 @@ set(MELISSA_MACROS
 #define MELISSA_COUPLING_ZMQ 0
 #define MELISSA_COUPLING_MPI 1
 #define MELISSA_COUPLING_FLOWVR 2")
+
+file(GLOB
+     ALL_API
+     RELATIVE
+     ${CMAKE_CURRENT_SOURCE_DIR}
+     *.h
+     *.c
+     )
+
+if(BUILD_WITH_FLOWVR)
+    set(ALL_API ${ALL_API}
+                flowvr_group.cpp)
+endif(BUILD_WITH_FLOWVR)
 
 if(BUILD_WITH_MPI)
     configure_file(melissa_api.h melissa_api.h @ONLY)
@@ -41,6 +50,6 @@ configure_file(melissa_api.f melissa_api.f @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/api/melissa_api.f DESTINATION include)
 
 add_library(melissa_api SHARED ${ALL_API} $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(melissa_api ${ZMQ_LIBRARY} ${EXTRA_LIBS})
+target_link_libraries(melissa_api ${ZEROMQ_LIBRARIES} ${EXTRA_LIBS})
 target_compile_options(melissa_api BEFORE PUBLIC -fPIC)
 install(TARGETS melissa_api LIBRARY DESTINATION lib)
