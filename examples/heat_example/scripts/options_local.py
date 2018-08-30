@@ -100,141 +100,141 @@ def check_load():
 def kill_job(job):
     os.system('kill '+str(job.job_id))
 
-def heat_visu():
-    os.chdir('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS')
-    fig = list()
-    nb_time_steps = str(STUDY_OPTIONS['nb_time_steps'])
-    matrix = np.zeros((100,100))
+#def heat_visu():
+#    os.chdir('@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS')
+#    fig = list()
+#    nb_time_steps = str(STUDY_OPTIONS['nb_time_steps'])
+#    matrix = np.zeros((100,100))
 
-    if (MELISSA_STATS['mean']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_mean.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Means')
-        fig[len(fig)-1].show()
-        file.close()
+#    if (MELISSA_STATS['mean']):
+#        fig.append(plt.figure(len(fig)))
+#        file_name = 'results.heat1_mean.'+nb_time_steps
+#        file=open(file_name)
+#        value = 0
+#        for line in file:
+#            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#            value += 1
+#        plt.pcolor(matrix,cmap=cm.coolwarm)
+#        plt.colorbar().set_label('Means')
+#        fig[len(fig)-1].show()
+#        file.close()
 
-    if (MELISSA_STATS['variance']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_variance.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Variances')
-        fig[len(fig)-1].show()
-        file.close()
+#    if (MELISSA_STATS['variance']):
+#        fig.append(plt.figure(len(fig)))
+#        file_name = 'results.heat1_variance.'+nb_time_steps
+#        file=open(file_name)
+#        value = 0
+#        for line in file:
+#            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#            value += 1
+#        plt.pcolor(matrix,cmap=cm.coolwarm)
+#        plt.colorbar().set_label('Variances')
+#        fig[len(fig)-1].show()
+#        file.close()
 
-    if (MELISSA_STATS['skewness']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_skewness.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Skewness')
-        fig[len(fig)-1].show()
-        file.close()
+#    if (MELISSA_STATS['skewness']):
+#        fig.append(plt.figure(len(fig)))
+#        file_name = 'results.heat1_skewness.'+nb_time_steps
+#        file=open(file_name)
+#        value = 0
+#        for line in file:
+#            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#            value += 1
+#        plt.pcolor(matrix,cmap=cm.coolwarm)
+#        plt.colorbar().set_label('Skewness')
+#        fig[len(fig)-1].show()
+#        file.close()
 
-    if (MELISSA_STATS['kurtosis']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_kurtosis.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Kurtosis')
-        fig[len(fig)-1].show()
-        file.close()
+#    if (MELISSA_STATS['kurtosis']):
+#        fig.append(plt.figure(len(fig)))
+#        file_name = 'results.heat1_kurtosis.'+nb_time_steps
+#        file=open(file_name)
+#        value = 0
+#        for line in file:
+#            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#            value += 1
+#        plt.pcolor(matrix,cmap=cm.coolwarm)
+#        plt.colorbar().set_label('Kurtosis')
+#        fig[len(fig)-1].show()
+#        file.close()
 
-    if (MELISSA_STATS['min']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_min.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Minimum')
-        fig[len(fig)-1].show()
-        file.close()
+#    if (MELISSA_STATS['min']):
+#        fig.append(plt.figure(len(fig)))
+#        file_name = 'results.heat1_min.'+nb_time_steps
+#        file=open(file_name)
+#        value = 0
+#        for line in file:
+#            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#            value += 1
+#        plt.pcolor(matrix,cmap=cm.coolwarm)
+#        plt.colorbar().set_label('Minimum')
+#        fig[len(fig)-1].show()
+#        file.close()
 
-    if (MELISSA_STATS['max']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_max.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Maximum')
-        fig[len(fig)-1].show()
-        file.close()
+#    if (MELISSA_STATS['max']):
+#        fig.append(plt.figure(len(fig)))
+#        file_name = 'results.heat1_max.'+nb_time_steps
+#        file=open(file_name)
+#        value = 0
+#        for line in file:
+#            matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#            value += 1
+#        plt.pcolor(matrix,cmap=cm.coolwarm)
+#        plt.colorbar().set_label('Maximum')
+#        fig[len(fig)-1].show()
+#        file.close()
 
-    if (MELISSA_STATS['threshold_exceedance']):
-        fig.append(plt.figure(len(fig)))
-        file_name = 'results.heat1_threshold.'+nb_time_steps
-        file=open(file_name)
-        value = 0
-        for line in file:
-            matrix[int(value)/100, int(value)%100] = int(line.split('\n')[0])
-            value += 1
-        plt.pcolor(matrix,cmap=cm.coolwarm)
-        plt.colorbar().set_label('Threshold exceedance')
-        fig[len(fig)-1].show()
-        file.close()
+#    if (MELISSA_STATS['threshold_exceedance']):
+#        fig.append(plt.figure(len(fig)))
+#        file_name = 'results.heat1_threshold.'+nb_time_steps
+#        file=open(file_name)
+#        value = 0
+#        for line in file:
+#            matrix[int(value)/100, int(value)%100] = int(line.split('\n')[0])
+#            value += 1
+#        plt.pcolor(matrix,cmap=cm.coolwarm)
+#        plt.colorbar().set_label('Threshold exceedance')
+#        fig[len(fig)-1].show()
+#        file.close()
 
-    if (MELISSA_STATS['quantiles']):
-        for val in STUDY_OPTIONS['quantile_values']:
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat1_quantile'+str(val)+'.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Quantiles'+str(val))
-            fig[len(fig)-1].show()
-            file.close()
+#    if (MELISSA_STATS['quantiles']):
+#        for val in STUDY_OPTIONS['quantile_values']:
+#            fig.append(plt.figure(len(fig)))
+#            file_name = 'results.heat1_quantile'+str(val)+'.'+nb_time_steps
+#            file=open(file_name)
+#            value = 0
+#            for line in file:
+#                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#                value += 1
+#            plt.pcolor(matrix,cmap=cm.coolwarm)
+#            plt.colorbar().set_label('Quantiles'+str(val))
+#            fig[len(fig)-1].show()
+#            file.close()
 
-    if (MELISSA_STATS['sobol_indices']):
-        for param in range(STUDY_OPTIONS['nb_parameters']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat1_sobol'+str(param)+'.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Sobol\'s indices '+str(param))
-            fig[len(fig)-1].show()
-            file.close()
-        for param in range(STUDY_OPTIONS['nb_parameters']):
-            fig.append(plt.figure(len(fig)))
-            file_name = 'results.heat1_sobol_tot'+str(param)+'.'+nb_time_steps
-            file=open(file_name)
-            value = 0
-            for line in file:
-                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
-                value += 1
-            plt.pcolor(matrix,cmap=cm.coolwarm)
-            plt.colorbar().set_label('Total order Sobol\'s indices '+str(param))
-            fig[len(fig)-1].show()
-            file.close()
+#    if (MELISSA_STATS['sobol_indices']):
+#        for param in range(STUDY_OPTIONS['nb_parameters']):
+#            fig.append(plt.figure(len(fig)))
+#            file_name = 'results.heat1_sobol'+str(param)+'.'+nb_time_steps
+#            file=open(file_name)
+#            value = 0
+#            for line in file:
+#                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#                value += 1
+#            plt.pcolor(matrix,cmap=cm.coolwarm)
+#            plt.colorbar().set_label('Sobol\'s indices '+str(param))
+#            fig[len(fig)-1].show()
+#            file.close()
+#        for param in range(STUDY_OPTIONS['nb_parameters']):
+#            fig.append(plt.figure(len(fig)))
+#            file_name = 'results.heat1_sobol_tot'+str(param)+'.'+nb_time_steps
+#            file=open(file_name)
+#            value = 0
+#            for line in file:
+#                matrix[int(value)/100, int(value)%100] = float(line.split('\n')[0])
+#                value += 1
+#            plt.pcolor(matrix,cmap=cm.coolwarm)
+#            plt.colorbar().set_label('Total order Sobol\'s indices '+str(param))
+#            fig[len(fig)-1].show()
+#            file.close()
 
     raw_input()

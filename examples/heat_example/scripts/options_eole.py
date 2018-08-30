@@ -95,7 +95,7 @@ def launch_server(server):
                                   universal_newlines=True)
     # get the job ID
     (out, err) = proc.communicate()
-    if size(out.split()) > 0:
+    if len(out.split()) > 0:
         server.job_id = out.split()[-1]
     else:
         print err
@@ -131,7 +131,7 @@ def launch_simu(simulation):
                                   universal_newlines=True)
     # get the job ID
     (out, err) = proc.communicate()
-    if size(out.split()) > 0:
+    if len(out.split()) > 0:
         simulation.job_id = out.split()[-1]
     else:
         print err

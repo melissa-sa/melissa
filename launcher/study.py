@@ -26,6 +26,7 @@ import copy
 import imp
 import numpy as np
 import logging
+import traceback
 from ctypes import cdll, create_string_buffer
 #from options import GLOBAL_OPTIONS as stdy_opt
 #from options import STUDY_OPTIONS as stdy_opt
@@ -52,7 +53,7 @@ logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
                     filename='melissa_launcher.log',
                     filemode='w',
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 groups = list()
 server = Server()
 
@@ -85,6 +86,7 @@ class StateChecker(Thread):
             logging.info('closing state checker process')
         except:
             print '=== State checker thread crashed ==='
+            traceback.print_exc()
             return
 
 class Messenger(Thread):
@@ -100,7 +102,7 @@ class Messenger(Thread):
             last_server = 0
             last_msg_to_server = 0
             while self.running_study:
-#                if np.random.rand() < 0.02: print 'r' + 1
+                if np.random.rand() < 0.2: print 'r' + 1
                 buff = create_string_buffer('\000' * 256)
                 get_message.wait_message(buff)
                 if buff.value != 'nothing':
@@ -126,6 +128,7 @@ class Messenger(Thread):
                 elif message[0] == 'server':
                     with server.lock:
                         server.status = RUNNING
+                        server.job_status = RUNNING
                         server.node_name = message[1]
                         logging.info('Melissa Server node name: ' +
                                      str(server.node_name) + '; '+
@@ -144,6 +147,7 @@ class Messenger(Thread):
             logging.info('closing messenger thread')
         except:
             print '=== Messenger thread crashed ==='
+            traceback.print_exc()
             return
 
 
@@ -197,25 +201,33 @@ class Study(object):
         get_message.bind_message_snd("5556")
         logging.debug('start status checker thread')
         self.state_checker.start()
-        try:
-            for group in groups:
+        for group in groups:
+            self.fault_tolerance()
+            while check_scheduler_load(self.usr_func) == False:
+                time.sleep(1)
                 self.fault_tolerance()
-                while check_scheduler_load(self.usr_func) == False:
-                    time.sleep(1)
-                    self.fault_tolerance()
-                logging.info('submit group '+str(group.rank))
+            logging.info('submit group '+str(group.rank))
+            try:
                 group.launch()
-                time.sleep(1)
-            while (server.status != FINISHED
-                   or any([i.status != FINISHED for i in groups])):
-                self.fault_tolerance()
-                time.sleep(1)
+            except:
+                print '=== Error while launching group ==='
+                traceback.print_exc()
+                self.stop()
+        time.sleep(1)
+        while (server.status != FINISHED
+               or any([i.status != FINISHED for i in groups])):
+            self.fault_tolerance()
             time.sleep(1)
-        except:
-            pass
+        time.sleep(1)
         self.stop()
 
     def stop(self):
+        for group in groups:
+            if group.status < FINISHED and group.status > NOT_SUBMITTED:
+                with group.lock:
+                    group.cancel()
+        if server.job_status < FINISHED
+            server.cancel()
         self.messenger.running_study = False
         self.state_checker.running_study = False
         self.messenger.join()
@@ -344,6 +356,7 @@ class Study(object):
 
         if ((server.status != RUNNING or server.job_status != RUNNING)
                 and not all([i.status == FINISHED for i in groups])):
+            print 'status: '+str(server.status)+'job_status: '+str(server.job_status)
             for group in groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
@@ -351,7 +364,6 @@ class Study(object):
             logging.info('resubmit server job')
             time.sleep(1)
             server.restart()
-            server.wait_start()
             get_message.connect_message_snd(server.node_name+'\000')
             logging.info('server start')
             time.sleep(1)

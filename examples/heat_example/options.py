@@ -24,13 +24,11 @@ import numpy as np
 import subprocess
 import getpass
 import imp
-from matplotlib import pyplot as plt
-from matplotlib import cm
+#from matplotlib import pyplot as plt
+#from matplotlib import cm
 from string import Template
 from shutil import copyfile
 
-imp.load_source("options", "./scripts/options_local.py")
-from options import *
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
@@ -38,11 +36,13 @@ BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'.upper()
 EXECUTABLE='heatc'
 BATCH_SCHEDULER = "local"
-WALLTIME_SERVER = 600
-NODES_SERVER = 5
-WALLTIME_SIMU = 300
-NODES_GROUP = 2
+WALLTIME_SERVER = "0:10:00"
+NODES_SERVER = 1
+WALLTIME_SIMU = "0:05:00"
+NODES_GROUP = 1
 
+imp.load_source("options", "./scripts/options_g5k.py")
+from options import *
 
 def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
     content = ""
@@ -83,9 +83,9 @@ MELISSA_STATS['skewness'] = True
 MELISSA_STATS['kurtosis'] = True
 MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
-MELISSA_STATS['threshold_exceedance'] = True
-MELISSA_STATS['quantiles'] = True
-MELISSA_STATS['sobol_indices'] = True
+MELISSA_STATS['threshold_exceedance'] = False
+MELISSA_STATS['quantiles'] = False
+MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

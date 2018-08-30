@@ -1,28 +1,29 @@
- ###################################################################
- #                            Melissa                              #
- #-----------------------------------------------------------------#
- #   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
- #                                                                 #
- # This source is covered by the BSD 3-Clause License.             #
- # Refer to the  LICENCE file for further information.             #
- #                                                                 #
- #-----------------------------------------------------------------#
- #  Original Contributors:                                         #
- #    Theophile Terraz,                                            #
- #    Bruno Raffin,                                                #
- #    Alejandro Ribes,                                             #
- #    Bertrand Iooss,                                              #
- ###################################################################
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
 
 
- """
-     User defined scripts for Grid5000
- """
+"""
+    User defined scripts for Grid5000
+"""
 
- WALLTIME_SERVER = 600
- NODES_SERVER = 3
- WALLTIME_SIMU = 300
- NODES_GROUP = 2
+#WALLTIME_SERVER = 600
+#NODES_SERVER = 1
+#WALLTIME_SIMU = 300
+NODES_SIMU = NODES_GROUP
+PROC_PER_NODE = 4
 
 
 def create_run_server(server):
@@ -42,13 +43,12 @@ def create_run_server(server):
     content += "#OAR -E melissa.%jobid%.err                                           \n"
     content += "#OAR -n Melissa                                                       \n"
     content += "#OAR --checkpoint 300                                                 \n"
-    content += "#OAR --signal=SIGUSR2                                                 \n"
-    content += "module load openmpi/1.8.5_gcc-4.4.6                                   \n"
+#    content += "#OAR --signal=SIGUSR2                                                 \n"
     content += "ulimit -s unlimited                                                   \n"
-    content += "export OMPI_MCA_orte_rsh_agent=oarsh                                  \n"
-    content += signal_handler
+#    content += signal_handler
     content += "date +\"%d/%m/%y %T\"                                                 \n"
     content += "STOP=0                                                                \n"
+    content += "source @CMAKE_INSTALL_PREFIX@/melissa_set_env.sh                      \n"
     content += "# run Melissa                                                         \n"
     content += "echo  \"### Launch Melissa\"                                          \n"
     content += "mkdir stats${OAR_JOB_ID}.resu                                         \n"
@@ -62,6 +62,23 @@ def create_run_server(server):
     file.close()
     os.system("chmod 744 run_server.sh")
 
+def create_run_simu(simulation, command):
+    content = ""
+    file=open("run_simu.sh", "w")
+    content += "#!/bin/bash                                                     \n"
+    content += "#OAR -l nodes="+str(NODES_SIMU)+"                              \n"
+    content += "#OAR -s ulimit=unlimited                                        \n"
+    content += "#OAR -O simu.%jobid%.log                                             \n"
+    content += "#OAR -E simu.%jobid%.err                                             \n"
+    content += "source @CMAKE_INSTALL_PREFIX@/melissa_set_env.sh                \n"
+    content += "date +\"%d/%m/%y %T\"                                           \n"
+    content += command + "                                                      \n"
+    content += "date +\"%d/%m/%y %T\"                                           \n"
+    content += "exit $?                                                         \n"
+    file.write(content)
+    file.close()
+    os.system("chmod 744 run_simu.sh")
+
 def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
         os.mkdir(STUDY_OPTIONS['working_directory'])
@@ -74,7 +91,10 @@ def launch_server(server):
                                   universal_newlines=True)
     # get the job ID
     (out, err) = proc.communicate()
-    server.job_id = out.split("OAR_JOB_ID=")[1]
+    if len(out.split()) > 0:
+        server.job_id = out.split("OAR_JOB_ID=")[1]
+    else:
+        print err
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
@@ -86,7 +106,7 @@ def launch_simu(simulation):
         command = 'mpirun '
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
-                                 str(NODES_GROUP),
+                                 str(PROC_PER_NODE),
                                  '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
@@ -94,34 +114,41 @@ def launch_simu(simulation):
     else:
         command = ' '.join(('mpirun',
                              '-n',
-                             str(NODES_GROUP),
+                             str(PROC_PER_NODE),
                              '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/bin/'+EXECUTABLE,
                              str(simulation.simu_id), str(simulation.coupling),
                              ' '.join(str(i) for i in simulation.param_set)))
-        print command
-        simulation.job_id = subprocess.Popen(command.split()).pid
     print command[:-2]
-    create_run_group(simulation, command)
+    create_run_simu(simulation, command)
+    proc = subprocess.Popen('oarsub -S "./run_simu.sh"',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+    # get the job ID
+    (out, err) = proc.communicate()
+    if len(out.split()) > 0:
+        simulation.job_id = out.split("OAR_JOB_ID=")[1]
+    else:
+        print err
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
     state = 0
-    proc = subprocess.Popen("oarstat -u --sql \"state = 'Waiting'\"",
+    time.sleep(1)
+    proc = subprocess.Popen("oarstat -s -j "+str(job.job_id),
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             shell=True,
                             universal_newlines=True)
+    time.sleep(1)
     (out, err) = proc.communicate()
-    if (not str(job.job_id) in out):
+    if "Waiting" in out:
+        state = 0
+    elif "Running" in out:
         state = 1
-        proc = subprocess.Popen("oarstat -u --sql \"state = 'Running'\"",
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                shell=True,
-                                universal_newlines=True)
-        (out, err) = proc.communicate()
-        if (not str(job.job_id) in out):
-            state = 2
+    else:
+        state = 2
     job.job_status = state
 
 def check_load():
