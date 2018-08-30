@@ -34,14 +34,8 @@ USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'.upper()
-EXECUTABLE='heatc'
-BATCH_SCHEDULER = "local"
-WALLTIME_SERVER = "0:10:00"
-NODES_SERVER = 1
-WALLTIME_SIMU = "0:05:00"
-NODES_GROUP = 1
 
-imp.load_source("options", "./scripts/options_g5k.py")
+imp.load_source("options", "./scripts/options_local.py")
 from options import *
 
 def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):

@@ -22,6 +22,10 @@
 EXECUTABLE='heatc'
 NODES_SERVER = 3
 NODES_GROUP = 2
+WALLTIME_SERVER = 600
+NODES_SERVER = 2
+WALLTIME_SIMU = 300
+NODES_GROUP = 2
 
 def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
@@ -65,7 +69,7 @@ def launch_simu(simulation):
             print command[:-2]
             simulation.job_id = subprocess.Popen(command[:-2].split()).pid
     else:
-        if BUILD_EXAMPLES_WITH_MPI == 'ON':
+        if BUILD_WITH_MPI == 'ON':
             command = ' '.join(('mpirun',
                                  '-n',
                                  str(NODES_GROUP),

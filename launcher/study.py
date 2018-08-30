@@ -102,7 +102,7 @@ class Messenger(Thread):
             last_server = 0
             last_msg_to_server = 0
             while self.running_study:
-                if np.random.rand() < 0.2: print 'r' + 1
+#                if np.random.rand() < 0.2: print 'r' + 1
                 buff = create_string_buffer('\000' * 256)
                 get_message.wait_message(buff)
                 if buff.value != 'nothing':
@@ -226,7 +226,7 @@ class Study(object):
             if group.status < FINISHED and group.status > NOT_SUBMITTED:
                 with group.lock:
                     group.cancel()
-        if server.job_status < FINISHED
+        if server.job_status < FINISHED:
             server.cancel()
         self.messenger.running_study = False
         self.state_checker.running_study = False
