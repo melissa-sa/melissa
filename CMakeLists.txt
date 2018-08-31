@@ -18,6 +18,15 @@ project(Melissa C CXX Fortran)
 
 cmake_minimum_required(VERSION 3.2.2)
 
+get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
+get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
+
+# disable in-source builds
+if(${srcdir} STREQUAL ${bindir})
+    message("You are attempting to build in your source Directory.")
+    message("You must run cmake from a build directory.")
+endif(${srcdir} STREQUAL ${bindir})
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 include(CTest)
