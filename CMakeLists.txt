@@ -65,7 +65,11 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 #find_package(PythonLibs)
 find_package(PythonInterp REQUIRED)
-message(STATUS "Python found")
+
+message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} found")
+if(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "2")
+    message(ERROR "Melissa needs Python 2")
+endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "2")
 find_python_module(numpy REQUIRED)
 
 # BLAS #

@@ -33,7 +33,7 @@ from shutil import copyfile
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
-BUILD_EXAMPLES_WITH_MPI = '@BUILD_EXAMPLES_WITH_MPI@'.upper()
+BUILD_EXAMPLES_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 
 imp.load_source("options", "./scripts/options_local.py")
 from options import *
@@ -96,5 +96,5 @@ USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
 USER_FUNCTIONS['cancel_job'] = kill_job
-USER_FUNCTIONS['postprocessing'] = @HEAT_VISU@
+USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None

@@ -191,11 +191,23 @@ class Study(object):
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
-        server.launch()
+        try:
+            server.launch()
+        except:
+            logging.error('Error while launching server')
+            print '=== Error while launching server ==='
+            traceback.print_exc()
+            self.stop()
         logging.debug('start messenger thread')
         self.messenger.start()
         logging.debug('wait server start')
-        server.wait_start()
+        try:
+            server.wait_start()
+        except:
+            logging.error('Error while waiting server')
+            print '=== Error while waiting server ==='
+            traceback.print_exc()
+            self.stop()
         server.write_node_name()
         # connect to server
         get_message.bind_message_snd("5556")
@@ -210,6 +222,7 @@ class Study(object):
             try:
                 group.launch()
             except:
+                logging.error('Error while launching group')
                 print '=== Error while launching group ==='
                 traceback.print_exc()
                 self.stop()
@@ -363,7 +376,13 @@ class Study(object):
                         group.cancel()
             logging.info('resubmit server job')
             time.sleep(1)
-            server.restart()
+            try:
+                server.restart()
+            except:
+                logging.error('Error while restarting server')
+                print '=== Error while restarting server ==='
+                traceback.print_exc()
+                self.stop()
             get_message.connect_message_snd(server.node_name+'\000')
             logging.info('server start')
             time.sleep(1)
@@ -372,7 +391,13 @@ class Study(object):
                     with group.lock:
                         logging.info('resubmit group ' + str(group.rank)
                                      + ' (server crash)')
-                        group.restart()
+                        try:
+                            group.restart()
+                        except:
+                            logging.error('Error while restarting group '+group.rank)
+                            print '=== Error while restarting group '+group.rank+' ==='
+                            traceback.print_exc()
+                            self.stop()
             time.sleep(2)
 
         for group in groups:
@@ -387,14 +412,26 @@ class Study(object):
                     if group.status <= RUNNING:
                         logging.info("resubmit group " + str(group.rank)
                                      + " (simulation crashed)")
-                        group.restart()
+                        try:
+                            group.restart()
+                        except:
+                            logging.error('Error while restarting group '+group.rank)
+                            print '=== Error while restarting group '+group.rank+' ==='
+                            traceback.print_exc()
+                            self.stop()
             with group.lock:
                 if group.status == WAITING:
                     if group.job_status == RUNNING:
                         if time.time() - group.start_time > self.stdy_opt['simulation_timeout']:
                             logging.info("resubmit group " + str(group.rank)
                                          + " (timeout detected by launcher)")
-                            group.restart()
+                            try:
+                                group.restart()
+                            except:
+                                logging.error('Error while restarting group '+group.rank)
+                                print '=== Error while restarting group '+group.rank+' ==='
+                                traceback.print_exc()
+                                self.stop()
 #    time.sleep(1)
 
 
@@ -408,6 +445,7 @@ def create_study(usr_func):
             usr_func['create_study']()
         except:
             logging.warning("Create study failed")
+            traceback.print_exc()
     else:
         pass
 
@@ -420,6 +458,7 @@ def draw_parameter_set(usr_func, stdy_opt):
             param_set = usr_func['draw_parameter_set']()
         except:
             logging.error("Draw parameter set failed")
+            traceback.print_exc()
             exit()
     else:
         param_set = np.zeros(stdy_opt['nb_parameters'])
@@ -437,6 +476,7 @@ def check_scheduler_load(usr_func):
             return usr_func['check_scheduler_load']()
         except:
             logging.warning("Check scheduler load failed")
+            traceback.print_exc()
             return True
     else:
         return True
@@ -453,6 +493,7 @@ def postprocessing(usr_func):
             usr_func['postprocessing']()
         except:
             logging.warning("Postprocessing failed")
+            traceback.print_exc()
     else:
         pass
 
@@ -466,6 +507,7 @@ def finalize(usr_func):
             usr_func['finalize']()
         except:
             logging.warning("Finalize failed")
+            traceback.print_exc()
     else:
         pass
 
