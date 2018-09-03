@@ -15,17 +15,23 @@
 ###################################################################
 
 
-file(GLOB
-     LAUNCHER_SRC
-     RELATIVE
-     ${CMAKE_CURRENT_SOURCE_DIR}
-     *.py
-     )
 
-foreach( _file ${LAUNCHER_SRC})
-    configure_file(${_file} ${_file} @ONLY)
-    install(FILES ${CMAKE_BINARY_DIR}/launcher/${_file} DESTINATION share/launcher)
-endforeach()
+
+configure_file(melissa_launcher.py.in melissa_launcher.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
+        DESTINATION share/launcher)
+
+install(FILES options.py
+        DESTINATION share/launcher)
+
+configure_file(simulation.py.in simulation.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/launcher/simulation.py
+        DESTINATION share/launcher)
+
+configure_file(study.py.in study.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
+        DESTINATION share/launcher)
+
 install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
         DESTINATION bin
         PERMISSIONS OWNER_WRITE
