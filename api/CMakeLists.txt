@@ -37,10 +37,10 @@ if(BUILD_WITH_FLOWVR)
 endif(BUILD_WITH_FLOWVR)
 
 if(BUILD_WITH_MPI)
-    configure_file(melissa_api.h melissa_api.h @ONLY)
+    configure_file(melissa_api.h.in ${CMAKE_CURRENT_BINARY_DIR}/melissa_api.h @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/api/melissa_api.h DESTINATION include)
 endif(BUILD_WITH_MPI)
-configure_file(melissa_api_no_mpi.h melissa_api_no_mpi.h @ONLY)
+configure_file(melissa_api_no_mpi.h.in ${CMAKE_CURRENT_BINARY_DIR}/melissa_api_no_mpi.h @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/api/melissa_api_no_mpi.h DESTINATION include)
 
 configure_file(melissa_api.f90 melissa_api.f90 @ONLY)

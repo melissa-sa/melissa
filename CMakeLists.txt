@@ -207,11 +207,11 @@ endif(BUILD_WITH_PROBES)
 
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
-include_directories("${PROJECT_SOURCE_DIR}/utils")
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/utils")
 
 add_subdirectory(utils)
 
-include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
+include_directories(AFTER "${CMAKE_BINARY_DIR}/api")
 
 add_subdirectory(api)
 
@@ -252,3 +252,17 @@ if(BUILD_DOCUMENTATION)
                     VERBATIM )
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/doc)
 endif(BUILD_DOCUMENTATION)
+
+set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
+
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(${PROJECT_NAME}Config.cmake.in
+                              "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+                              INSTALL_DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+                                 VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
+                                 COMPATIBILITY AnyNewerVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+              DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})

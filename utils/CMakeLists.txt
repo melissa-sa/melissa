@@ -37,6 +37,7 @@ install(TARGETS get_message LIBRARY DESTINATION share/launcher)
 
 add_library(melissa_utils OBJECT ${UTILS_C} ${UTILS_H})
 target_compile_options(melissa_utils BEFORE PUBLIC -fPIC)
+#configure_file(melissa_utils.h ${CMAKE_CURRENT_BINARY_DIR}/melissa_utils.h @ONLY)
 install(FILES ${UTILS_H} DESTINATION include)
 
 add_executable(create_file_master_name create_file_master_name.c)

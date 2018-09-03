@@ -678,8 +678,8 @@ int main (int argc, char **argv)
     if (comm_data.rank==0)
     {
         fprintf (stdout, " --- Number of simulations:           %d\n", melissa_options.nb_simu);
-        fprintf (stdout, " --- Number of simulation cores:      %d\n", comm_data.client_comm_size);
-        fprintf (stdout, " --- Number of analysis cores:        %d\n", comm_data.comm_size);
+        fprintf (stdout, " --- Number of simulation processes:  %d\n", comm_data.client_comm_size);
+        fprintf (stdout, " --- Number of analysis processes:    %d\n", comm_data.comm_size);
         fprintf (stdout, " --- Average communication time:      %g s\n", total_comm_time);
         fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
         fprintf (stdout, " --- Waiting time:                    %g s\n", total_wait_time);

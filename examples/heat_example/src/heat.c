@@ -21,8 +21,7 @@
 #include <unistd.h>
 #include <sys/timeb.h>
 #include <mpi.h>
-#include <zmq.h>
-#include <melissa_api.h>
+#include "melissa_api.h"
 
 // Fortran interfaces:
 
