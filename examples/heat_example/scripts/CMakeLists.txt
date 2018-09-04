@@ -21,13 +21,14 @@ find_python_module(matplotlib)
 #else (PY_MATPLOTLIB)
   set(HEAT_VISU "None")
 #endif (PY_MATPLOTLIB)
-file(GLOB
-     SCRIPTS_SRC
-     RELATIVE
-     ${CMAKE_CURRENT_SOURCE_DIR}
-     *.py
-     )
+
+set (SCRIPTS_SRC flowvr_group.py
+                 options_Slurm.py
+                 options_OAR.py
+                 options_local.py
+                 options_PBS.py )
+
 foreach( _file ${SCRIPTS_SRC})
-    configure_file(${_file} ${_file} @ONLY)
+    configure_file("${_file}.in" ${_file} @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/scripts/${_file} DESTINATION share/examples/heat_example/scripts)
 endforeach()

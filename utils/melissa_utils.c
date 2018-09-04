@@ -36,6 +36,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
+#include<stdarg.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
@@ -120,16 +121,16 @@ static void print_zmq_error(int         ret,
  *
  *******************************************************************************/
 
-void melissa_logo ()
+void melissa_logo (int verbose_lvl)
 {
-    fprintf (stdout, "\n");
-    fprintf (stdout, "  _    _   ____   _      _    ____   ____   ___    \n");
-    fprintf (stdout, " | \\  / | |  __| | |    | |  / ___| / ___| |   \\   \n");
-    fprintf (stdout, " |  \\/  | | |_   | |    | | ( (__  ( (__   | |\\ \\  \n");
-    fprintf (stdout, " |      | |  _|  | |    | |  \\__ \\  \\__ \\  | |_\\ \\ \n");
-    fprintf (stdout, " | |\\/| | | |__  | |__  | |  ___) ) ___) ) |  ___ \\\n");
-    fprintf (stdout, " |_|  |_| |____| |____| |_| |____/ |____/  |_|   \\/\n");
-    fprintf (stdout, "  \n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, "\n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, "  _    _   ____   _      _    ____   ____   ___    \n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, " | \\  / | |  __| | |    | |  / ___| / ___| |   \\   \n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, " |  \\/  | | |_   | |    | | ( (__  ( (__   | |\\ \\  \n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, " |      | |  _|  | |    | |  \\__ \\  \\__ \\  | |_\\ \\ \n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, " | |\\/| | | |__  | |__  | |  ___) ) ___) ) |  ___ \\\n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, " |_|  |_| |____| |____| |_| |____/ |____/  |_|   \\/\n");
+    melissa_print (VERBOSE_INFO, verbose_lvl, "  \n");
 }
 
 /**
@@ -384,6 +385,38 @@ void melissa_get_node_name (char *node_name)
 //#else
         gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
 //#endif // BUILD_WITH_MPI
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * Print a message depending on the verbose level
+ *
+ *******************************************************************************
+ *
+ * @param[in] *msg_priority
+ * The level of priority for this message
+ *
+ * @param[in] *verbose_lvl
+ * The requested verbose level
+ *
+ * @param[out] *format
+ * The format of the message to output
+ *
+ *******************************************************************************/
+
+void melissa_print (int msg_priority, int verbose_level, char* format, ...)
+{
+    va_list args;
+
+    if (msg_priority <= verbose_level)
+    {
+        va_start (args,format);
+        vprintf (format, args);
+        va_end(args);
     }
 }
 

@@ -119,11 +119,6 @@ int main (int argc, char **argv)
     comm_data.rank            = 0;
 #endif // BUILD_WITH_MPI
 
-    if (comm_data.rank == 0)
-    {
-        melissa_logo ();
-    }
-
     // === Get the node adress === //
 
     melissa_get_node_name (node_name);
@@ -135,17 +130,19 @@ int main (int argc, char **argv)
     // === Install signal handler === //
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
-            printf("\ncan't catch SIGINT\n");
+            melissa_print (VERBOSE_WARNING, melissa_options.verbose_lvl, "\ncan't catch SIGINT\n");
     if (signal(SIGUSR1, sig_handler) == SIG_ERR)
-            printf("\ncan't catch SIGUSR1\n");
+            melissa_print (VERBOSE_WARNING, melissa_options.verbose_lvl, "\ncan't catch SIGUSR1\n");
     if (signal(SIGUSR2, sig_handler) == SIG_ERR)
-            printf("\ncan't catch SIGUSR2\n");
+            melissa_print (VERBOSE_WARNING, melissa_options.verbose_lvl, "\ncan't catch SIGUSR2\n");
 
     // === Read options from command line === //
 
     melissa_get_options (argc, argv, &melissa_options);
+
     if (comm_data.rank == 0)
     {
+        melissa_logo (melissa_options.verbose_lvl);
         melissa_print_options (&melissa_options);
 //        melissa_write_options (&melissa_options);
     }
@@ -174,7 +171,7 @@ int main (int argc, char **argv)
 
     if (comm_data.rank == 0)
     {
-        fprintf (stdout, "server connected to launcher\n");
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "server connected to launcher\n");
         melissa_bind (init_responder, "tcp://*:2002");
         melissa_bind (connexion_responder, "tcp://*:2003");
 
@@ -193,7 +190,7 @@ int main (int argc, char **argv)
     {
         sprintf (txt_buffer, "server %s", node_name);
         zmq_send(text_pusher, txt_buffer, strlen(txt_buffer), 0);
-        fprintf (stdout, "server node name sent to launcher\n");
+        melissa_print (VERBOSE_GOSSIP, melissa_options.verbose_lvl, "server node name sent to launcher\n");
     }
 
     if (melissa_options.restart != 1)
@@ -209,7 +206,7 @@ int main (int argc, char **argv)
         // === Restart initialisation === //
         if (comm_data.rank == 0)
         {
-            fprintf (stdout, "reading simulation states at checkpoint time... ");
+            melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "reading simulation states at checkpoint time... ");
         }
         read_simu_states(&simulations, &melissa_options, &comm_data);
         for (i=0; i<simulations.size; i++)
@@ -233,6 +230,7 @@ int main (int argc, char **argv)
             for (i=0; i<simulations.size; i++)
             {
                 simu_ptr = simulations.items[i];
+                melissa_print (VERBOSE_DEBUG, melissa_options.verbose_lvl, "simu_state %d %d\n", i, simu_ptr->status);
                 sprintf (txt_buffer, "simu_state %d %d", i, simu_ptr->status);
                 zmq_send(text_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
@@ -240,7 +238,7 @@ int main (int argc, char **argv)
         melissa_options.sampling_size = simulations.size;
         if (comm_data.rank == 0)
         {
-            fprintf (stdout, " ok \n");
+            melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "ok \n");
         }
     }
 
@@ -295,15 +293,15 @@ int main (int argc, char **argv)
         {
             if (comm_data.rank == 0)
             {
-                fprintf (stderr, "Server detected Launcher timeout\n");
+                melissa_print (VERBOSE_ERROR, melissa_options.verbose_lvl, "Server detected Launcher timeout\n");
             }
             // remove unsubmited simulations from the sample
             i = count_job_status(&simulations, -1);
             melissa_options.sampling_size -= i;
             if (comm_data.rank == 0)
             {
-                fprintf (stderr, "Remove %d samples\n", i);
-                fprintf (stderr, "waiting for remaining simulations to complete\n");
+                melissa_print (VERBOSE_ERROR, melissa_options.verbose_lvl, "Remove %d samples\n", i);
+                melissa_print (VERBOSE_ERROR, melissa_options.verbose_lvl, "waiting for remaining simulations to complete\n");
             }
         }
 
@@ -313,7 +311,7 @@ int main (int argc, char **argv)
         {
             char text[256];
             zmq_recv (text_puller, text, 255, 0);
-            fprintf (stdout, "reçu %s (rank %d)\n", text, comm_data.rank);
+            melissa_print (VERBOSE_DEBUG, melissa_options.verbose_lvl, "reçu %s (rank %d)\n", text, comm_data.rank);
             last_msg_launcher = melissa_get_time();
             process_txt_message(text, &simulations);
             melissa_options.sampling_size = simulations.size;
@@ -410,9 +408,11 @@ int main (int argc, char **argv)
             buf_ptr += sizeof(int);
             field_name_ptr = buf_ptr;
 
+            melissa_print (VERBOSE_DEBUG, melissa_options.verbose_lvl, "Server rank %d recieved timestep %d from rank %d of group %d\n", comm_data.rank, time_step, client_rank, simu_id);
+
             if (time_step > melissa_options.nb_time_steps || time_step < 1)
             {
-                fprintf (stderr, "WARNING: bad time stamp (field %s)\n", field_name_ptr);
+                melissa_print (VERBOSE_WARNING, melissa_options.verbose_lvl, "WARNING: bad time stamp (field %s)\n", field_name_ptr);
                 continue;
             }
 
@@ -421,7 +421,7 @@ int main (int argc, char **argv)
             {
                 if (time_step == 0 && client_rank == 0)
                 {
-                    fprintf (stderr, "WARNING: not computing field %s\n", field_name_ptr);
+                    melissa_print (VERBOSE_WARNING, melissa_options.verbose_lvl, "WARNING: not computing field %s\n", field_name_ptr);
                 }
                 continue;
             }
@@ -451,12 +451,12 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
                     if (comm_data.rank == 0)
                     {
-                        fprintf (stdout, "reading checkpoint files...");
+                        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "reading checkpoint files...");
                     }
                     read_saved_stats (data_ptr, &comm_data, field_name_ptr, client_rank);
                     if (comm_data.rank == 0)
                     {
-                        fprintf (stdout, " ok\n");
+                        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "ok");
                     }
                     last_checkpoint_time = melissa_get_time();
 #ifdef BUILD_WITH_PROBES
@@ -510,26 +510,28 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             old_simu_state = simu_ptr->status;
             simu_ptr->status = check_simu_state(fields, melissa_options.nb_fields, group_id, melissa_options.nb_time_steps, &comm_data);
-//            fprintf (stderr, "group %d, rank %d, field %s, state %d\n", group_id, comm_data.rank, field_name_ptr, simu_state[group_id]);
+            melissa_print(VERBOSE_DEBUG, melissa_options.verbose_lvl, "Group %d, rank %d, field %s, status %d\n", group_id, comm_data.rank, field_name_ptr, simu_ptr->status);
 
             if (simu_ptr->status == 2)
             {
                 nb_finished_simulations += 1;
                 if (comm_data.rank == 0)
                 {
-                    fprintf(stdout, "  finished simulations: %d/%d\n", nb_finished_simulations, simulations.size);
+                    melissa_print(VERBOSE_GOSSIP, melissa_options.verbose_lvl, "INFO Simulation %d finished\n", group_id);
+                    melissa_print(VERBOSE_INFO, melissa_options.verbose_lvl, "INFO Finished simulations: %d/%d\n", nb_finished_simulations, simulations.size);
                 }
             }
             // === Send a message to the Python master in case of simulation status update === //
             if (old_simu_state != simu_ptr->status && comm_data.rank == 0)
             {
                 sprintf (txt_buffer, "group_state %d %d", group_id, simu_ptr->status);
+                melissa_print(VERBOSE_DEBUG, melissa_options.verbose_lvl, "INFO Send \"%s\" to launcher\n", txt_buffer);
                 zmq_send(text_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 
-//            if (/*comm_data.rank==0 && */((iteration % 10) == 0 || iteration < 10) )
+//            if (comm_data.rank==0)
 //            {
-//                fprintf(stdout, "time step %d - simulation %d\n", time_step, group_id);
+//                melissa_print(VERBOSE_DEBUG, melissa_options.verbose_lvl, "time step %d - simulation %d\n", time_step, group_id);
 //            }
             for (i=0; i<sizeof(buff_tab_ptr)/sizeof(double*); i++)
             {
@@ -552,14 +554,14 @@ int main (int argc, char **argv)
                 {
                     char dir[256];
                     getcwd(dir, 256*sizeof(char));
-//                    fprintf(stderr, "statistic field %s saved in %s\n", fields[i].name, dir);
+                    melissa_print(VERBOSE_INFO, melissa_options.verbose_lvl, "statistic field %s saved in %s\n", fields[i].name, dir);
                 }
             }
             save_simu_states (&simulations, &comm_data);
             last_checkpoint_time = melissa_get_time();
 #ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
-//            fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
+            melissa_print(VERBOSE_GOSSIP, melissa_options.verbose_lvl, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
             total_save_time += end_save_time - start_save_time;
 #endif // BUILD_WITH_PROBES
         }
@@ -573,7 +575,7 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_PROBES
             if (comm_data.rank == 0)
             {
-                fprintf (stderr, "\n   INTERUPTED\n");
+                melissa_print(VERBOSE_WARNING, melissa_options.verbose_lvl, "\n   INTERUPTED\n");
             }
             for (i=0; i<melissa_options.nb_fields; i++)
             {
@@ -582,7 +584,7 @@ int main (int argc, char **argv)
                 {
                     char dir[256];
                     getcwd(dir, 256*sizeof(char));
-                    fprintf(stderr, "statistic fields saved in %s\n\n", dir);
+                    melissa_print(VERBOSE_INFO, melissa_options.verbose_lvl, "statistic fields saved in %s\n\n", dir);
                 }
             }
             save_simu_states (&simulations, &comm_data);
@@ -595,7 +597,7 @@ int main (int argc, char **argv)
             }
 #ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
-            fprintf (stdout, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
+            melissa_print(VERBOSE_GOSSIP, melissa_options.verbose_lvl, "chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
             total_save_time += end_save_time - start_save_time;
 #endif // BUILD_WITH_PROBES
             break;
@@ -677,25 +679,25 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
     if (comm_data.rank==0)
     {
-        fprintf (stdout, " --- Number of simulations:           %d\n", melissa_options.nb_simu);
-        fprintf (stdout, " --- Number of simulation processes:  %d\n", comm_data.client_comm_size);
-        fprintf (stdout, " --- Number of analysis processes:    %d\n", comm_data.comm_size);
-        fprintf (stdout, " --- Average communication time:      %g s\n", total_comm_time);
-        fprintf (stdout, " --- Calcul time:                     %g s\n", total_computation_time);
-        fprintf (stdout, " --- Waiting time:                    %g s\n", total_wait_time);
-        fprintf (stdout, " --- Reading time:                    %g s\n", total_read_time);
-        fprintf (stdout, " --- Writing time:                    %g s\n", total_write_time);
-        fprintf (stdout, " --- Chekpointing time:               %g s\n", total_save_time);
-        fprintf (stdout, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
-        fprintf (stdout, " --- MB recieved:                     %ld MB\n",total_mbytes_recv);
-//        fprintf (stdout, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
-        fprintf (stdout, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&melissa_options));
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Number of simulations:           %d\n", melissa_options.nb_simu);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Number of simulation processes:  %d\n", comm_data.client_comm_size);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Number of analysis processes:    %d\n", comm_data.comm_size);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Average communication time:      %g s\n", total_comm_time);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Calcul time:                     %g s\n", total_computation_time);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Waiting time:                    %g s\n", total_wait_time);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Reading time:                    %g s\n", total_read_time);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Writing time:                    %g s\n", total_write_time);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Chekpointing time:               %g s\n", total_save_time);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Total time:                      %g s\n", melissa_get_time() - start_time);
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- MB recieved:                     %ld MB\n",total_mbytes_recv);
+//        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&melissa_options));
         if (melissa_options.sobol_op == 1)
         {
-            fprintf (stdout, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
-            fprintf (stdout, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
+            melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
+            melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
         }
-        fprintf (stdout, "\n");
+        melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "\n");
     }
 #endif // BUILD_WITH_PROBES
 

@@ -60,6 +60,7 @@ struct melissa_options_s
     int                  timeout_simu;       /**< time to wait for next simulation message before timeout          */
     char                 restart_dir[256];   /**< Melissa restart files directory                                  */
     char                 launcher_name[256]; /**< Melissa master node name                                         */
+    int                  verbose_lvl;        /**< requested level of verbosity                                     */
 };
 
 typedef struct melissa_options_s melissa_options_t; /**< type corresponding to melissa_options_s */

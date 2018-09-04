@@ -60,6 +60,7 @@ static inline void stats_usage ()
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
             " -c <double>    : Server checkpoints intervals (seconds, default: 300)"
+            " -v             : Verbosity level\n"
             " -h             : Print this message\n"
             "\n"
             );
@@ -96,6 +97,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
+    options->verbose_lvl     = VERBOSE_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
     sprintf (options->restart_dir, ".");
@@ -344,6 +346,7 @@ void melissa_print_options (melissa_options_t *options)
     fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
     fprintf(stdout, "Checkpoint every %g seconds\n", options->check_interval);
     fprintf(stdout, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
+    fprintf(stdout, "Melissa verbosity: %d\n", options->verbose_lvl);
 }
 
 /**
@@ -395,12 +398,14 @@ void melissa_get_options (int                 argc,
                                 { "restart",        required_argument, NULL, 'r' },
                                 { "samplingsize",   required_argument, NULL, 's' },
                                 { "timesteps",      required_argument, NULL, 't' },
+                                { "verbosity",      required_argument, NULL, 'v' },
+                                { "verbose",        required_argument, NULL, 'v' },
                                 { "timeout",        required_argument, NULL, 'w' },
                                 { NULL,             0,                 NULL,  0  }};
 
     do
     {
-        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:w:", longopts, NULL);
+        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:v:w:", longopts, NULL);
 
         switch (opt) {
         case 'r':
@@ -450,6 +455,9 @@ void melissa_get_options (int                 argc,
             break;
         case 'c':
             options->check_interval = atof (optarg);
+            break;
+        case 'v':
+            options->verbose_lvl = atoi (optarg);
             break;
         case 'w':
             options->timeout_simu = atof (optarg);
