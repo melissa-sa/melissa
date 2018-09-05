@@ -315,38 +315,38 @@ static inline void get_operations (char              *name,
 
 void melissa_print_options (melissa_options_t *options)
 {
-    fprintf(stdout, "Options:\n");
-    fprintf(stdout, "nb_time_steps = %d\n", options->nb_time_steps);
-    fprintf(stdout, "nb_parameters = %d\n", options->nb_parameters);
-    fprintf(stdout, "sampling_size = %d\n", options->sampling_size);
-    fprintf(stdout, "nb_simu = %d\n", options->nb_simu);
-    fprintf(stdout, "nb_fields = %d\n", options->nb_fields);
-    fprintf(stdout, "operations:\n");
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "Options:\n");
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_time_steps = %d\n", options->nb_time_steps);
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_parameters = %d\n", options->nb_parameters);
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "sampling_size = %d\n", options->sampling_size);
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_simu = %d\n", options->nb_simu);
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_fields = %d\n", options->nb_fields);
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "operations:\n");
     if (options->mean_op != 0)
-        fprintf(stdout, "    mean\n");
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    mean\n");
     if (options->variance_op != 0)
-        fprintf(stdout, "    variance\n");
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    variance\n");
     if (options->skewness_op != 0)
-        fprintf(stdout, "    skewness\n");
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    skewness\n");
     if (options->kurtosis_op != 0)
-        fprintf(stdout, "    kurtosis\n");
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    kurtosis\n");
     if (options->min_and_max_op != 0)
     {
-        fprintf(stdout, "    min\n");
-        fprintf(stdout, "    max\n");
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    min\n");
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    max\n");
     }
     if (options->threshold_op != 0)
-        fprintf(stdout, "    threshold exceedance (%d values)\n", options->nb_thresholds);
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    threshold exceedance (%d values)\n", options->nb_thresholds);
     if (options->quantile_op != 0)
-        fprintf(stdout, "    quantiles (%d values)\n", options->nb_quantiles);
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    quantiles (%d values)\n", options->nb_quantiles);
     if (options->sobol_op != 0)
-        fprintf(stdout, "    sobol indices\n");
+        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    sobol indices\n");
 //    if (options->restart != 0)
 //        fprintf(stdout, "using options.save restart file\n");
-    fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
-    fprintf(stdout, "Checkpoint every %g seconds\n", options->check_interval);
-    fprintf(stdout, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
-    fprintf(stdout, "Melissa verbosity: %d\n", options->verbose_lvl);
+    melissa_print(VERBOSE_GOSSIP, options->verbose_lvl, "Melissa launcher node name: %s\n", options->launcher_name);
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "Checkpoint every %g seconds\n", options->check_interval);
+    melissa_print(VERBOSE_GOSSIP, options->verbose_lvl, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
+    melissa_print(VERBOSE_INFO, options->verbose_lvl, "Melissa verbosity: %d\n", options->verbose_lvl);
 }
 
 /**

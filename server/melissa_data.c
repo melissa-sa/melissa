@@ -40,7 +40,7 @@ static void melissa_alloc_data (melissa_data_t *data)
 
     if (data->is_valid != 1)
     {
-        fprintf (stderr, "ERROR: data structure not valid (malloc_data)\n");
+        melissa_print (VERBOSE_ERROR, data->options->verbose_lvl, "ERROR: Data structure not valid (malloc_data)\n");
         exit (1);
     }
 
@@ -223,7 +223,7 @@ void melissa_free_data (melissa_data_t *data)
 
     if (data->is_valid != 1)
     {
-        fprintf (stderr, "ERROR: data structure not valid (free_data)\n");
+        melissa_print (VERBOSE_ERROR, data->options->verbose_lvl, "ERROR: Data structure not valid (free_data)\n");
         exit (1);
     }
 

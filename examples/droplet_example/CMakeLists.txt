@@ -19,7 +19,6 @@ file(GLOB
      LAUNCHER_TELEMAC2D
      RELATIVE
      ${CMAKE_CURRENT_SOURCE_DIR}
-     create_group.py
      *.json
      *.txt
      geo_gouttedo.cli
@@ -32,8 +31,11 @@ foreach( _file ${LAUNCHER_TELEMAC2D})
     install(FILES ${CMAKE_BINARY_DIR}/examples/droplet_example/${_file} DESTINATION share/examples/droplet_example)
 endforeach()
 
-configure_file(options.py options.py @ONLY)
+configure_file(options.py.in options.py @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/examples/droplet_example/options.py DESTINATION share/examples/droplet_example)
+
+configure_file(create_group.py.in create_group.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/droplet_example/create_group.py DESTINATION share/examples/droplet_example)
 
 file(GLOB
      USR_F

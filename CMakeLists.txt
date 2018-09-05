@@ -54,10 +54,11 @@ function(find_python_module module)
 endfunction(find_python_module)
 
 # The project version number.
-set(VERSION_MAJOR   0   CACHE STRING "Project major version number.")
-set(VERSION_MINOR   4   CACHE STRING "Project minor version number.")
-set(VERSION_PATCH   0   CACHE STRING "Project patch version number.")
-mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
+set(PROJECT_VERSION_MAJOR   0   CACHE STRING "Project major version number.")
+set(PROJECT_VERSION_MINOR   4   CACHE STRING "Project minor version number.")
+set(PROJECT_VERSION_PATCH   0   CACHE STRING "Project patch version number.")
+mark_as_advanced(PROJECT_VERSION_MAJOR PROJECT_VERSION_MINOR PROJECT_VERSION_PATCH)
+SET(PROJECT_VERSION “${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}”)
 
 option(INSTALL_ZMQ OFF)
 

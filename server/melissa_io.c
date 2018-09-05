@@ -96,12 +96,12 @@ int read_client_data (int                *client_comm_size,
     int   ret = 1;
 
     sprintf(file_name, "%s/client_data.save", options->restart_dir);
-    fprintf(stderr, "%s/client_data.save", file_name);
+    melissa_print (VERBOSE_DEBUG, options->verbose_lvl, "DEBUG: Client data save file: %s/client_data.save", file_name);
     f = fopen(file_name, "rb");
 
     if (f != NULL)
     {
-        fprintf( stdout, "File opened");
+        melissa_print (VERBOSE_DEBUG, options->verbose_lvl, "DEBUG: File %s/client_data.save opened", file_name);
         if (1 == fread(client_comm_size, sizeof(int), 1, f))
         {
             ret = 0;
@@ -155,7 +155,7 @@ void save_stats (melissa_data_t *data,
         f = fopen(file_name, "wb+");
         if (f == NULL)
         {
-            fprintf(stdout,"WARNING: can not open %s%d_%d.data\n", field_name, comm_data->rank, i);
+            melissa_print (VERBOSE_ERROR, 2, "ERROR: Can not open %s%d_%d.data (save_stats)\n", field_name, comm_data->rank, i);
             return;
         }
         fwrite(&data[i].vect_size, sizeof(int), 1, f);
@@ -169,23 +169,29 @@ void save_stats (melissa_data_t *data,
 //            {
 //                save_variance(data[i].variances, data[i].vect_size, data[i].options->nb_time_steps, f);
 //            }
+            melissa_print (VERBOSE_DEBUG, data[i].options->verbose_lvl, "DEBUG: Save min and max (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
             save_moments(data[i].moments, data[i].vect_size, data[i].options->nb_time_steps, f);
             if (data[i].options->min_and_max_op != 0)
             {
+                melissa_print (VERBOSE_DEBUG, data[i].options->verbose_lvl, "DEBUG: Save min and max (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
                 save_min_max(data[i].min_max, data[i].vect_size, data[i].options->nb_time_steps, f);
             }
             if (data[i].options->threshold_op != 0)
             {
+                melissa_print (VERBOSE_DEBUG, data[i].options->verbose_lvl, "DEBUG: Save threshold exceedances (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
                 save_threshold(data[i].thresholds, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_thresholds, f);
             }
             if (data[i].options->quantile_op != 0)
             {
+                melissa_print (VERBOSE_DEBUG, data[i].options->verbose_lvl, "DEBUG: Save quantiles (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
                 save_quantile(data[i].quantiles, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_quantiles, f);
             }
             if (data[i].options->sobol_op != 0)
             {
+                melissa_print (VERBOSE_DEBUG, data[i].options->verbose_lvl, "DEBUG: Save Sobol indices (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
                 data[i].save_sobol(data[i].sobol_indices, data[i].vect_size, data[i].options->nb_time_steps, data[i].options->nb_parameters, f);
             }
+            melissa_print (VERBOSE_DEBUG, data[i].options->verbose_lvl, "DEBUG: Save simulation steps (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
             fwrite(&data[i].step_simu.size, sizeof(int), 1, f);
             for (j=0; j<data[i].step_simu.size; j++)
             {
@@ -232,7 +238,7 @@ void read_saved_stats (melissa_data_t *data,
     f = fopen(file_name, "rb");
     if (f == NULL)
     {
-        fprintf(stdout,"WARNING: can not open %s/%s%d_%d.data\n", data[client_rank].options->restart_dir, field_name, comm_data->rank, client_rank);
+        melissa_print (VERBOSE_ERROR, 2, "ERROR: can not open %s/%s%d_%d.data (read_saved_stats)\n", data[client_rank].options->restart_dir, field_name, comm_data->rank, client_rank);
         return;
     }
     fread(&data[client_rank].vect_size, sizeof(int), 1, f);
@@ -249,22 +255,27 @@ void read_saved_stats (melissa_data_t *data,
         read_moments(data[client_rank].moments, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
         if (data[client_rank].options->min_and_max_op != 0)
         {
+            melissa_print (VERBOSE_DEBUG, data[client_rank].options->verbose_lvl, "DEBUG: Read min and max (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             read_min_max(data[client_rank].min_max, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, f);
         }
         if (data[client_rank].options->threshold_op != 0)
         {
+            melissa_print (VERBOSE_DEBUG, data[client_rank].options->verbose_lvl, "DEBUG: Read min and max (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             read_threshold(data[client_rank].thresholds, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_thresholds, f);
         }
         if (data[client_rank].options->quantile_op != 0)
         {
+            melissa_print (VERBOSE_DEBUG, data[client_rank].options->verbose_lvl, "DEBUG: Read min and max (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             read_quantile(data[client_rank].quantiles, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_quantiles, f);
         }
         if (data[client_rank].options->sobol_op != 0)
         {
+            melissa_print (VERBOSE_DEBUG, data[client_rank].options->verbose_lvl, "DEBUG: Read min and max (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             data[client_rank].read_sobol(data[client_rank].sobol_indices, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
         }
         if (data[client_rank].options->restart == 1)
         {
+            melissa_print (VERBOSE_DEBUG, data[client_rank].options->verbose_lvl, "DEBUG: Read simu steps (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             fread(&temp_size, sizeof(int), 1, f);
             while (temp_size > data[client_rank].step_simu.size)
             {
@@ -294,10 +305,14 @@ void read_saved_stats (melissa_data_t *data,
  * @param[in] *comm_data
  * communication structure
  *
+ * @param[in] verbose_lvl
+ * requested level of verbosity
+ *
  *******************************************************************************/
 
-void save_simu_states(vector_t    *simu,
-                      comm_data_t *comm_data)
+void save_simu_states (vector_t    *simu,
+                       comm_data_t *comm_data,
+                       int          verbose_lvl)
 {
     char                  file_name[256];
     FILE*                 f = NULL;
@@ -308,14 +323,14 @@ void save_simu_states(vector_t    *simu,
     f = fopen(file_name, "wb+");
     if (f == NULL)
     {
-        fprintf(stdout,"WARNING: can not open simu_state_%d.data\n",comm_data->rank);
+        melissa_print (VERBOSE_WARNING, verbose_lvl, "WARNING: Can not open simu_state_%d.data (save_simu_states)\n", comm_data->rank);
         return;
     }
     fwrite(&simu->size, sizeof(int), 1, f);
     for (i=0; i<simu->size; i++)
     {
         simu_ptr = simu->items[i];
-//        fprintf (stdout, " %d", simu_ptr->status);
+        melissa_print (VERBOSE_DEBUG, verbose_lvl, "DEBUG: Simulation %d status: %d (save_simu_states)", i, simu_ptr->status);
         fwrite(&simu_ptr->status, sizeof(int), 1, f);
     }
     fclose(f);
@@ -341,9 +356,9 @@ void save_simu_states(vector_t    *simu,
  *
  *******************************************************************************/
 
-void read_simu_states(vector_t          *simu,
-                      melissa_options_t *options,
-                      comm_data_t       *comm_data)
+void read_simu_states (vector_t          *simu,
+                       melissa_options_t *options,
+                       comm_data_t       *comm_data)
 {
     char                  file_name[256];
     FILE*                 f = NULL;
@@ -357,15 +372,16 @@ void read_simu_states(vector_t          *simu,
     f = fopen(file_name, "rb");
     if (f == NULL)
     {
-      fprintf(stdout,"WARNING: can not open simu_%d.data\n",comm_data->rank);
+      melissa_print (VERBOSE_WARNING, options->verbose_lvl, "WARNING: Can not open %s (read_simu_states)\n", file_name);
       return;
     }
 
     fread(&size, sizeof(int), 1, f);
-//    fprintf (stdout, "====== read file ======\nsize : %d\n", size);
+    melissa_print (VERBOSE_GOSSIP, options->verbose_lvl, "INFO: Read file %s\n", file_name);
+    melissa_print (VERBOSE_WARNING, options->verbose_lvl, "DEBUG: Size : %d (process %d)\n", size, comm_data->rank);
 #ifdef BUILD_WITH_MPI
     MPI_Allreduce (&size, &max_size, 1, MPI_INT, MPI_MAX, comm_data->comm);
-//    fprintf (stdout, "max size : %d\n", max_size);
+    melissa_print (VERBOSE_DEBUG, options->verbose_lvl, "DEBUG: Max size : %d\n", max_size);
     request = melissa_malloc(max_size * sizeof(MPI_Request));
 #else // BUILD_WITH_MPI
     max_size = size;
