@@ -64,10 +64,7 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
-                          melissa_options_t *options
-#ifdef BUILD_WITH_PROBES
-                          , double *write_time
-#endif // BUILD_WITH_PROBES
-                          );
+                          melissa_options_t *options,
+                          double *write_time);
 
 #endif // MELISSA_FIELDS_H

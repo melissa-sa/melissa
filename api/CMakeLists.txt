@@ -50,6 +50,7 @@ configure_file(melissa_api.f melissa_api.f @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/api/melissa_api.f DESTINATION include)
 
 add_library(melissa_api SHARED ${ALL_API} $<TARGET_OBJECTS:melissa_utils>)
+set_target_properties(melissa_api PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} VERSION ${PROJECT_VERSION})
 target_link_libraries(melissa_api ${ZEROMQ_LIBRARIES} ${EXTRA_LIBS})
 target_compile_options(melissa_api BEFORE PUBLIC -fPIC)
 install(TARGETS melissa_api LIBRARY DESTINATION lib)

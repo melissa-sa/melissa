@@ -220,7 +220,6 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
     return NULL;
 }
 
-#ifdef BUILD_WITH_PROBES
 /**
  *******************************************************************************
  *
@@ -243,35 +242,11 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
  * time counter
  *
  *******************************************************************************/
-#else // BUILD_WITH_PROBES
-/**
- *******************************************************************************
- *
- * @ingroup melissa_fields
- *
- * This function writes the data and frees the fields structure
- *
- *******************************************************************************
- *
- * @param[in] *fields
- * Melissa field array
- *
- * @param[in] *comm_data
- * Melissa communication structure
- *
- * @param[in] *options
- * Melissa options
- *
- *******************************************************************************/
-#endif // BUILD_WITH_PROBES
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
-                          melissa_options_t *options
-#ifdef BUILD_WITH_PROBES
-                          , double *total_write_time
-#endif // BUILD_WITH_PROBES
-                          )
+                          melissa_options_t *options,
+                          double *total_write_time)
 {
     double start_write_time, end_write_time;
     int i, j;
@@ -292,9 +267,7 @@ void finalize_field_data (melissa_field_t   *fields,
             }
         }
 
-#ifdef BUILD_WITH_PROBES
         start_write_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
         for (j=0; j<options->nb_fields; j++)
         {
 //            write_stats_bin (&(fields[j].stats_data),
@@ -310,10 +283,8 @@ void finalize_field_data (melissa_field_t   *fields,
 //                                 comm_data,
 //                                 fields[j].name);
         }
-#ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();
         *total_write_time += end_write_time - start_write_time;
-#endif // BUILD_WITH_PROBES
 
 
         for (j=0; j<options->nb_fields; j++)

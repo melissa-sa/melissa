@@ -14,18 +14,24 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-project(Melissa C CXX Fortran)
+if (POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif (POLICY CMP0048)
+
+# disable in-source builds
+set(CMAKE_DISABLE_SOURCE_CHANGES ON)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+if(${srcdir} STREQUAL ${bindir})
+    message("You are attempting to build in your source Directory.")
+    message("You must run cmake from a build directory.")
+endif(${srcdir} STREQUAL ${bindir})
+
+project(Melissa VERSION 0.4.0 LANGUAGES C CXX Fortran)
 
 cmake_minimum_required(VERSION 3.2.2)
 
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
-
-# disable in-source builds
-if(${srcdir} STREQUAL ${bindir})
-    message("You are attempting to build in your source Directory.")
-    message("You must run cmake from a build directory.")
-endif(${srcdir} STREQUAL ${bindir})
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
@@ -54,10 +60,6 @@ function(find_python_module module)
 endfunction(find_python_module)
 
 # The project version number.
-set(PROJECT_VERSION_MAJOR   0   CACHE STRING "Project major version number.")
-set(PROJECT_VERSION_MINOR   4   CACHE STRING "Project minor version number.")
-set(PROJECT_VERSION_PATCH   0   CACHE STRING "Project patch version number.")
-mark_as_advanced(PROJECT_VERSION_MAJOR PROJECT_VERSION_MINOR PROJECT_VERSION_PATCH)
 SET(PROJECT_VERSION “${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}”)
 
 option(INSTALL_ZMQ OFF)
@@ -202,13 +204,6 @@ if(DOXYGEN_FOUND)
 else(DOXYGEN_FOUND)
   option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
 endif(DOXYGEN_FOUND)
-
-# Probes #
-
-option(BUILD_WITH_PROBES "Set probes for bench" ON)
-if(BUILD_WITH_PROBES)
-    add_definitions( -DBUILD_WITH_PROBES )
-endif(BUILD_WITH_PROBES)
 
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 

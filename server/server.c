@@ -76,7 +76,6 @@ int main (int argc, char **argv)
     int                   nb_converged_fields = 0;
     double                interval1, interval_tot;
     zmq_msg_t             msg;
-#ifdef BUILD_WITH_PROBES
     double                start_time = 0;
     double                total_comm_time = 0;
     double                start_comm_time = 0;
@@ -95,7 +94,6 @@ int main (int argc, char **argv)
     double                end_read_time = 0;
     double                total_write_time = 0;
     long int              total_mbytes_recv = 0;
-#endif // BUILD_WITH_PROBES
     int                   old_simu_state;
     double                last_timeout_check = 0;
     int                   detected_timeouts;
@@ -123,9 +121,7 @@ int main (int argc, char **argv)
 
     melissa_get_node_name (node_name);
 
-#ifdef BUILD_WITH_PROBES
     start_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
 
     // === Install signal handler === //
 
@@ -256,19 +252,15 @@ int main (int argc, char **argv)
 
     while (1)
     {
-#ifdef BUILD_WITH_PROBES
         start_wait_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
         zmq_pollitem_t items [] = {
             { text_puller, 0, ZMQ_POLLIN, 0 },
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
             { data_puller, 0, ZMQ_POLLIN, 0 }
         };
         zmq_poll (items, 3, 100);
-#ifdef BUILD_WITH_PROBES
         end_wait_time = melissa_get_time();
         total_wait_time += end_wait_time - start_wait_time;
-#endif // BUILD_WITH_PROBES
 
         // === check timeouts === //
 
@@ -324,9 +316,7 @@ int main (int argc, char **argv)
         {
             if (comm_data.rank == 0)
             {
-#ifdef BUILD_WITH_PROBES
                 start_comm_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
                 // new simulation wants to connect
                 zmq_msg_init (&msg);
                 zmq_msg_recv (&msg, connexion_responder, 0);
@@ -346,10 +336,8 @@ int main (int argc, char **argv)
                 {
                     first_init = 1;
                 }
-#ifdef BUILD_WITH_PROBES
                 end_comm_time = melissa_get_time();
                 total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
             }
         }
 
@@ -386,16 +374,12 @@ int main (int argc, char **argv)
 
         if (items[2].revents & ZMQ_POLLIN)
         {
-#ifdef BUILD_WITH_PROBES
             start_comm_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
             zmq_msg_init (&msg);
             zmq_msg_recv (&msg, data_puller, 0);
             buf_ptr = zmq_msg_data (&msg);
-#ifdef BUILD_WITH_PROBES
             end_comm_time = melissa_get_time();
             total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
 
             memcpy(&time_step, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
@@ -447,9 +431,7 @@ int main (int argc, char **argv)
                 last_checkpoint_time = melissa_get_time();
                 if (melissa_options.restart > 0)
                 {
-#ifdef BUILD_WITH_PROBES
                     start_read_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
                     if (comm_data.rank == 0)
                     {
                         melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "INFO reading checkpoint files...");
@@ -460,19 +442,15 @@ int main (int argc, char **argv)
                         melissa_print (VERBOSE_GOSSIP, melissa_options.verbose_lvl, "INFO reading checkpoint files ok");
                     }
                     last_checkpoint_time = melissa_get_time();
-#ifdef BUILD_WITH_PROBES
                     end_read_time = melissa_get_time();
                     total_read_time += end_read_time - start_read_time;
-#endif // BUILD_WITH_PROBES
                 }
             }
             simu_ptr = simulations.items[group_id];
             simu_ptr->last_message = melissa_get_time();
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
-#ifdef BUILD_WITH_PROBES
             total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
             start_computation_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
 
             if (melissa_options.sobol_op != 1)
             {
@@ -505,10 +483,8 @@ int main (int argc, char **argv)
                                                                         melissa_options.nb_time_steps,
                                                                         melissa_options.nb_parameters);
             }
-#ifdef BUILD_WITH_PROBES
             end_computation_time = melissa_get_time();
             total_computation_time += end_computation_time - start_computation_time;
-#endif // BUILD_WITH_PROBES
             old_simu_state = simu_ptr->status;
             simu_ptr->status = check_simu_state(fields, melissa_options.nb_fields, group_id, melissa_options.nb_time_steps, &comm_data);
             melissa_print(VERBOSE_DEBUG, melissa_options.verbose_lvl, "DEBUG Group %d, rank %d, field %s, status %d\n", group_id, comm_data.rank, field_name_ptr, simu_ptr->status);
@@ -545,9 +521,7 @@ int main (int argc, char **argv)
 //        if (iteration % 100 == 0)
         if (last_checkpoint_time  + melissa_options.check_interval < melissa_get_time() && last_checkpoint_time > 0.1)
         {
-#ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
             for (i=0; i<melissa_options.nb_fields; i++)
             {
                 save_stats (fields[i].stats_data, &comm_data, fields[i].name);
@@ -560,20 +534,16 @@ int main (int argc, char **argv)
             }
             save_simu_states (&simulations, &comm_data, melissa_options.verbose_lvl);
             last_checkpoint_time = melissa_get_time();
-#ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
             melissa_print(VERBOSE_GOSSIP, melissa_options.verbose_lvl, "INFO Chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
             total_save_time += end_save_time - start_save_time;
-#endif // BUILD_WITH_PROBES
         }
 
         // === Signal handling === //
 
         if (end_signal == SIGINT || end_signal == SIGUSR1 || end_signal == SIGUSR2)
         {
-#ifdef BUILD_WITH_PROBES
             start_save_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
             if (comm_data.rank == 0)
             {
                 melissa_print(VERBOSE_WARNING, melissa_options.verbose_lvl, "\n --- INTERUPTED ---\n");
@@ -596,11 +566,9 @@ int main (int argc, char **argv)
 #endif // BUILD_WITH_MPI
                 return 0;
             }
-#ifdef BUILD_WITH_PROBES
             end_save_time = melissa_get_time();
             melissa_print(VERBOSE_GOSSIP, melissa_options.verbose_lvl, "INFO Chekpoint time: %g (proc %d)\n", end_save_time - start_save_time, comm_data.rank);
             total_save_time += end_save_time - start_save_time;
-#endif // BUILD_WITH_PROBES
             break;
         }
 
@@ -656,16 +624,12 @@ int main (int argc, char **argv)
     {
         finalize_field_data (fields,
                              &comm_data,
-                             &melissa_options
-#ifdef BUILD_WITH_PROBES
-                             , &total_write_time
-#endif // BUILD_WITH_PROBES
-                             );
+                             &melissa_options,
+                             &total_write_time);
     }
     melissa_free (first_send);
     free_simu_vector (simulations);
 
-#ifdef BUILD_WITH_PROBES
 #ifdef BUILD_WITH_MPI
     double temp1;
     long int temp2;
@@ -700,7 +664,6 @@ int main (int argc, char **argv)
         }
         melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "\n");
     }
-#endif // BUILD_WITH_PROBES
 
     // === Sockets deconnexion === //
 
