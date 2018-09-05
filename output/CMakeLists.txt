@@ -14,28 +14,8 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-configure_file(melissa_launcher.py.in melissa_launcher.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-        DESTINATION share/launcher)
-
-install(FILES options.py
-        DESTINATION share/launcher)
-
-configure_file(simulation.py.in simulation.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/simulation.py
-        DESTINATION share/launcher)
-
-configure_file(study.py.in study.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
-        DESTINATION share/launcher)
-
-install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-        DESTINATION bin
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE
-        RENAME melissa_launcher)
+add_library(melissa_output SHARED melissa_output.c)
+set_target_properties(melissa_output PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} VERSION ${PROJECT_VERSION})
+target_link_libraries(melissa_output ${EXTRA_LIBS})
+target_compile_options(melissa_output BEFORE PUBLIC -fPIC)
+install(TARGETS melissa_output LIBRARY DESTINATION lib)

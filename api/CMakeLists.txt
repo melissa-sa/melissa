@@ -14,15 +14,6 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-
-
-set(MELISSA_MACROS
-"#define MELISSA_COUPLING_NONE 0
-#define MELISSA_COUPLING_DEFAULT 0
-#define MELISSA_COUPLING_ZMQ 0
-#define MELISSA_COUPLING_MPI 1
-#define MELISSA_COUPLING_FLOWVR 2")
-
 file(GLOB
      ALL_API
      RELATIVE

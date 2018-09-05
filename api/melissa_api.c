@@ -123,12 +123,10 @@ static global_data_t global_data;
 static field_data_t *field_data;
 static char *node_names;
 
-#ifdef BUILD_WITH_PROBES
 static double total_comm_time;
 static double start_comm_time;
 static double end_comm_time;
 static long int total_bytes_sent;
-#endif // BUILD_WITH_PROBES
 
 static field_data_t* get_field_data(field_data_t *data,
                                     const char*   field_name)
@@ -412,10 +410,8 @@ void melissa_init (const char *field_name,
 
 //    global_data.sobol_rank = *sobol_rank;
     global_data.coupling = *coupling;
-#ifdef BUILD_WITH_PROBES
     total_comm_time = 0.0;
     total_bytes_sent = 0;
-#endif // BUILD_WITH_PROBES
     if (first_init != 0)
     {
         global_data.buff_size = 0;
@@ -985,9 +981,7 @@ void melissa_send (const int  *time_step,
             break;
 #endif // BUILD_WITH_MPI
         }
-#ifdef BUILD_WITH_PROBES
         total_bytes_sent += local_vect_size * sizeof(double);
-#endif // BUILD_WITH_PROBES
     }
 
     if (global_data.sobol_rank == 0)
@@ -1035,16 +1029,12 @@ void melissa_send (const int  *time_step,
                     print_zmq_error(ret);
                 }
                 j += 1;
-#ifdef BUILD_WITH_PROBES
                 total_bytes_sent += buff_size;
-#endif // BUILD_WITH_PROBES
             }
         }
     }
-#ifdef BUILD_WITH_PROBES
     end_comm_time = melissa_get_time();
     total_comm_time += end_comm_time - start_comm_time;
-#endif // BUILD_WITH_PROBES
 }
 
 /**
@@ -1123,8 +1113,6 @@ void melissa_finalize (void)
         free(global_data.buffer_sobol);
     }
 
-#ifdef BUILD_WITH_PROBES
     fprintf (stdout, " --- Simulation comm time: %g s\n",total_comm_time);
     fprintf (stdout, " --- Bytes sent: %ld bytes\n",total_bytes_sent);
-#endif // BUILD_WITH_PROBES
 }

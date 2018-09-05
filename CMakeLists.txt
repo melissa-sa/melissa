@@ -225,6 +225,8 @@ add_subdirectory(server)
 
 add_subdirectory(launcher)
 
+add_subdirectory(output)
+
 add_subdirectory(tests)
 
 if(BUILD_EXAMPLES)

@@ -103,6 +103,8 @@ int main (int argc, char **argv)
     const double          timeout_launcher = 50;
     vector_t              simulations;
     melissa_simulation_t *simu_ptr;
+    char*                 melissa_output_lib  = INSTALL_PREFIX"/lib/libmelissa_output.so";
+    char*                 melissa_output_func = "write_stats_txt";
 
 #ifdef BUILD_WITH_MPI
 
@@ -135,6 +137,10 @@ int main (int argc, char **argv)
     // === Read options from command line === //
 
     melissa_get_options (argc, argv, &melissa_options);
+
+    // === load the output library === //
+
+    melissa_get_output_lib (melissa_output_lib, melissa_output_func);
 
     if (comm_data.rank == 0)
     {
@@ -664,6 +670,8 @@ int main (int argc, char **argv)
         }
         melissa_print (VERBOSE_INFO, melissa_options.verbose_lvl, "\n");
     }
+
+    melissa_close_output_lib();
 
     // === Sockets deconnexion === //
 
