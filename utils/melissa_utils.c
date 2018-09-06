@@ -43,6 +43,8 @@
 #include <zmq.h>
 #include "melissa_utils.h"
 
+static int verbose_lvl; /**< verbosity lvl requested by user */
+
 static void print_zmq_error(int         ret,
                             const char* port_name)
 {
@@ -121,16 +123,16 @@ static void print_zmq_error(int         ret,
  *
  *******************************************************************************/
 
-void melissa_logo (int verbose_lvl)
+void melissa_logo ()
 {
-    melissa_print (VERBOSE_INFO, verbose_lvl, "\n");
-    melissa_print (VERBOSE_INFO, verbose_lvl, "  _    _   ____   _      _    ____   ____   ___    \n");
-    melissa_print (VERBOSE_INFO, verbose_lvl, " | \\  / | |  __| | |    | |  / ___| / ___| |   \\   \n");
-    melissa_print (VERBOSE_INFO, verbose_lvl, " |  \\/  | | |_   | |    | | ( (__  ( (__   | |\\ \\  \n");
-    melissa_print (VERBOSE_INFO, verbose_lvl, " |      | |  _|  | |    | |  \\__ \\  \\__ \\  | |_\\ \\ \n");
-    melissa_print (VERBOSE_INFO, verbose_lvl, " | |\\/| | | |__  | |__  | |  ___) ) ___) ) |  ___ \\\n");
-    melissa_print (VERBOSE_INFO, verbose_lvl, " |_|  |_| |____| |____| |_| |____/ |____/  |_|   \\/\n");
-    melissa_print (VERBOSE_INFO, verbose_lvl, "  \n");
+    melissa_print (VERBOSE_INFO, "\n");
+    melissa_print (VERBOSE_INFO, "  _    _   ____   _      _    ____   ____   ___    \n");
+    melissa_print (VERBOSE_INFO, " | \\  / | |  __| | |    | |  / ___| / ___| |   \\   \n");
+    melissa_print (VERBOSE_INFO, " |  \\/  | | |_   | |    | | ( (__  ( (__   | |\\ \\  \n");
+    melissa_print (VERBOSE_INFO, " |      | |  _|  | |    | |  \\__ \\  \\__ \\  | |_\\ \\ \n");
+    melissa_print (VERBOSE_INFO, " | |\\/| | | |__  | |__  | |  ___) ) ___) ) |  ___ \\\n");
+    melissa_print (VERBOSE_INFO, " |_|  |_| |____| |____| |_| |____/ |____/  |_|   \\/\n");
+    melissa_print (VERBOSE_INFO, "  \n");
 }
 
 /**
@@ -397,25 +399,52 @@ void melissa_get_node_name (char *node_name)
  *
  *******************************************************************************
  *
+ * @param[in] *verbose_lvl
+ * The requested verbose level for melissa_print
+ *
+ *******************************************************************************/
+
+void init_verbose_lvl (int verbose_level)
+{
+    verbose_lvl = verbose_level;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * Print a message depending on the verbose level
+ *
+ *******************************************************************************
+ *
  * @param[in] *msg_priority
  * The level of priority for this message
- *
- * @param[in] *verbose_lvl
- * The requested verbose level
  *
  * @param[out] *format
  * The format of the message to output
  *
  *******************************************************************************/
 
-void melissa_print (int msg_priority, int verbose_level, char* format, ...)
+void melissa_print (int msg_priority, const char* format, ...)
 {
     va_list args;
+    char* msg;
 
-    if (msg_priority <= verbose_level)
+
+    if (msg_priority <= verbose_lvl)
     {
+        if (msg_priority == VERBOSE_ERROR)
+            strcpy(msg, "ERROR:   ");
+        else if (msg_priority == VERBOSE_WARNING)
+            strcpy(msg, "WARNING: ");
+        else if (msg_priority == VERBOSE_INFO)
+            strcpy(msg, "");
+        else if (msg_priority == VERBOSE_DEBUG)
+            strcpy(msg, "");
+        msg = strcat(msg, format);
         va_start (args,format);
-        vprintf (format, args);
+        vprintf (msg, args);
         va_end(args);
     }
 }

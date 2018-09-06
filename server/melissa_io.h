@@ -59,8 +59,7 @@ void read_saved_stats (melissa_data_t *data,
                        int             client_rank);
 
 void save_simu_states (vector_t    *simu_states,
-                       comm_data_t *comm_data,
-                       int          verbose_lvl);
+                       comm_data_t *comm_data);
 
 void read_simu_states (vector_t          *simu_states,
                        melissa_options_t *options,

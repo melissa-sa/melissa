@@ -29,4 +29,4 @@ configure_file(options.py options.py @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/options.py DESTINATION share/examples/heat_example)
 
 
-add_test(TestHeatc "melissa_launcher")
+add_test(NAME TestHeatc COMMAND melissa_launcher ${CMAKE_INSTALL_PREFIX}/share/examples/heat_example)

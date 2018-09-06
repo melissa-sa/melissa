@@ -199,7 +199,7 @@ int get_field_id(melissa_field_t fields[],
     }
     else
     {
-        melissa_print (VERBOSE_WARNING, fields[0].stats_data->options->verbose_lvl, "WARNING: wrong field name (get_field_id)\n");
+        melissa_print (VERBOSE_WARNING, "Wrong field name (get_field_id)\n");
     }
     return -1;
 }
@@ -246,7 +246,7 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
     {
         return NULL;
     }
-    melissa_print (VERBOSE_ERROR, fields[i].stats_data->options->verbose_lvl, "ERROR: Wrong field name (get_data_ptr)\n");
+    melissa_print (VERBOSE_ERROR, "Wrong field name (get_data_ptr)\n");
     return NULL;
 }
 

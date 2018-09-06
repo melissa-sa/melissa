@@ -315,38 +315,38 @@ static inline void get_operations (char              *name,
 
 void melissa_print_options (melissa_options_t *options)
 {
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "Options:\n");
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_time_steps = %d\n", options->nb_time_steps);
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_parameters = %d\n", options->nb_parameters);
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "sampling_size = %d\n", options->sampling_size);
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_simu = %d\n", options->nb_simu);
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "nb_fields = %d\n", options->nb_fields);
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "operations:\n");
+    melissa_print(VERBOSE_INFO, "Options:\n");
+    melissa_print(VERBOSE_INFO, "nb_time_steps = %d\n", options->nb_time_steps);
+    melissa_print(VERBOSE_INFO, "nb_parameters = %d\n", options->nb_parameters);
+    melissa_print(VERBOSE_INFO, "sampling_size = %d\n", options->sampling_size);
+    melissa_print(VERBOSE_INFO, "nb_simu = %d\n", options->nb_simu);
+    melissa_print(VERBOSE_INFO, "nb_fields = %d\n", options->nb_fields);
+    melissa_print(VERBOSE_INFO, "operations:\n");
     if (options->mean_op != 0)
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    mean\n");
+        melissa_print(VERBOSE_INFO, "    mean\n");
     if (options->variance_op != 0)
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    variance\n");
+        melissa_print(VERBOSE_INFO, "    variance\n");
     if (options->skewness_op != 0)
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    skewness\n");
+        melissa_print(VERBOSE_INFO, "    skewness\n");
     if (options->kurtosis_op != 0)
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    kurtosis\n");
+        melissa_print(VERBOSE_INFO, "    kurtosis\n");
     if (options->min_and_max_op != 0)
     {
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    min\n");
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    max\n");
+        melissa_print(VERBOSE_INFO, "    min\n");
+        melissa_print(VERBOSE_INFO, "    max\n");
     }
     if (options->threshold_op != 0)
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    threshold exceedance (%d values)\n", options->nb_thresholds);
+        melissa_print(VERBOSE_INFO, "    threshold exceedance (%d values)\n", options->nb_thresholds);
     if (options->quantile_op != 0)
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    quantiles (%d values)\n", options->nb_quantiles);
+        melissa_print(VERBOSE_INFO, "    quantiles (%d values)\n", options->nb_quantiles);
     if (options->sobol_op != 0)
-        melissa_print(VERBOSE_INFO, options->verbose_lvl, "    sobol indices\n");
+        melissa_print(VERBOSE_INFO, "    sobol indices\n");
 //    if (options->restart != 0)
 //        fprintf(stdout, "using options.save restart file\n");
-    melissa_print(VERBOSE_GOSSIP, options->verbose_lvl, "Melissa launcher node name: %s\n", options->launcher_name);
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "Checkpoint every %g seconds\n", options->check_interval);
-    melissa_print(VERBOSE_GOSSIP, options->verbose_lvl, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
-    melissa_print(VERBOSE_INFO, options->verbose_lvl, "Melissa verbosity: %d\n", options->verbose_lvl);
+    melissa_print(VERBOSE_DEBUG, "Melissa launcher node name: %s\n", options->launcher_name);
+    melissa_print(VERBOSE_INFO, "Checkpoint every %g seconds\n", options->check_interval);
+    melissa_print(VERBOSE_DEBUG, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
+    melissa_print(VERBOSE_INFO, "Melissa verbosity: %d\n", options->verbose_lvl);
 }
 
 /**
@@ -458,6 +458,7 @@ void melissa_get_options (int                 argc,
             break;
         case 'v':
             options->verbose_lvl = atoi (optarg);
+            init_verbose_lvl (options->verbose_lvl);
             break;
         case 'w':
             options->timeout_simu = atof (optarg);

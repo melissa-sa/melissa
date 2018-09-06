@@ -95,8 +95,7 @@ void free_simu_vector(vector_t v)
  *******************************************************************************/
 
 int check_timeouts (vector_t *simulations,
-                    int       timeout_simu,
-                    int       verbose_lvl)
+                    int       timeout_simu)
 {
     int detected_timeouts = 0;
     int i;
@@ -112,7 +111,7 @@ int check_timeouts (vector_t *simulations,
             {
                 simu_ptr->timeout = 1;
                 detected_timeouts += 1;
-                melissa_print (VERBOSE_WARNING, verbose_lvl, "WARNING: Timeout detected on simulation group %d\n", i);
+                melissa_print (VERBOSE_WARNING, "Timeout detected on simulation group %d\n", i);
                 simu_ptr->last_message = 0;
                 simu_ptr->status = 0;
             }

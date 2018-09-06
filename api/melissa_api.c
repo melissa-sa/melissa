@@ -74,7 +74,7 @@ struct global_data_s
     void    *context;             /**< ZeroMQ context                                             */
     void    *connexion_requester; /**< connexion ZeroMQ port                                      */
     void   **sobol_requester;     /**< data ZeroMQ Sobol port                                     */
-    int      rinit_tab[3];        /**< array used to receive data                                 */
+    int      rinit_tab[4];        /**< array used to receive data                                 */
     int      sobol;               /**< 1 if sobol computation, 0 otherwhise                       */
     int      sobol_rank;          /**< sobol rank                                                 */
     int      sample_id;           /**< parameters sample id                                       */
@@ -471,8 +471,8 @@ void melissa_init (const char *field_name,
             print_zmq_error(ret);
         }
         buf_ptr = zmq_msg_data (&msg);
-        memcpy(global_data.rinit_tab, buf_ptr, 3 * sizeof(int));
-        buf_ptr += 3 * sizeof(int);
+        memcpy(global_data.rinit_tab, buf_ptr, 4 * sizeof(int));
+        buf_ptr += 4 * sizeof(int);
     }
 
     // init data structure
@@ -497,7 +497,7 @@ void melissa_init (const char *field_name,
         }
         else
         {
-            fprintf (stdout, "Warning: field already initialized (%s)\n", field_name);
+            fprintf (stdout, "WARNING: field already initialized (%s)\n", field_name);
             return;
         }
     }
@@ -534,6 +534,7 @@ void melissa_init (const char *field_name,
         global_data.nb_proc_server = global_data.rinit_tab[0];
         global_data.sobol = global_data.rinit_tab[1];
         global_data.nb_parameters = global_data.rinit_tab[2];
+        init_verbose_lvl (global_data.rinit_tab[3]);
         if (global_data.sobol == 1)
         {
             global_data.sobol_rank = *simu_id % (global_data.rinit_tab[2] +2);
@@ -641,7 +642,7 @@ void melissa_init (const char *field_name,
                 strcpy (master_node_name, "localhost");
                 if (global_data.sobol_rank == 0 && *rank == 0)
                 {
-                    fprintf(stdout,"WARNING: Group %d master name set to \"localhost\"\n", global_data.sample_id);
+                    melissa_print(VERBOSE_WARNING, "Group %d master name set to \"localhost\"\n", global_data.sample_id);
                 }
             }
             if (global_data.sobol_rank == 0)
@@ -675,7 +676,7 @@ void melissa_init (const char *field_name,
             }
             break;
         default:
-            fprintf (stderr, "ERROR: bad coupling parameter");
+            melissa_print(VERBOSE_ERROR, "Bad coupling parameter");
             exit;
         }
     }
@@ -702,7 +703,7 @@ void melissa_init (const char *field_name,
 
         if (j != field_data_ptr->local_nb_messages)
         {
-            fprintf (stderr, "Warning: wrong number of data pusher ports");
+            melissa_print(VERBOSE_WARNING, "Wrong number of data pusher ports");
         }
         if (global_data.coupling == MELISSA_COUPLING_ZMQ && first_init != 0)
         {
@@ -877,7 +878,7 @@ void melissa_init_no_mpi (const char *field_name,
     MPI_Comm comm = 0;
     if (*coupling == MELISSA_COUPLING_MPI)
     {
-        fprintf (stderr, "ERROR: MPI coupling not available in melissa_init_no_mpi");
+        melissa_print(VERBOSE_ERROR, "MPI coupling not available in melissa_init_no_mpi");
         exit;
     }
     melissa_init (field_name,
@@ -936,7 +937,7 @@ void melissa_send (const int  *time_step,
     field_data_ptr = get_field_data(field_data, field_name);
     if (field_data_ptr == NULL)
     {
-        fprintf (stderr, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
+        fprintf (stdout, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
         return;
     }
     local_vect_size = field_data_ptr->local_vect_sizes[*rank];
