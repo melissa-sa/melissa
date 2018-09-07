@@ -37,3 +37,6 @@ foreach(sched_version ${SCHED_VERSIONS})
     configure_file(options_${sched_version}.py.in options_${sched_version}.py @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/scripts/options_${sched_version}.py DESTINATION ${EXAMPLES_DIR}/heat_example/${sched_version}/scripts)
 endforeach(sched_version in ${SCHED_VERSIONS})
+
+install(FILES Dockerfile DESTINATION ${EXAMPLES_DIR}/heat_example/OAR)
+install(FILES oardocker.sh DESTINATION ${EXAMPLES_DIR}/heat_example/OAR)
