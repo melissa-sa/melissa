@@ -127,16 +127,16 @@ int main (int argc, char **argv)
 
     // === Install signal handler === //
 
+    // === Read options from command line === //
+
+    melissa_get_options (argc, argv, &melissa_options);
+
     if (signal(SIGINT, sig_handler) == SIG_ERR)
             melissa_print (VERBOSE_WARNING, "Melissa can't catch SIGINT\n");
     if (signal(SIGUSR1, sig_handler) == SIG_ERR)
             melissa_print (VERBOSE_WARNING, "Melissa an't catch SIGUSR1\n");
     if (signal(SIGUSR2, sig_handler) == SIG_ERR)
             melissa_print (VERBOSE_WARNING, "Melissa an't catch SIGUSR2\n");
-
-    // === Read options from command line === //
-
-    melissa_get_options (argc, argv, &melissa_options);
 
     // === load the output library === //
 

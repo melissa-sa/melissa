@@ -46,14 +46,14 @@ void melissa_get_output_lib(char* lib_name,
                             char* func_name)
 {
     write_stats = NULL;
-    melissa_print (VERBOSE_ERROR, 2, "open lib %s\n", lib_name);
+//    melissa_print (VERBOSE_ERROR, "open lib %s\n", lib_name);
     output_lib = dlopen(lib_name, RTLD_NOW);
     if (output_lib == NULL)
     {
         fprintf(stdout, "ERROR: Cannot load output library\n");
         exit(1);
     }
-    melissa_print (VERBOSE_ERROR, 2, "load func  %s\n", func_name);
+//    melissa_print (VERBOSE_ERROR, "load func  %s\n", func_name);
     write_stats = dlsym(output_lib, func_name);
     if (write_stats == NULL)
     {

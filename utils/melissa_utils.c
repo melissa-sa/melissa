@@ -395,11 +395,11 @@ void melissa_get_node_name (char *node_name)
  *
  * @ingroup melissa_utils
  *
- * Print a message depending on the verbose level
+ * init verbose lvl
  *
  *******************************************************************************
  *
- * @param[in] *verbose_lvl
+ * @param[in] *verbose_level
  * The requested verbose level for melissa_print
  *
  *******************************************************************************/
@@ -434,6 +434,7 @@ void melissa_print (int msg_priority, const char* format, ...)
 
     if (msg_priority <= verbose_lvl)
     {
+        msg = melissa_malloc(strlen (format) + 10);
         if (msg_priority == VERBOSE_ERROR)
             strcpy(msg, "ERROR:   ");
         else if (msg_priority == VERBOSE_WARNING)
@@ -443,9 +444,10 @@ void melissa_print (int msg_priority, const char* format, ...)
         else if (msg_priority == VERBOSE_DEBUG)
             strcpy(msg, "");
         msg = strcat(msg, format);
-        va_start (args,format);
+        va_start (args, format);
         vprintf (msg, args);
         va_end(args);
+        melissa_free(msg);
     }
 }
 

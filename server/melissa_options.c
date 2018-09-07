@@ -458,7 +458,6 @@ void melissa_get_options (int                 argc,
             break;
         case 'v':
             options->verbose_lvl = atoi (optarg);
-            init_verbose_lvl (options->verbose_lvl);
             break;
         case 'w':
             options->timeout_simu = atof (optarg);
@@ -478,6 +477,7 @@ void melissa_get_options (int                 argc,
 
     } while (opt != -1);
 
+    init_verbose_lvl (options->verbose_lvl);
     melissa_check_options (options);
 
     return;

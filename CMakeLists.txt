@@ -231,6 +231,7 @@ add_subdirectory(output)
 add_subdirectory(tests)
 
 if(BUILD_EXAMPLES)
+    set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
   add_subdirectory(examples)
 endif(BUILD_EXAMPLES)
 

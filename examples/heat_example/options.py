@@ -35,12 +35,12 @@ BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 BUILD_EXAMPLES_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 
-imp.load_source("options", "./scripts/options_local.py")
+imp.load_source("options", "@EXAMPLES_DIR@/heat_example/@sched_version@/scripts/options_@sched_version@.py")
 from options import *
 
 def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
     content = ""
-    file=open("@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/scripts/flowvr_group.py", "r")
+    file=open("@EXAMPLES_DIR@/heat_example/scripts/flowvr_group.py", "r")
     content = Template(file.read()).substitute(args=str(args),
                                      group_id=str(group_id),
                                      np_simu=str(nb_proc_simu),
@@ -59,7 +59,7 @@ def draw_param_set():
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
-STUDY_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/STATS'
+STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/@sched_version@/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
