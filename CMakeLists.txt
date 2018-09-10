@@ -77,7 +77,7 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 #find_package(PkgConfig REQUIRED)
 
 #find_package(PythonLibs)
-find_package(PythonInterp REQUIRED)
+find_package(PythonInterp 2 REQUIRED)
 
 message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} found")
 if(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "2")

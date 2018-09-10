@@ -1,0 +1,63 @@
+ 
+How to run Melissa in on a virtual cluster
+
+Before starting, you should be in the directory @EXAMPLES_DIR@/heat_example/OAR
+
+We will run the heat example sensitivity analysis on a virtual cluster.
+We will use OAR-docker to emulate a cluster on our local machine.
+All the informations to install OAR-docker are available in the OAR wiki.
+Basicly, just folow these steps from install/share/examples/heat_example/OAR directory:
+
+$ git clone https://github.com/oar-team/oar-docker.git
+$ cd oar-docker
+$ git checkout dev
+$ pip install -e .
+$ cd ..
+
+Now, init a Docker image with a minimal Debian Stretch:
+
+$ oardocker init -e stretch
+
+The images should be initialized in .oardocker/images.
+As the minimal Debian doesn't have some dependencies needed by Melissa, we provide a Dockerfile to replace the base Dockerfile of the images, with everything Melissa needs to run.
+Simply copy this file to the base image:
+
+$ cp scripts/Dockerfile .oardocker/images/base/Dockerfile
+
+You can now build the images:
+
+$ oardocker build
+
+Install OAR on the cluster from the web:
+
+$ oardocker install http://oar-ftp.imag.fr/oar/2.5/sources/testing/oar-2.5.8+rc5.tar.gz
+
+The cluster is ready to run.
+Start it, with -n <nuber-of-nodes>.
+
+$ oardocker start -n 3
+
+The cluster starts.
+You can now connect to the frontend:
+
+$ oardocker connect frontend
+
+You are now on the cluster frontend.
+Install Melissa as a classical cluster.
+To install it from github:
+
+$ git clone https://github.com/melissa-sa/melissa.git
+$ mkdir melissa/build
+$ cd melissa/build
+$ cmake ../source -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON
+$ make install
+$ source ../install/melissa_set_env.sh
+
+You are ready to launch the sensitivity analysis !
+
+In the directory @EXAMPLES_DIR@/heat_example/OAR, run:
+
+$ melissa_launcher . &
+
+You can folow your jobs by using the "oarstat" command.
+At the end of the study, the results are in @EXAMPLES_DIR@/heat_example/OAR/STATS.
