@@ -45,9 +45,9 @@ def create_run_server(server):
     content += "#OAR -E melissa.%jobid%.err                                           \n"
     content += "#OAR -n Melissa                                                       \n"
     content += "#OAR --checkpoint 300                                                 \n"
-#    content += "#OAR --signal=SIGUSR2                                                 \n"
+    content += "#OAR --signal=SIGUSR2                                                 \n"
     content += "ulimit -s unlimited                                                   \n"
-#    content += signal_handler
+    content += signal_handler
     content += "date +\"%d/%m/%y %T\"                                                 \n"
     content += "STOP=0                                                                \n"
     content += "source @CMAKE_INSTALL_PREFIX@/melissa_set_env.sh                      \n"

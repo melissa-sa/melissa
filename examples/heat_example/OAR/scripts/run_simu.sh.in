@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#OAR -l nodes=${NODES_SIMU},walltime=${WALLTIME_SIMU}
+#OAR -s ulimit=unlimited
+#OAR -O simu.%jobid%.log
+#OAR -E simu.%jobid%.err
+#OAR -n Simu${SIMU_ID}
+
+source @CMAKE_INSTALL_PREFIX@/melissa_set_env.sh
+date +\"%d/%m/%y\ %T\"
+${SIMU_CMD}
+date +\"%d/%m/%y\ %T\"

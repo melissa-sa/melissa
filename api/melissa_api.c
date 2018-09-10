@@ -944,6 +944,7 @@ void melissa_send (const int  *time_step,
 
     if (global_data.sobol == 1)
     {
+        melissa_print(VERBOSE_DEBUG, "Group %d gather data\n", &global_data.sample_id);
         switch (global_data.coupling)
         {
 #ifdef BUILD_WITH_FLOWVR
@@ -987,6 +988,7 @@ void melissa_send (const int  *time_step,
 
     if (global_data.sobol_rank == 0)
     {
+        melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", &global_data.sample_id, *time_step);
         zmq_msg_t msg;
         j = 0;
         for (i=0; i<field_data_ptr->total_nb_messages; i++)
@@ -1024,6 +1026,7 @@ void melissa_send (const int  *time_step,
                 }
                 zmq_msg_init_data (&msg, global_data.buffer, buff_size, my_free, NULL);
                 ret = zmq_msg_send (&msg, field_data_ptr->data_pusher[j], 0);
+                melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent (proc %d)\n", buff_size, field_data_ptr->push_rank[i]);
                 if (ret == -1)
                 {
                     ret = errno;
@@ -1106,7 +1109,9 @@ void melissa_finalize (void)
     }
 
     free_field_data(field_data);
+    melissa_print(VERBOSE_DEBUG, "Free ZMQ context...\n");
     zmq_ctx_term (global_data.context);
+    melissa_print(VERBOSE_DEBUG, "Free ZMQ context OK\n");
     free (node_names);
 
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)
@@ -1114,6 +1119,6 @@ void melissa_finalize (void)
         free(global_data.buffer_sobol);
     }
 
-    fprintf (stdout, " --- Simulation comm time: %g s\n",total_comm_time);
-    fprintf (stdout, " --- Bytes sent: %ld bytes\n",total_bytes_sent);
+    melissa_print(VERBOSE_INFO, " --- Simulation comm time: %g s\n",total_comm_time);
+    melissa_print(VERBOSE_INFO, " --- Bytes sent: %ld bytes\n",total_bytes_sent);
 }
