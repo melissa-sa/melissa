@@ -20,7 +20,6 @@ foreach(sched_version ${SCHED_VERSIONS})
     add_subdirectory(${sched_version})
 endforeach(sched_version in ${SCHED_VERSIONS})
 
-add_subdirectory(scripts)
 add_subdirectory(src)
 
 #find_python_module(matplotlib)

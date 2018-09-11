@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#SBATCH -N ${NODES_SIMU}
+#SBATCH --ntasks-per-node=${PROC_PER_NODE}
+#SBATCH --partition=cn
+#SBATCH --time=${WALLTIME_SIMU}
+#SBATCH -o simu.%j.log
+#SBATCH -e simu.%j.err
+#SBATCH --job-name=Simu${SIMU_ID}
+
+source @CMAKE_INSTALL_PREFIX@/melissa_set_env.sh
+date +\"%d/%m/%y %T\"
+${SIMU_CMD}
+date +\"%d/%m/%y %T\"

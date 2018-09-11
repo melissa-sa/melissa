@@ -43,7 +43,7 @@ You can now connect to the frontend:
 $ oardocker connect frontend
 
 You are now on the cluster frontend.
-Install Melissa as a classical cluster.
+Install Melissa as on a classical cluster.
 To install it from github:
 
 $ git clone https://github.com/melissa-sa/melissa.git

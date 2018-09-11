@@ -32,30 +32,136 @@ from shutil import copyfile
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
-BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
-BUILD_EXAMPLES_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
-
-imp.load_source("options", "@EXAMPLES_DIR@/heat_example/@sched_version@/scripts/options_@sched_version@.py")
-from options import *
-
-def create_flowvr_group(executable, args, group_id, nb_proc_simu, nb_parameters):
-    content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/scripts/flowvr_group.py", "r")
-    content = Template(file.read()).substitute(args=str(args),
-                                     group_id=str(group_id),
-                                     np_simu=str(nb_proc_simu),
-                                     nb_param=str(nb_parameters),
-                                     executable=str(executable))
-    file.close()
-    file=open("create_group"+str(group_id)+".py", "w")
-    file.write(content)
-    file.close()
+EXECUTABLE='heatc'
+NODES_SERVER = 1
+NODES_GROUP = 2
+WALLTIME_SERVER = "0:10:00"
+WALLTIME_SIMU = "0:05:00"
+NODES_SIMU = NODES_GROUP
+PROC_PER_NODE = 16
 
 def draw_param_set():
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
     for i in range(STUDY_OPTIONS['nb_parameters']):
         param_set[i] = np.random.uniform(0, 1)
     return param_set
+
+def launch_server(server):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
+    #create_run_server(server)
+    server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
+
+    content = ""
+    file=open("@EXAMPLES_DIR@/heat_example/Slurm/scripts/run_server.sh", "r")
+    content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
+                                               NODES_SERVER=str(NODES_SERVER),
+                                               PROC_PER_NODE=str(PROC_PER_NODE),
+                                               SERVER_CMD=str(server_cmd),
+                                               SLURM_JOB_ID="${SLURM_JOB_ID}")
+    file.close()
+    file=open("run_server.sh", "w")
+    file.write(content)
+    file.close()
+    os.system("chmod 744 run_server.sh")
+
+    proc = subprocess.Popen('sbatch "./run_server.sh"',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+    # get the job ID
+    (out, err) = proc.communicate()
+    if len(out.split()) > 0:
+        server.job_id = out.split()[-1]
+    else:
+        print err
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+def launch_simu(simulation):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    if MELISSA_STATS['sobol_indices']:
+        command = 'mpirun '
+        for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+            command += ' '.join(('-n',
+                                 str(NODES_GROUP),
+                                 '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/Slurm/bin/'+EXECUTABLE,
+                                 str(simulation.simu_id[i]), str(simulation.coupling),
+                                 ' '.join(str(j) for j in simulation.param_set[i]),
+                                 ': '))
+        command = command[:-2]
+    else:
+        command = ' '.join(('mpirun',
+                             '-n',
+                             str(NODES_GROUP),
+                             '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/Slurm/bin/'+EXECUTABLE,
+                             str(simulation.simu_id), str(simulation.coupling),
+                             ' '.join(str(i) for i in simulation.param_set)))
+    print command
+
+    content = ""
+    file=open("@EXAMPLES_DIR@/heat_example/Slurm/scripts/run_simu.sh", "r")
+    content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
+                                               NODES_SIMU=str(NODES_SIMU),
+                                               PROC_PER_NODE=str(PROC_PER_NODE),
+                                               SIMU_ID=str(simulation.rank),
+                                               SIMU_CMD=str(command))
+    file.close()
+    file=open("run_simu.sh", "w")
+    file.write(content)
+    file.close()
+    os.system("chmod 744 run_simu.sh")
+
+    proc = subprocess.Popen('ccc_msub -r Simu'+str(simulation.rank)+' "./run_group.sh"',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+    # get the job ID
+    (out, err) = proc.communicate()
+    if len(out.split()) > 0:
+        simulation.job_id = out.split()[-1]
+    else:
+        print err
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+def check_job(job):
+    state = 0
+    proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    if (not "PENDING" in out):
+        state = 1
+        proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        if (not "RUNNING" in out):
+            state = 2
+    job.job_status = state
+
+def check_load():
+    proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    running_jobs = int(out)
+    return running_jobs < 250
+
+def kill_job(job):
+    print 'killing job ...'
+    os.system("scancel "+str(job.job_id))
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME

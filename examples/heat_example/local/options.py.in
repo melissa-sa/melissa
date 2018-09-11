@@ -70,7 +70,7 @@ def launch_simu(simulation):
             for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
                 args.append(str(simulation.simu_id[i])+" "+ str(simulation.coupling)+" "+' '.join(str(j) for j in simulation.param_set[i]))
             content = ""
-            file=open("@EXAMPLES_DIR@/heat_example/scripts/flowvr_group.py", "r")
+            file=open("@EXAMPLES_DIR@/heat_example/local/scripts/flowvr_group.py", "r")
             content = Template(file.read()).substitute(args=str(args),
                                group_id=str(simulation.rank),
                                np_simu=str(int(NODES_GROUP)),

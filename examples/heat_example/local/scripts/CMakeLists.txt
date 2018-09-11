@@ -14,8 +14,5 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-add_subdirectory(scripts)
-
-configure_file(options.py.in options.py @ONLY)
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/options.py DESTINATION ${EXAMPLES_DIR}/heat_example/Slurm)
+configure_file(flowvr_group.py.in flowvr_group.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/local/scripts/flowvr_group.py DESTINATION ${EXAMPLES_DIR}/heat_example/local/scripts)
