@@ -441,7 +441,7 @@ void melissa_print (int msg_priority, const char* format, ...)
             strcpy(msg, "WARNING: ");
         else if (msg_priority == VERBOSE_INFO)
             strcpy(msg, "");
-        else if (msg_priority == VERBOSE_DEBUG)
+        else if (msg_priority >= VERBOSE_DEBUG)
             strcpy(msg, "");
         msg = strcat(msg, format);
         va_start (args, format);

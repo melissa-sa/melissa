@@ -28,13 +28,13 @@ import imp
 #from matplotlib import cm
 from string import Template
 from shutil import copyfile
-import xml.etree.ElementTree as ET
+from lxml import etree
 
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
-NODES_SERVER = 3
-NODES_GROUP = 2
+NODES_SERVER = 1
+NODES_GROUP = 1
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
 
@@ -78,7 +78,7 @@ def launch_server(server):
                                       ' ' + server.path +
                                       '/melissa_server ' +
                                       server.cmd_opt +
-                                      ' &').split()).pid
+                                      ' -v 4 &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def create_simu(simulation):
@@ -95,27 +95,34 @@ def create_simu(simulation):
     os.chdir(casedir+"/SRC")
 
     #modif xml file
-    tree = ET.parse(STUDY_OPTIONS['working_directory']+'/../case1/DATA/case1.xml')
+    tree = etree.parse(STUDY_OPTIONS['working_directory']+'/../case1/DATA/case1.xml')
     root = tree.getroot()
     # modif parameters
     param0 = 'temperature = '+str(simulation.param_set[0])+';'
     root.find('thermophysical_models').find('thermal_scalar').find('variable').find('formula').text = param0
     root.find('physical_properties').find('fluid_properties').find("property/[@name='molecular_viscosity']").find('initial_value').text = str(simulation.param_set[1])
+    root.find('analysis_control').find('output').find("writer/[@label='results']").find("format/[@name='melissa']").set('options',str(simulation.rank))
     # modif path to mesh file directory
     meshlist = root.find('solution_domain').find('meshes_list')
     if meshlist.find('meshdir') is None:
-        meshdir=ET.SubElement(meshlist, 'meshdir')
+        meshdir=etree.SubElement(meshlist, 'meshdir')
         meshdir.set('name', '../../MESH')
     else:
         meshlist.find('meshdir').set('name', '../../../MESH')
 
-    tree.write(casedir+'/DATA/case1.xml')
-    return 0
+    # we do that because Code_Saturne needs double quotes...
+    xml_str = ('<?xml version="1.0" encoding="UTF-8"?>' +
+               etree.tostring(root, encoding="UTF-8", pretty_print=True, xml_declaration=False))
+    with open(casedir+'/DATA/case1.xml', 'wb') as xml_file:
+        xml_file.write(xml_str)
+
     os.chdir(STUDY_OPTIONS['working_directory'])
+    return 0
 
 def launch_simu(simulation):
     os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0/DATA")
-    simulation.job_id = subprocess.Popen("code_saturne run -n "+str(NODES_GROUP)+" --param "+STUDY_OPTIONS['xml_name'].split()).pid
+    cmd = STUDY_OPTIONS['saturne_path']+"/code_saturne run -n "+str(NODES_GROUP)+" --param case1.xml"
+    simulation.job_id = subprocess.Popen(cmd.split()).pid
 
 def check_job(job):
     state = 0
@@ -127,7 +134,11 @@ def check_job(job):
     job.job_status = state
 
 def check_load():
-    return True
+    try:
+        subprocess.check_output(["pidof","code_saturne"])
+        return False
+    except:
+        return True
 
 def kill_job(job):
     os.system('kill '+str(job.job_id))
@@ -136,16 +147,17 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/fluid_example/STATS'
 STUDY_OPTIONS['nb_parameters'] = 2                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 10              # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 30              # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 75                # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 400.0
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
-STUDY_OPTIONS['field_names'] = ["tempc"]           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
+STUDY_OPTIONS['field_names'] = ["TempC"]           # list of field names
+STUDY_OPTIONS['simulation_timeout'] = 400           # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 30          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['xml_name'] = "case1.xml"
 STUDY_OPTIONS['saturne_path'] = "/home/tterraz/Programmes/Code_Saturne/5.2-alpha/code_saturne-5.2-alpha/arch/Linux_x86_64/bin"
+STUDY_OPTIONS['verbosity_level'] = "DEBUG"
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

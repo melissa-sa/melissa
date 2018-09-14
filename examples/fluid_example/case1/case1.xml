@@ -70,11 +70,11 @@
 				<probe_z>0</probe_z>
 			</probe>
 			<probe_format choice="DAT"/>
-			<probe_recording_frequency_time>0.1</probe_recording_frequency_time>
+                        <probe_recording_frequency_time>0.1</probe_recording_frequency_time>
 			<writer id="-1" label="results">
 				<directory name="postprocessing"/>
-				<format name="ensight" options="text"/>
-				<frequency period="time_step">5</frequency>
+                                <format name="melissa" options="text"/>
+                                <frequency period="time_step">1</frequency>
 				<time_dependency choice="fixed_mesh"/>
 			</writer>
 		</output>

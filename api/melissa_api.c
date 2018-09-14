@@ -988,7 +988,7 @@ void melissa_send (const int  *time_step,
 
     if (global_data.sobol_rank == 0)
     {
-        melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", &global_data.sample_id, *time_step);
+        melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", global_data.sample_id, *time_step);
         zmq_msg_t msg;
         j = 0;
         for (i=0; i<field_data_ptr->total_nb_messages; i++)
