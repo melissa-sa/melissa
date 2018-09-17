@@ -324,7 +324,7 @@ void save_simu_states (vector_t    *simu,
     for (i=0; i<simu->size; i++)
     {
         simu_ptr = simu->items[i];
-        melissa_print (VERBOSE_DEBUG, "Simulation %d status: %d (save_simu_states)", i, simu_ptr->status);
+        melissa_print (VERBOSE_DEBUG, "Simulation %d status: %d (save_simu_states)\n", i, simu_ptr->status);
         fwrite(&simu_ptr->status, sizeof(int), 1, f);
     }
     fclose(f);

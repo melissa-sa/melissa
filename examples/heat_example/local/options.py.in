@@ -51,10 +51,10 @@ def launch_server(server):
                                       ' &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
-def launch_simu(simulation):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+def launch_group(group):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
     copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
         command = 'mpirun '
@@ -62,17 +62,17 @@ def launch_simu(simulation):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
                                  '@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]), str(simulation.coupling),
-                                 ' '.join(str(j) for j in simulation.param_set[i]),
+                                 str(group.simu_id[i]), str(group.coupling),
+                                 ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
         if BUILD_WITH_FLOWVR == 'ON' and STUDY_OPTIONS['coupling'] == 'MELISSA_COUPLING_FLOWVR':
             args = []
             for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-                args.append(str(simulation.simu_id[i])+" "+ str(simulation.coupling)+" "+' '.join(str(j) for j in simulation.param_set[i]))
+                args.append(str(group.simu_id[i])+" "+ str(group.coupling)+" "+' '.join(str(j) for j in group.param_set[i]))
             content = ""
             file=open("@EXAMPLES_DIR@/heat_example/local/scripts/flowvr_group.py", "r")
             content = Template(file.read()).substitute(args=str(args),
-                               group_id=str(simulation.rank),
+                               group_id=str(group.rank),
                                np_simu=str(int(NODES_GROUP)),
                                nb_param=str(STUDY_OPTIONS['nb_parameters']),
                                executable='@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE)
@@ -80,26 +80,39 @@ def launch_simu(simulation):
             file=open("create_group"+str(group_id)+".py", "w")
             file.write(content)
             file.close()
-            os.system('python create_group'+str(simulation.rank)+'.py')
-            simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+            os.system('python create_group'+str(group.rank)+'.py')
+            group.job_id = subprocess.Popen('flowvr group'+str(group.rank), shell=True).pid
         else:
             print command[:-2]
-            simulation.job_id = subprocess.Popen(command[:-2].split()).pid
+            group.job_id = subprocess.Popen(command[:-2].split()).pid
+
+    elif STUDY_OPTIONS['batch_size'] > 1:
+        command = 'mpirun '
+        for i in range(group.size):
+            command += ' '.join(('-n',
+                                 str(NODES_GROUP),
+                                 '@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
+                                 str(group.simu_id[i]),
+                                 ' '.join(str(j) for j in group.param_set[i]),
+                                 ': '))
+        print command[:-2]
+        group.job_id = subprocess.Popen(command[:-2].split()).pid
+
     else:
         if BUILD_WITH_MPI == 'ON':
             command = ' '.join(('mpirun',
                                  '-n',
                                  str(NODES_GROUP),
                                  '@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id),
-                                 ' '.join(str(i) for i in simulation.param_set)))
+                                 str(group.simu_id),
+                                 ' '.join(str(i) for i in group.param_set)))
         else:
             command = ' '.join(('@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
                                 str(0),
-                                str(simulation.rank),
-                                ' '.join(str(i) for i in simulation.param_set)))
+                                str(group.simu_id),
+                                ' '.join(str(i) for i in group.param_set)))
         print command
-        simulation.job_id = subprocess.Popen(command.split()).pid
+        group.job_id = subprocess.Popen(command.split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
@@ -139,6 +152,8 @@ STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
+STUDY_OPTIONS['batch_size'] = 3
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
@@ -158,7 +173,7 @@ USER_FUNCTIONS['create_group'] = None
 #if MELISSA_STATS['sobol_indices']:
 #    USER_FUNCTIONS['launch_group'] = launch_group
 #else:
-USER_FUNCTIONS['launch_group'] = launch_simu
+USER_FUNCTIONS['launch_group'] = launch_group
 USER_FUNCTIONS['launch_server'] = launch_server
 USER_FUNCTIONS['check_server_job'] = check_job
 USER_FUNCTIONS['check_group_job'] = check_job

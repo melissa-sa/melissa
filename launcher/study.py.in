@@ -35,6 +35,7 @@ from ctypes import cdll, create_string_buffer
 imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
+from simulation import MultiSimuGroup
 from simulation import Group
 from simulation import SobolGroup
 from simulation import Job
@@ -93,9 +94,10 @@ class Messenger(Thread):
     """
         Thread in charge of checking job status
     """
-    def __init__(self):
+    def __init__(self, batch_size = 1):
         Thread.__init__(self)
         self.running_study = True
+        self.batch_size = batch_size
 
     def run(self):
         try:
@@ -115,15 +117,16 @@ class Messenger(Thread):
                         logging.info('end study')
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
-                        group_id = int(message[1])
+                        group_id = int(message[1])/self.batch_size
                         logging.info('restarting group ' + str(group_id)
                                      + ' (timeout detected by server)')
                         with groups[group_id].lock:
                             groups[group_id].restart()
                             groups[group_id].job_status = PENDING
                 elif message[0] == 'group_state':
-                    with groups[int(message[1])].lock:
-                        groups[int(message[1])].status = int(message[2])
+                    group_id = int(message[1])/self.batch_size
+                    with groups[group_id].lock:
+                        groups[group_id].status = int(message[2])
                     logging.info('Group ' + message[1] + ' status: ' + message[2])
                 elif message[0] == 'server':
                     with server.lock:
@@ -157,14 +160,10 @@ class Study(object):
     """
     def __init__(self, stdy_opt, ml_stats, usr_func):
         self.groups = list()
-        self.nb_groups = stdy_opt['sampling_size']
         if ml_stats['sobol_indices']:
             self.sobol = True
         else:
             self.sobol = False
-        self.messenger = Messenger()
-        self.state_checker = StateChecker()
-        self.stdy_opt = stdy_opt
         self.stdy_opt = stdy_opt
         self.ml_stats = ml_stats
         self.usr_func = usr_func
@@ -175,6 +174,8 @@ class Study(object):
         Job.set_usr_func(self.usr_func)
         Job.set_stdy_opt(self.stdy_opt)
         Job.set_ml_stats(self.ml_stats)
+        self.messenger = Messenger(self.stdy_opt['batch_size'])
+        self.state_checker = StateChecker()
 
     def run(self):
         """
@@ -266,6 +267,12 @@ class Study(object):
             logging.error('Error bad option: sample_size not big enough')
             errors += 1
 
+        if (not 'verbosity' in self.stdy_opt):
+            self.stdy_opt['verbosity'] = 2
+
+        if (not 'batch_size' in self.stdy_opt):
+            self.stdy_opt['batch_size'] = 1
+
         if 'threshold_exceedance' in self.ml_stats:
             self.ml_stats['threshold_exceedances'] = self.ml_stats['threshold_exceedance']
             self.ml_stats['threshold_exceedance'] = False
@@ -297,6 +304,7 @@ class Study(object):
 
         if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
             self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+
 
         optional_func = ['create_study',
                          'draw_parameter_set',
@@ -335,6 +343,14 @@ class Study(object):
                 self.groups.append(SobolGroup(
                     draw_parameter_set(self.usr_func, self.stdy_opt),
                     draw_parameter_set(self.usr_func, self.stdy_opt)))
+        elif "batch_size" in self.stdy_opt.keys() \
+        and self.stdy_opt['batch_size'] > 1:
+            while len(self.groups) < self.stdy_opt['sampling_size']/self.stdy_opt['batch_size']:
+                param_sets = list()
+                for i in range(self.stdy_opt['batch_size']):
+                    param_sets.append(draw_parameter_set(self.usr_func, self.stdy_opt))
+                self.groups.append(MultiSimuGroup(param_sets))
+
         else:
             while len(self.groups) < self.stdy_opt['sampling_size']:
                 self.groups.append(SingleSimuGroup(draw_parameter_set(self.usr_func, self.stdy_opt)))
@@ -351,7 +367,7 @@ class Study(object):
         if not self.messenger.isAlive():
             logging.error('Messenger thread crashed')
             self.messenger.join()
-            self.messenger = Messenger()
+            self.messenger = Messenger(self.stdy_opt['batch_size'])
             self.messenger.start()
         if not self.state_checker.isAlive():
             logging.error('State checker thread crashed')

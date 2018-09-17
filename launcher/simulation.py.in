@@ -191,6 +191,52 @@ class SingleSimuGroup(Group):
         self.status = WAITING
 
 
+class MultiSimuGroup(Group):
+    """
+    Multiple simulation group class (without Sobol' indices)
+    """
+    nb_simu = 0
+    def __init__(self, param_sets):
+        """
+            SingleSimuGroup constructor
+        """
+        Group.__init__(self)
+        self.param_set = list()
+        self.simu_id = list()
+        self.size = len(param_sets)
+        self.coupling = 0
+        for i in range(self.size):
+            self.param_set.append(numpy.copy(param_sets[i]))
+            self.simu_id.append(MultiSimuGroup.nb_simu)
+            MultiSimuGroup.nb_simu += 1
+
+    def restart(self):
+        """
+            Ends and restarts the simulations (mandatory)
+        """
+        self.cancel()
+        self.nb_restarts += 1
+        if self.nb_restarts > 4:
+            logging.warning('Simulation group ' + self.rank +
+                            'crashed 5 times, drawing new parameter sets')
+            for i in range(self.size):
+                logging.info('old parameter set: ' + str(self.param_set[i]))
+                self.param_set[i] = Job.usr_func['draw_parameter_set']()
+                logging.info('new parameter set: ' + str(self.param_set[i]))
+            self.nb_restarts = 0
+
+        if "restart_group" in Job.usr_func.keys() \
+        and Job.usr_func['restart_group']:
+            Job.usr_func['restart_group'](self)
+        else:
+            logging.warning('warning: no \'restart_group\''
+                            +' function provided,'
+                            +' using \'launch_group\' instead')
+            self.launch()
+        self.job_status = PENDING
+        self.status = WAITING
+
+
 class SobolGroup(Group):
     """
         Sobol coupled group class
@@ -304,6 +350,7 @@ class Server(Job):
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),
                                  '-w', str(Job.stdy_opt['simulation_timeout']),
                                  '-f', field_str,
+                                 '-v', str(Job.stdy_opt['verbosity']),
                                  '-n', str(buff.value)))
 
     def launch(self):

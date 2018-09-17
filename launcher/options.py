@@ -39,6 +39,8 @@ STUDY_OPTIONS['simulation_timeout'] = 400               # simulations are restar
 STUDY_OPTIONS['server_timeout'] = 600                   # server is restarted if no life sign for 400 seconds (int)
 STUDY_OPTIONS['checkpoint_interval'] = 300              # server checkpoints every 300 seconds (double)
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_DEFAULT"  # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['verbosity'] = 2                          # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
+STUDY_OPTIONS['batch_size'] = 1
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
