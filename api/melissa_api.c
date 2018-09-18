@@ -76,6 +76,7 @@ struct global_data_s
     void   **sobol_requester;     /**< data ZeroMQ Sobol port                                     */
     int      rinit_tab[4];        /**< array used to receive data                                 */
     int      sobol;               /**< 1 if sobol computation, 0 otherwhise                       */
+    int      rank;                /**< mpi rank                                                 */
     int      sobol_rank;          /**< sobol rank                                                 */
     int      sample_id;           /**< parameters sample id                                       */
     int      nb_proc_server;      /**< number of MPI processes of the library                     */
@@ -113,6 +114,7 @@ struct field_data_s
     int                  *push_rank;                    /**< rank of the pushing process for the message i              */
     int                   total_nb_messages;            /**< total number of messages                                   */
     int                   local_nb_messages;            /**< local number of messages                                   */
+    int                   timestamp;                    /**< melissa internal timestamp                                 */
     void                **data_pusher;                  /**< push data ZeroMQ ports                                     */
     struct field_data_s  *next;                         /**< next field_data_struct                                     */
 };
@@ -505,6 +507,7 @@ void melissa_init (const char *field_name,
     field_data_ptr->global_vect_size = 0;
     field_data_ptr->local_vect_sizes = malloc(*comm_size * sizeof(int));
     field_data_ptr->data_pusher = NULL;
+    field_data_ptr->timestamp = 0;
 
     // bcast infos
 #ifdef BUILD_WITH_MPI
@@ -545,6 +548,7 @@ void melissa_init (const char *field_name,
             global_data.sobol_rank = 0;
             global_data.sample_id = *simu_id;
         }
+        global_data.rank = *rank;
         node_names = malloc (global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
     }
 
@@ -940,7 +944,7 @@ void melissa_send (const int  *time_step,
         fprintf (stdout, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
         return;
     }
-    local_vect_size = field_data_ptr->local_vect_sizes[*rank];
+    local_vect_size = field_data_ptr->local_vect_sizes[global_data.rank];
 
     if (global_data.sobol == 1)
     {
@@ -988,12 +992,12 @@ void melissa_send (const int  *time_step,
 
     if (global_data.sobol_rank == 0)
     {
-        melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", global_data.sample_id, *time_step);
+        melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", global_data.sample_id, field_data_ptr->timestamp);
         zmq_msg_t msg;
         j = 0;
         for (i=0; i<field_data_ptr->total_nb_messages; i++)
         {
-            if (*rank == field_data_ptr->push_rank[i] && global_data.sobol_rank == 0)
+            if (global_data.rank == field_data_ptr->push_rank[i] && global_data.sobol_rank == 0)
             {
                 buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
                 if (global_data.sobol == 1)
@@ -1002,13 +1006,13 @@ void melissa_send (const int  *time_step,
                 }
                 global_data.buffer = malloc (buff_size);
                 buff_ptr = global_data.buffer;
-                memcpy(buff_ptr, time_step, sizeof(int));
+                memcpy(buff_ptr, &field_data_ptr->timestamp, sizeof(int));
                 buff_ptr += sizeof(int);
                 memcpy(buff_ptr, &global_data.sobol_rank, sizeof(int));
                 buff_ptr += sizeof(int);
                 memcpy(buff_ptr, &global_data.sample_id, sizeof(int));
                 buff_ptr += sizeof(int);
-                memcpy(buff_ptr, rank, sizeof(int));
+                memcpy(buff_ptr, &global_data.rank, sizeof(int));
                 buff_ptr += sizeof(int);
                 memcpy(buff_ptr, &field_data_ptr->send_counts[field_data_ptr->pull_rank[i]], sizeof(int));
                 buff_ptr += sizeof(int);
@@ -1037,6 +1041,7 @@ void melissa_send (const int  *time_step,
             }
         }
     }
+    field_data_ptr->timestamp += 1;
     end_comm_time = melissa_get_time();
     total_comm_time += end_comm_time - start_comm_time;
 }

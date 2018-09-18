@@ -402,7 +402,7 @@ int main (int argc, char **argv)
 
             melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d\n", comm_data.rank, time_step, client_rank, group_id);
 
-            if (time_step > melissa_options.nb_time_steps || time_step < 1)
+            if (time_step >= melissa_options.nb_time_steps || time_step < 0)
             {
                 melissa_print (VERBOSE_WARNING, "Bad time stamp (field %s)\n", field_name_ptr);
                 continue;
@@ -464,7 +464,7 @@ int main (int argc, char **argv)
                 buff_tab_ptr[0] = (double*)buf_ptr;
                 // === Compute classical statistics === //
                 compute_stats (&data_ptr[client_rank],
-                               time_step-1,
+                               time_step,
                                1,
                                buff_tab_ptr,
                                group_id);
@@ -478,11 +478,11 @@ int main (int argc, char **argv)
                 }
                 // === Compute classical statistics + Sobol indices === //
                 compute_stats (&data_ptr[client_rank],
-                               time_step-1,
+                               time_step,
                                melissa_options.nb_parameters+2,
                                buff_tab_ptr,
                                group_id);
-                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step-1]),
+                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step]),
                                            melissa_options.nb_parameters,
                                            data_ptr[client_rank].vect_size);
                 nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
