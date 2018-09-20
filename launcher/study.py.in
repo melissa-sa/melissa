@@ -323,7 +323,9 @@ class Study(object):
         for func_name in optional_func:
             if not func_name in self.usr_func.keys():
                 self.usr_func[func_name] = None
-                logging.debug('Warning: no \''+func_name+'\' key in USER_FUNCTIONS')
+                logging.warning('Warning: no \''+func_name+'\' key in USER_FUNCTIONS')
+            else if self.usr_func(func_name) is None:
+                logging.warning('Warning: no \''+func_name+'\' provided')
 
         for func_name in mandatory_func:
             if not func_name in self.usr_func.keys():

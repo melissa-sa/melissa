@@ -202,7 +202,7 @@ int main( int argc, char **argv )
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon, &i1, &in, &np, &me, &next, &previous, &fcomm);
     // The result is u
     // melissa_send is called at each iteration to send u to the server.
-    melissa_send (&n, field_name, u, &me, &simu_id);
+    melissa_send (field_name, u);
   }
 
   // write results on disk

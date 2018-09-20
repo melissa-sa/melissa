@@ -98,7 +98,7 @@ program heat_no_mpi
     call conjgrad(A, F, U, nx, ny, epsilon)
     ! The result is u
     ! melissa_send_no_mpi is called at each iteration to send u to the server.
-    call melissa_send_no_mpi(n, name, u, simu_id)
+    call melissa_send_no_mpi(name, u)
   end do
 
   ! write results on disk

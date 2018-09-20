@@ -45,28 +45,18 @@ subroutine melissa_init_no_mpi(field_name,&
     integer(kind=C_INT) :: coupling
 end subroutine melissa_init_no_mpi
 
-subroutine melissa_send(time_step,&
-                        field_name,&
-                        send_vect,&
-                        rank,&
-                        simu_id) bind(c, name = 'melissa_send')
+subroutine melissa_send(field_name,&
+                        send_vect) bind(c, name = 'melissa_send')
     use ISO_C_BINDING, only: C_INT, C_DOUBLE, C_CHAR
-    integer(kind=C_INT)                 :: time_step
     character(kind=C_CHAR),dimension(*) :: field_name
     real(kind=C_DOUBLE),dimension(*)    :: send_vect
-    integer(kind=C_INT)                 :: rank
-    integer(kind=C_INT)                 :: simu_id
 end subroutine melissa_send
 
-subroutine melissa_send_no_mpi(time_step,&
-                               field_name,&
-                               send_vect,&
-                               simu_id) bind(c, name = 'melissa_send_no_mpi')
+subroutine melissa_send_no_mpi(field_name,&
+                               send_vect) bind(c, name = 'melissa_send_no_mpi')
     use ISO_C_BINDING, only: C_INT, C_DOUBLE, C_CHAR
-    integer(kind=C_INT)                 :: time_step
     character(kind=C_CHAR),dimension(*) :: field_name
     real(kind=C_DOUBLE),dimension(*)    :: send_vect
-    integer(kind=C_INT)                 :: simu_id
     end subroutine melissa_send_no_mpi
 
 subroutine melissa_finalize() bind(c, name = 'melissa_finalize')

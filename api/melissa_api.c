@@ -903,28 +903,16 @@ void melissa_init_no_mpi (const char *field_name,
  *
  *******************************************************************************
  *
- * @param[in] time_step
- * current time step of the simulation
- *
  * @param[in] *field_name
  * name of the field to send to Melissa Server
  *
  * @param[in] *send_vect
  * local data array to send to the statistic library
  *
- * @param[in] *rank
- * MPI rank
- *
- * @param[in] *simu_id
- * ID of the calling simulation
- *
  *******************************************************************************/
 
-void melissa_send (const int  *time_step,
-                   const char *field_name,
-                   double     *send_vect,
-                   const int  *rank,
-                   const int  *simu_id)
+void melissa_send (const char *field_name,
+                   double     *send_vect)
 {
     int   i=0, j=0, k, ret;
     int   buff_size;
@@ -1069,17 +1057,12 @@ void melissa_send (const int  *time_step,
  *
  *******************************************************************************/
 
-void melissa_send_no_mpi (const int  *time_step,
-                          const char *field_name,
-                          double     *send_vect,
-                          const int  *simu_id)
+void melissa_send_no_mpi (const char *field_name,
+                          double     *send_vect)
 {
     int rank = 0;
-    melissa_send (time_step,
-                  field_name,
-                  send_vect,
-                  &rank,
-                  simu_id);
+    melissa_send (field_name,
+                  send_vect);
 }
 
 /**

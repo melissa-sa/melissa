@@ -112,9 +112,6 @@ class Group(Job):
         if "create_group" in Job.usr_func.keys() \
         and Job.usr_func['create_group']:
             Job.usr_func['create_group'](self)
-        else:
-            logging.warning('Warning: no \'create_group\''
-                          +' function provided')
 
     def launch(self):
         """
@@ -172,7 +169,7 @@ class SingleSimuGroup(Group):
         self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > 4:
-            logging.warning('Simulation ' + self.rank +
+            logging.warning('Simulation ' + str(self.rank) +
                             'crashed 5 times, drawing new parameter set')
             logging.info('old parameter set: ' + str(self.param_set))
             self.param_set = Job.usr_func['draw_parameter_set']()
@@ -217,7 +214,7 @@ class MultiSimuGroup(Group):
         self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > 4:
-            logging.warning('Simulation group ' + self.rank +
+            logging.warning('Simulation group ' + str(self.rank) +
                             'crashed 5 times, drawing new parameter sets')
             for i in range(self.size):
                 logging.info('old parameter set: ' + str(self.param_set[i]))
