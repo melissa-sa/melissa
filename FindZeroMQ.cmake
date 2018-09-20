@@ -12,10 +12,10 @@ if(INSTALL_ZMQ)
 #    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
   URL https://github.com/zeromq/libzmq/archive/v4.2.2.tar.gz
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}/ZeroMQ
-             -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_PREFIX}/ZeroMQ/lib)
-  set(ZEROMQ_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/ZeroMQ/include")
-  set(ZEROMQ_LIBRARIES "${CMAKE_INSTALL_PREFIX}/ZeroMQ/lib/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}" )
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+             -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_PREFIX}/lib)
+  set(ZEROMQ_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include")
+  set(ZEROMQ_LIBRARIES "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}" )
   include_directories(${ZEROMQ_INCLUDE_DIR})
   MESSAGE(STATUS "ZeroMQ will be installed")
 
@@ -25,7 +25,7 @@ else(INSTALL_ZMQ)
             PATH_SUFFIXES
                 include
             PATHS
-                ${CMAKE_INSTALL_PREFIX}/ZeroMQ
+                ${CMAKE_INSTALL_PREFIX}
                 ${ZEROMQDIR}
                 $ENV{ZEROMQDIR}
                 ~/Library/Frameworks
@@ -39,7 +39,7 @@ else(INSTALL_ZMQ)
 
     SET(ZEROMQ_FOUND TRUE)
     SET(FIND_ZEROMQ_LIB_PATHS
-            ${CMAKE_INSTALL_PREFIX}/ZeroMQ
+            ${CMAKE_INSTALL_PREFIX}
             ${ZEROMQDIR}
             $ENV{ZEROMQDIR}
             ~/Library/Frameworks
@@ -60,7 +60,7 @@ else(INSTALL_ZMQ)
                     lib
                 PATHS
                     ${FIND_ZEROMQ_LIB_PATHS}
-                    ${CMAKE_INSTALL_PREFIX}/ZeroMQ/bin/Win32/Debug/v120/dynamic
+                    ${CMAKE_INSTALL_PREFIX}/bin/Win32/Debug/v120/dynamic
                     ${ZEROMQDIR}/bin/Win32/Debug/v120/dynamic
                     $ENV{ZEROMQDIR}/bin/Win32/Debug/v120/dynamic )
 
@@ -73,7 +73,7 @@ else(INSTALL_ZMQ)
                     lib
                 PATHS
                     ${FIND_ZEROMQ_LIB_PATHS}
-                    ${CMAKE_INSTALL_PREFIX}/ZeroMQ/bin/Win32/Release/v120/dynamic
+                    ${CMAKE_INSTALL_PREFIX}/bin/Win32/Release/v120/dynamic
                     ${ZEROMQDIR}/bin/Win32/Release/v120/dynamic
                     $ENV{ZEROMQDIR}/bin/Win32/Release/v120/dynamic )
 

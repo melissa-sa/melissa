@@ -157,7 +157,7 @@ STUDY_OPTIONS['checkpoint_interval'] = 30          # server checkpoints every 30
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['xml_name'] = "case1.xml"
 STUDY_OPTIONS['saturne_path'] = "/home/tterraz/Programmes/Code_Saturne/5.2-alpha/code_saturne-5.2-alpha/arch/Linux_x86_64/bin"
-STUDY_OPTIONS['verbosity_level'] = "DEBUG"
+STUDY_OPTIONS['verbosity'] = 2
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
@@ -168,6 +168,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantiles'] = False
+# This local example does not work for Sobol' indices yet.
 MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}

@@ -15,19 +15,19 @@
 ###################################################################
 
 configure_file(melissa_launcher.py.in melissa_launcher.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-        DESTINATION share/launcher)
+#install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
+#        DESTINATION share/launcher)
 
 install(FILES options.py
-        DESTINATION share/launcher)
+        DESTINATION share/melissa/launcher)
 
 configure_file(simulation.py.in simulation.py @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/launcher/simulation.py
-        DESTINATION share/launcher)
+        DESTINATION share/melissa/launcher)
 
 configure_file(study.py.in study.py @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
-        DESTINATION share/launcher)
+        DESTINATION share/melissa/launcher)
 
 install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
         DESTINATION bin

@@ -1060,7 +1060,6 @@ void melissa_send (const char *field_name,
 void melissa_send_no_mpi (const char *field_name,
                           double     *send_vect)
 {
-    int rank = 0;
     melissa_send (field_name,
                   send_vect);
 }

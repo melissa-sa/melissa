@@ -237,7 +237,14 @@ endif(BUILD_EXAMPLES)
 
 # set environement variables
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+    PERMISSIONS OWNER_WRITE
+                OWNER_READ
+                OWNER_EXECUTE
+                GROUP_READ
+                GROUP_EXECUTE
+                WORLD_READ
+                WORLD_EXECUTE)
 
 if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
@@ -257,7 +264,7 @@ if(BUILD_DOCUMENTATION)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/doc)
 endif(BUILD_DOCUMENTATION)
 
-set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
+set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/melissa/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
 
 include(CMakePackageConfigHelpers)
 

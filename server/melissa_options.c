@@ -59,7 +59,7 @@ static inline void stats_usage ()
             " -n <char*>     : Melissa Launcher node name (default: localhost)\n"
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
-            " -c <double>    : Server checkpoints intervals (seconds, default: 300)"
+            " -c <double>    : Server checkpoints intervals (seconds, default: 300)\n"
             " -v             : Verbosity level\n"
             " -h             : Print this message\n"
             "\n"
