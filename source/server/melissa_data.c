@@ -40,7 +40,7 @@ static void melissa_alloc_data (melissa_data_t *data)
 
     if (data->is_valid != 1)
     {
-        fprintf (stderr, "ERROR: data structure not valid (malloc_data)\n");
+        melissa_print (VERBOSE_ERROR, "Data structure not valid (malloc_data)\n");
         exit (1);
     }
 
@@ -138,7 +138,7 @@ static void melissa_alloc_data (melissa_data_t *data)
     alloc_vector (&data->step_simu, data->options->sampling_size);
     for (i=0; i<data->options->sampling_size; i++)
     {
-        vector_set (&data->step_simu, i, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
+        vector_add (&data->step_simu, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
     }
 }
 
@@ -223,7 +223,7 @@ void melissa_free_data (melissa_data_t *data)
 
     if (data->is_valid != 1)
     {
-        fprintf (stderr, "ERROR: data structure not valid (free_data)\n");
+        melissa_print (VERBOSE_ERROR, "Data structure not valid (free_data)\n");
         exit (1);
     }
 

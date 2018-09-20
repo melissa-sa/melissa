@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!@PYTHON_EXECUTABLE@
 
 ###################################################################
 #                            Melissa                              #
@@ -40,7 +40,7 @@ def main():
     if len(sys.argv) == 2:
         options_path = sys.argv[1]
     else:
-        options_path = cwd
+        options_path = ""
 
     if not os.path.isfile(options_path+"/options.py"):
         print "ERROR no Melissa Launcher options file given"

@@ -60,6 +60,7 @@ static inline void stats_usage ()
             " -l             : Learning mode\n"
             " -r <char*>     : Melissa restart files directory\n"
             " -c <double>    : Server checkpoints intervals (seconds, default: 300)"
+            " -v             : Verbosity level\n"
             " -h             : Print this message\n"
             "\n"
             );
@@ -96,6 +97,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
+    options->verbose_lvl     = VERBOSE_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
     sprintf (options->restart_dir, ".");
@@ -313,37 +315,38 @@ static inline void get_operations (char              *name,
 
 void melissa_print_options (melissa_options_t *options)
 {
-    fprintf(stdout, "Options:\n");
-    fprintf(stdout, "nb_time_steps = %d\n", options->nb_time_steps);
-    fprintf(stdout, "nb_parameters = %d\n", options->nb_parameters);
-    fprintf(stdout, "sampling_size = %d\n", options->sampling_size);
-    fprintf(stdout, "nb_simu = %d\n", options->nb_simu);
-    fprintf(stdout, "nb_fields = %d\n", options->nb_fields);
-    fprintf(stdout, "operations:\n");
+    melissa_print(VERBOSE_INFO, "Options:\n");
+    melissa_print(VERBOSE_INFO, "nb_time_steps = %d\n", options->nb_time_steps);
+    melissa_print(VERBOSE_INFO, "nb_parameters = %d\n", options->nb_parameters);
+    melissa_print(VERBOSE_INFO, "sampling_size = %d\n", options->sampling_size);
+    melissa_print(VERBOSE_INFO, "nb_simu = %d\n", options->nb_simu);
+    melissa_print(VERBOSE_INFO, "nb_fields = %d\n", options->nb_fields);
+    melissa_print(VERBOSE_INFO, "operations:\n");
     if (options->mean_op != 0)
-        fprintf(stdout, "    mean\n");
+        melissa_print(VERBOSE_INFO, "    mean\n");
     if (options->variance_op != 0)
-        fprintf(stdout, "    variance\n");
+        melissa_print(VERBOSE_INFO, "    variance\n");
     if (options->skewness_op != 0)
-        fprintf(stdout, "    skewness\n");
+        melissa_print(VERBOSE_INFO, "    skewness\n");
     if (options->kurtosis_op != 0)
-        fprintf(stdout, "    kurtosis\n");
+        melissa_print(VERBOSE_INFO, "    kurtosis\n");
     if (options->min_and_max_op != 0)
     {
-        fprintf(stdout, "    min\n");
-        fprintf(stdout, "    max\n");
+        melissa_print(VERBOSE_INFO, "    min\n");
+        melissa_print(VERBOSE_INFO, "    max\n");
     }
     if (options->threshold_op != 0)
-        fprintf(stdout, "    threshold exceedance (%d values)\n", options->nb_thresholds);
+        melissa_print(VERBOSE_INFO, "    threshold exceedance (%d values)\n", options->nb_thresholds);
     if (options->quantile_op != 0)
-        fprintf(stdout, "    quantiles (%d values)\n", options->nb_quantiles);
+        melissa_print(VERBOSE_INFO, "    quantiles (%d values)\n", options->nb_quantiles);
     if (options->sobol_op != 0)
-        fprintf(stdout, "    sobol indices\n");
+        melissa_print(VERBOSE_INFO, "    sobol indices\n");
 //    if (options->restart != 0)
 //        fprintf(stdout, "using options.save restart file\n");
-    fprintf(stdout, "Melissa launcher node name: %s\n", options->launcher_name);
-    fprintf(stdout, "Checkpoint every %g seconds\n", options->check_interval);
-    fprintf(stdout, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
+    melissa_print(VERBOSE_DEBUG, "Melissa launcher node name: %s\n", options->launcher_name);
+    melissa_print(VERBOSE_INFO, "Checkpoint every %g seconds\n", options->check_interval);
+    melissa_print(VERBOSE_DEBUG, "Wait time for simulation message before timeout: %d seconds\n", options->timeout_simu);
+    melissa_print(VERBOSE_INFO, "Melissa verbosity: %d\n", options->verbose_lvl);
 }
 
 /**
@@ -395,12 +398,14 @@ void melissa_get_options (int                 argc,
                                 { "restart",        required_argument, NULL, 'r' },
                                 { "samplingsize",   required_argument, NULL, 's' },
                                 { "timesteps",      required_argument, NULL, 't' },
+                                { "verbosity",      required_argument, NULL, 'v' },
+                                { "verbose",        required_argument, NULL, 'v' },
                                 { "timeout",        required_argument, NULL, 'w' },
                                 { NULL,             0,                 NULL,  0  }};
 
     do
     {
-        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:w:", longopts, NULL);
+        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:v:w:", longopts, NULL);
 
         switch (opt) {
         case 'r':
@@ -451,6 +456,9 @@ void melissa_get_options (int                 argc,
         case 'c':
             options->check_interval = atof (optarg);
             break;
+        case 'v':
+            options->verbose_lvl = atoi (optarg);
+            break;
         case 'w':
             options->timeout_simu = atof (optarg);
             break;
@@ -469,6 +477,7 @@ void melissa_get_options (int                 argc,
 
     } while (opt != -1);
 
+    init_verbose_lvl (options->verbose_lvl);
     melissa_check_options (options);
 
     return;

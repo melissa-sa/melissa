@@ -48,6 +48,7 @@ melissa_simulation_t* add_simulation()
     simu->timeout = 0;
     simu->last_message = 0.0;
     sprintf (simu->job_id, "0");
+    simu->job_status = -1;
 
     return simu;
 }
@@ -110,7 +111,7 @@ int check_timeouts (vector_t *simulations,
             {
                 simu_ptr->timeout = 1;
                 detected_timeouts += 1;
-                fprintf (stdout, "timeout detected on simulation group %d\n", i);
+                melissa_print (VERBOSE_WARNING, "Timeout detected on simulation group %d\n", i);
                 simu_ptr->last_message = 0;
                 simu_ptr->status = 0;
             }
@@ -165,4 +166,83 @@ void send_timeouts (int       detected_timeouts,
             }
         }
     }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function parses messages from launcher
+ *
+ *******************************************************************************
+ *
+ * @param[in] msg message from launcher
+ * number of timeouts detected
+ *
+ * @param[in] *simulations
+ * pointer to the simulation vector
+ *
+ *******************************************************************************/
+
+void process_txt_message (char      msg[255],
+                          vector_t *simulations)
+{
+    melissa_simulation_t *simu_ptr;
+    int                   simu_id, i;
+    const char            s[2] = " ";
+    char                 *temp_char;
+
+    temp_char = strtok (msg, s);
+    if (0 == strcmp(temp_char, "job"))
+    {
+        temp_char = strtok (NULL, s);
+        simu_id = atoi(temp_char);
+        if (simu_id > simulations->size)
+        {
+            for (i=simulations->size; i<simu_id; i++)
+            {
+                vector_add (simulations, add_simulation());
+            }
+        }
+        simu_ptr = vector_get (simulations, simu_id);
+        temp_char = strtok (NULL, s);
+        strcpy(simu_ptr->job_id, temp_char);
+        simu_ptr->job_status = 0;
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function counts the number of simulations in a given job status
+ *
+ *******************************************************************************
+ *
+ * @param[in] *simulations
+ * pointer to the simulation vector
+ *
+ * @param[in] job_status
+ * the job status to count
+ *
+ *******************************************************************************/
+
+int count_job_status(vector_t *simulations,
+                      int       job_status)
+{
+    melissa_simulation_t *simu_ptr;
+    int                   i;
+    int                   nb_simu = 0;
+
+    for (i=0; i<simulations->size; i++)
+    {
+        simu_ptr = vector_get (simulations, i);
+        if (simu_ptr->job_status == job_status)
+        {
+            nb_simu +=1;
+        }
+    }
+    return nb_simu;
 }

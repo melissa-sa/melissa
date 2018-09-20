@@ -66,7 +66,7 @@ void compute_stats (melissa_data_t  *data,
 
     if (data->is_valid != 1)
     {
-        fprintf (stderr, "ERROR: data structure not valid (compute_stats)\n");
+        melissa_print (VERBOSE_ERROR, "Data structure not valid (compute_stats)\n");
         exit (1);
     }
 
@@ -85,7 +85,7 @@ void compute_stats (melissa_data_t  *data,
     if (test_bit (data->step_simu.items[group_id], time_step) != 0)
     {
         // Time step already computed, message ignored.
-        fprintf (stderr, "Warning: allready computed time step (simulation %d, time step %d)\n", group_id, time_step);
+        melissa_print (VERBOSE_WARNING,  "Allready computed time step (simulation %d, time step %d)\n", group_id, time_step);
         return;
     }
 
@@ -133,7 +133,7 @@ void compute_stats (melissa_data_t  *data,
     {
         if (nb_vect != data->options->nb_parameters + 2)
         {
-            fprintf (stderr, "ERROR: invalid vector number (compute_stats)\n");
+            melissa_print (VERBOSE_ERROR, "Invalid vector number (compute_stats)\n");
             exit (1);
         }
         data->increment_sobol (&(data->sobol_indices[time_step]),

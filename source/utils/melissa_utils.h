@@ -38,6 +38,11 @@
 #define MAX_FIELD_NAME 128 /**< Define name size if not defined */
 #endif
 
+#define VERBOSE_ERROR 0   /**< display only errors  */
+#define VERBOSE_WARNING 1 /**< display errors and warnings  */
+#define VERBOSE_INFO 2    /**< display usefull messages */
+#define VERBOSE_DEBUG 3   /**< display all messages */
+
 void melissa_logo ();
 
 void* melissa_malloc (size_t size);
@@ -59,6 +64,11 @@ void melissa_connect (void *socket,
 double melissa_get_time ();
 
 void melissa_get_node_name (char *node_name);
+
+void init_verbose_lvl(int verbose_level);
+
+void melissa_print (int         msg_type,
+                    const char* format, ...);
 
 void set_bit (int32_t *vect, int pos);
 

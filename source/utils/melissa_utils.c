@@ -36,75 +36,78 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
+#include<stdarg.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
 #include <zmq.h>
 #include "melissa_utils.h"
 
+static int verbose_lvl; /**< verbosity lvl requested by user */
+
 static void print_zmq_error(int         ret,
                             const char* port_name)
 {
-    fprintf(stderr,"ERROR on port (%s)\n", port_name);
+    fprintf(stdout,"ERROR on port (%s):\n", port_name);
     if (ret == EINVAL)
     {
-        fprintf(stderr, "The endpoint supplied is invalid.\n");
+        fprintf(stdout, "  The endpoint supplied is invalid.\n");
     }
     else if (ret == EPROTONOSUPPORT)
     {
-        fprintf(stderr, "The requested transport protocol is not supported.\n");
+        fprintf(stdout, "  The requested transport protocol is not supported.\n");
     }
     else if (ret == ENOCOMPATPROTO)
     {
-        fprintf(stderr, "The requested transport protocol is not compatible with the socket type.\n");
+        fprintf(stdout, "  The requested transport protocol is not compatible with the socket type.\n");
     }
     else if (ret == EADDRINUSE)
     {
-        fprintf(stderr, "The requested address is already in use.\n");
+        fprintf(stdout, "  The requested address is already in use.\n");
     }
     else if (ret == EADDRNOTAVAIL)
     {
-        fprintf(stderr, "The requested address was not local.\n");
+        fprintf(stdout, "  The requested address was not local.\n");
     }
     else if (ret == ENODEV)
     {
-        fprintf(stderr, "The requested address specifies a nonexistent interface.\n");
+        fprintf(stdout, "  The requested address specifies a nonexistent interface.\n");
     }
     else if (ret == ETERM)
     {
-        fprintf(stderr, "The ZeroMQ context associated with the specified socket was terminated.\n");
+        fprintf(stdout, "  The ZeroMQ context associated with the specified socket was terminated.\n");
     }
     else if (ret == ENOTSOCK)
     {
-        fprintf(stderr, "The provided socket was invalid.\n");
+        fprintf(stdout, "  The provided socket was invalid.\n");
     }
     else if (ret == EMTHREAD)
     {
-        fprintf(stderr, "No I/O thread is available to accomplish the task.\n");
+        fprintf(stdout, "  No I/O thread is available to accomplish the task.\n");
     }
     else if (ret == EAGAIN)
     {
-        fprintf(stderr, "Non-blocking mode was requested and the message cannot be sent at the moment.\n");
+        fprintf(stdout, "  Non-blocking mode was requested and the message cannot be sent at the moment.\n");
     }
     else if (ret == ENOTSUP)
     {
-        fprintf(stderr, "The zmq_send() operation is not supported by this socket type\n");
+        fprintf(stdout, "  The zmq_send() operation is not supported by this socket type\n");
     }
     else if (ret == EFSM)
     {
-        fprintf(stderr, "The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
+        fprintf(stdout, "  The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
     }
     else if (ret == EINTR)
     {
-        fprintf(stderr, "The operation was interrupted by delivery of a signal before the message was sent.\n");
+        fprintf(stdout, "  The operation was interrupted by delivery of a signal before the message was sent.\n");
     }
     else if (ret == EHOSTUNREACH)
     {
-        fprintf(stderr, "The message cannot be routed.\n");
+        fprintf(stdout, "  The message cannot be routed.\n");
     }
     else
     {
-        fprintf(stderr, "Unknown error.\n");
+        fprintf(stdout, "  Unknown error.\n");
     }
     exit(0);
 }
@@ -122,14 +125,14 @@ static void print_zmq_error(int         ret,
 
 void melissa_logo ()
 {
-    fprintf (stdout, "\n");
-    fprintf (stdout, "  _    _   ____   _      _    ____   ____   ___    \n");
-    fprintf (stdout, " | \\  / | |  __| | |    | |  / ___| / ___| |   \\   \n");
-    fprintf (stdout, " |  \\/  | | |_   | |    | | ( (__  ( (__   | |\\ \\  \n");
-    fprintf (stdout, " |      | |  _|  | |    | |  \\__ \\  \\__ \\  | |_\\ \\ \n");
-    fprintf (stdout, " | |\\/| | | |__  | |__  | |  ___) ) ___) ) |  ___ \\\n");
-    fprintf (stdout, " |_|  |_| |____| |____| |_| |____/ |____/  |_|   \\/\n");
-    fprintf (stdout, "  \n");
+    melissa_print (VERBOSE_INFO, "\n");
+    melissa_print (VERBOSE_INFO, "  _    _   ____   _      _    ____   ____   ___    \n");
+    melissa_print (VERBOSE_INFO, " | \\  / | |  __| | |    | |  / ___| / ___| |   \\   \n");
+    melissa_print (VERBOSE_INFO, " |  \\/  | | |_   | |    | | ( (__  ( (__   | |\\ \\  \n");
+    melissa_print (VERBOSE_INFO, " |      | |  _|  | |    | |  \\__ \\  \\__ \\  | |_\\ \\ \n");
+    melissa_print (VERBOSE_INFO, " | |\\/| | | |__  | |__  | |  ___) ) ___) ) |  ___ \\\n");
+    melissa_print (VERBOSE_INFO, " |_|  |_| |____| |____| |_| |____/ |____/  |_|   \\/\n");
+    melissa_print (VERBOSE_INFO, "  \n");
 }
 
 /**
@@ -154,7 +157,7 @@ void* melissa_malloc (size_t size)
     ptr = malloc (size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR melissa_malloc failed\n");
+        fprintf (stdout, "ERROR melissa_malloc failed\n");
         exit(0);
     }
     else
@@ -190,7 +193,7 @@ void* melissa_calloc (size_t num,
     ptr = calloc (num, size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR melissa_calloc failed\n");
+        fprintf (stdout, "ERROR melissa_calloc failed\n");
         exit(0);
     }
     else
@@ -225,7 +228,7 @@ void* melissa_realloc (void   *ptr,
     ptr = realloc (ptr, size);
     if (ptr == NULL)
     {
-        fprintf (stderr, "ERROR melissa_realloc failed\n");
+        fprintf (stdout, "ERROR melissa_realloc failed\n");
         exit(0);
     }
     else
@@ -384,6 +387,67 @@ void melissa_get_node_name (char *node_name)
 //#else
         gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
 //#endif // BUILD_WITH_MPI
+    }
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * init verbose lvl
+ *
+ *******************************************************************************
+ *
+ * @param[in] *verbose_level
+ * The requested verbose level for melissa_print
+ *
+ *******************************************************************************/
+
+void init_verbose_lvl (int verbose_level)
+{
+    verbose_lvl = verbose_level;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_utils
+ *
+ * Print a message depending on the verbose level
+ *
+ *******************************************************************************
+ *
+ * @param[in] *msg_priority
+ * The level of priority for this message
+ *
+ * @param[out] *format
+ * The format of the message to output
+ *
+ *******************************************************************************/
+
+void melissa_print (int msg_priority, const char* format, ...)
+{
+    va_list args;
+    char* msg;
+
+
+    if (msg_priority <= verbose_lvl)
+    {
+        msg = melissa_malloc(strlen (format) + 10);
+        if (msg_priority == VERBOSE_ERROR)
+            strcpy(msg, "ERROR:   ");
+        else if (msg_priority == VERBOSE_WARNING)
+            strcpy(msg, "WARNING: ");
+        else if (msg_priority == VERBOSE_INFO)
+            strcpy(msg, "");
+        else if (msg_priority >= VERBOSE_DEBUG)
+            strcpy(msg, "");
+        msg = strcat(msg, format);
+        va_start (args, format);
+        vprintf (msg, args);
+        va_end(args);
+        melissa_free(msg);
     }
 }
 

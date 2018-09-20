@@ -152,7 +152,7 @@ int main( int argc, char **argv )
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon);
     // The result is u
     // melissa_send_no_mpi is called at each iteration to send u to the server.
-    melissa_send_no_mpi(&n, field_name, u, &simu_id);
+    melissa_send_no_mpi(field_name, u);
   }
 
   // write results on disk

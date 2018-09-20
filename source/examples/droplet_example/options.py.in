@@ -369,6 +369,8 @@ STUDY_OPTIONS['field_names'] = ["WATER_DEPTH_____",
 STUDY_OPTIONS['simulation_timeout'] = 40    # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 30   # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_FLOWVR"
+STUDY_OPTIONS['verbosity'] = 2                          # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
+STUDY_OPTIONS['batch_size'] = 1
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

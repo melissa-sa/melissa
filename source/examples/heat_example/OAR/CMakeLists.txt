@@ -14,20 +14,10 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+add_subdirectory(scripts)
 
-find_python_module(matplotlib)
-#if (PY_MATPLOTLIB)
-#  set(HEAT_VISU "heat_visu")
-#else (PY_MATPLOTLIB)
-  set(HEAT_VISU "None")
-#endif (PY_MATPLOTLIB)
-file(GLOB
-     SCRIPTS_SRC
-     RELATIVE
-     ${CMAKE_CURRENT_SOURCE_DIR}
-     *.py
-     )
-foreach( _file ${SCRIPTS_SRC})
-    configure_file(${_file} ${_file} @ONLY)
-    install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/scripts/${_file} DESTINATION share/examples/heat_example/scripts)
-endforeach()
+configure_file(options.py.in options.py @ONLY)
+configure_file(README.txt.in README.txt @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/options.py DESTINATION ${EXAMPLES_DIR}/heat_example/OAR)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/README.txt DESTINATION ${EXAMPLES_DIR}/heat_example/OAR)

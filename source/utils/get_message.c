@@ -39,10 +39,10 @@ typedef struct cmessage_s cmessage_t;
 
 void get_node_name (char *node_name);
 void init_context();
-void bind_message_rcv();
-void bind_message_snd();
-void connect_message_rcv(char* node_name);
-void connect_message_snd(char* node_name);
+void bind_message_rcv(char* port_number);
+void bind_message_snd(char* port_number);
+void connect_message_rcv(char* node_name, char* port_number);
+void connect_message_snd(char* node_name, char* port_number);
 void wait_message(char* msg);
 void send_message(char* msg);
 void close_message();
@@ -87,48 +87,48 @@ void init_context ()
     message.context = zmq_ctx_new ();
 }
 
-void bind_message_rcv()
+void bind_message_rcv(char* port_number)
 {
     int rcv_timeout = 1000; // miliseconds
     char name[255];
     message.message_puller = zmq_socket (message.context, ZMQ_PULL);
     zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
-    sprintf (name, "tcp://*:%d", PORT_NUMBER);
+    sprintf (name, "tcp://*:%s", port_number);
     melissa_bind (message.message_puller, name);
 }
 
-void connect_message_rcv(char* node_name)
+void connect_message_rcv(char* node_name, char* port_number)
 {
     int rcv_timeout = 1000; // miliseconds
     char name[255];
     message.message_puller = zmq_socket (message.context, ZMQ_PULL);
     zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
-    sprintf (name, "tcp://%s:%d", node_name, PORT_NUMBER+1);
+    sprintf (name, "tcp://%s:%s", node_name, port_number);
     melissa_connect (message.message_puller, name);
 }
 
-void bind_message_snd()
+void bind_message_snd(char* port_number)
 {
     int snd_timeout = 1000; // miliseconds
     char name[255];
-    message.message_pusher = zmq_socket (message.context, ZMQ_PUSH);
+    message.message_pusher = zmq_socket (message.context, ZMQ_PUB);
     zmq_setsockopt (message.message_pusher, ZMQ_SNDTIMEO, &snd_timeout, sizeof(int));
     zmq_setsockopt (message.message_pusher, ZMQ_LINGER, &snd_timeout, sizeof(int));
-    sprintf (name, "tcp://*:%d", PORT_NUMBER);
+    sprintf (name, "tcp://*:%s", port_number);
     melissa_bind (message.message_pusher, name);
 }
 
-void connect_message_snd(char* node_name)
-{
-    int snd_timeout = 1000; // miliseconds
-    char name[255];
-    message.message_pusher = zmq_socket (message.context, ZMQ_PUSH);
-    zmq_setsockopt (message.message_pusher, ZMQ_SNDTIMEO, &snd_timeout, sizeof(int));
-    zmq_setsockopt (message.message_pusher, ZMQ_LINGER, &snd_timeout, sizeof(int));
-    sprintf (name, "tcp://%s:%d", node_name, PORT_NUMBER+1);
-    fprintf (stdout, "connecting launcher to %s\n", name);
-    melissa_connect (message.message_pusher, name);
-}
+//void connect_message_snd(char* node_name, char* port_number)
+//{
+//    int snd_timeout = 1000; // miliseconds
+//    char name[255];
+//    message.message_pusher = zmq_socket (message.context, ZMQ_PUSH);
+//    zmq_setsockopt (message.message_pusher, ZMQ_SNDTIMEO, &snd_timeout, sizeof(int));
+//    zmq_setsockopt (message.message_pusher, ZMQ_LINGER, &snd_timeout, sizeof(int));
+//    sprintf (name, "tcp://%s:%s", node_name, port_number);
+//    fprintf (stdout, "connecting launcher to %s\n", name);
+//    melissa_connect (message.message_pusher, name);
+//}
 
 void wait_message(char* msg)
 {

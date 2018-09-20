@@ -25,6 +25,8 @@
 #ifndef MELISSA_API_NO_MPI_H
 #define MELISSA_API_NO_MPI_H
 
+#include "@ZEROMQ_INCLUDE_DIR@/zmq.h"
+
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
 #define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
 #define MELISSA_COUPLING_ZMQ 0     /**< ZeroMQ coupling */
@@ -36,10 +38,8 @@ void melissa_init_no_mpi(const char *field_name,
                          const int  *simu_id,
                          const int  *coupling);
 
-void melissa_send_no_mpi(const int  *time_step,
-                         const char *field_name,
-                         double     *send_vect,
-                         const int  *simu_id);
+void melissa_send_no_mpi(const char *field_name,
+                         double     *send_vect);
 
 void melissa_finalize(void);
 

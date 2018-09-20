@@ -45,6 +45,10 @@ struct melissa_field_s /**< Structure for a linked list of output fields */
 
 typedef struct melissa_field_s melissa_field_t; /**< type corresponding to field_s */
 
+
+void melissa_get_output_lib(char* lib_name,
+                            char* func_name);
+
 void melissa_get_fields (int               argc,
                          char            **argv,
                          melissa_field_t   fields[],
@@ -64,10 +68,9 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
-                          melissa_options_t *options
-#ifdef BUILD_WITH_PROBES
-                          , double *write_time
-#endif // BUILD_WITH_PROBES
-                          );
+                          melissa_options_t *options,
+                          double *write_time);
+
+void melissa_close_output_lib();
 
 #endif // MELISSA_FIELDS_H

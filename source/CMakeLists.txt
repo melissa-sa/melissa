@@ -14,9 +14,27 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-project(Melissa C CXX Fortran)
+if (POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif (POLICY CMP0048)
+
+# disable in-source builds
+set(CMAKE_DISABLE_SOURCE_CHANGES ON)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+if(${srcdir} STREQUAL ${bindir})
+    message("You are attempting to build in your source Directory.")
+    message("You must run cmake from a build directory.")
+endif(${srcdir} STREQUAL ${bindir})
+
+project(Melissa VERSION 0.4.0 LANGUAGES C CXX Fortran)
 
 cmake_minimum_required(VERSION 3.2.2)
+
+get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
+get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+
 include(CTest)
 include(FindPackageHandleStandardArgs)
 
@@ -41,11 +59,12 @@ function(find_python_module module)
         find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
 
-set(ALL_SRCS )
-set(ALL_INCS )
+# The project version number.
+SET(PROJECT_VERSION “${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}”)
 
 option(INSTALL_ZMQ OFF)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
 
@@ -55,11 +74,15 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-find_package(PkgConfig REQUIRED)
+#find_package(PkgConfig REQUIRED)
 
 #find_package(PythonLibs)
-find_package(PythonInterp REQUIRED)
-message(STATUS "Python found")
+find_package(PythonInterp 2 REQUIRED)
+
+message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} found")
+if(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "2")
+    message(ERROR "Melissa needs Python 2")
+endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "2")
 find_python_module(numpy REQUIRED)
 
 # BLAS #
@@ -82,80 +105,37 @@ endif(BUILD_EXAMPLES)
 
 # ZeroMQ #
 
-
-#if(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-#  set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
-#  message(STATUS "ZeroMQ Found")
-#else(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-#  option(INSTALL_ZMQ "Download and install ZeroMQ" ON)
-#  message(STATUS "ZeroMQ not found")
-#endif(EXISTS ${ZMQ_DIR}/lib/pkgconfig)
-
-#set(INSTALL_ZMQ OFF CACHE BOOL "Download and install ZeroMQ" FORCE)
-
-
-if(INSTALL_ZMQ)
-  include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
-  ExternalProject_Add(ZeroMQ
-#    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
-    URL https://github.com/zeromq/libzmq/archive/v4.2.2.tar.gz
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}/ZeroMQ
-  )
-  set(ZMQ_DIR ${CMAKE_INSTALL_PREFIX}/ZeroMQ CACHE FORCE " ")
-#  mark_as_advanced(FORCE ZMQ_DIR)
-  set(ZMQ_STATIC_LIBRARY ${ZMQ_DIR}/lib/libzmq-static.a CACHE INTERNAL " ")
-  set(ZMQ_LIBRARY ${ZMQ_DIR}/lib/libzmq.so CACHE INTERNAL " ")
-  set(ZMQ_INCLUDE_DIR ${ZMQ_DIR}/include CACHE INTERNAL " ")
-  set ( ZMQ_LIBRARIES ${ZMQ_LIBRARY} )
-  set ( ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR} )
-  include_directories( ${ZMQ_INCLUDE_DIRS} )
-  set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${ZMQ_DIR}/lib/pkgconfig" )
-  find_package_handle_standard_args ( ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
-else(INSTALL_ZMQ)
-    find_path ( ZMQ_INCLUDE_DIR zmq.h )
-    find_library ( ZMQ_LIBRARY NAMES zmq )
-    set ( ZMQ_LIBRARIES ${ZMQ_LIBRARY} )
-    set ( ZMQ_INCLUDE_DIRS ${ZMQ_INCLUDE_DIR} )
-    include_directories( ${ZMQ_INCLUDE_DIRS} )
-    # handle the QUIETLY and REQUIRED arguments and set ZMQ_FOUND to TRUE
-    # if all listed variables are TRUE
-    find_package_handle_standard_args ( ZMQ DEFAULT_MSG ZMQ_LIBRARY ZMQ_INCLUDE_DIR)
-endif(INSTALL_ZMQ)
-if(NOT ZMQ_FOUND)
-    message(FATAL_ERROR "ZeroMQ not found:")
-else(NOT ZMQ_FOUND)
-    get_filename_component(ZMQ_LIB_DIR ${ZMQ_LIBRARY} DIRECTORY)
-    get_filename_component(ZMQ_DIR ${ZMQ_LIB_DIR} DIRECTORY)
-    set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${ZMQ_LIBRARIES})
-endif(NOT ZMQ_FOUND)
+find_package(ZeroMQ)
 
 # MPI #
 
 option(BUILD_WITH_MPI "Build with MPI" ON)
 
 if(BUILD_WITH_MPI)
-  find_package(MPI)
-  if(MPI_FOUND)
-    set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${MPI_LIBRARIES} mpi)
-    add_definitions( -DBUILD_WITH_MPI )
-    include_directories( ${MPI_INCLUDE_PATH} )
-    add_definitions(${MPI_Fortran_COMPILE_FLAGS})
-    include_directories(${MPI_Fortran_INCLUDE_PATH})
-    link_directories(${MPI_Fortran_LIBRARIES})
-    set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${MPI_Fortran_LIBRARIES} )
-    message(STATUS "MPI Found")
-    if(NOT MPI_Fortran_FOUND)
-        find_package(MPI REQUIRED)
-    endif(NOT MPI_Fortran_FOUND)
-  else(MPI_FOUND)
-    # Disable  Option if missing dependencies
-    set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-    message(STATUS "MPI missing. BUILD_WITH_MPI option turned OFF")
-  endif(MPI_FOUND)
+  find_package(MPI QUIET)
+  if(MPI_C_FOUND AND MPI_Fortran_FOUND)
+      set(EXTRA_LIBS ${EXTRA_LIBS}
+                     ${MPI_LIBRARIES} mpi)
+      add_definitions( -DBUILD_WITH_MPI )
+      include_directories( ${MPI_INCLUDE_PATH} )
+      add_definitions(${MPI_Fortran_COMPILE_FLAGS})
+      include_directories(${MPI_Fortran_INCLUDE_PATH})
+      link_directories(${MPI_Fortran_LIBRARIES})
+      set(EXTRA_LIBS ${EXTRA_LIBS}
+                     ${MPI_Fortran_LIBRARIES} )
+      message(STATUS "MPI Found")
+  else(MPI_C_FOUND AND MPI_Fortran_FOUND)
+      # Disable  Option if missing dependencies
+      set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
+      if(NOT MPI_Fortran_FOUND)
+          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
+          message(STATUS "MPI Fortran missing. BUILD_WITH_MPI option turned OFF")
+      endif(NOT MPI_Fortran_FOUND)
+      if(NOT MPI_C_FOUND)
+          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
+          message(STATUS "MPI C missing. BUILD_WITH_MPI option turned OFF")
+      endif(NOT MPI_C_FOUND)
+  endif(MPI_C_FOUND AND MPI_Fortran_FOUND)
 endif(BUILD_WITH_MPI)
 
 # OpenMP #
@@ -226,99 +206,32 @@ else(DOXYGEN_FOUND)
   option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
 endif(DOXYGEN_FOUND)
 
-# Probes #
-
-option(BUILD_WITH_PROBES "Set probes for bench" ON)
-if(BUILD_WITH_PROBES)
-    add_definitions( -DBUILD_WITH_PROBES )
-endif(BUILD_WITH_PROBES)
-
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
-set(UTILS_C ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c
-            ${PROJECT_SOURCE_DIR}/utils/vector.c )
-set(ALL_SRCS ${ALL_SRCS} ${UTILS_C})
-set(UTILS_H ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h
-            ${PROJECT_SOURCE_DIR}/utils/vector.h )
-set(ALL_INCS ${ALL_INCS} ${UTILS_H})
-set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/utils/melissa_utils.c ${PROJECT_SOURCE_DIR}/utils/melissa_utils.h")
-
-include_directories("${PROJECT_SOURCE_DIR}/utils")
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/utils")
 
 add_subdirectory(utils)
 
-set(ALL_API melissa_api.c
-            melissa_api.h
-            melissa_api_no_mpi.h)
-foreach( _file ${ALL_API})
-  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/api/${_file}" )
-endforeach()
-
-include_directories(AFTER "${PROJECT_SOURCE_DIR}/api")
+include_directories(AFTER "${CMAKE_BINARY_DIR}/api")
 
 add_subdirectory(api)
-
-set(STATS_C covariance.c
-            variance.c
-            mean.c
-            general_moments.c
-            min_max.c
-            sobol.c
-            threshold.c
-            quantile.c)
-set(ALL_SRCS ${ALL_SRCS} ${STATS_C})
-set(STATS_H covariance.h
-            variance.h
-            mean.h
-            general_moments.h
-            min_max.h
-            sobol.h
-            threshold.h
-            quantile.h)
-set(ALL_INCS ${ALL_INCS} ${STATS_H})
-foreach( _file ${STATS_C} ${STATS_H})
-  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/stats/${_file}" )
-endforeach()
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")
 
 add_subdirectory(stats)
 
-set(SERVER_SRC compute_stats.c
-               melissa_fields.c
-               melissa_data.c
-               melissa_io.c
-               melissa_options.c
-               server_helper.c
-               fault_tolerance.c)
-set(ALL_SRCS ${ALL_SRCS} ${SERVER_SRC})
-set(SERVER_H compute_stats.h
-             melissa_fields.h
-             melissa_data.h
-             melissa_io.h
-             melissa_options.h
-             server.h
-             fault_tolerance.h)
-set(ALL_INCS ${ALL_INCS} ${SERVER_H})
-foreach( _file ${SERVER_SRC} ${SERVER_H})
-  set(DOX_SOURCES "${DOX_SOURCES} ${PROJECT_SOURCE_DIR}/server/${_file}" )
-endforeach()
-
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
-#add_subdirectory(launcher.old)
-
 add_subdirectory(launcher)
 
-#add_subdirectory(launcher_saturne)
-
-#add_subdirectory(gui)
+add_subdirectory(output)
 
 add_subdirectory(tests)
 
 if(BUILD_EXAMPLES)
+    set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
   add_subdirectory(examples)
 endif(BUILD_EXAMPLES)
 
@@ -328,7 +241,7 @@ install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL
 
 if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
-    message(FATAL_ERROR "Doxygen needed to build the documentation. Please install it correctly")
+    message(SEND_ERROR "Doxygen needed to build the documentation. Please install it correctly")
   endif(NOT DOXYGEN_FOUND)
 
   # Configure the Template Doxyfile for our project
@@ -337,6 +250,23 @@ if(BUILD_DOCUMENTATION)
                  ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
   # Add a custom target to run Doxygen when ever the project is built
   add_custom_target(docs ALL
-    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile
-    SOURCES ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
+                    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                    COMMENT "Generating API documentation with Doxygen"
+                    VERBATIM )
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/doc)
 endif(BUILD_DOCUMENTATION)
+
+set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
+
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(${PROJECT_NAME}Config.cmake.in
+                              "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+                              INSTALL_DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+                                 VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
+                                 COMPATIBILITY AnyNewerVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+              DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})

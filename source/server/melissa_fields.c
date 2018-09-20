@@ -25,12 +25,42 @@
  *
  **/
 
+#include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <dlfcn.h>
 #include "melissa_fields.h"
 #include "melissa_data.h"
 #include "melissa_io.h"
 #include "compute_stats.h"
+
+void (*write_stats)(melissa_data_t**,
+                    melissa_options_t*,
+                    comm_data_t*,
+                    char*);
+void* output_lib;
+
+void melissa_get_output_lib(char* lib_name,
+                            char* func_name)
+{
+    write_stats = NULL;
+    melissa_print (VERBOSE_DEBUG, "open lib %s\n", lib_name);
+    output_lib = dlopen(lib_name, RTLD_NOW);
+    if (output_lib == NULL)
+    {
+        fprintf(stdout, "ERROR: Cannot load output library\n");
+        exit(1);
+    }
+    melissa_print (VERBOSE_DEBUG, "load func  %s\n", func_name);
+    write_stats = dlsym(output_lib, func_name);
+    if (write_stats == NULL)
+    {
+        fprintf(stdout, "ERROR: Cannot load output function\n");
+        exit(1);
+    }
+}
 
 /**
  *******************************************************************************
@@ -114,8 +144,8 @@ void melissa_get_fields (int               argc,
  *******************************************************************************/
 
 void add_fields (melissa_field_t *fields,
-                int              data_size,
-                int              nb_fields)
+                 int              data_size,
+                 int              nb_fields)
 {
     int i, j;
     for (j=0; j<nb_fields; j++)
@@ -169,7 +199,7 @@ int get_field_id(melissa_field_t fields[],
     }
     else
     {
-        fprintf (stderr, "WARNING: wrong field name (get_field_id)\n");
+        melissa_print (VERBOSE_WARNING, "Wrong field name (get_field_id)\n");
     }
     return -1;
 }
@@ -216,11 +246,10 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
     {
         return NULL;
     }
-    fprintf (stderr, "ERROR: wrong field name (get_data_ptr)\n");
+    melissa_print (VERBOSE_ERROR, "Wrong field name (get_data_ptr)\n");
     return NULL;
 }
 
-#ifdef BUILD_WITH_PROBES
 /**
  *******************************************************************************
  *
@@ -243,35 +272,11 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
  * time counter
  *
  *******************************************************************************/
-#else // BUILD_WITH_PROBES
-/**
- *******************************************************************************
- *
- * @ingroup melissa_fields
- *
- * This function writes the data and frees the fields structure
- *
- *******************************************************************************
- *
- * @param[in] *fields
- * Melissa field array
- *
- * @param[in] *comm_data
- * Melissa communication structure
- *
- * @param[in] *options
- * Melissa options
- *
- *******************************************************************************/
-#endif // BUILD_WITH_PROBES
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
-                          melissa_options_t *options
-#ifdef BUILD_WITH_PROBES
-                          , double *total_write_time
-#endif // BUILD_WITH_PROBES
-                          )
+                          melissa_options_t *options,
+                          double *total_write_time)
 {
     double start_write_time, end_write_time;
     int i, j;
@@ -292,28 +297,28 @@ void finalize_field_data (melissa_field_t   *fields,
             }
         }
 
-#ifdef BUILD_WITH_PROBES
         start_write_time = melissa_get_time();
-#endif // BUILD_WITH_PROBES
         for (j=0; j<options->nb_fields; j++)
         {
 //            write_stats_bin (&(fields[j].stats_data),
 //                             options,
 //                             comm_data,
 //                             fields[j].name);
-            write_stats_txt (&(fields[j].stats_data),
-                             options,
-                             comm_data,
-                             fields[j].name);
+//            write_stats_txt (&(fields[j].stats_data),
+//                             options,
+//                             comm_data,
+//                             fields[j].name);
 //            write_stats_ensight (&(fields[j].stats_data),
 //                                 options,
 //                                 comm_data,
 //                                 fields[j].name);
+            write_stats (&(fields[j].stats_data),
+                         options,
+                         comm_data,
+                         fields[j].name);
         }
-#ifdef BUILD_WITH_PROBES
         end_write_time = melissa_get_time();
         *total_write_time += end_write_time - start_write_time;
-#endif // BUILD_WITH_PROBES
 
 
         for (j=0; j<options->nb_fields; j++)
@@ -329,4 +334,9 @@ void finalize_field_data (melissa_field_t   *fields,
         }
     }
     return;
+}
+
+void melissa_close_output_lib()
+{
+    dlclose(output_lib);
 }

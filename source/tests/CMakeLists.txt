@@ -16,8 +16,8 @@
 
 
 set(TESTS_LIBS ${EXTRA_LIBS}
-               ${ZMQ_LIBRARY}
-                  m mpi )
+               ${ZEROMQ_LIBRARIES}
+                  m )
 
 #foreach(lang C CXX Fortran)
 #    if(CMAKE_COMPILER_IS_GNU${lang})

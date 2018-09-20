@@ -125,7 +125,7 @@ program heat
     call conjgrad(A, F, U, nx, ny, epsilon, i1, in, np, me, next, previous, comm)
     ! The result is u
     ! melissa_send is called at each iteration to send u to the server.
-    call melissa_send(n, name, u, me, simu_id)
+    call melissa_send(name, u)
   end do
 
   ! write results on disk

@@ -47,30 +47,20 @@
           INTEGER(KIND=C_INT) :: COUPLING
       END SUBROUTINE MELISSA_INIT_NO_MPI
 
-      SUBROUTINE MELISSA_SEND(TIME_STEP,
-     & FIELD_NAME,
-     & SEND_VECT,
-     & RANK,
-     & SIMU_ID)
+      SUBROUTINE MELISSA_SEND(FIELD_NAME,
+     & SEND_VECT)
      & BIND(C, NAME = 'melissa_send')
           USE ISO_C_BINDING, ONLY: C_INT, C_DOUBLE, C_CHAR
-          INTEGER(KIND=C_INT)                 :: TIME_STEP
           CHARACTER(KIND=C_CHAR),DIMENSION(*) :: FIELD_NAME
           REAL(KIND=C_DOUBLE),DIMENSION(*)    :: SEND_VECT
-          INTEGER(KIND=C_INT)                 :: RANK
-          INTEGER(KIND=C_INT)                 :: SIMU_ID
       END SUBROUTINE MELISSA_SEND
 
-      SUBROUTINE MELISSA_SEND_NO_MPI(TIME_STEP,
-     & FIELD_NAME,
-     & SEND_VECT,
-     & SIMU_ID)
+      SUBROUTINE MELISSA_SEND_NO_MPI(FIELD_NAME,
+     & SEND_VECT)
      & BIND(C, NAME = 'melissa_send_no_mpi')
           USE ISO_C_BINDING, ONLY: C_INT, C_DOUBLE, C_CHAR
-          INTEGER(KIND=C_INT)                 :: TIME_STEP
           CHARACTER(KIND=C_CHAR),DIMENSION(*) :: FIELD_NAME
           REAL(KIND=C_DOUBLE),DIMENSION(*)    :: SEND_VECT
-          INTEGER(KIND=C_INT)                 :: SIMU_ID
           END SUBROUTINE MELISSA_SEND_NO_MPI
 
       SUBROUTINE MELISSA_FINALIZE() BIND(C, NAME = 'melissa_finalize')
