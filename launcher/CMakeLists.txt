@@ -16,7 +16,7 @@
 
 configure_file(melissa_launcher.py.in melissa_launcher.py @ONLY)
 #install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-#        DESTINATION share/launcher)
+#        DESTINATION share/melissa/launcher)
 
 install(FILES options.py
         DESTINATION share/melissa/launcher)

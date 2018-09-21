@@ -18,7 +18,7 @@ configure_file(run_server.sh.in run_server.sh @ONLY)
 configure_file(run_simu.sh.in run_simu.sh @ONLY)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/run_server.sh
-    DESTINATION ${EXAMPLES_DIR}/heat_example/OAR/scripts
+    DESTINATION ${EXAMPLES_DIR}/heat_example/study_OAR/scripts
     PERMISSIONS OWNER_WRITE
                 OWNER_READ
                 OWNER_EXECUTE
@@ -27,7 +27,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/run_server.sh
                 WORLD_READ
                 WORLD_EXECUTE)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/run_simu.sh
-    DESTINATION ${EXAMPLES_DIR}/heat_example/OAR/scripts
+    DESTINATION ${EXAMPLES_DIR}/heat_example/study_OAR/scripts
     PERMISSIONS OWNER_WRITE
                 OWNER_READ
                 OWNER_EXECUTE
@@ -36,5 +36,5 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/run_simu.sh
                 WORLD_READ
                 WORLD_EXECUTE)
 
-install(FILES Dockerfile DESTINATION ${EXAMPLES_DIR}/heat_example/OAR/scripts)
-install(FILES oardocker.sh DESTINATION ${EXAMPLES_DIR}/heat_example/OAR/scripts)
+install(FILES Dockerfile DESTINATION ${EXAMPLES_DIR}/heat_example/study_OAR/scripts)
+install(FILES oardocker.sh DESTINATION ${EXAMPLES_DIR}/heat_example/study_OAR/scripts)

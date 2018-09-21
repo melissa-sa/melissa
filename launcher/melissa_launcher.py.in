@@ -36,7 +36,7 @@ def main():
         Import options from command line, and launch Melissa study
     """
     cwd = os.getcwd()
-    sys.path.append('@CMAKE_INSTALL_PREFIX@/share/launcher')
+    sys.path.append('@CMAKE_INSTALL_PREFIX@/share/melissa/launcher')
     if len(sys.argv) == 2:
         options_path = sys.argv[1]
     else:

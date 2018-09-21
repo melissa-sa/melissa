@@ -15,4 +15,4 @@
 ###################################################################
 
 configure_file(flowvr_group.py.in flowvr_group.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/local/scripts/flowvr_group.py DESTINATION ${EXAMPLES_DIR}/heat_example/local/scripts)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/local/scripts/flowvr_group.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_local/scripts)
