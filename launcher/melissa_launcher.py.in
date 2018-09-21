@@ -29,7 +29,12 @@ import os
 import sys
 import signal
 import imp
+import getopt
 signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+def usage():
+    print "Usage:"
+    print "  melissa_launcher -o <path/to/options.py>"
 
 def main():
     """
@@ -37,13 +42,36 @@ def main():
     """
     cwd = os.getcwd()
     sys.path.append('@CMAKE_INSTALL_PREFIX@/share/melissa/launcher')
+
+    options_path = ""
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "ho:", ["help", "option="])
+    except getopt.GetoptError as err:
+        # print help information and exit:
+        print(err) # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+    output = None
+    verbose = False
+    for o, a in opts:
+        if o == "-v":
+            verbose = True
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-o", "--option"):
+            options_path = a
+        else:
+            assert False, "unhandled option"
+
     if len(sys.argv) == 2:
         options_path = sys.argv[1]
-    else:
-        options_path = ""
 
     if not os.path.isfile(options_path+"/options.py"):
         print "ERROR no Melissa Launcher options file given"
+        usage()
+        sys.exit(2)
     else:
         imp.load_source("options", options_path+"/options.py")
         from options import STUDY_OPTIONS as stdy_opt
