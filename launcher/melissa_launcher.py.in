@@ -46,7 +46,7 @@ def main():
     options_path = ""
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:", ["help", "option="])
+        opts, args = getopt.getopt(sys.argv[1:], "ho:", ["help", "options="])
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err) # will print something like "option -a not recognized"
@@ -60,7 +60,7 @@ def main():
         elif o in ("-h", "--help"):
             usage()
             sys.exit()
-        elif o in ("-o", "--option"):
+        elif o in ("-o", "--options"):
             options_path = a
         else:
             assert False, "unhandled option"
