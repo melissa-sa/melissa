@@ -261,10 +261,10 @@ if(BUILD_DOCUMENTATION)
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                     COMMENT "Generating API documentation with Doxygen"
                     VERBATIM )
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/doc)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/melissa/doc)
 endif(BUILD_DOCUMENTATION)
 
-set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/melissa/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
+set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
 
 include(CMakePackageConfigHelpers)
 
