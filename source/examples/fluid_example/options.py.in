@@ -147,16 +147,16 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/fluid_example/STATS'
 STUDY_OPTIONS['nb_parameters'] = 2                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 30                # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 30              # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 75                # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 400.0
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["TempC"]           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 400          # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['simulation_timeout'] = 400           # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 30          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['xml_name'] = "case1.xml"
-STUDY_OPTIONS['saturne_path'] = "path/to/code_saturne"
+STUDY_OPTIONS['saturne_path'] = "Code_Saturne/install/bin"
 STUDY_OPTIONS['verbosity'] = 2
 
 MELISSA_STATS = {}
@@ -168,6 +168,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantiles'] = False
+# This local example does not work for Sobol' indices yet.
 MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}

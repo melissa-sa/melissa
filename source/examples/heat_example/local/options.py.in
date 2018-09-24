@@ -29,7 +29,7 @@ import imp
 from string import Template
 from shutil import copyfile
 
-
+# These variables are only used in this file.
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 EXECUTABLE='heatc'
@@ -37,6 +37,13 @@ NODES_SERVER = 3
 NODES_GROUP = 2
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
+
+# The launch_server functionto put in USER_FUNCTIONS['launch_server'].
+# It takes a Server object as argument, and must set its job_id attribute.
+# Here, we use the PID of the subprocess.
+# The server object provides two important attributes:
+#   path: the path to melissa_server executable
+#   cmd_opt: the options set by the launcher to pass to the server.
 
 def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
@@ -51,12 +58,29 @@ def launch_server(server):
                                       ' &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
+# The launch_group function to put in USER_FUNCTIONS['launch_group'].
+# It is used to launch batches of simulations (or groups of simulation the case of Sobol' indices computation).
+# It takes a Group object as argument, and must set the job ID of the group of simulations in the attribute job_id of the Group object.
+# This object provides three important attributes:
+#   simu_id:
+#   rank
+#   param_set
+# We distinguish three kinds of groups:
+
+# Once we have set the job IDs of our jobs, we can use it to define the fault tolerance functions. In our case, we will use the same function for the server and the simulations. It takes a `Job` object as argument, and sets its `status` attribute to 0 if it is waiting to be scheduled, 1 if it is currently running, or 2 if it is not running anymore. In your local machine, a job will never be have a 0 status, because it is launched immediately when `USER_FUNCTIONS['launch_group']` is called.
+
 def launch_group(group):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))):
         os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
     os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
     copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+
     if MELISSA_STATS['sobol_indices']:
+
+        # Sobol group: In the case of Sobol' indices computation, all the simulations of a Sobol' group must be in the same job.
+        # In that case, simu_id is a list of the simulation IDs inside the Sobol' group (the ones you will pass to melissa_init), and rank is the ID of the group.
+        # param_set is a list of size STUDY_OPTIONS['nb_parameters'] + 2 of numpy arrays of size STUDY_OPTIONS['nb_parameters'], corresponding to the sets of n parameters of the n+2 simulations in the Sobol' group.
+
         command = 'mpirun '
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
@@ -75,7 +99,7 @@ def launch_group(group):
                                group_id=str(group.rank),
                                np_simu=str(int(NODES_GROUP)),
                                nb_param=str(STUDY_OPTIONS['nb_parameters']),
-                               executable='@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE)
+                               executable='@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE)
             file.close()
             file=open("create_group"+str(group_id)+".py", "w")
             file.write(content)
@@ -87,11 +111,17 @@ def launch_group(group):
             group.job_id = subprocess.Popen(command[:-2].split()).pid
 
     elif STUDY_OPTIONS['batch_size'] > 1:
+
+        # Batch of simulations: Multiple simulations are launched in the same job.
+        # In that case, simu_id is a list of the simulation IDs of size STUDY_OPTIONS['batch_size'] (the ones you will pass to melissa_init in your solver), and rank is the ID of the group.
+        # param_set is a list of size STUDY_OPTIONS['batch_size'] of numpy arrays of size STUDY_OPTIONS['nb_parameters'].
+        # The parameter STUDY_OPTIONS['sampling_size'] must be a multiple of STUDY_OPTIONS['batch_size'].
+
         command = 'mpirun '
         for i in range(group.size):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
-                                 '@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
+                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(group.simu_id[i]),
                                  ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
@@ -99,32 +129,45 @@ def launch_group(group):
         group.job_id = subprocess.Popen(command[:-2].split()).pid
 
     else:
+
+        # Single simulation (general case): Every simulation has its own job.
+        # In this case, simu_id and rank are equivalents, and param_set is a numpy array of size STUDY_OPTIONS['nb_parameters'].
+
         if BUILD_WITH_MPI == 'ON':
             command = ' '.join(('mpirun',
                                  '-n',
                                  str(NODES_GROUP),
-                                 '@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
+                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(group.simu_id),
                                  ' '.join(str(i) for i in group.param_set)))
         else:
-            command = ' '.join(('@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
+            command = ' '.join(('@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                 str(0),
                                 str(group.simu_id),
                                 ' '.join(str(i) for i in group.param_set)))
         print command
+
+        # We set the job_id attribute of the Group object.
+
         group.job_id = subprocess.Popen(command.split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
+    # Check the job state:
+    # 0: not runing
+    # 1: running
+    # 2: not running anymore (finished or crashed)
     state = 0
     try:
         subprocess.check_output(["ps",str(job.job_id)])
         state = 1
     except:
         state = 2
+    # we set the job_status attribute of the Job object. Group and Server objects inherite of Job.
     job.job_status = state
 
 def check_load():
+    # We only run one group at a time
     try:
         subprocess.check_output(["pidof",EXECUTABLE])
         return False
@@ -135,6 +178,7 @@ def kill_job(job):
     os.system('kill '+str(job.job_id))
 
 def draw_param_set():
+    # draw a numpy array of size STUDY_OPTIONS['nb_parameters']
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
     for i in range(STUDY_OPTIONS['nb_parameters']):
         param_set[i] = np.random.uniform(0, 1)
@@ -142,7 +186,7 @@ def draw_param_set():
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
-STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/local/STATS'
+STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view

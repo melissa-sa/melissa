@@ -1043,24 +1043,17 @@ void melissa_send (const char *field_name,
  *
  *******************************************************************************
  *
- * @param[in] time_step
- * current time step of the simulation
- *
  * @param[in] *field_name
  * name of the field to send to Melissa Server
  *
  * @param[in] *send_vect
  * local data array to send to the statistic library
  *
- * @param[in] *simu_id
- * ID of the calling simulation
- *
  *******************************************************************************/
 
 void melissa_send_no_mpi (const char *field_name,
                           double     *send_vect)
 {
-    int rank = 0;
     melissa_send (field_name,
                   send_vect);
 }

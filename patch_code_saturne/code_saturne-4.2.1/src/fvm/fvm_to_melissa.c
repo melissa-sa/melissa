@@ -92,8 +92,8 @@ typedef struct {
 
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
-  int          nb_parameters;      /* nb_of variables parameters */
-  int          parameters_tab[2];     /* array of parameters */
+  int          simu_id;            /* simulation ID */
+  int          is_init;            /* Melissa field initialization */
 
 #if defined(HAVE_MPI)
   int          min_rank_step;      /* Minimum rank step */
@@ -141,36 +141,40 @@ _write_block_doubles_l(size_t             n_values,
 {
   static int is_init = 0;
   int n = (int)n_values;
-  static int t = 0;
   int coupling = 1;
-  if (is_init == 0 && 0 == strcmp (c->name, "scalar1"))
+  if (is_init == 0 && c->writer->time_stamp > 0)
   {
-    fprintf (stdout, "Connexion to Mleissa server ...\n");
+//     fprintf (stdout, "Connexion to Mleissa server ...\n");
 #if defined(HAVE_MPI)
-    melissa_init (&n,
-                  &c->writer->n_ranks,
-                  &c->writer->rank,
-                  &c->writer->parameters_tab[0],
-                  &c->writer->parameters_tab[1],
-                  &c->writer->comm,
-                  &coupling);
+    melissa_init(c->name,
+                 &n,
+                 &c->writer->n_ranks,
+                 &c->writer->rank,
+                 &c->writer->simu_id,
+                 &c->writer->comm,
+                 &coupling)
 #else
-    melissa_init_no_mpi (&n);
+    melissa_init_no_mpi(c->name,
+                        &n,
+                        &c->writer->simu_id,
+                        &coupling);
 #endif
-    fprintf (stdout, "Connected\n");
+//     fprintf (stdout, "Connected\n");
     is_init = 1;
   }
   
-  if (c->time_step > 0 && 0 == strcmp (c->name, "scalar1"))
+  if (c->writer->time_stamp > 0)
   {
-    t += 1;
-    melissa_send (&t,
-                  c->name,
-                  values,
-                  &c->writer->rank,
-                  &c->writer->parameters_tab[0],
-                  &c->writer->parameters_tab[1]);
-//     fprintf (stdout, "send_to_stats _write_block_doubles_l, time_step = %d\n",c->time_step);
+#if defined(HAVE_MPI)
+    melissa_send(&(c->writer->time_stamp),
+                 c->name,
+                 values,
+                 &c->writer->rank,
+                 &c->writer->simu_id);
+#else
+    melissa_send_no_mpi(c->name,
+                        values);
+#endif
   }
 }
 
@@ -212,38 +216,26 @@ _field_output_g(void           *context,
   assert(datatype == CS_DOUBLE);
   
   static int is_init = 0;
-  static int t = 0;
   int coupling = 1;
 
-  if (is_init == 0 && 0 == strcmp (c->name, "scalar1"))
+  if (c->writer->is_init == 0 && c->writer->time_stamp > 0)
   {
-    fprintf (stdout, "Connexion to Melissa server ...\n");
-#if defined(HAVE_MPI)
-    melissa_init (&local_vect_size,
-                  &c->writer->n_ranks,
-                  &c->writer->rank,
-                  &c->writer->parameters_tab[0],
-                  &c->writer->parameters_tab[1],
-                  &c->writer->comm,
-                  &coupling);
-#else
-    melissa_init_no_mpi (&local_vect_size);
-#endif
-    fprintf (stdout, "Connected\n");
+//     fprintf (stdout, "Connexion to Melissa server ...\n");
+    melissa_init(c->name,
+                 &local_vect_size,
+                 &c->writer->n_ranks,
+                 &c->writer->rank,
+                 &c->writer->simu_id,
+                 &c->writer->comm,
+                 &coupling);
+//     fprintf (stdout, "Connected\n");
     is_init = 1;
   }
   
-  if (c->time_step > 0 && 0 == strcmp (c->name, "scalar1"))
+  if ( c->writer->time_stamp > 0 )
   {
-    t += 1;
-    int time_step;
-    time_step = t;
-    melissa_send (&time_step,
-                  c->name,
-                  buffer,
-                  &c->writer->rank,
-                  &c->writer->parameters_tab[0],
-                  &c->writer->parameters_tab[1]);
+    melissa_send (c->name,
+                  buffer);
 //     fprintf (stdout, "send_to_stats _field_output_g, time_step = %d\n",c->time_step);
   }
 }
@@ -504,46 +496,33 @@ fvm_to_melissa_init_writer(const char             *name,
 
   /* Parse options */
 
-  if (options != NULL && strlen(options) > 1)
-  {
+  this_writer->simu_id = 0;
 
-  /* Add metadata */
+  if (options != NULL) {
 
-    // fprintf (stdout, "options: %s\n",options);
+    size_t l = strlen(options);
 
-    char       *options_ptr;
-    const char  s[2] = ":";
-    char       *temp_char;
-    int         i;
-      
-      options_ptr = options;
+    if (l > 0) {
 
-      this_writer->parameters_tab[0] = 0;
-      
-      /* get the first token */
-      temp_char = strtok (options, s);
-      i = 0;
-      
-      /* walk through other tokens */
-      while( temp_char != NULL )
-      {
-         this_writer->parameters_tab[i] = atoi (temp_char);
-         i += 1;
-      
-         temp_char = strtok (NULL, s);
-      }
-      
+      /* Add metadata */
+
+      char       *options_c = NULL;
+
+      BFT_MALLOC(options_c, l+1, char);
+      strncpy(options_c, options, l);
+      options_c[l] = '\0';
+      this_writer->simu_id = atoi(options_c);
+
+      BFT_FREE(options_c);
+
     }
-    else
-    {
-      this_writer->parameters_tab[0] = 0;
-      this_writer->parameters_tab[1] = 0;
-    }
-    
+  }
+
+  this_writer->nt_cur = -1;
+  this_writer->time_stamp = 0;
+  this_writer->is_init = 0;
     
   /* Return writer */
-  
-  
 
   return this_writer;
 }
@@ -654,11 +633,6 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 
   const int  rank = w->rank;
   const int  n_ranks = w->n_ranks;
-   
-  if (0 != strcmp ("scalar1", name))
-  {
-      return;
-  }
 
   /* Initialization */
   /*----------------*/

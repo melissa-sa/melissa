@@ -67,7 +67,7 @@ $ oardocker init -e stretch
 
 The image is  initialized in
 
-$HOME/.oardocker/images
+.oardocker/images
 
 As the minimal Debian does not come with some dependencies needed by Melissa, we provide a Melissa
 compliant Dockerfile to replace the base Dockerfile of the images.  copy this file to the base image:
@@ -89,7 +89,7 @@ You can share
 Start a virtual cluster of 3 nodes sharing the melissa
 directory  with the host machine (to avoid having to download and install melissa everytime you start the cluster): 
  
-$ oardocker start -n 3  -v ~/path/to/melissa:/home/docker/melissa
+$ oardocker start -n 3  -v ~/path/to/melissa/on/host/machine:/home/docker/melissa
 
 Connect to the frontend:
 
@@ -112,7 +112,7 @@ Go to the directory @EXAMPLES_DIR@/heat_example/OAR and  run:
 
 $ melissa_launcher . &
 
-To monitor  job execution:
+ To monitor  job execution:
 
 $ oarstat
 

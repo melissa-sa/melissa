@@ -32,7 +32,7 @@ from ctypes import cdll, create_string_buffer
 #from options import STUDY_OPTIONS as stdy_opt
 #from options import MELISSA_STATS as ml_stats
 #from options import USER_FUNCTIONS as usr_func
-imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/launcher/simulation.py')
+imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
 from simulation import MultiSimuGroup
@@ -40,7 +40,7 @@ from simulation import Group
 from simulation import SobolGroup
 from simulation import Job
 
-get_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/share/launcher/libget_message.so')
+melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
 
 # Jobs and executions status
 from simulation import NOT_SUBMITTED
@@ -106,7 +106,7 @@ class Messenger(Thread):
             while self.running_study:
 #                if np.random.rand() < 0.2: print 'r' + 1
                 buff = create_string_buffer('\000' * 256)
-                get_message.wait_message(buff)
+                melissa_message.wait_message(buff)
                 if buff.value != 'nothing':
                     logging.debug('message: '+buff.value)
                 last_server = time.time()
@@ -145,7 +145,7 @@ class Messenger(Thread):
                             server.status = TIMEOUT
                 if (time.time() - last_msg_to_server) > 10:
                     buff.value = 'hello server '+str(time.time())+'\000'
-                    get_message.send_message(buff)
+                    melissa_message.send_message(buff)
                     last_msg_to_server = time.time()
             logging.info('closing messenger thread')
         except:
@@ -187,8 +187,8 @@ class Study(object):
         create_study(self.usr_func)
         self.create_group_list()
         # init zmq context
-        get_message.init_context()
-        get_message.bind_message_rcv("5555")
+        melissa_message.init_context()
+        melissa_message.bind_message_rcv("5555")
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
@@ -211,7 +211,7 @@ class Study(object):
             self.stop()
         server.write_node_name()
         # connect to server
-        get_message.bind_message_snd("5556")
+        melissa_message.bind_message_snd("5556")
         logging.debug('start status checker thread')
         self.state_checker.start()
         for group in groups:
@@ -249,7 +249,7 @@ class Study(object):
         postprocessing(self.usr_func)
         finalize(self.usr_func)
         # finalize zmq context
-        get_message.close_message()
+        melissa_message.close_message()
 
     def check_options(self):
         """
@@ -401,7 +401,7 @@ class Study(object):
                 print '=== Error while restarting server ==='
                 traceback.print_exc()
                 self.stop()
-            get_message.connect_message_snd(server.node_name+'\000')
+            melissa_message.connect_message_snd(server.node_name+'\000')
             logging.info('server start')
             time.sleep(1)
             for group in groups:

@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2016 EDF S.A.
+  Copyright (C) 1998-2018 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -37,15 +37,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 /*----------------------------------------------------------------------------
  * Statistics library header
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
+
+#undef BUILD_WITH_MPI
+#define BUILD_WITH_MPI 1
+
 #include "melissa_api.h"
-#endif
+
+#else
+
 #include "melissa_api_no_mpi.h"
+
+#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -83,7 +90,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * EnSight Gold writer structure
+ * Melissa output writer structure
  *----------------------------------------------------------------------------*/
 
 typedef struct {
@@ -113,9 +120,8 @@ typedef struct {
 
 typedef struct {
 
-  fvm_to_melissa_writer_t  *writer;    /* Pointer to writer structure */
-  int                      time_step;  /* current time_step */
-  const char               *name;      /* current field name */
+  fvm_to_melissa_writer_t  *writer;      /* Pointer to writer structure */
+  const char               *name;        /* current field name */
 
 } _melissa_context_t;
 
@@ -128,7 +134,7 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Write block of a vector of doubles to a CoProcessing stats daemon
+ * Write block of a vector of doubles to Melissa output
  *
  * parameters:
  *   n_values <-- number of values to write
@@ -142,7 +148,6 @@ _write_block_doubles_l(size_t             n_values,
                       const double        values[],
                       _melissa_context_t *c)
 {
-  static int is_init = 0;
   int n = (int)n_values;
   int coupling = 1;
 
@@ -201,8 +206,8 @@ _field_output_g(void           *context,
                 cs_gnum_t       block_end,
                 void           *buffer)
 {
-//   CS_UNUSED(dimension);
-//   CS_UNUSED(component_id);
+  CS_UNUSED(dimension);
+  CS_UNUSED(component_id);
 
   _melissa_context_t *c = context;
 
@@ -233,7 +238,7 @@ _field_output_g(void           *context,
 
 /*----------------------------------------------------------------------------
  * Write field values associated with nodal values of a nodal mesh to
- * an CoProcessing stats daemon in serial mode.
+ * an Melissa output in serial mode.
  *
  * Output fields ar either scalar or 3d vectors or scalars, and are
  * non interlaced. Input arrays may be less than 2d, in which case the z
@@ -268,7 +273,6 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
   int  i;
   size_t  output_size;
   double  *output_buffer;
-  _melissa_context_t *c = context;
 
   int output_dim = fvm_writer_field_helper_field_dim(helper);
 
@@ -292,11 +296,8 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
                                            field_values,
                                            output_buffer,
                                            output_buffer_size,
-                                           &output_size) == 0) {
-      
-        _write_block_doubles_l(output_buffer_size, output_buffer, context);
-
-    }
+                                           &output_size) == 0)
+      _write_block_doubles_l(output_buffer_size, output_buffer, context);
   }
 
   BFT_FREE(output_buffer);
@@ -304,7 +305,7 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
 
 /*----------------------------------------------------------------------------
  * Write field values associated with element values of a nodal mesh to
- * an CoProcessing stats daemon.
+ * an Melissa output.
  *
  * Output fields ar either scalar or 3d vectors or scalars, and are
  * non interlaced. Input arrays may be less than 2d, in which case the z
@@ -325,7 +326,7 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
  *   f                <-- associated file handle
  *----------------------------------------------------------------------------*/
 
-static fvm_writer_section_t *
+static const fvm_writer_section_t *
 _export_field_values_el(const fvm_writer_section_t      *export_section,
                         fvm_writer_field_helper_t       *helper,
                         int                              input_dim,
@@ -340,7 +341,6 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
   size_t  input_size = 0, output_size = 0;
   size_t  min_output_buffer_size = 0, output_buffer_size = 0;
   double  *output_buffer = NULL;
-  _melissa_context_t *c = context;
 
   const fvm_writer_section_t  *current_section = NULL;
 
@@ -385,11 +385,8 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
                                              field_values,
                                              output_buffer,
                                              output_buffer_size,
-                                             &output_size) == 0) {
-      
+                                             &output_size) == 0)
         _write_block_doubles_l(output_buffer_size, output_buffer, context);
-
-      }
 
       current_section = current_section->next;
 
@@ -413,7 +410,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize FVM to CoProcessing stats daemon writer.
+ * Initialize FVM to Melissa output writer.
  *
  * No options are currently handled
  *
@@ -424,7 +421,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
  *   comm           <-- associated MPI communicator.
  *
  * returns:
- *   pointer to opaque CoProcessing stats daemon writer structure.
+ *   pointer to opaque Melissa output writer structure.
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
@@ -442,48 +439,51 @@ fvm_to_melissa_init_writer(const char             *name,
                            fvm_writer_time_dep_t   time_dependency)
 #endif
 {
-  fvm_to_melissa_writer_t  *this_writer = NULL;
+  CS_UNUSED(path);
+  CS_UNUSED(time_dependency);
+
+  fvm_to_melissa_writer_t  *w = NULL;
 
   /* Initialize writer */
 
-  BFT_MALLOC(this_writer, 1, fvm_to_melissa_writer_t);
+  BFT_MALLOC(w, 1, fvm_to_melissa_writer_t);
 
-  BFT_MALLOC(this_writer->name, strlen(name) + 1, char);
-  strcpy(this_writer->name, name);
+  BFT_MALLOC(w->name, strlen(name) + 1, char);
+  strcpy(w->name, name);
 
-  this_writer->rank = 0;
-  this_writer->n_ranks = 1;
+  w->rank = 0;
+  w->n_ranks = 1;
 
 #if defined(HAVE_MPI)
   {
     int mpi_flag, rank, n_ranks, min_rank_step, min_block_size;
     MPI_Comm w_block_comm, w_comm;
-    this_writer->min_rank_step = 1;
-    this_writer->min_block_size = 1024*1024*8;
-    this_writer->block_comm = MPI_COMM_NULL;
-    this_writer->comm = MPI_COMM_NULL;
+    w->min_rank_step = 1;
+    w->min_block_size = 1024*1024*8;
+    w->block_comm = MPI_COMM_NULL;
+    w->comm = MPI_COMM_NULL;
     MPI_Initialized(&mpi_flag);
     if (mpi_flag && comm != MPI_COMM_NULL) {
-      this_writer->comm = comm;
-      MPI_Comm_rank(this_writer->comm, &rank);
-      MPI_Comm_size(this_writer->comm, &n_ranks);
-      this_writer->rank = rank;
-      this_writer->n_ranks = n_ranks;
+      w->comm = comm;
+      MPI_Comm_rank(w->comm, &rank);
+      MPI_Comm_size(w->comm, &n_ranks);
+      w->rank = rank;
+      w->n_ranks = n_ranks;
       cs_file_get_default_comm(&min_rank_step, &min_block_size,
                                &w_block_comm, &w_comm);
       if (comm == w_comm) {
-        this_writer->min_rank_step = min_rank_step;
-        this_writer->min_block_size = min_block_size;
-        this_writer->block_comm = w_block_comm;
+        w->min_rank_step = min_rank_step;
+        w->min_block_size = min_block_size;
+        w->block_comm = w_block_comm;
       }
-      this_writer->comm = comm;
+      w->comm = comm;
     }
   }
 #endif /* defined(HAVE_MPI) */
 
   /* Parse options */
 
-  this_writer->simu_id = 0;
+  w->simu_id = 0;
 
   if (options != NULL) {
 
@@ -498,24 +498,23 @@ fvm_to_melissa_init_writer(const char             *name,
       BFT_MALLOC(options_c, l+1, char);
       strncpy(options_c, options, l);
       options_c[l] = '\0';
-      this_writer->simu_id = atoi(options_c);
+      w->simu_id = atoi(options_c);
 
       BFT_FREE(options_c);
 
     }
   }
 
-  this_writer->nt_cur = -1;
-  this_writer->time_stamp = 0;
-  this_writer->is_init = 0;
-    
+  w->nt_cur = -1;
+  w->time_stamp = 0;
+  w->is_init = 0;
+
   /* Return writer */
-  
-  return this_writer;
+  return w;
 }
 
 /*----------------------------------------------------------------------------
- * Finalize FVM to CoProcessing stats daemon writer.
+ * Finalize FVM to Melissa output writer.
  *
  * parameters:
  *   this_writer_p <-- pointer to opaque Ensight Gold writer structure.
@@ -527,15 +526,13 @@ fvm_to_melissa_init_writer(const char             *name,
 void *
 fvm_to_melissa_finalize_writer(void  *this_writer_p)
 {
-  fvm_to_melissa_writer_t  *this_writer
-                             = (fvm_to_melissa_writer_t *)this_writer_p;
+  fvm_to_melissa_writer_t *w = (fvm_to_melissa_writer_t *)this_writer_p;
   static int disconnected = 0;
- 
-  if (disconnected == 0)
-  {
-    BFT_FREE(this_writer->name);
-    melissa_finalize ();
-    BFT_FREE(this_writer);
+
+  if (disconnected == 0) {
+    BFT_FREE(w->name);
+    melissa_finalize();
+    BFT_FREE(w);
     disconnected = 1;
   }
   return NULL;
@@ -555,10 +552,15 @@ fvm_to_melissa_set_mesh_time(void          *this_writer_p,
                              const int      time_step,
                              const double   time_value)
 {
+  fvm_to_melissa_writer_t  *w = (fvm_to_melissa_writer_t *)this_writer_p;
+  if (time_step > w->nt_cur) {
+    w->nt_cur = time_step;
+    w->time_stamp += 1;
+  }
 }
 
 /*----------------------------------------------------------------------------
- * Write nodal mesh to a an CoProcessing stats daemon
+ * Write nodal mesh to a an Melissa output
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer
@@ -569,10 +571,11 @@ void
 fvm_to_melissa_export_nodal(void               *this_writer_p,
                             const fvm_nodal_t  *mesh)
 {
+
 }
 
 /*----------------------------------------------------------------------------
- * Write field associated with a nodal mesh to a CoProcessing stats daemon.
+ * Write field associated with a nodal mesh to a Melissa output.
  *
  * Assigning a negative value to the time step indicates a time-independent
  * field (in which case the time_value argument is unused).
@@ -611,7 +614,6 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
                             const void      *const field_values[])
 {
   int   output_dim;
-//   fvm_to_melissa_case_file_info_t  file_info;
 
   const fvm_writer_section_t  *export_section = NULL;
   fvm_writer_field_helper_t   *helper = NULL;
@@ -620,27 +622,25 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 
   const int  rank = w->rank;
   const int  n_ranks = w->n_ranks;
-   
-  if (0 != strcmp ("scalar1", name))
-  {
-      return;
+
+  if (time_step > w->nt_cur) {
+    w->nt_cur = time_step;
+    w->time_stamp += 1;
   }
+  else if (time_step < w->nt_cur)
+    return;
 
   /* Initialization */
   /*----------------*/
-  //printf("fvm_to_melissa_export_field rank %d\n", rank);
-  /* Dimension */
 
   output_dim = dimension;
   if (dimension != 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Data of dimension %d not handled"), dimension);
+    return; /* currently handled only for scalars */
 
   /* Initialize writer helper */
   /*--------------------------*/
 
   /* Build list of sections that are used here, in order of output */
-  //printf("fvm_writer_export_list\n");
   export_list = fvm_writer_export_list(mesh,
                                        fvm_nodal_get_max_entity_dim(mesh),
                                        true,
@@ -649,7 +649,6 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
                                        true,
                                        false,
                                        false);
-  //printf("fvm_writer_field_helper_create\n");
 
   helper = fvm_writer_field_helper_create(mesh,
                                           export_list,
@@ -661,7 +660,6 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1)
-    printf("fvm_writer_field_helper_init_g\n");
     fvm_writer_field_helper_init_g(helper,
                                    w->min_rank_step,
                                    w->min_block_size,
@@ -669,45 +667,33 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 
 #endif
 
-//   /* Part header */
-// 
-//   _write_string(f, "part");
-//   _write_int(f, part_num);
-  //printf("_melissa_context_t init\n");
   _melissa_context_t c;
   c.writer = w;
-  c.time_step = time_step;
   c.name = name;
 
   /* Per node variable */
   /*-------------------*/
 
   if (location == FVM_WRITER_PER_NODE) {
-    //printf("location = FVM_WRITER_PER_NODE\n");
-//     _write_string(f, "coordinates");
 
 #if defined(HAVE_MPI)
 
-    if (n_ranks > 1) {
-    //    printf("fvm_writer_field_helper_output_n\n");
-        fvm_writer_field_helper_output_n(helper,
-                                         &c,
-                                         mesh,
-                                         dimension,
-                                         interlace,
-                                         NULL,
-                                         n_parent_lists,
-                                         parent_num_shift,
-                                         datatype,
-                                         field_values,
-                                         _field_output_g);
-
-    }
+    if (n_ranks > 1)
+      fvm_writer_field_helper_output_n(helper,
+                                       &c,
+                                       mesh,
+                                       dimension,
+                                       interlace,
+                                       NULL,
+                                       n_parent_lists,
+                                       parent_num_shift,
+                                       datatype,
+                                       field_values,
+                                       _field_output_g);
 
 #endif /* defined(HAVE_MPI) */
 
     if (n_ranks == 1)
-   //   printf("_export_field_values_nl\n");
       _export_field_values_nl(mesh,
                               helper,
                               dimension,
@@ -723,7 +709,6 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
   /*----------------------*/
 
   else if (location == FVM_WRITER_PER_ELEMENT) {
-    //printf("location = FVM_WRITER_PER_ELEMENT\n");
     export_section = export_list;
 
     while (export_section != NULL) {
@@ -732,8 +717,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 
 #if defined(HAVE_MPI)
 
-      if (n_ranks > 1) {
-   //     printf("fvm_writer_field_helper_output_e\n");
+      if (n_ranks > 1)
         export_section = fvm_writer_field_helper_output_e(helper,
                                                           &c,
                                                           export_section,
@@ -746,12 +730,9 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
                                                           field_values,
                                                           _field_output_g);
 
-      }
-
 #endif /* defined(HAVE_MPI) */
 
       if (n_ranks == 1)
- //       printf("_export_field_values_el\n");
         export_section = _export_field_values_el(export_section,
                                                  helper,
                                                  dimension,
@@ -768,9 +749,7 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
 
   /* Free helper structures */
   /*------------------------*/
-  //printf("fvm_writer_field_helper_destroy\n");
   fvm_writer_field_helper_destroy(&helper);
-  //printf("BFT_FREE\n");
   BFT_FREE(export_list);
 }
 

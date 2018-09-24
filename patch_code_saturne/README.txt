@@ -15,3 +15,9 @@ in src/fvm/Makefile.in, line 634, replace <path_to_melissa_install> by the path 
 Download and extract code_saturn-4.3.1 tarball
 copy the files from this repository to the code_saturne-4.3.1 folder
 install code_saturn normaly
+
+2) code_saturn-5.2.0
+
+copy the files from this repository to the code_saturne-5.2.0 folder
+Add --with-melissa=ON when doing configure
+install code_saturn normaly

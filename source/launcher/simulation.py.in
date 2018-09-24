@@ -26,7 +26,7 @@ import subprocess
 import logging
 from threading import RLock
 from ctypes import cdll, create_string_buffer
-get_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/share/launcher/libget_message.so')
+melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
 
 # Jobs and executions status
 
@@ -125,7 +125,7 @@ class Group(Job):
             exit()
         self.job_status = PENDING
         self.status = WAITING
-        get_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
+        melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
 
     def check_job(self):
         """
@@ -337,7 +337,7 @@ class Server(Job):
                 logging.error('error bad option: no threshold value given')
                 return
         buff = create_string_buffer('\000' * 256)
-        get_message.get_node_name(buff)
+        melissa_message.get_node_name(buff)
         self.cmd_opt = ' '.join(('-o', op_str,
                                  '-p', str(Job.stdy_opt['nb_parameters']),
                                  '-s', str(Job.stdy_opt['sampling_size']),
