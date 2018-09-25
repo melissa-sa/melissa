@@ -97,7 +97,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_op        = 0;
     options->sobol_order     = 0;
     options->restart         = 0;
-    options->verbose_lvl     = VERBOSE_INFO;
+    options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
     sprintf (options->restart_dir, ".");

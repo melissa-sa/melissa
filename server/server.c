@@ -703,7 +703,7 @@ int main (int argc, char **argv)
             melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
             melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
         }
-        melissa_print (VERBOSE_INFO, "\n");
+//        melissa_print (VERBOSE_INFO, " \n");
     }
 
     melissa_close_output_lib();

@@ -426,23 +426,43 @@ void init_verbose_lvl (int verbose_level)
  *
  *******************************************************************************/
 
-void melissa_print (int msg_priority, const char* format, ...)
+void melissa_print (int msg_priority, const char* func_name, const char* format, ...)
 {
     va_list args;
     char* msg;
 
-
     if (msg_priority <= verbose_lvl)
     {
-        msg = melissa_malloc(strlen (format) + 10);
-        if (msg_priority == VERBOSE_ERROR)
+        msg = melissa_malloc(strlen (format) + strlen (func_name) + 12);
+        if (msg_priority == MELISSA_ERROR)
+        {
             strcpy(msg, "ERROR:   ");
-        else if (msg_priority == VERBOSE_WARNING)
+            msg = strcat(msg, func_name);
+            msg = strcat(msg, ":");
+        }
+        else if (msg_priority == MELISSA_WARNING)
+        {
             strcpy(msg, "WARNING: ");
-        else if (msg_priority == VERBOSE_INFO)
+            msg = strcat(msg, func_name);
+            msg = strcat(msg, ":");
+        }
+        else if (msg_priority == MELISSA_INFO)
+        {
             strcpy(msg, "");
-        else if (msg_priority >= VERBOSE_DEBUG)
-            strcpy(msg, "");
+            if (verbose_lvl > MELISSA_INFO)
+            {
+                strcpy(msg, "INFO:    ");
+                msg = strcat(msg, func_name);
+                msg = strcat(msg, ":");
+            }
+        }
+        else if (msg_priority >= MELISSA_DEBUG)
+        {
+            strcpy(msg, "DEBUG:   ");
+            msg = strcat(msg, func_name);
+            msg = strcat(msg, ":");
+        }
+        msg = strcat(msg, " ");
         msg = strcat(msg, format);
         va_start (args, format);
         vprintf (msg, args);

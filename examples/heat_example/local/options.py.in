@@ -197,7 +197,7 @@ STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted i
 STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 1
+STUDY_OPTIONS['batch_size'] = 3
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
