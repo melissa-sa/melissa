@@ -24,6 +24,7 @@
  **/
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -71,21 +72,24 @@ void flowvr_close();
 
 struct global_data_s
 {
-    void    *context;             /**< ZeroMQ context                                             */
-    void    *connexion_requester; /**< connexion ZeroMQ port                                      */
-    void   **sobol_requester;     /**< data ZeroMQ Sobol port                                     */
-    int      rinit_tab[4];        /**< array used to receive data                                 */
-    int      sobol;               /**< 1 if sobol computation, 0 otherwhise                       */
-    int      rank;                /**< mpi rank                                                 */
-    int      sobol_rank;          /**< sobol rank                                                 */
-    int      sample_id;           /**< parameters sample id                                       */
-    int      nb_proc_server;      /**< number of MPI processes of the library                     */
-    int      nb_parameters;       /**< number of parameters of the study                          */
-    char    *buffer;              /**< buffer used to send data to the library                    */
-    double  *buffer_sobol;        /**< buffer used to store data on sobol rank 0                  */
-    int      buff_size;           /**< size of sobol buffer                                       */
-    int      coupling;            /**< coupling method                                            */
-    MPI_Comm comm_sobol;          /**< inter-groups communicator                                  */
+    void    *context;               /**< ZeroMQ context                            */
+    void    *connexion_requester;   /**< connexion ZeroMQ port                     */
+    void    *deconnexion_requester; /**< connexion ZeroMQ port                     */
+    void   **sobol_requester;       /**< data ZeroMQ Sobol port                    */
+    int      rinit_tab[4];          /**< array used to receive data                */
+    int      sobol;                 /**< 1 if sobol computation, 0 otherwhise      */
+    MPI_Comm comm;                  /**< simulation mpi communicator               */
+    int      rank;                  /**< mpi rank in comm                          */
+    int      comm_size;             /**< mpi comm size                             */
+    int      sobol_rank;            /**< sobol rank                                */
+    int      sample_id;             /**< parameters sample id                      */
+    int      nb_proc_server;        /**< number of MPI processes of the library    */
+    int      nb_parameters;         /**< number of parameters of the study         */
+    char    *buffer;                /**< buffer used to send data to the library   */
+    double  *buffer_sobol;          /**< buffer used to store data on sobol rank 0 */
+    int      buff_size;             /**< size of sobol buffer                      */
+    int      coupling;              /**< coupling method                           */
+    MPI_Comm comm_sobol;            /**< inter-groups communicator                 */
 };
 
 typedef struct global_data_s global_data_t; /**< type corresponding to global_data_s */
@@ -419,7 +423,10 @@ void melissa_init (const char *field_name,
         global_data.buff_size = 0;
         global_data.context = zmq_ctx_new ();
         global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
+        global_data.deconnexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
         global_data.sobol_requester = NULL;
+        global_data.comm_size = *comm_size;
+        MPI_Comm_dup(*comm, &global_data.comm);
     }
 
     // get main server node name
@@ -458,6 +465,8 @@ void melissa_init (const char *field_name,
         memcpy (buf_ptr, simu_id, sizeof(int));
         sprintf (port_name, "tcp://%s:2003", server_node_name);
         melissa_connect (global_data.connexion_requester, port_name);
+        sprintf (port_name, "tcp://%s:2002", server_node_name);
+        melissa_connect (global_data.deconnexion_requester, port_name);
         ret = zmq_msg_send (&msg, global_data.connexion_requester, 0);
         if (ret == -1)
         {
@@ -475,6 +484,7 @@ void melissa_init (const char *field_name,
         buf_ptr = zmq_msg_data (&msg);
         memcpy(global_data.rinit_tab, buf_ptr, 4 * sizeof(int));
         buf_ptr += 4 * sizeof(int);
+        zmq_msg_close (&msg);
     }
 
     // init data structure
@@ -1069,7 +1079,48 @@ void melissa_send_no_mpi (const char *field_name,
 
 void melissa_finalize (void)
 {
-    int i;
+    int        i, temp, ret;
+    zmq_msg_t  msg;
+
+    if (global_data.rank == 0)
+    {
+        i = 0;
+        while (i<2)
+        {
+            melissa_print (VERBOSE_DEBUG, "Group %d ready to disconnect \n", global_data.sample_id);
+            zmq_msg_init_size (&msg, sizeof(int));
+            memcpy (zmq_msg_data (&msg), &global_data.sample_id, sizeof(int));
+            ret = zmq_msg_send (&msg, global_data.deconnexion_requester, 0);
+            if (ret == -1)
+            {
+                ret = errno;
+                print_zmq_error(ret);
+            }
+            zmq_msg_close (&msg);
+            melissa_print (VERBOSE_DEBUG, "Group %d waiting... \n", global_data.sample_id);
+            zmq_msg_init (&msg);
+            ret = zmq_msg_recv (&msg, global_data.deconnexion_requester, 0);
+            if (ret == -1)
+            {
+                ret = errno;
+                print_zmq_error(ret);
+            }
+            memcpy(&i, zmq_msg_data (&msg), sizeof(int));
+            zmq_msg_close (&msg);
+            melissa_print (VERBOSE_DEBUG, "Group status: %d \n", i);
+            if (i==1)
+            {
+                sleep(2);
+            }
+        }
+    }
+    zmq_close (global_data.deconnexion_requester);
+#ifdef BUILD_WITH_MPI
+    if (global_data.comm_size > 1)
+    {
+        MPI_Barrier(global_data.comm);
+    }
+#endif // BUILD_WITH_MPI
 
 #ifdef BUILD_WITH_FLOWVR
     if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_FLOWVR)
@@ -1090,9 +1141,9 @@ void melissa_finalize (void)
     }
 
     free_field_data(field_data);
-    melissa_print(VERBOSE_DEBUG, "Free ZMQ context...\n");
+    melissa_print(VERBOSE_INFO, "Free ZMQ context...\n");
     zmq_ctx_term (global_data.context);
-    melissa_print(VERBOSE_DEBUG, "Free ZMQ context OK\n");
+    melissa_print(VERBOSE_INFO, "Free ZMQ context OK\n");
     free (node_names);
 
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)

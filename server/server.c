@@ -63,7 +63,7 @@ int main (int argc, char **argv)
     void                 *context = zmq_ctx_new ();
     char                  node_name[MPI_MAX_PROCESSOR_NAME];
     void                 *connexion_responder = zmq_socket (context, ZMQ_REP);
-    void                 *init_responder = zmq_socket (context, ZMQ_REP);
+    void                 *deconnexion_responder = zmq_socket (context, ZMQ_REP);
     void                 *data_puller = zmq_socket (context, ZMQ_PULL);
     void                 *text_puller = zmq_socket (context, ZMQ_SUB);
     void                 *text_pusher = zmq_socket (context, ZMQ_PUSH);
@@ -174,7 +174,7 @@ int main (int argc, char **argv)
     if (comm_data.rank == 0)
     {
         melissa_print (VERBOSE_INFO, "Server connected to launcher\n");
-        melissa_bind (init_responder, "tcp://*:2002");
+        melissa_bind (deconnexion_responder, "tcp://*:2002");
         melissa_bind (connexion_responder, "tcp://*:2003");
 
         node_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * comm_data.comm_size);
@@ -262,9 +262,10 @@ int main (int argc, char **argv)
         zmq_pollitem_t items [] = {
             { text_puller, 0, ZMQ_POLLIN, 0 },
             { connexion_responder, 0, ZMQ_POLLIN, 0 },
-            { data_puller, 0, ZMQ_POLLIN, 0 }
+            { data_puller, 0, ZMQ_POLLIN, 0 },
+            { deconnexion_responder, 0, ZMQ_POLLIN, 0 }
         };
-        zmq_poll (items, 3, 100);
+        zmq_poll (items, 4, 100);
         end_wait_time = melissa_get_time();
         total_wait_time += end_wait_time - start_wait_time;
 
@@ -498,15 +499,18 @@ int main (int argc, char **argv)
 
             if (simu_ptr->status == 2)
             {
-                nb_finished_simulations += 1;
-                if (comm_data.rank == 0)
+                if (comm_data.rank != 0)
                 {
-                    melissa_print(VERBOSE_DEBUG, "Simulation %d finished\n", group_id);
-                    melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", nb_finished_simulations, simulations.size);
+                    nb_finished_simulations += 1;
                 }
+//                if (comm_data.rank == 0)
+//                {
+//                    melissa_print(VERBOSE_DEBUG, "Simulation %d finished\n", group_id);
+//                    melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", nb_finished_simulations, simulations.size);
+//                }
             }
             // === Send a message to the Python master in case of simulation status update === //
-            if (old_simu_state != simu_ptr->status && comm_data.rank == 0)
+            if (old_simu_state != simu_ptr->status && comm_data.rank == 0 && simu_ptr->status == 1)
             {
                 sprintf (txt_buffer, "group_state %d %d", group_id, simu_ptr->status);
                 melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
@@ -523,6 +527,36 @@ int main (int argc, char **argv)
             }
             buf_ptr = NULL;
             zmq_msg_close (&msg);
+        }
+
+        if (items[3].revents & ZMQ_POLLIN)
+        {
+            if (comm_data.rank == 0)
+            {
+                start_comm_time = melissa_get_time();
+                zmq_msg_init (&msg);
+                zmq_msg_recv (&msg, deconnexion_responder, 0);
+                memcpy(&group_id, zmq_msg_data (&msg), sizeof(int));
+                zmq_msg_close (&msg);
+                melissa_print (VERBOSE_DEBUG, "Group %d ask to disconnect \n", group_id);
+                // simulation wants to disconnect
+                simu_ptr = simulations.items[group_id];
+                zmq_msg_init_size (&msg, sizeof(int));
+                memcpy (zmq_msg_data (&msg), &simu_ptr->status, sizeof(int));
+                zmq_msg_send (&msg, deconnexion_responder, 0);
+                end_comm_time = melissa_get_time();
+                total_comm_time += end_comm_time - start_comm_time;
+                if (simu_ptr->status == 2)
+                {
+                    sprintf (txt_buffer, "group_state %d %d", group_id, simu_ptr->status);
+                    melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
+                    zmq_send(text_pusher, txt_buffer, strlen(txt_buffer), 0);
+                    simu_ptr->status = 3;
+                    nb_finished_simulations += 1;
+                    melissa_print(VERBOSE_INFO, "Simulation %d finished\n", group_id);
+                    melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", nb_finished_simulations, simulations.size);
+                }
+            }
         }
 
 //        if (iteration % 100 == 0)
@@ -677,7 +711,7 @@ int main (int argc, char **argv)
     // === Sockets deconnexion === //
 
     zmq_close (connexion_responder);
-    zmq_close (init_responder);
+    zmq_close (deconnexion_responder);
     zmq_close (data_puller);
 
     if (comm_data.rank == 0 && end_signal == 0)
