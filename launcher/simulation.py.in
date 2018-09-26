@@ -348,6 +348,8 @@ class Server(Job):
                                  '-w', str(Job.stdy_opt['simulation_timeout']),
                                  '-f', field_str,
                                  '-v', str(Job.stdy_opt['verbosity']),
+                                 '--txt_push_port', str(Job.stdy_opt['recv_port']),
+                                 '--txt_pull_port', str(Job.stdy_opt['send_port']),
                                  '-n', str(buff.value)))
 
     def launch(self):

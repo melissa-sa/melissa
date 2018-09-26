@@ -162,11 +162,11 @@ int main (int argc, char **argv)
     // === Open launcher ports === //
     i = 10000; // linger
 
-    sprintf (txt_buffer, "tcp://%s:5555", melissa_options.launcher_name);
+    sprintf (txt_buffer, "tcp://%s:%d", melissa_options.launcher_name, melissa_options.txt_push_port);
     zmq_setsockopt (text_pusher, ZMQ_LINGER, &i, sizeof(int));
     melissa_connect (text_pusher, txt_buffer);
 
-    sprintf (txt_buffer, "tcp://%s:5556", melissa_options.launcher_name);
+    sprintf (txt_buffer, "tcp://%s:%d", melissa_options.launcher_name, melissa_options.txt_pull_port);
     zmq_setsockopt (text_puller, ZMQ_LINGER, &i, sizeof(int));
     zmq_setsockopt(text_puller, ZMQ_SUBSCRIBE, "", 0);
     melissa_connect (text_puller, txt_buffer);
