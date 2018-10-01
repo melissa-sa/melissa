@@ -31,29 +31,59 @@ import sys
 import signal
 import imp
 import getopt
+import numpy as np
 import ctypes
 
-melissa_server = ctypes.CDLL('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_server4py.so')
+melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/')
+
+c_char_ptr = ctypes.POINTER(ctypes.c_char)
+c_char_ptr_ptr = ctypes.POINTER(c_char_ptr)
+c_double_ptr = ctypes.POINTER(ctypes.c_double)
+c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
+
+class simulation_data(ctypes.Structure):
+    _fields_ = [("simu_id", ctypes.c_int),
+                ("time_stamp", ctypes.c_int),
+                ("first_init", ctypes.c_int),
+                ("end", ctypes.c_int),
+                ("val", c_double_ptr),
+                ("val_size", ctypes.c_int)]
 
 def main():
 
-    LP_c_char = ctypes.POINTER(ctypes.c_char)
-    LP_LP_c_char = ctypes.POINTER(LP_c_char)
+    simu_data_ptr = ctypes.POINTER(simulation_data)
 
     melissa_server.melissa_server_init.argtypes = (ctypes.c_int, # argc
-                                                   LP_LP_c_char) # argv
+                                                   c_char_ptr_ptr, # argv
+                                                   c_void_ptr_ptr)
+
+    melissa_server.melissa_server_run.argtypes = (c_void_ptr_ptr,
+                                                  simu_data_ptr)
+
+    melissa_server.melissa_server_finalize.argtypes = (c_void_ptr_ptr,
+                                                       simu_data_ptr)
 
     argc = len(sys.argv)
-    argv = (LP_c_char * (argc + 1))()
+    argv = (c_char_ptr * (argc + 1))()
     for i, arg in enumerate(sys.argv):
         enc_arg = arg.encode('utf-8')
         argv[i] = ctypes.create_string_buffer(enc_arg)
 
     handle = ctypes.c_void_p()
+    data = simulation_data()
 
-    melissa_server.melissa_server_init(argc, argv, ctypes.byref(handle))
-    melissa_server.melissa_server_run(ctypes.byref(handle))
-    melissa_server.melissa_server_finalize(ctypes.byref(handle))
+    melissa_server.melissa_server_init(argc,
+                                       argv,
+                                       ctypes.byref(handle))
+
+    while getattr(data, 'end') != 1:
+        melissa_server.melissa_server_run(ctypes.byref(handle),
+                                          ctypes.byref(data))
+        if getattr(data, 'first_init') != 1:
+            new_np_array = np.ctypeslib.as_array(getattr(data, 'val'), shape=(getattr(data, 'val_size'),))
+
+    melissa_server.melissa_server_finalize(ctypes.byref(handle),
+                                           ctypes.byref(data))
 
 if __name__ == '__main__':
     main()

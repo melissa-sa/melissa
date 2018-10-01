@@ -248,7 +248,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
 }
 
-void melissa_server_run (void **server_handle)
+void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 {
     melissa_server_t     *server_ptr;
     int                   simu_id, group_id, i;
@@ -265,6 +265,8 @@ void melissa_server_run (void **server_handle)
     melissa_data_t       *data_ptr = NULL;
 
     server_ptr = *server_handle;
+    simu_data->first_init = 0;
+    simu_data->end = 0;
 
     // =================== //
     // ===  Main loop  === //
@@ -390,6 +392,8 @@ void melissa_server_run (void **server_handle)
                        server_ptr->melissa_options.nb_fields);
 
             server_ptr->first_init = 0;
+            simu_data->first_init = 1;
+            return;
         }
 
         // === Data reception and statistics computation === //
@@ -404,15 +408,20 @@ void melissa_server_run (void **server_handle)
             server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
 
             memcpy(&time_step, buf_ptr, sizeof(int));
+            memcpy(&simu_data->time_stamp, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&group_id, buf_ptr, sizeof(int));
+            memcpy(&simu_data->simu_id, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&recv_vect_size, buf_ptr, sizeof(int));
+            memcpy(&simu_data->val_size, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
+            simu_data->val = melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
+            memcpy(simu_data->val, buf_ptr, recv_vect_size*sizeof(double));
             field_name_ptr = buf_ptr;
             new_data = 1;
 
@@ -646,13 +655,19 @@ void melissa_server_run (void **server_handle)
 
         if (server_ptr->nb_finished_simulations >= server_ptr->melissa_options.sampling_size)
         {
+            simu_data->end = 1;
+            break;
+        }
+
+        if (new_data == 1)
+        {
             break;
         }
     }
 
 }
 
-void melissa_server_finalize (void** server_handle)
+void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data)
 {
     melissa_server_t *server_ptr;
     double            interval1, interval_tot;
@@ -660,6 +675,8 @@ void melissa_server_finalize (void** server_handle)
     char              txt_buffer[MPI_MAX_PROCESSOR_NAME];
 
     server_ptr = *server_handle;
+
+    melissa_free (simu_data->val);
 
     for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
     {
@@ -760,9 +777,13 @@ void melissa_server_finalize (void** server_handle)
 int main (int argc, char **argv)
 {
     void* melissa_server_ptr;
+    simulation_data_t simu_data;
     melissa_server_init (argc, argv, &melissa_server_ptr);
-    melissa_server_run (&melissa_server_ptr);
-    melissa_server_finalize (&melissa_server_ptr);
+    while (simu_data.end != 1)
+    {
+        melissa_server_run (&melissa_server_ptr, &simu_data);
+    }
+    melissa_server_finalize (&melissa_server_ptr, &simu_data);
 
     return 0;
 }

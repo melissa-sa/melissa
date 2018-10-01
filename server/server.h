@@ -83,11 +83,23 @@ struct melissa_server_s
 
 typedef struct melissa_server_s melissa_server_t; /**< type corresponding to melissa_server_s */
 
+struct simulation_data_s
+{
+    int     simu_id;
+    int     time_stamp;
+    int     first_init;
+    int     end;
+    double *val;
+    int     val_size;
+};
+
+typedef struct simulation_data_s simulation_data_t; /**< type corresponding to simulation_data_s */
+
 void melissa_server_init (int argc, char **argv, void **melissa_server_ptr);
 
-void melissa_server_run (void **melissa_server_ptr);
+void melissa_server_run (void **melissa_server_ptr, simulation_data_t *simu_data);
 
-void melissa_server_finalize (void **melissa_server_ptr);
+void melissa_server_finalize (void **melissa_server_ptr, simulation_data_t *simu_data);
 
 int check_simu_state(melissa_field_t *field,
                      int              nb_fields,

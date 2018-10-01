@@ -53,6 +53,7 @@ def launch_server(server):
     #server.job_id = subprocess.Popen(('mpirun ' +
                                       #' -n '+str(NODES_SERVER) +
                                       #' ' + server.path +
+                                      #'/melissa_server ' +
     server.job_id = subprocess.Popen(('python ' + server.path +
                                       '/melissa_server.py ' +
                                       server.cmd_opt +
