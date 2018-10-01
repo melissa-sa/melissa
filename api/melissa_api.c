@@ -550,8 +550,18 @@ void melissa_init (const char *field_name,
         init_verbose_lvl (global_data.rinit_tab[3]);
         if (global_data.sobol == 1)
         {
+            melissa_get_node_name (master_node_name);
             global_data.sobol_rank = *simu_id % (global_data.rinit_tab[2] +2);
             global_data.sample_id = *simu_id / (global_data.rinit_tab[2]+2);
+
+            // write master node name node name
+            if (*rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ)
+            {
+                sprintf (port_name, "master_name%d.txt", global_data.sample_id);
+                file = fopen(port_name, "w");
+                fputs(master_node_name, file);
+                fclose(file);
+            }
         }
         else
         {
@@ -582,7 +592,6 @@ void melissa_init (const char *field_name,
     {
         memcpy(node_names, buf_ptr, global_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char));
         buf_ptr = NULL;
-        zmq_msg_close (&msg);
     }
 
 #ifdef BUILD_WITH_MPI
@@ -620,7 +629,6 @@ void melissa_init (const char *field_name,
             // get Sobol master node name
             if (global_data.sobol_rank == 0)
             {
-                melissa_get_node_name (master_node_name);
                 if (*rank == 0)
                 {
                     master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
@@ -638,14 +646,8 @@ void melissa_init (const char *field_name,
 #endif // BUILD_WITH_MPI
             }
 
-            sprintf (port_name, "../../DATA/master_name.txt");
+            sprintf (port_name, "master_name%d.txt", global_data.sample_id);
             file = fopen(port_name, "r");
-
-            if (file == NULL)
-            {
-                sprintf (port_name, "master_name.txt");
-                file = fopen(port_name, "r");
-            }
             if (file != NULL)
             {
                 fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
@@ -653,10 +655,20 @@ void melissa_init (const char *field_name,
             }
             else
             {
-                strcpy (master_node_name, "localhost");
-                if (global_data.sobol_rank == 0 && *rank == 0)
+                sleep(1);
+                file = fopen(port_name, "r");
+                if (file != NULL)
                 {
-                    melissa_print(VERBOSE_WARNING, "Group %d master name set to \"localhost\"\n", global_data.sample_id);
+                    fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
+                    fclose(file);
+                }
+                else
+                {
+                    strcpy (master_node_name, "localhost");
+                    if (global_data.sobol_rank == 0 && *rank == 0)
+                    {
+                        melissa_print(VERBOSE_WARNING, "Group %d master name set to \"localhost\"\n", global_data.sample_id);
+                    }
                 }
             }
             if (global_data.sobol_rank == 0)
