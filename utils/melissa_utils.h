@@ -25,6 +25,10 @@
 #ifndef MELISSA_UTILS_H
 #define MELISSA_UTILS_H
 
+#if BUILD_WITH_MPI == 0
+#undef BUILD_WITH_MPI
+#endif // BUILD_WITH_MPI
+
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI

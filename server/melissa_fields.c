@@ -36,6 +36,7 @@
 #include "melissa_io.h"
 #include "compute_stats.h"
 
+#if MELISSA4PY != 1
 void (*write_stats)(melissa_data_t**,
                     melissa_options_t*,
                     comm_data_t*,
@@ -50,6 +51,7 @@ void melissa_get_output_lib(char* lib_name,
     output_lib = dlopen(lib_name, RTLD_NOW);
     if (output_lib == NULL)
     {
+        perror("cannot load library:");
         fprintf(stdout, "ERROR: Cannot load output library\n");
         exit(1);
     }
@@ -61,6 +63,7 @@ void melissa_get_output_lib(char* lib_name,
         exit(1);
     }
 }
+#endif // MELISSA4PY
 
 /**
  *******************************************************************************
@@ -297,6 +300,7 @@ void finalize_field_data (melissa_field_t   *fields,
             }
         }
 
+#if MELISSA4PY != 1
         start_write_time = melissa_get_time();
         for (j=0; j<options->nb_fields; j++)
         {
@@ -319,7 +323,7 @@ void finalize_field_data (melissa_field_t   *fields,
         }
         end_write_time = melissa_get_time();
         *total_write_time += end_write_time - start_write_time;
-
+#endif // MELISSA4PY
 
         for (j=0; j<options->nb_fields; j++)
         {
@@ -336,7 +340,9 @@ void finalize_field_data (melissa_field_t   *fields,
     return;
 }
 
+#if MELISSA4PY != 1
 void melissa_close_output_lib()
 {
     dlclose(output_lib);
 }
+#endif // MELISSA4PY

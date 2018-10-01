@@ -22,6 +22,10 @@
  *
  **/
 
+#if BUILD_WITH_MPI == 0
+#undef BUILD_WITH_MPI
+#endif // BUILD_WITH_MPI
+
 #ifndef MEAN_H
 #define MEAN_H
 #ifdef BUILD_WITH_MPI

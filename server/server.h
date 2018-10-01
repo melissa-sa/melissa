@@ -24,12 +24,70 @@
 
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
+#include <zmq.h>
 #include "melissa_fields.h"
 #include "melissa_data.h"
 #include "melissa_utils.h"
+#include "fault_tolerance.h"
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
+
+struct melissa_server_s
+{
+    melissa_options_t     melissa_options;
+    melissa_field_t      *fields;
+    comm_data_t           comm_data;
+    int                   port_no;
+    char                 *node_names;
+    int                   rinit_tab[2];
+    char                  node_name[MPI_MAX_PROCESSOR_NAME];
+    void                 *context;
+    void                 *connexion_responder;
+    void                 *deconnexion_responder;
+    void                 *data_puller;
+    void                 *text_puller;
+    void                 *text_pusher;
+    int                   first_init;
+    int                  *first_send;
+    int                   local_nb_messages;
+    int                   nb_bufferized_messages;
+    int                   nb_converged_fields;
+    double              **buff_tab_ptr;
+    double                start_time;
+    double                total_comm_time;
+    double                start_comm_time;
+    double                end_comm_time;
+    double                total_computation_time;
+    double                start_computation_time;
+    double                end_computation_time;
+    double                total_wait_time;
+    double                start_wait_time;
+    double                end_wait_time;
+    double                total_save_time;
+    double                start_save_time;
+    double                end_save_time;
+    double                total_read_time;
+    double                start_read_time;
+    double                end_read_time;
+    double                total_write_time;
+    long int              total_mbytes_recv;
+    double                last_timeout_check;
+    int                   detected_timeouts;
+    int                   nb_finished_simulations;
+    double                last_checkpoint_time;
+    double                last_msg_launcher;
+    double                timeout_launcher;
+    vector_t              simulations;
+};
+
+typedef struct melissa_server_s melissa_server_t; /**< type corresponding to melissa_server_s */
+
+void melissa_server_init (int argc, char **argv, void **melissa_server_ptr);
+
+void melissa_server_run (void **melissa_server_ptr);
+
+void melissa_server_finalize (void **melissa_server_ptr);
 
 int check_simu_state(melissa_field_t *field,
                      int              nb_fields,

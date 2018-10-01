@@ -1,0 +1,59 @@
+ 
+#!@PYTHON_EXECUTABLE@
+
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+# -*- coding: utf-8 -*-
+
+"""
+    Main module of Melissa Launcher.
+
+    usage:
+    melissa_launcher path/to/options.py
+"""
+
+import os
+import sys
+import signal
+import imp
+import getopt
+import ctypes
+
+melissa_server = ctypes.CDLL('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_server4py.so')
+
+def main():
+
+    LP_c_char = ctypes.POINTER(ctypes.c_char)
+    LP_LP_c_char = ctypes.POINTER(LP_c_char)
+
+    melissa_server.melissa_server_init.argtypes = (ctypes.c_int, # argc
+                                                   LP_LP_c_char) # argv
+
+    argc = len(sys.argv)
+    argv = (LP_c_char * (argc + 1))()
+    for i, arg in enumerate(sys.argv):
+        enc_arg = arg.encode('utf-8')
+        argv[i] = ctypes.create_string_buffer(enc_arg)
+
+    handle = ctypes.c_void_p()
+
+    melissa_server.melissa_server_init(argc, argv, ctypes.byref(handle))
+    melissa_server.melissa_server_run(ctypes.byref(handle))
+    melissa_server.melissa_server_finalize(ctypes.byref(handle))
+
+if __name__ == '__main__':
+    main()
