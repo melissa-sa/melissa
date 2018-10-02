@@ -49,6 +49,7 @@ melissa_simulation_t* add_simulation()
     simu->last_message = 0.0;
     sprintf (simu->job_id, "0");
     simu->job_status = -1;
+    simu->parameters = NULL;
 
     return simu;
 }
@@ -70,8 +71,13 @@ melissa_simulation_t* add_simulation()
 void free_simu_vector(vector_t v)
 {
     int i;
+    melissa_simulation_t *simu_ptr;
+
     for (i=0; i<v.size; i++)
     {
+        simu_ptr = vector_get (&v, i);
+        melissa_free (simu_ptr->parameters);
+        simu_ptr = NULL;
         melissa_free (v.items[i]);
     }
     melissa_free (v.items);
@@ -186,7 +192,8 @@ void send_timeouts (int       detected_timeouts,
  *******************************************************************************/
 
 void process_txt_message (char      msg[255],
-                          vector_t *simulations)
+                          vector_t *simulations,
+                          int       nb_param)
 {
     melissa_simulation_t *simu_ptr;
     int                   simu_id, i;
@@ -209,6 +216,21 @@ void process_txt_message (char      msg[255],
         temp_char = strtok (NULL, s);
         strcpy(simu_ptr->job_id, temp_char);
         simu_ptr->job_status = 0;
+        if (simu_ptr->parameters == NULL)
+        {
+            simu_ptr->parameters = melissa_malloc (nb_param * sizeof(double));
+        }
+        temp_char = strtok (NULL, s);
+        i = 0;
+        printf ("simu %d parameters: ", simu_id);
+        while( temp_char != NULL )
+        {
+            simu_ptr->parameters[i] = atof(temp_char);
+            printf ("%g ", simu_ptr->parameters[i]);
+            i++;
+            temp_char = strtok (NULL, s);
+        }
+        printf ("\n");
     }
 }
 

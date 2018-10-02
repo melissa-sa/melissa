@@ -20,10 +20,10 @@
 # -*- coding: utf-8 -*-
 
 """
-    Main module of Melissa Launcher.
+    Python sequential version of melissa_server.
 
     usage:
-    melissa_launcher path/to/options.py
+    python melissa_server.py <options>
 """
 
 import os
@@ -76,11 +76,14 @@ def main():
                                        argv,
                                        ctypes.byref(handle))
 
+    old_val_size = getattr(data, 'val_size')
     while getattr(data, 'end') != 1:
         melissa_server.melissa_server_run(ctypes.byref(handle),
                                           ctypes.byref(data))
-        if getattr(data, 'first_init') != 1:
+        if old_val_size != getattr(data, 'val_size'):
+            print 'New val size: '+str(getattr(data, 'val_size'))+'; old val size: '+str(old_val_size)
             new_np_array = np.ctypeslib.as_array(getattr(data, 'val'), shape=(getattr(data, 'val_size'),))
+            old_val_size = getattr(data, 'val_size')
 
     melissa_server.melissa_server_finalize(ctypes.byref(handle),
                                            ctypes.byref(data))

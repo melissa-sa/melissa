@@ -46,6 +46,7 @@
 
 #ifndef BUILD_WITH_MPI
 typedef int MPI_Comm; /**< Convert MPI_Comm to int when built without MPI */
+typedef int MPI_Fint; /**< Convert MPI_Fint to int when built without MPI */
 #endif // BUILD_WITH_MPI
 
 #ifdef BUILD_WITH_FLOWVR
@@ -426,7 +427,11 @@ void melissa_init (const char *field_name,
         global_data.deconnexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
         global_data.sobol_requester = NULL;
         global_data.comm_size = *comm_size;
+#ifdef BUILD_WITH_MPI
         MPI_Comm_dup(*comm, &global_data.comm);
+#else // BUILD_WITH_MPI
+        global_data.comm = *comm;
+#endif // BUILD_WITH_MPI
     }
 
     // get main server node name
@@ -822,7 +827,6 @@ void melissa_init (const char *field_name,
     first_init = 0;
 }
 
-#ifdef BUILD_WITH_MPI
 /**
  *******************************************************************************
  *
@@ -866,10 +870,13 @@ void melissa_init_f (const char *field_name,
                      MPI_Fint   *comm_fortran,
                      int        *coupling)
 {
+#ifdef BUILD_WITH_MPI
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
+#else // BUILD_WITH_MPI
+    int comm = *comm_fortran;
+#endif // BUILD_WITH_MPI
     melissa_init(field_name, local_vect_size, comm_size, rank, simu_id, &comm, coupling);
 }
-#endif // BUILD_WITH_MPI
 
 /**
  *******************************************************************************

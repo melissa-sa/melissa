@@ -392,7 +392,7 @@ class Study(object):
 
         if ((server.status != RUNNING or server.job_status != RUNNING)
                 and not all([i.status == FINISHED for i in groups])):
-            print 'status: '+str(server.status)+'job_status: '+str(server.job_status)
+            print 'server status: '+str(server.status)+' job_status: '+str(server.job_status)
             for group in groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:

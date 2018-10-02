@@ -328,7 +328,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             zmq_recv (server_ptr->text_puller, text, 255, 0);
             melissa_print (VERBOSE_DEBUG, "Reçu %s (rank %d)\n", text, server_ptr->comm_data.rank);
             server_ptr->last_msg_launcher = melissa_get_time();
-            process_txt_message(text, &server_ptr->simulations);
+            process_txt_message(text, &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
             server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
         }
 
@@ -407,27 +407,32 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             server_ptr->end_comm_time = melissa_get_time();
             server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
 
-            memcpy(&time_step, buf_ptr, sizeof(int));
+//            memcpy(&time_step, buf_ptr, sizeof(int));
             memcpy(&simu_data->time_stamp, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
-            memcpy(&group_id, buf_ptr, sizeof(int));
+//            memcpy(&group_id, buf_ptr, sizeof(int));
             memcpy(&simu_data->simu_id, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&recv_vect_size, buf_ptr, sizeof(int));
+            if (recv_vect_size > simu_data->max_val_size)
+            {
+                melissa_print (VERBOSE_DEBUG, "realloc, new size: %d\n", recv_vect_size);
+                simu_data->val = melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
+                simu_data->max_val_size = recv_vect_size;
+            }
             memcpy(&simu_data->val_size, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
-            simu_data->val = melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
             memcpy(simu_data->val, buf_ptr, recv_vect_size*sizeof(double));
             field_name_ptr = buf_ptr;
             new_data = 1;
 
-            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d\n", server_ptr->comm_data.rank, time_step, client_rank, group_id);
+            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d\n", server_ptr->comm_data.rank, time_step, client_rank, simu_data->simu_id);
 
-            if (time_step >= server_ptr->melissa_options.nb_time_steps || time_step < 0)
+            if (simu_data->time_stamp >= server_ptr->melissa_options.nb_time_steps || simu_data->time_stamp < 0)
             {
                 melissa_print (VERBOSE_WARNING, "Bad time stamp (field %s)\n", field_name_ptr);
                 continue;
@@ -436,7 +441,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             field_id = get_field_id(server_ptr->fields, server_ptr->melissa_options.nb_fields, field_name_ptr);
             if (field_id == -1)
             {
-                if (time_step == 0 && client_rank == 0)
+                if (simu_data->time_stamp == 0 && client_rank == 0)
                 {
                     melissa_print (VERBOSE_WARNING, "Not computing field %s\n", field_name_ptr);
                 }
@@ -447,9 +452,9 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 server_ptr->local_nb_messages += 1;
                 server_ptr->first_send[field_id*server_ptr->comm_data.client_comm_size+client_rank] = 1;
             }
-            if (group_id > server_ptr->simulations.size)
+            if (simu_data->simu_id > server_ptr->simulations.size)
             {
-                for (i=server_ptr->simulations.size; i<group_id; i++)
+                for (i=server_ptr->simulations.size; i<simu_data->simu_id; i++)
                 {
                     vector_add (&server_ptr->simulations, add_simulation());
                 }
@@ -478,7 +483,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     server_ptr->total_read_time += server_ptr->end_read_time - server_ptr->start_read_time;
                 }
             }
-            simu_ptr = server_ptr->simulations.items[group_id];
+            simu_ptr = server_ptr->simulations.items[simu_data->simu_id];
             simu_ptr->last_message = melissa_get_time();
             buf_ptr += MAX_FIELD_NAME * sizeof(char);
             server_ptr->total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
@@ -489,10 +494,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 server_ptr->buff_tab_ptr[0] = (double*)buf_ptr;
                 // === Compute classical statistics === //
                 compute_stats (&data_ptr[client_rank],
-                               time_step,
+                               simu_data->time_stamp,
                                1,
                                server_ptr->buff_tab_ptr,
-                               group_id);
+                               simu_data->simu_id);
             }
             else
             {
@@ -503,11 +508,11 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 }
                 // === Compute classical statistics + Sobol indices === //
                 compute_stats (&data_ptr[client_rank],
-                               time_step,
+                               simu_data->time_stamp,
                                server_ptr->melissa_options.nb_parameters+2,
                                server_ptr->buff_tab_ptr,
-                               group_id);
-                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[time_step]),
+                               simu_data->simu_id);
+                confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
                                            server_ptr->melissa_options.nb_parameters,
                                            data_ptr[client_rank].vect_size);
                 server_ptr->nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
@@ -519,8 +524,8 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             server_ptr->total_computation_time += server_ptr->end_computation_time - server_ptr->start_computation_time;
 
             old_simu_state = simu_ptr->status;
-            simu_ptr->status = check_simu_state(server_ptr->fields, server_ptr->melissa_options.nb_fields, group_id, server_ptr->melissa_options.nb_time_steps, &server_ptr->comm_data);
-            melissa_print(VERBOSE_DEBUG, "Group %d, rank %d, field %s, status %d\n", group_id, server_ptr->comm_data.rank, field_name_ptr, simu_ptr->status);
+            simu_ptr->status = check_simu_state(server_ptr->fields, server_ptr->melissa_options.nb_fields, simu_data->simu_id, server_ptr->melissa_options.nb_time_steps, &server_ptr->comm_data);
+            melissa_print(VERBOSE_DEBUG, "Group %d, rank %d, field %s, status %d\n", simu_data->simu_id, server_ptr->comm_data.rank, field_name_ptr, simu_ptr->status);
 
             if (simu_ptr->status == 2)
             {
@@ -530,21 +535,21 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 }
 //                if (comm_data.rank == 0)
 //                {
-//                    melissa_print(VERBOSE_DEBUG, "Simulation %d finished\n", group_id);
+//                    melissa_print(VERBOSE_DEBUG, "Simulation %d finished\n", simu_data->simu_id);
 //                    melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", nb_finished_simulations, simulations.size);
 //                }
             }
             // === Send a message to the Python master in case of simulation status update === //
             if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0 && simu_ptr->status == 1)
             {
-                sprintf (txt_buffer, "group_state %d %d", group_id, simu_ptr->status);
+                sprintf (txt_buffer, "group_state %d %d", simu_data->simu_id, simu_ptr->status);
                 melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
                 zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 
 //            if (comm_data.rank==0)
 //            {
-//                melissa_print(VERBOSE_DEBUG, "time step %d - simulation %d\n", time_step, group_id);
+//                melissa_print(VERBOSE_DEBUG, "time step %d - simulation %d\n", time_step, simu_data->simu_id);
 //            }
             for (i=0; i<sizeof(server_ptr->buff_tab_ptr)/sizeof(double*); i++)
             {
@@ -778,6 +783,10 @@ int main (int argc, char **argv)
 {
     void* melissa_server_ptr;
     simulation_data_t simu_data;
+    simu_data.end = 0;
+    simu_data.val_size = 0;
+    simu_data.max_val_size = 0;
+    simu_data.val = melissa_malloc(0);
     melissa_server_init (argc, argv, &melissa_server_ptr);
     while (simu_data.end != 1)
     {

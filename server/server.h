@@ -91,6 +91,7 @@ struct simulation_data_s
     int     end;
     double *val;
     int     val_size;
+    int     max_val_size;
 };
 
 typedef struct simulation_data_s simulation_data_t; /**< type corresponding to simulation_data_s */

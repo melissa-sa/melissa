@@ -125,7 +125,6 @@ class Group(Job):
             exit()
         self.job_status = PENDING
         self.status = WAITING
-        melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
 
     def check_job(self):
         """
@@ -162,6 +161,13 @@ class SingleSimuGroup(Group):
         self.param_set = numpy.copy(param_set)
         self.coupling = 0
 
+    def launch(self):
+        Group.launch(self)
+        melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id))
+        param_str = " ".join(str(i) for i in self.param_set)
+        print message_str+" " +param_str
+        melissa_message.send_message(message_str+" " +param_str+"\000")
+
     def restart(self):
         """
             Ends and restarts the simulation (mandatory)
@@ -179,6 +185,7 @@ class SingleSimuGroup(Group):
         if "restart_group" in Job.usr_func.keys() \
         and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
+            melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
         else:
             logging.warning('warning: no \'restart_group\''
                             +' function provided,'
@@ -195,7 +202,7 @@ class MultiSimuGroup(Group):
     nb_simu = 0
     def __init__(self, param_sets):
         """
-            SingleSimuGroup constructor
+            MultiSimuGroup constructor
         """
         Group.__init__(self)
         self.param_set = list()
@@ -206,6 +213,15 @@ class MultiSimuGroup(Group):
             self.param_set.append(numpy.copy(param_sets[i]))
             self.simu_id.append(MultiSimuGroup.nb_simu)
             MultiSimuGroup.nb_simu += 1
+
+    def launch(self):
+        Group.launch(self)
+        for i in range(self.size):
+            #melissa_message.send_message("job "+str(self.simu_id[i])+" " +str(self.job_id)+"\000")
+            message_str = "job "+str(self.simu_id[i])+" " +str(self.job_id)
+            param_str = " ".join(str(j) for j in self.param_set[i])
+            print message_str+" " +param_str
+            melissa_message.send_message(message_str+" " +param_str+"\000")
 
     def restart(self):
         """
@@ -225,6 +241,8 @@ class MultiSimuGroup(Group):
         if "restart_group" in Job.usr_func.keys() \
         and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
+            for i in range(self.size):
+                melissa_message.send_message("job "+str(self.simu_id[i])+" " +str(self.job_id)+"\000")
         else:
             logging.warning('warning: no \'restart_group\''
                             +' function provided,'
@@ -254,6 +272,10 @@ class SobolGroup(Group):
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.simu_id.append(self.rank*(len(param_set_a)+2)+i+2)
 
+    def launch(self):
+        Group.launch(self)
+        melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
+
     def restart(self):
         """
             Ends and restarts the Sobol group (mandatory)
@@ -278,6 +300,7 @@ class SobolGroup(Group):
         if "restart_group" in Job.usr_func.keys() \
         and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
+            melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
         else:
             logging.warning('warning: no \'restart_group\''
                             +' function provided,'
