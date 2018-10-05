@@ -264,7 +264,7 @@ if(BUILD_DOCUMENTATION)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/melissa/doc)
 endif(BUILD_DOCUMENTATION)
 
-set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
+set(MELISSA_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
 
 include(CMakePackageConfigHelpers)
 

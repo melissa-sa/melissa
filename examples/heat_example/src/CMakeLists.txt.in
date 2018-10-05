@@ -24,6 +24,8 @@ cmake_minimum_required(VERSION 3.2.2)
 
 include(CTest)
 
+set(Melissa_DIR @CMAKE_INSTALL_PREFIX@/share/cmake/Melissa)
+
 find_package(Melissa CONFIG REQUIRED)
 include_directories( ${Melissa_INCLUDE_DIR} )
 message(STATUS "include ${Melissa_INCLUDE_DIR}")
