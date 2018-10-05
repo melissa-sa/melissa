@@ -25,7 +25,11 @@ file(GLOB
      )
 
 add_executable(melissa_server ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(melissa_server ${EXTRA_LIBS} ${ZEROMQ_LIBRARIES} melissa_stats dl)
+if (BUILD_WITH_MPI)
+    target_link_libraries(melissa_server ${EXTRA_LIBS} ${ZEROMQ_LIBRARIES} melissa_stats dl)
+else (BUILD_WITH_MPI)
+    target_link_libraries(melissa_server ${EXTRA_LIBS} ${ZEROMQ_LIBRARIES} melissa_stats_no_mpi dl)
+endif (BUILD_WITH_MPI)
 INSTALL(TARGETS melissa_server RUNTIME DESTINATION bin RENAME melissa_server)
 
 add_library(melissa_server4py SHARED ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
