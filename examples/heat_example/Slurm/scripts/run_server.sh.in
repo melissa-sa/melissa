@@ -9,6 +9,7 @@
 #SBATCH --job-name=Melissa
 
 date +\"%d/%m/%y %T\"
+source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 # run Melissa
 echo  \"### Launch Melissa\"
 mkdir stats${SLURM_JOB_ID}.resu

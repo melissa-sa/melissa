@@ -88,6 +88,37 @@ int check_simu_state(melissa_field_t *fields,
     return 2;
 }
 
+int check_last_timestep(melissa_field_t *fields,
+                        int              nb_fields,
+                        int              group_id,
+                        int              nb_time_steps,
+                        comm_data_t     *comm_data)
+{
+    int i, j, t;
+
+    if (fields == NULL)
+    {
+        return 0;
+    }
+    else
+    {
+        for (j=0; j<nb_fields; j++)
+        {
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (fields[j].stats_data[i].vect_size > 0)
+                {
+                    if (test_bit (fields[j].stats_data[i].step_simu.items[group_id], nb_time_steps-1) == 0)
+                    {
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    return 2;
+}
+
 /**
  *******************************************************************************
  *

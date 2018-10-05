@@ -220,6 +220,7 @@ class Study(object):
                 self.fault_tolerance()
             logging.info('submit group '+str(group.rank))
             try:
+                group.server_node_name = str(server.node_name)
                 group.launch()
             except:
                 logging.error('Error while launching group')
@@ -415,6 +416,7 @@ class Study(object):
                         logging.info('resubmit group ' + str(group.rank)
                                      + ' (server crash)')
                         try:
+                            group.server_node_name = str(server.node_name)
                             group.restart()
                         except:
                             logging.error('Error while restarting group '+group.rank)

@@ -23,7 +23,7 @@ install(FILES ../../heat_example_base/heat_utils.f90 DESTINATION ${EXAMPLES_DIR}
 install(FILES CMakeLists.txt.in DESTINATION ${EXAMPLES_DIR}/heat_example/solver RENAME CMakeLists.txt)
 
 if (BUILD_WITH_MPI)
-    add_test(NAME ConfigureHeatc COMMAND  cmake ${EXAMPLES_DIR}/heat_example/solver WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example/solver)
-    add_test(NAME CompileHeatc COMMAND  make install WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example/solver)
-    add_test(NAME TestHeatc COMMAND  melissa_launcher ${EXAMPLES_DIR}/heat_example/study_local WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example/study_local)
+    add_test(NAME ConfigureHeatc COMMAND cmake ${EXAMPLES_DIR}/heat_example/solver WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example/solver)
+    add_test(NAME CompileHeatc COMMAND make install WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example/solver)
+    add_test(NAME TestHeatc COMMAND melissa_launcher ${EXAMPLES_DIR}/heat_example/study_local WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example)
 endif (BUILD_WITH_MPI)

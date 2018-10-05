@@ -19,7 +19,7 @@
 
 date +\"%d/%m/%y\ %T\"
 STOP=0
-source @CMAKE_INSTALL_PREFIX@/melissa_set_env.sh
+source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 # Run Melissa Server
 echo  \"### Launch Melissa\"
 mkdir stats${OAR_JOB_ID}.resu

@@ -24,6 +24,7 @@ import numpy as np
 import subprocess
 import getpass
 import imp
+import socket
 #from matplotlib import pyplot as plt
 #from matplotlib import cm
 from string import Template
@@ -75,7 +76,7 @@ def launch_group(group):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))):
         os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
     os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
-    copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    os.environ['MELISSA_SERVER_NODE_NAME'] = group.server_node_name
 
     if MELISSA_STATS['sobol_indices']:
 
@@ -128,6 +129,7 @@ def launch_group(group):
                                  ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
         print command[:-2]
+        os.environ['MASTER_NODE_NAME'] = socket.gethostname()
         group.job_id = subprocess.Popen(command[:-2].split()).pid
 
     else:

@@ -108,6 +108,12 @@ int check_simu_state(melissa_field_t *field,
                      int              nb_time_steps,
                      comm_data_t     *comm_data);
 
+int check_last_timestep(melissa_field_t *fields,
+                        int              nb_fields,
+                        int              group_id,
+                        int              nb_time_steps,
+                        comm_data_t     *comm_data);
+
 long int count_mbytes_written (melissa_options_t  *options);
 
 int string_recv (void *socket,

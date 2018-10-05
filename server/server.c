@@ -572,7 +572,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 // simulation wants to disconnect
                 simu_ptr = server_ptr->simulations.items[group_id];
                 zmq_msg_init_size (&msg, sizeof(int));
-                memcpy (zmq_msg_data (&msg), &simu_ptr->status, sizeof(int));
+                int last_timestep_status = check_last_timestep (server_ptr->fields, server_ptr->melissa_options.nb_fields, simu_data->simu_id, server_ptr->melissa_options.nb_time_steps, &server_ptr->comm_data);
+
+                printf ("last timestep status %d (simu %d)\n", last_timestep_status, group_id);
+                memcpy (zmq_msg_data (&msg), &last_timestep_status, sizeof(int));
                 zmq_msg_send (&msg, server_ptr->deconnexion_responder, 0);
                 server_ptr->end_comm_time = melissa_get_time();
                 server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;

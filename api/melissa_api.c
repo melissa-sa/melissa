@@ -402,12 +402,12 @@ void melissa_init (const char *field_name,
                    MPI_Comm   *comm,
                    const int  *coupling)
 {
-    char           server_node_name[MPI_MAX_PROCESSOR_NAME];
+    char          *server_node_name;
     char           port_name[MPI_MAX_PROCESSOR_NAME] = {0};
     int            port_no, i, j, ret;
     FILE*          file = NULL;
     int            linger = -1;
-    char           master_node_name[MPI_MAX_PROCESSOR_NAME];
+    char          *master_node_name;
     char          *master_node_names = NULL;
     void          *master_requester = NULL;
     static int     first_init = 1;
@@ -437,28 +437,34 @@ void melissa_init (const char *field_name,
     // get main server node name
     if (*rank == 0 && first_init != 0)
     {
-        file = fopen("../../DATA/server_name.txt", "r");
-
-        if (file == NULL)
+        server_node_name = getenv("MELISSA_SERVER_NODE_NAME");
+        melissa_print (VERBOSE_DEBUG, "Server node name: %s\n", server_node_name);
+        if (server_node_name == NULL)
         {
-            file = fopen("server_name.txt", "r");
+            server_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME);
+            file = fopen("../../DATA/server_name.txt", "r");
 
             if (file == NULL)
             {
-                file = fopen("../server_name.txt", "r");
+                file = fopen("server_name.txt", "r");
 
                 if (file == NULL)
                 {
-                    strcpy (server_node_name, "localhost");
-                    fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
+                    file = fopen("../server_name.txt", "r");
+
+                    if (file == NULL)
+                    {
+                        strcpy (server_node_name, "localhost");
+                        fprintf(stdout,"WARNING: Server name set to \"localhost\"\n");
+                    }
                 }
             }
-        }
 
-        if (file != NULL)
-        {
-            fgets(server_node_name, MPI_MAX_PROCESSOR_NAME, file);
-            fclose(file);
+            if (file != NULL)
+            {
+                fgets(server_node_name, MPI_MAX_PROCESSOR_NAME, file);
+                fclose(file);
+            }
         }
 
         global_data.rinit_tab[0] = 0;
@@ -556,6 +562,11 @@ void melissa_init (const char *field_name,
         if (global_data.sobol == 1)
         {
             melissa_get_node_name (master_node_name);
+            if (strcmp(getenv("MASTER_NODE_NAME"), master_node_name) != 0)
+            {
+                melissa_print (VERBOSE_ERROR, "Wrong master node name\n");
+                return(-1);
+            }
             global_data.sobol_rank = *simu_id % (global_data.rinit_tab[2] +2);
             global_data.sample_id = *simu_id / (global_data.rinit_tab[2]+2);
 
@@ -650,32 +661,40 @@ void melissa_init (const char *field_name,
                 }
 #endif // BUILD_WITH_MPI
             }
-
-            sprintf (port_name, "master_name%d.txt", global_data.sample_id);
-            file = fopen(port_name, "r");
-            if (file != NULL)
+            if (global_data.sobol_rank != 0)
             {
-                fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
-                fclose(file);
-            }
-            else
-            {
-                sleep(1);
-                file = fopen(port_name, "r");
-                if (file != NULL)
+                master_node_name = getenv("MASTER_NODE_NAME");
+                if (master_node_name == NULL)
                 {
-                    fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
-                    fclose(file);
-                }
-                else
-                {
-                    strcpy (master_node_name, "localhost");
-                    if (global_data.sobol_rank == 0 && *rank == 0)
+                    master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME);
+                    sprintf (port_name, "master_name%d.txt", global_data.sample_id);
+                    file = fopen(port_name, "r");
+                    if (file != NULL)
                     {
-                        melissa_print(VERBOSE_WARNING, "Group %d master name set to \"localhost\"\n", global_data.sample_id);
+                        fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
+                        fclose(file);
+                    }
+                    else
+                    {
+                        sleep(1);
+                        file = fopen(port_name, "r");
+                        if (file != NULL)
+                        {
+                            fgets(master_node_name, MPI_MAX_PROCESSOR_NAME, file);
+                            fclose(file);
+                        }
+                        else
+                        {
+                            strcpy (master_node_name, "localhost");
+                            if (global_data.sobol_rank == 0 && *rank == 0)
+                            {
+                                melissa_print(VERBOSE_WARNING, "Group %d master name set to \"localhost\"\n", global_data.sample_id);
+                            }
+                        }
                     }
                 }
             }
+
             if (global_data.sobol_rank == 0)
             {
                 if (*rank == 0)
@@ -1101,8 +1120,16 @@ void melissa_finalize (void)
     int        i, temp, ret;
     zmq_msg_t  msg;
 
+#ifdef BUILD_WITH_MPI
+    if (global_data.comm_size > 1)
+    {
+        MPI_Barrier(global_data.comm);
+    }
+#endif // BUILD_WITH_MPI
+
     if (global_data.rank == 0)
     {
+        sleep(2);
         i = 0;
         while (i<2)
         {

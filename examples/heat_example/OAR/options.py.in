@@ -24,6 +24,7 @@ import numpy as np
 import subprocess
 import getpass
 import imp
+import socket
 #from matplotlib import pyplot as plt
 #from matplotlib import cm
 from string import Template
@@ -34,7 +35,7 @@ USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 EXECUTABLE='heatc'
 NODES_SERVER = 1
-NODES_GROUP = 2
+NODES_GROUP = 1
 WALLTIME_SERVER = "0:10:00"
 WALLTIME_SIMU = "0:05:00"
 NODES_SIMU = NODES_GROUP
@@ -48,7 +49,7 @@ def launch_server(server):
     server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
 
     content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/OAR/scripts/run_server.sh", "r")
+    file=open("@EXAMPLES_DIR@/heat_example/study_OAR/scripts/run_server.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
                                                NODES_SERVER=str(NODES_SERVER),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
@@ -88,6 +89,16 @@ def launch_simu(simulation):
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         command = command[:-2]
+    elif STUDY_OPTIONS['batch_size'] > 1:
+        command = 'mpirun '
+        for i in range(simulation.size):
+            command += ' '.join(('-n',
+                                 str(PROC_PER_NODE*NODES_SIMU),
+                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
+                                 str(simulation.simu_id[i]),
+                                 ' '.join(str(j) for j in simulation.param_set[i]),
+                                 ': '))
+        print command[:-2]
     else:
         command = ' '.join(('mpirun',
                              '-n',
@@ -95,15 +106,17 @@ def launch_simu(simulation):
                              '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                              str(simulation.simu_id), str(simulation.coupling),
                              ' '.join(str(i) for i in simulation.param_set)))
-    print command
+        print command
 
     content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/OAR/scripts/run_simu.sh", "r")
+    file=open("@EXAMPLES_DIR@/heat_example/study_OAR/scripts/run_simu.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
-                                               NODES_SIMU=str(NODES_SIMU),
+                                               NODES_SIMU=str(NODES_SIMU*simulation.size),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
                                                SIMU_ID=str(simulation.rank),
-                                               SIMU_CMD=str(command))
+                                               SIMU_CMD=str(command),
+                                               SERVER_NODE_NAME=str(simulation.server_node_name),
+                                               HOSTNAME=str("$(hostname)"))
     file.close()
     file=open("run_simu.sh", "w")
     file.write(content)
@@ -168,6 +181,8 @@ STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
+STUDY_OPTIONS['batch_size'] = 2
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

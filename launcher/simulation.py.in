@@ -92,6 +92,8 @@ class Group(Job):
             Group constructor
         """
         Job.__init__(self)
+        self.node_name = ''
+        self.server_node_name = ''
         self.nb_restarts = 0
         self.status = NOT_SUBMITTED
         self.lock = RLock()
@@ -319,7 +321,6 @@ class Server(Job):
         """
         Job.__init__(self)
         self.status = WAITING
-        self.node_name = ''
         self.first_job_id = ''
 #        self.create_options()
         self.lock = RLock()

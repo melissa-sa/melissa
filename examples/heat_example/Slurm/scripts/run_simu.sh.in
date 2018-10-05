@@ -8,7 +8,12 @@
 #SBATCH -e simu.%j.err
 #SBATCH --job-name=Simu${SIMU_ID}
 
-source @CMAKE_INSTALL_PREFIX@/melissa_set_env.sh
+
+
+
+
+source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
+export MASTER_NODE_NAME=${HOSTNAME}
 date +\"%d/%m/%y %T\"
 ${SIMU_CMD}
 date +\"%d/%m/%y %T\"

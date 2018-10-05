@@ -222,15 +222,13 @@ void process_txt_message (char      msg[255],
         }
         temp_char = strtok (NULL, s);
         i = 0;
-        printf ("simu %d parameters: ", simu_id);
+        melissa_print (VERBOSE_DEBUG, "simu %d parameters: %s\n", s);
         while( temp_char != NULL )
         {
             simu_ptr->parameters[i] = atof(temp_char);
-            printf ("%g ", simu_ptr->parameters[i]);
             i++;
             temp_char = strtok (NULL, s);
         }
-        printf ("\n");
     }
 }
 
