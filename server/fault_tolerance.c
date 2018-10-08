@@ -45,6 +45,7 @@ melissa_simulation_t* add_simulation()
     simu = melissa_malloc (sizeof(melissa_simulation_t));
 
     simu->status = 0;
+    simu->last_time_step = 0;
     simu->timeout = 0;
     simu->last_message = 0.0;
     sprintf (simu->job_id, "0");

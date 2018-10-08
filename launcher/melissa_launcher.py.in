@@ -37,7 +37,7 @@ def usage():
     print "  melissa_launcher [option [argument]]"
     print "  option:  long option:  argument:               description:"
     print "  -o       --options     <path/to/options/file>  Path to user defined option file"
-    print "  -h       --help        NONE                    Print this help
+    print "  -h       --help        NONE                    Print this help"
 
 def main():
     """

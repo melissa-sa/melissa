@@ -128,7 +128,7 @@ typedef struct field_data_s field_data_t; /**< type corresponding to field_data_
 
 static global_data_t global_data;
 static field_data_t *field_data;
-static char *node_names;
+static char *port_names;
 
 static double total_comm_time;
 static double start_comm_time;
@@ -495,7 +495,6 @@ void melissa_init (const char *field_name,
         buf_ptr = zmq_msg_data (&msg);
         memcpy(global_data.rinit_tab, buf_ptr, 4 * sizeof(int));
         buf_ptr += 4 * sizeof(int);
-        zmq_msg_close (&msg);
     }
 
     // init data structure
@@ -554,7 +553,7 @@ void melissa_init (const char *field_name,
 
     if (first_init != 0)
     {
-        node_names = NULL;
+        port_names = NULL;
         global_data.nb_proc_server = global_data.rinit_tab[0];
         global_data.sobol = global_data.rinit_tab[1];
         global_data.nb_parameters = global_data.rinit_tab[2];
@@ -585,7 +584,7 @@ void melissa_init (const char *field_name,
             global_data.sample_id = *simu_id;
         }
         global_data.rank = *rank;
-        node_names = malloc (global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+        port_names = malloc (global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
     }
 
     field_data_ptr->server_vect_size = calloc (global_data.nb_proc_server, sizeof(int));
@@ -606,14 +605,15 @@ void melissa_init (const char *field_name,
 
     if (*rank == 0 && first_init != 0)
     {
-        memcpy(node_names, buf_ptr, global_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+        memcpy(port_names, buf_ptr, global_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char));
         buf_ptr = NULL;
+        zmq_msg_close (&msg);
     }
 
 #ifdef BUILD_WITH_MPI
     if (*comm_size > 1 && first_init != 0)
     {
-        MPI_Bcast (node_names, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
+        MPI_Bcast (port_names, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
     }
 #endif // BUILD_WITH_MPI
 
@@ -744,9 +744,7 @@ void melissa_init (const char *field_name,
                 field_data_ptr->data_pusher[j] = zmq_socket (global_data.context, ZMQ_PUSH);
                 zmq_setsockopt (field_data_ptr->data_pusher[j], ZMQ_SNDHWM, &field_data_ptr->local_nb_messages, sizeof(int));
                 zmq_setsockopt (field_data_ptr->data_pusher[j], ZMQ_LINGER, &linger, sizeof(int));
-                port_no = 100 + field_data_ptr->pull_rank[i];
-                sprintf (port_name, "tcp://%s:11%d", &node_names[MPI_MAX_PROCESSOR_NAME * field_data_ptr->pull_rank[i]], port_no);
-                melissa_connect (field_data_ptr->data_pusher[j], port_name);
+                melissa_connect (field_data_ptr->data_pusher[j], &port_names[MPI_MAX_PROCESSOR_NAME * field_data_ptr->pull_rank[i]]);
                 j += 1;
             }
         }
@@ -1190,7 +1188,7 @@ void melissa_finalize (void)
     melissa_print(VERBOSE_INFO, "Free ZMQ context...\n");
     zmq_ctx_term (global_data.context);
     melissa_print(VERBOSE_INFO, "Free ZMQ context OK\n");
-    free (node_names);
+    free (port_names);
 
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)
     {

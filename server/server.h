@@ -39,7 +39,7 @@ struct melissa_server_s
     melissa_field_t      *fields;
     comm_data_t           comm_data;
     int                   port_no;
-    char                 *node_names;
+    char                 *port_names;
     int                   rinit_tab[2];
     char                  node_name[MPI_MAX_PROCESSOR_NAME];
     void                 *context;
@@ -101,6 +101,14 @@ void melissa_server_init (int argc, char **argv, void **melissa_server_ptr);
 void melissa_server_run (void **melissa_server_ptr, simulation_data_t *simu_data);
 
 void melissa_server_finalize (void **melissa_server_ptr, simulation_data_t *simu_data);
+
+int create_port_number (comm_data_t *comm_data,
+                        const char  *node_name,
+                        const int    start_number,
+                        const int    forbidden_port1,
+                        const int    forbidden_port2,
+                        const int    forbidden_port3,
+                        const int    forbidden_port4);
 
 int check_simu_state(melissa_field_t *field,
                      int              nb_fields,
