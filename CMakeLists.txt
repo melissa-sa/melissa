@@ -95,13 +95,13 @@ find_python_module(numpy REQUIRED)
 #set(EXTRA_LIBS ${EXTRA_LIBS}
 #                 ${BLAS_LIBRARIES} )
 
-option(BUILD_EXAMPLES "Build examples" ON)
-if(BUILD_EXAMPLES)
-  if(NOT CMAKE_Fortran_COMPILER)
-    set(BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
-    message(STATUS "Fortran compiler not found. BUILD_EXAMPLES option turned OFF")
-  endif(NOT CMAKE_Fortran_COMPILER)
-endif(BUILD_EXAMPLES)
+#option(BUILD_EXAMPLES "Build examples" ON)
+#if(BUILD_EXAMPLES)
+#  if(NOT CMAKE_Fortran_COMPILER)
+#    set(BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
+#    message(STATUS "Fortran compiler not found. BUILD_EXAMPLES option turned OFF")
+#  endif(NOT CMAKE_Fortran_COMPILER)
+#endif(BUILD_EXAMPLES)
 
 # ZeroMQ #
 
@@ -230,10 +230,8 @@ add_subdirectory(output)
 
 add_subdirectory(tests)
 
-if(BUILD_EXAMPLES)
-    set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
-  add_subdirectory(examples)
-endif(BUILD_EXAMPLES)
+set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
+add_subdirectory(examples)
 
 # set environement variables
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
