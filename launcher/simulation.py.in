@@ -374,6 +374,7 @@ class Server(Job):
                                  '-v', str(Job.stdy_opt['verbosity']),
                                  '--txt_push_port', str(Job.stdy_opt['recv_port']),
                                  '--txt_pull_port', str(Job.stdy_opt['send_port']),
+                                 '--data_port', str(Job.stdy_opt['data_port']),
                                  '-n', str(buff.value)))
 
     def launch(self):

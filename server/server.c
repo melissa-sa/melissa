@@ -152,9 +152,9 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     server_ptr->port_no = create_port_number(&server_ptr->comm_data,
                                              server_ptr->node_name,
-                                             2000,
+                                             server_ptr->melissa_options.data_port,
                                              server_ptr->melissa_options.txt_push_port,
-                                             server_ptr->melissa_options.txt_push_port,
+                                             server_ptr->melissa_options.txt_pull_port,
                                              2002,
                                              2003);
     sprintf (txt_buffer, "tcp://*:%d", server_ptr->port_no);

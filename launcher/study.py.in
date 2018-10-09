@@ -279,6 +279,13 @@ class Study(object):
         if (not 'recv_port' in self.stdy_opt):
             self.stdy_opt['recv_port'] = 5555
 
+        if (not 'data_port' in self.stdy_opt):
+            self.stdy_opt['data_port'] = 2004
+
+        if self.stdy_opt['send_port'] == self.stdy_opt['recv_port']:
+            logging.error('Error: send_port and recv_port can not have the same value')
+            errors += 1
+
         if 'threshold_exceedance' in self.ml_stats:
             self.ml_stats['threshold_exceedances'] = self.ml_stats['threshold_exceedance']
             self.ml_stats['threshold_exceedance'] = False

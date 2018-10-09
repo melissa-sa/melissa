@@ -62,6 +62,7 @@ struct melissa_options_s
     char                 launcher_name[256]; /**< Melissa launcher node name                                       */
     int                  txt_pull_port;      /**< Melissa launcher pull port number                                */
     int                  txt_push_port;      /**< Melissa launcher push port number                                */
+    int                  data_port;          /**< Melissa launcher data port number                                */
     int                  verbose_lvl;        /**< requested level of verbosity                                     */
 };
 
