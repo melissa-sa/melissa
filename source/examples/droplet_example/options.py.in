@@ -242,14 +242,15 @@ def launch_simu_slurm(simulation):
         contenu += "#SBATCH --job-name=test_Telemac\n"
         contenu += "source ~/.bashrc\n"
         contenu += "source /scratch/cnt0027/ima0366/tterraz/telemac/barracuda/configs/pysource.sh\n"
+        contenu += "export MELISSA_SERVER_NODE_NAME=\""+ simulation.server_node_name +"\"\n"
+        contenu += "export MASTER_NODE_NAME=$(hostname)\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(i))):
                 os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(i))
             os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
-            shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
             contenu += "cd rank"+str(i)+"\n"
-            contenu += "telemac2d.py --mpi t2d_gouttedo.cas &\n"
+            contenu += "srun -N 1 -n 1 telemac2d.py --mpi t2d_gouttedo.cas &\n"
             contenu += "cd ..\n"
         contenu += "wait %1\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
@@ -272,6 +273,7 @@ def launch_simu_slurm(simulation):
         contenu += "#SBATCH --job-name=test_Telemac\n"
         contenu += "source ~/.bashrc\n"
         contenu += "source /scratch/cnt0027/ima0366/tterraz/telemac/barracuda/configs/pysource.sh\n"
+        contenu += "export MELISSA_SERVER_NODE_NAME=\""+ simulation.server_node_name +"\"\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
         contenu += "telemac2d.py --mpi t2d_gouttedo.cas\n"
         contenu += "date +\"%d/%m/%y %T\"\n"

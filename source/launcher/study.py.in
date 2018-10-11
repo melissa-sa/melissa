@@ -28,10 +28,6 @@ import numpy as np
 import logging
 import traceback
 from ctypes import cdll, create_string_buffer
-#from options import GLOBAL_OPTIONS as stdy_opt
-#from options import STUDY_OPTIONS as stdy_opt
-#from options import MELISSA_STATS as ml_stats
-#from options import USER_FUNCTIONS as usr_func
 imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
@@ -188,7 +184,9 @@ class Study(object):
         self.create_group_list()
         # init zmq context
         melissa_message.init_context()
-        melissa_message.bind_message_rcv("5555")
+        logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
+        print 'bind to recv port '+str(self.stdy_opt['recv_port'])
+        melissa_message.bind_message_rcv(str(self.stdy_opt['recv_port']))
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
@@ -211,7 +209,8 @@ class Study(object):
             self.stop()
         server.write_node_name()
         # connect to server
-        melissa_message.bind_message_snd("5556")
+        logging.debug('bind to send port '+str(self.stdy_opt['send_port']))
+        melissa_message.bind_message_snd(str(self.stdy_opt['send_port']))
         logging.debug('start status checker thread')
         self.state_checker.start()
         for group in groups:
@@ -221,6 +220,7 @@ class Study(object):
                 self.fault_tolerance()
             logging.info('submit group '+str(group.rank))
             try:
+                group.server_node_name = str(server.node_name)
                 group.launch()
             except:
                 logging.error('Error while launching group')
@@ -272,6 +272,19 @@ class Study(object):
 
         if (not 'batch_size' in self.stdy_opt):
             self.stdy_opt['batch_size'] = 1
+
+        if (not 'send_port' in self.stdy_opt):
+            self.stdy_opt['send_port'] = 5556
+
+        if (not 'recv_port' in self.stdy_opt):
+            self.stdy_opt['recv_port'] = 5555
+
+        if (not 'data_port' in self.stdy_opt):
+            self.stdy_opt['data_port'] = 2004
+
+        if self.stdy_opt['send_port'] == self.stdy_opt['recv_port']:
+            logging.error('Error: send_port and recv_port can not have the same value')
+            errors += 1
 
         if 'threshold_exceedance' in self.ml_stats:
             self.ml_stats['threshold_exceedances'] = self.ml_stats['threshold_exceedance']
@@ -387,7 +400,7 @@ class Study(object):
 
         if ((server.status != RUNNING or server.job_status != RUNNING)
                 and not all([i.status == FINISHED for i in groups])):
-            print 'status: '+str(server.status)+'job_status: '+str(server.job_status)
+            print 'server status: '+str(server.status)+' job_status: '+str(server.job_status)
             for group in groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
@@ -410,6 +423,7 @@ class Study(object):
                         logging.info('resubmit group ' + str(group.rank)
                                      + ' (server crash)')
                         try:
+                            group.server_node_name = str(server.node_name)
                             group.restart()
                         except:
                             logging.error('Error while restarting group '+group.rank)

@@ -59,7 +59,10 @@ struct melissa_options_s
     double               check_interval;     /**< interval between checkpoints                                     */
     int                  timeout_simu;       /**< time to wait for next simulation message before timeout          */
     char                 restart_dir[256];   /**< Melissa restart files directory                                  */
-    char                 launcher_name[256]; /**< Melissa master node name                                         */
+    char                 launcher_name[256]; /**< Melissa launcher node name                                       */
+    int                  txt_pull_port;      /**< Melissa launcher pull port number                                */
+    int                  txt_push_port;      /**< Melissa launcher push port number                                */
+    int                  data_port;          /**< Melissa launcher data port number                                */
     int                  verbose_lvl;        /**< requested level of verbosity                                     */
 };
 

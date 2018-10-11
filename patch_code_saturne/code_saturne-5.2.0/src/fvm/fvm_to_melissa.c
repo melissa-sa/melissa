@@ -172,7 +172,7 @@ _write_block_doubles_l(size_t             n_values,
   if (c->writer->time_stamp > 0) {
 #if defined(HAVE_MPI)
     melissa_send(c->name,
-                 values,);
+                 values);
 #else
     melissa_send_no_mpi(c->name,
                         values);

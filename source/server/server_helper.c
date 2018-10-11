@@ -28,6 +28,48 @@
 #include "melissa_io.h"
 #include "server.h"
 
+int create_port_number (comm_data_t *comm_data,
+                        const char*  node_name,
+                        const int    start_number,
+                        const int    forbidden_port1,
+                        const int    forbidden_port2,
+                        const int    forbidden_port3,
+                        const int    forbidden_port4)
+{
+    char *node_names;
+    int   i;
+    int   port;
+
+    port = start_number;
+
+    node_names = melissa_malloc(MPI_MAX_PROCESSOR_NAME * comm_data->comm_size);
+
+#ifdef BUILD_WITH_MPI
+    MPI_Allgather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, comm_data->comm);
+#else // BUILD_WITH_MPI
+    memcpy (node_names, node_name, MPI_MAX_PROCESSOR_NAME);
+#endif // BUILD_WITH_MPI
+
+    for (i=0; i<comm_data->rank; i++)
+    {
+        if (0 == strcmp(&node_names[i * MPI_MAX_PROCESSOR_NAME], node_name))
+        {
+            port += 1;
+            while (port == forbidden_port1
+                   || port == forbidden_port2
+                   || port == forbidden_port3
+                   || port == forbidden_port4)
+            {
+                port += 1;
+            }
+        }
+    }
+
+    melissa_free (node_names);
+
+    return port;
+}
+
 /**
  *******************************************************************************
  *
@@ -80,6 +122,37 @@ int check_simu_state(melissa_field_t *fields,
                         {
                             return 1;
                         }
+                    }
+                }
+            }
+        }
+    }
+    return 2;
+}
+
+int check_last_timestep(melissa_field_t *fields,
+                        int              nb_fields,
+                        int              group_id,
+                        int              nb_time_steps,
+                        comm_data_t     *comm_data)
+{
+    int i, j, t;
+
+    if (fields == NULL)
+    {
+        return 0;
+    }
+    else
+    {
+        for (j=0; j<nb_fields; j++)
+        {
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if (fields[j].stats_data[i].vect_size > 0)
+                {
+                    if (test_bit (fields[j].stats_data[i].step_simu.items[group_id], nb_time_steps-1) == 0)
+                    {
+                        return 1;
                     }
                 }
             }

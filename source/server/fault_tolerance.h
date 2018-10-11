@@ -41,11 +41,13 @@
 
 struct melissa_simulation_s
 {
-    int    status;       /**< simulation status (0: no messages recieved, 1: at least one message recieved, 2: finished */
-    int    timeout;      /**< 1 if timeout detected on this simulation */
-    double last_message; /**< time of the last recieved message from this simulation */
-    char   job_id[255];  /**< simulation job ID */
-    int    job_status;   /**< simulation job status */
+    int    status;         /**< simulation status (0: no messages recieved, 1: at least one message recieved, 2: finished */
+    int    last_time_step; /**< simulation status (1: not all messages recieved, 2: all messages recieved */
+    int    timeout;        /**< 1 if timeout detected on this simulation */
+    double last_message;   /**< time of the last recieved message from this simulation */
+    char   job_id[255];    /**< simulation job ID */
+    int    job_status;     /**< simulation job status */
+    double *parameters;    /**< simulation parameter set */
 };
 
 typedef struct melissa_simulation_s melissa_simulation_t; /**< type corresponding to melissa_simulation_s */
@@ -62,7 +64,8 @@ void send_timeouts (int       detected_timeouts,
                     void     *python_pusher);
 
 void process_txt_message (char      msg[255],
-                          vector_t *simulations);
+                          vector_t *simulations,
+                          int nb_param);
 
 
 int count_job_status(vector_t *simulations,

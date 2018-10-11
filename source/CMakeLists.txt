@@ -95,13 +95,13 @@ find_python_module(numpy REQUIRED)
 #set(EXTRA_LIBS ${EXTRA_LIBS}
 #                 ${BLAS_LIBRARIES} )
 
-option(BUILD_EXAMPLES "Build examples" ON)
-if(BUILD_EXAMPLES)
-  if(NOT CMAKE_Fortran_COMPILER)
-    set(BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
-    message(STATUS "Fortran compiler not found. BUILD_EXAMPLES option turned OFF")
-  endif(NOT CMAKE_Fortran_COMPILER)
-endif(BUILD_EXAMPLES)
+#option(BUILD_EXAMPLES "Build examples" ON)
+#if(BUILD_EXAMPLES)
+#  if(NOT CMAKE_Fortran_COMPILER)
+#    set(BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
+#    message(STATUS "Fortran compiler not found. BUILD_EXAMPLES option turned OFF")
+#  endif(NOT CMAKE_Fortran_COMPILER)
+#endif(BUILD_EXAMPLES)
 
 # ZeroMQ #
 
@@ -230,10 +230,8 @@ add_subdirectory(output)
 
 add_subdirectory(tests)
 
-if(BUILD_EXAMPLES)
-    set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
-  add_subdirectory(examples)
-endif(BUILD_EXAMPLES)
+set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
+add_subdirectory(examples)
 
 # set environement variables
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
@@ -264,7 +262,7 @@ if(BUILD_DOCUMENTATION)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/melissa/doc)
 endif(BUILD_DOCUMENTATION)
 
-set(MELISSA_CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
+set(MELISSA_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
 
 include(CMakePackageConfigHelpers)
 
