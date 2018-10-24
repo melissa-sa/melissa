@@ -121,8 +121,18 @@ class Messenger(Thread):
                             groups[group_id].job_status = PENDING
                 elif message[0] == 'group_state':
                     group_id = int(message[1])/self.batch_size
+                    simu_id = int(message[1])%self.batch_size
                     with groups[group_id].lock:
-                        groups[group_id].status = int(message[2])
+                        if groups[group_id].job_type == 3:
+                            if groups[group_id].status < 2:
+                                groups[group_id].status = int(message[2])
+                            print "group " +str(group_id)+ " simu "+str(simu_id)
+                            groups[group_id].simu_status[simu_id] = int(message[2])
+                            if all(simu_status == 2 for simu_status in groups[group_id].simu_status):
+                                groups[group_id].status = 2
+                                print 'Group ' + str(group_id) + ' status: ' + str(groups[group_id].status)
+                        else:
+                            groups[group_id].status = int(message[2])
                     logging.info('Group ' + message[1] + ' status: ' + message[2])
                 elif message[0] == 'server':
                     with server.lock:
@@ -209,8 +219,8 @@ class Study(object):
             self.stop()
         server.write_node_name()
         # connect to server
-        logging.debug('bind to send port '+str(self.stdy_opt['send_port']))
-        melissa_message.bind_message_snd(str(self.stdy_opt['send_port']))
+        logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
+        melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
         logging.debug('start status checker thread')
         self.state_checker.start()
         for group in groups:
@@ -414,8 +424,21 @@ class Study(object):
                 print '=== Error while restarting server ==='
                 traceback.print_exc()
                 self.stop()
-            melissa_message.connect_message_snd(server.node_name+'\000')
+            logging.debug('wait server restart')
+            try:
+                server.wait_start()
+            except:
+                logging.error('Error while waiting server')
+                print '=== Error while waiting server ==='
+                traceback.print_exc()
+                self.stop()
+
             logging.info('server start')
+            server.write_node_name()
+            # connect to server
+            logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
+            melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
+
             time.sleep(1)
             for group in groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:

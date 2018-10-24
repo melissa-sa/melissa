@@ -411,7 +411,7 @@ void melissa_get_options (int                 argc,
 
     do
     {
-        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:v:w:", longopts, NULL);
+        opt = getopt_long (argc, argv, "c:e:f:hlm::n:o:p:q:r::s:t:v:w:", longopts, NULL);
 
         switch (opt) {
         case 'r':

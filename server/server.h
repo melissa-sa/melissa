@@ -86,6 +86,8 @@ typedef struct melissa_server_s melissa_server_t; /**< type corresponding to mel
 struct simulation_data_s
 {
     int     simu_id;
+    double *parameters;
+    int     nb_param;      /**< number of parameters */
     int     time_stamp;
     int     first_init;
     int     end;

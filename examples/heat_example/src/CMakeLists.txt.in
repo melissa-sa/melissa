@@ -31,6 +31,8 @@ include_directories( ${Melissa_INCLUDE_DIR} )
 message(STATUS "include ${Melissa_INCLUDE_DIR}")
 message(STATUS "libraries ${Melissa_LIBRARY}")
 
+include_directories(@ZEROMQ_INCLUDE_DIR@)
+
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix." FORCE)
 
 option(BUILD_WITH_MPI "Build with MPI" ON)

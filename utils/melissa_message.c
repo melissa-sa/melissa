@@ -118,17 +118,17 @@ void bind_message_snd(char* port_number)
     melissa_bind (message.message_pusher, name);
 }
 
-//void connect_message_snd(char* node_name, char* port_number)
-//{
-//    int snd_timeout = 1000; // miliseconds
-//    char name[255];
-//    message.message_pusher = zmq_socket (message.context, ZMQ_PUSH);
-//    zmq_setsockopt (message.message_pusher, ZMQ_SNDTIMEO, &snd_timeout, sizeof(int));
-//    zmq_setsockopt (message.message_pusher, ZMQ_LINGER, &snd_timeout, sizeof(int));
-//    sprintf (name, "tcp://%s:%s", node_name, port_number);
-//    fprintf (stdout, "connecting launcher to %s\n", name);
-//    melissa_connect (message.message_pusher, name);
-//}
+void connect_message_snd(char* node_name, char* port_number)
+{
+    int snd_timeout = 1000; // miliseconds
+    char name[255];
+    message.message_pusher = zmq_socket (message.context, ZMQ_PUSH);
+    zmq_setsockopt (message.message_pusher, ZMQ_SNDTIMEO, &snd_timeout, sizeof(int));
+    zmq_setsockopt (message.message_pusher, ZMQ_LINGER, &snd_timeout, sizeof(int));
+    sprintf (name, "tcp://%s:%s", node_name, port_number);
+    fprintf (stdout, "connecting launcher to %s\n", name);
+    melissa_connect (message.message_pusher, name);
+}
 
 void wait_message(char* msg)
 {

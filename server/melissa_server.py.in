@@ -1,4 +1,3 @@
- 
 #!@PYTHON_EXECUTABLE@
 
 ###################################################################
@@ -36,18 +35,26 @@ import ctypes
 
 melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/')
 
+imp.load_source("melissa_learning", "@CMAKE_INSTALL_PREFIX@/lib/melissa_learning.py")
+import melissa_learning
+
 c_char_ptr = ctypes.POINTER(ctypes.c_char)
 c_char_ptr_ptr = ctypes.POINTER(c_char_ptr)
 c_double_ptr = ctypes.POINTER(ctypes.c_double)
 c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
+BATCH_SIZE = 5
+
 class simulation_data(ctypes.Structure):
     _fields_ = [("simu_id", ctypes.c_int),
+                ("parameters", c_double_ptr),
+                ("nb_param", ctypes.c_int),
                 ("time_stamp", ctypes.c_int),
                 ("first_init", ctypes.c_int),
                 ("end", ctypes.c_int),
                 ("val", c_double_ptr),
-                ("val_size", ctypes.c_int)]
+                ("val_size", ctypes.c_int),
+                ("max_val_size", ctypes.c_int)]
 
 def main():
 
@@ -69,23 +76,84 @@ def main():
         enc_arg = arg.encode('utf-8')
         argv[i] = ctypes.create_string_buffer(enc_arg)
 
-    handle = ctypes.c_void_p()
+    simu_handle = ctypes.c_void_p()
     data = simulation_data()
+
+    print "getattr(data, 'end') "+str(getattr(data, 'end'))
 
     melissa_server.melissa_server_init(argc,
                                        argv,
-                                       ctypes.byref(handle))
+                                       ctypes.byref(simu_handle))
 
-    old_val_size = getattr(data, 'val_size')
+    print "getattr(data, 'end') "+str(getattr(data, 'end'))
+
+    melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                      ctypes.byref(data))
+
+    print "getattr(data, 'end') "+str(getattr(data, 'end'))
+
+    melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                      ctypes.byref(data))
+
+    ctypes.pythonapi.PyBuffer_FromMemory.restype = ctypes.py_object
+
+    buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))
+    val_array = np.frombuffer(buff_val, float)
+
+    buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
+    param_array = np.frombuffer(buff_param, float)
+    param_array = np.append(param_array, getattr(data, 'time_stamp'))
+
+    learning_handle = melissa_learning.model_init(len(val_array), len(param_array))
+
+    i = 0
+    j = 0
+    k = 0
     while getattr(data, 'end') != 1:
-        melissa_server.melissa_server_run(ctypes.byref(handle),
+        melissa_server.melissa_server_run(ctypes.byref(simu_handle),
                                           ctypes.byref(data))
-        if old_val_size != getattr(data, 'val_size'):
-            print 'New val size: '+str(getattr(data, 'val_size'))+'; old val size: '+str(old_val_size)
-            new_np_array = np.ctypeslib.as_array(getattr(data, 'val'), shape=(getattr(data, 'val_size'),))
-            old_val_size = getattr(data, 'val_size')
+        #val_array = np.ctypeslib.as_array(getattr(data, 'val'), shape=(getattr(data, 'val_size'),))
+        buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))
+        val_array = np.frombuffer(buff_val, float)
+        #param_array = np.ctypeslib.as_array(getattr(data, 'parameters'), shape=(getattr(data, 'nb_param'),))
+        buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
+        param_array = np.frombuffer(buff_param, float)
+        param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
+        j += 1
+        if j == 5:
+            melissa_learning.add_to_testing_set(param_array, val_array, learning_handle)
+            k += 1
+            if k == BATCH_SIZE:
+                res = melissa_learning.test_batch(learning_handle)
+                print "loss test = " + str(res)
+                k = 0
+            j = 0
+        else:
+            melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
+            #if val_size != getattr(data, 'val_size'):
+                #print 'New val size: '+str(getattr(data, 'val_size'))+'; old val size: '+str(val_size)
+                #new_np_array = np.ctypeslib.as_array(getattr(data, 'val'), shape=(getattr(data, 'val_size'),))
+                #val_size = getattr(data, 'val_size')
+            i += 1
+            if i == BATCH_SIZE:
+                res = melissa_learning.train_batch(learning_handle)
+                print "loss train = " + str(res)
+                i = 0
 
-    melissa_server.melissa_server_finalize(ctypes.byref(handle),
+    print "end server"
+
+    if i != 0:
+        res = melissa_learning.train_batch(learning_handle)
+        print "loss train = " + str(res)
+        i = 0
+
+    if k == BATCH_SIZE:
+        res = melissa_learning.test_batch(learning_handle)
+        print "loss test = " + str(res)
+        k = 0
+
+
+    melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))
 
 if __name__ == '__main__':
