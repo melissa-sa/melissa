@@ -35,8 +35,11 @@ import os.path
 import scipy as sp
 import time
 import random
+import keras
 from keras.models import Sequential
 from keras.layers import Dense, Activation
+from keras import backend as K
+import horovod.keras as hvd
 
 MODEL = Sequential()
 class melissa_helper:
@@ -52,6 +55,12 @@ class melissa_helper:
 
 
 def model_init(vect_size, nb_parameters):
+    hvd.init()
+    # Horovod: pin GPU to be used to process local rank (one GPU per process)
+    config = tf.ConfigProto()
+#    config.gpu_options.allow_growth = True
+#    config.gpu_options.visible_device_list = str(hvd.local_rank())
+    K.set_session(tf.Session(config=config))
     # creating the model
     print "vect_size = "+str(vect_size)
     print "nb_parameters = "+str(nb_parameters)
@@ -61,7 +70,15 @@ def model_init(vect_size, nb_parameters):
     MODEL.add(Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
     MODEL.add(Dense(vect_size*2, kernel_initializer='normal', activation='relu'))
     MODEL.add(Dense(vect_size, kernel_initializer='normal'))
-    MODEL.compile(optimizer='adam',loss='mse', metrics=['mse'])
+
+    # Horovod: adjust learning rate based on number of GPUs.
+    opt = keras.optimizers.Adam()
+    # Horovod: add Horovod Distributed Optimizer.
+    opt = hvd.DistributedOptimizer(opt)
+
+    MODEL.compile(optimizer=opt, loss='mse', metrics=['mse'])
+#    MODEL.compile(optimizer='adam', loss='mse', metrics=['mse'])
+    hvd.broadcast_global_variables(0)
     return melissa_helper(nb_parameters)
 
 def add_to_training_set(x, y, handle):
@@ -105,5 +122,13 @@ def test_batch(handle):
         handle.test_x.append([])
     handle.test_y = []
     return res
+
+def model_finalize(dirname, filename):
+    if hvd.rank() == 0:
+        MODEL.save(dirname+"/"+filename)
+    print "Horovod size: "+str(hvd.size())
+    print "Horovod local rank: "+str(hvd.local_rank())
+    print "Horovod rank: "+str(hvd.rank())
+
 
 

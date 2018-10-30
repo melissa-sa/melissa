@@ -120,7 +120,7 @@ def main():
         param_array = np.frombuffer(buff_param, float)
         param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
         j += 1
-        if j == 5:
+        if j == 10:
             melissa_learning.add_to_testing_set(param_array, val_array, learning_handle)
             k += 1
             if k == BATCH_SIZE:
@@ -152,6 +152,7 @@ def main():
         print "loss test = " + str(res)
         k = 0
 
+    melissa_learning.model_finalize('.', 'model_insitu.h5')
 
     melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))

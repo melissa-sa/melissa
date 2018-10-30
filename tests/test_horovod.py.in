@@ -32,6 +32,7 @@ import imp
 import getopt
 import numpy as np
 import ctypes
+import time
 
 imp.load_source("melissa_learning", "@CMAKE_INSTALL_PREFIX@/lib/melissa_learning.py")
 import melissa_learning
@@ -43,6 +44,8 @@ def f (x1, x2, t, x01, x02):
 x1size = 10
 x2size = 10
 tsize = 10
+
+t1 = time.time()
 
 handle = melissa_learning.model_init(x1size*x2size, 3)
 
@@ -89,4 +92,6 @@ for i in range(100):
         print "loss = " + str(res)
         i2 = 0
 
-print "termine"
+melissa_learning.model_finalize(".", "test_horovod.h5")
+
+print "time: "+str(time.time() - t1)
