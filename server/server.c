@@ -259,8 +259,8 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 {
     melissa_server_t     *server_ptr;
-    int                   simu_id, group_id, i;
-    int                   field_id, time_step;
+    int                   simu_id, i;
+    int                   field_id;
     int                   old_simu_state;
     int                   old_last_time_step_state;
     int                   recv_vect_size = 0;
@@ -444,7 +444,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             field_name_ptr = buf_ptr;
             new_data = 1;
 
-            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d\n", server_ptr->comm_data.rank, &simu_data->time_stamp, client_rank, simu_data->simu_id);
+            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d\n", server_ptr->comm_data.rank, simu_data->time_stamp, client_rank, simu_data->simu_id);
 
             if (simu_data->time_stamp >= server_ptr->melissa_options.nb_time_steps || simu_data->time_stamp < 0)
             {
@@ -508,10 +508,21 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             server_ptr->total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
             server_ptr->start_computation_time = melissa_get_time();
 
-            if (test_bit (data_ptr[client_rank].step_simu.items[group_id], &simu_data->time_stamp) != 0)
+            if (simu_data->simu_id >= data_ptr[client_rank].step_simu.size)
+            {
+                int32_t *item;
+                for (i=data_ptr[client_rank].step_simu.size; i<simu_data->simu_id; i++)
+                {
+                    item = melissa_calloc((data_ptr[client_rank].options->nb_time_steps+31)/32, sizeof(int32_t));
+                    vector_add(&data_ptr[client_rank].step_simu, (void*)item);
+
+                }
+            }
+
+            if (test_bit (data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp) != 0)
             {
                 // Time step already computed, message ignored.
-                melissa_print (VERBOSE_WARNING,  "Allready computed time step (simulation %d, time step %d)\n", group_id, &simu_data->time_stamp);
+                melissa_print (VERBOSE_WARNING,  "Allready computed time step (simulation %d, time step %d)\n", simu_data->simu_id, simu_data->time_stamp);
                 new_data = 0;
             }
 
