@@ -34,8 +34,8 @@ from shutil import copyfile
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 EXECUTABLE='heatc'
-NODES_SERVER = 3
-NODES_GROUP = 2
+NODES_SERVER = 2
+NODES_GROUP = 1
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
 
@@ -51,16 +51,18 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
     print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
+    #server.job_id = subprocess.Popen(('mpirun ' +
+                                      #' -n '+str(NODES_SERVER) +
+                                      #' ' + server.path +
+                                      #'/melissa_server ' +
+                                      #server.cmd_opt +
+                                      #' &').split()).pid
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/melissa_server ' +
+                                      '/melissa_server.py ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
-    #server.job_id = subprocess.Popen(('python ' + server.path +
-                                      #'/melissa_server.py ' +
-                                      #server.cmd_opt +
-                                      #' &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 # The launch_group function to put in USER_FUNCTIONS['launch_group'].

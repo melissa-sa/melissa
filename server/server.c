@@ -101,10 +101,14 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 #ifdef BUILD_WITH_MPI
 
     // === init MPI === //
+    MPI_Initialized (&i);
+    if (!i)
+    {
+        MPI_Init_thread (&argc, &argv, MPI_THREAD_FUNNELED , &i);
+    }
 
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED , &i);
     server_ptr->comm_data.comm = MPI_COMM_WORLD;
-    MPI_Comm_size(server_ptr->comm_data.comm, &server_ptr->comm_data.comm_size);
+    MPI_Comm_size (server_ptr->comm_data.comm, &server_ptr->comm_data.comm_size);
     MPI_Comm_rank (server_ptr->comm_data.comm, &server_ptr->comm_data.rank);
 #else
     server_ptr->comm_data.comm_size       = 1;
