@@ -87,9 +87,6 @@ def main():
     melissa_server.melissa_server_run(ctypes.byref(simu_handle),
                                       ctypes.byref(data))
 
-    melissa_server.melissa_server_run(ctypes.byref(simu_handle),
-                                      ctypes.byref(data))
-
     ctypes.pythonapi.PyBuffer_FromMemory.restype = ctypes.py_object
 
     buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))

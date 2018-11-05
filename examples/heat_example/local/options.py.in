@@ -33,9 +33,10 @@ from shutil import copyfile
 # These variables are only used in this file.
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
+BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 EXECUTABLE='heatc'
 NODES_SERVER = 2
-NODES_GROUP = 1
+NODES_GROUP = 2
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
 
@@ -50,7 +51,7 @@ def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
-    print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
+    print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' -l &'
     #server.job_id = subprocess.Popen(('mpirun ' +
                                       #' -n '+str(NODES_SERVER) +
                                       #' ' + server.path +
@@ -60,7 +61,7 @@ def launch_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/melissa_server.py ' +
+                                      '/melissa_server.py -l ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
@@ -93,7 +94,7 @@ def launch_group(group):
             for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
                 args.append(str(group.simu_id[i])+" "+ str(group.coupling)+" "+' '.join(str(j) for j in group.param_set[i]))
             content = ""
-            file=open("@EXAMPLES_DIR@/heat_example/local/scripts/flowvr_group.py", "r")
+            file=open("@EXAMPLES_DIR@/heat_example/study_local/scripts/flowvr_group.py", "r")
             content = Template(file.read()).substitute(args=str(args),
                                group_id=str(group.rank),
                                np_simu=str(int(NODES_GROUP)),
@@ -110,7 +111,7 @@ def launch_group(group):
             for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
                 command += ' '.join(('-n',
                                      str(NODES_GROUP),
-                                     '@EXAMPLES_DIR@/heat_example/local/bin/'+EXECUTABLE,
+                                     '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                      str(group.simu_id[i]), str(group.coupling),
                                      ' '.join(str(j) for j in group.param_set[i]),
                                      ': '))
@@ -205,7 +206,7 @@ STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted i
 STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 3
+STUDY_OPTIONS['batch_size'] = 1
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
@@ -216,7 +217,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

@@ -121,11 +121,11 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     server_ptr->start_time = melissa_get_time();
 
-    // === Install signal handler === //
-
     // === Read options from command line === //
 
     melissa_get_options (argc, argv, &server_ptr->melissa_options);
+
+    // === Install signal handler === //
 
     if (signal(SIGINT, sig_handler) == SIG_ERR)
             melissa_print (VERBOSE_WARNING, "Melissa can't catch SIGINT\n");
@@ -394,6 +394,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             MPI_Bcast(server_ptr->rinit_tab, 2, MPI_INT, 0, server_ptr->comm_data.comm);
 #endif // BUILD_WITH_MPI
             server_ptr->comm_data.client_comm_size = server_ptr->rinit_tab[0];
+            if (server_ptr->melissa_options.learning == 1)
+            {
+                server_ptr->comm_data.client_comm_size = 1;
+            }
             server_ptr->first_send = melissa_calloc(server_ptr->melissa_options.nb_fields*server_ptr->comm_data.client_comm_size, sizeof(int));
             for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
             {

@@ -276,13 +276,13 @@ class SobolGroup(Group):
             self.param_set.append(numpy.copy(self.param_set[0]))
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.simu_id.append(self.rank*(len(param_set_a)+2)+i+2)
+        self.size = len(self.param_set)
 
     def launch(self):
         Group.launch(self)
-        for i in range(self.simu_id):
-            message_str = "job "+str(self.simu_id[i])+" " +str(self.job_id)
-            param_str = " ".join(str(j) for j in self.param_set[i])
-            melissa_message.send_message(message_str+" " +param_str+"\000")
+        message_str = "job "+str(self.rank)+" " +str(self.job_id)
+        param_str = " ".join(str(j) for j in self.param_set[0])
+        melissa_message.send_message(message_str+" " +param_str+"\000")
 
     def restart(self):
         """
@@ -308,7 +308,9 @@ class SobolGroup(Group):
         if "restart_group" in Job.usr_func.keys() \
         and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
-            melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
+            message_str = "job "+str(self.rank)+" " +str(self.job_id)
+            param_str = " ".join(str(j) for j in self.param_set[0])
+            melissa_message.send_message(message_str+" " +param_str+"\000")
         else:
             logging.warning('warning: no \'restart_group\''
                             +' function provided,'
