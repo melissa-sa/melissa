@@ -829,9 +829,6 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     zmq_close (server_ptr->text_puller);
     zmq_ctx_term (server_ptr->context);
 
-#ifdef BUILD_WITH_MPI
-    MPI_Finalize ();
-#endif // BUILD_WITH_MPI
 }
 
 int main (int argc, char **argv)
@@ -842,12 +839,19 @@ int main (int argc, char **argv)
     simu_data.val_size = 0;
     simu_data.max_val_size = 0;
     simu_data.val = melissa_malloc(0);
+#ifdef BUILD_WITH_MPI
+    int i;
+    MPI_Init_thread (&argc, &argv, MPI_THREAD_FUNNELED , &i);
+#endif // BUILD_WITH_MPI
     melissa_server_init (argc, argv, &melissa_server_ptr);
     while (simu_data.end != 1)
     {
         melissa_server_run (&melissa_server_ptr, &simu_data);
     }
     melissa_server_finalize (&melissa_server_ptr, &simu_data);
+#ifdef BUILD_WITH_MPI
+    MPI_Finalize ();
+#endif // BUILD_WITH_MPI
 
     return 0;
 }

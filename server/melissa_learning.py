@@ -54,7 +54,7 @@ class melissa_helper:
             self.test_x.append([])
 
 
-def model_init(vect_size, nb_parameters):
+def model_init_minibatch(vect_size, nb_parameters):
     hvd.init()
     # Horovod: pin GPU to be used to process local rank (one GPU per process)
     config = tf.ConfigProto()
@@ -77,8 +77,25 @@ def model_init(vect_size, nb_parameters):
     opt = hvd.DistributedOptimizer(opt)
 
     MODEL.compile(optimizer=opt, loss='mse', metrics=['mse'])
-#    MODEL.compile(optimizer='adam', loss='mse', metrics=['mse'])
+
     hvd.broadcast_global_variables(0)
+
+    return melissa_helper(nb_parameters)
+
+def model_init_parallel(vect_size, nb_parameters):
+    hvd.init()
+    # creating the model
+    print "vect_size = "+str(vect_size)
+    print "nb_parameters = "+str(nb_parameters)
+    MODEL.add(Dense(vect_size*2, input_dim=nb_parameters, activation='relu'))
+    MODEL.add(Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
+    MODEL.add(Dense(vect_size*4, kernel_initializer='normal', activation='relu'))
+    MODEL.add(Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
+    MODEL.add(Dense(vect_size*2, kernel_initializer='normal', activation='relu'))
+    MODEL.add(Dense(vect_size, kernel_initializer='normal'))
+
+    MODEL.compile(optimizer='adam', loss='mse', metrics=['mse'])
+
     return melissa_helper(nb_parameters)
 
 def add_to_training_set(x, y, handle):
@@ -123,12 +140,19 @@ def test_batch(handle):
     handle.test_y = []
     return res
 
-def model_finalize(dirname, filename):
+def model_finalize_minibatch(dirname, filename):
     if hvd.rank() == 0:
         MODEL.save(dirname+"/"+filename)
     print "Horovod size: "+str(hvd.size())
     print "Horovod local rank: "+str(hvd.local_rank())
     print "Horovod rank: "+str(hvd.rank())
+
+
+def model_finalize_parallel(dirname, filename):
+#    if (not os.path.isdir(dirname+"/rank"+str(hvd.rank()))):
+#        os.mkdir(dirname+"/rank"+str(hvd.rank()))
+#    MODEL.save(dirname+"/rank"+str(hvd.rank())+"/"+filename)
+    pass
 
 
 

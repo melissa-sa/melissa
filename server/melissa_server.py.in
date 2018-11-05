@@ -32,6 +32,7 @@ import imp
 import getopt
 import numpy as np
 import ctypes
+from mpi4py import MPI
 
 melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/')
 
@@ -79,18 +80,12 @@ def main():
     simu_handle = ctypes.c_void_p()
     data = simulation_data()
 
-    print "getattr(data, 'end') "+str(getattr(data, 'end'))
-
     melissa_server.melissa_server_init(argc,
                                        argv,
                                        ctypes.byref(simu_handle))
 
-    print "getattr(data, 'end') "+str(getattr(data, 'end'))
-
     melissa_server.melissa_server_run(ctypes.byref(simu_handle),
                                       ctypes.byref(data))
-
-    print "getattr(data, 'end') "+str(getattr(data, 'end'))
 
     melissa_server.melissa_server_run(ctypes.byref(simu_handle),
                                       ctypes.byref(data))
@@ -104,7 +99,7 @@ def main():
     param_array = np.frombuffer(buff_param, float)
     param_array = np.append(param_array, getattr(data, 'time_stamp'))
 
-    learning_handle = melissa_learning.model_init(len(val_array), len(param_array))
+    learning_handle = melissa_learning.model_init_parallel(len(val_array), len(param_array))
 
     i = 0
     j = 0
@@ -152,10 +147,11 @@ def main():
         print "loss test = " + str(res)
         k = 0
 
-    melissa_learning.model_finalize('.', 'model_insitu.h5')
+    melissa_learning.model_finalize_parallel('.', 'model_insitu.h5')
 
     melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))
+
 
 if __name__ == '__main__':
     main()
