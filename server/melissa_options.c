@@ -451,7 +451,7 @@ void melissa_get_options (int                 argc,
             options->sampling_size = atoi (optarg);
             break;
         case 'l':
-            // learning
+            options->learning = 1;
             break;
         case 'n':
             sprintf (options->launcher_name, "%s", optarg);

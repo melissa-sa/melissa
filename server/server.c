@@ -358,11 +358,13 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 zmq_msg_recv (&msg, server_ptr->connexion_responder, 0);
                 memcpy(server_ptr->rinit_tab, zmq_msg_data (&msg), 2 * sizeof(int));
                 zmq_msg_close (&msg);
-                zmq_msg_init_size (&msg, 4 * sizeof(int) + server_ptr->comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+                zmq_msg_init_size (&msg, 5 * sizeof(int) + server_ptr->comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char));
                 buf_ptr = zmq_msg_data (&msg);
                 memcpy (buf_ptr, &server_ptr->comm_data.comm_size, sizeof(int));
                 buf_ptr += sizeof(int);
                 memcpy (buf_ptr, &server_ptr->melissa_options.sobol_op, sizeof(int));
+                buf_ptr += sizeof(int);
+                memcpy (buf_ptr, &server_ptr->melissa_options.learning, sizeof(int));
                 buf_ptr += sizeof(int);
                 memcpy (buf_ptr, &server_ptr->melissa_options.nb_parameters, sizeof(int));
                 buf_ptr += sizeof(int);
