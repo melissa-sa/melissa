@@ -122,8 +122,8 @@ struct field_data_s
     int                   local_nb_messages;            /**< local number of messages                                   */
     int                   timestamp;                    /**< melissa internal timestamp                                 */
     void                **data_pusher;                  /**< push data ZeroMQ ports                                     */
-    int                  *rcvcnt;
-    int                  *displs;
+    int                  *gatherv_rcvcnt;
+    int                  *gatherv_displs;
     struct field_data_s  *next;                         /**< next field_data_struct                                     */
 };
 
@@ -170,8 +170,8 @@ static void free_field_data(field_data_t *data)
 
     if (global_data.learning == 1)
     {
-        melissa_free (data->rcvcnt);
-        melissa_free (data->displs);
+        melissa_free (data->gatherv_rcvcnt);
+        melissa_free (data->gatherv_displs);
     }
     if (data != NULL)
     {
@@ -246,15 +246,15 @@ static inline void gatherv_init(field_data_t  *data_field,
                                 int            comm_size)
 {
     int i;
-    data_field->rcvcnt = melissa_malloc (comm_size * sizeof(int));
-    data_field->displs = melissa_malloc (comm_size * sizeof(int));
-    data_field->displs[0] = 0;
+    data_field->gatherv_rcvcnt = melissa_malloc (comm_size * sizeof(int));
+    data_field->gatherv_displs = melissa_malloc (comm_size * sizeof(int));
+    data_field->gatherv_displs[0] = 0;
     for (i=0; i<comm_size-1; i++)
     {
-        data_field->rcvcnt[i] = vect_sizes[i];
-        data_field->displs[i+1] = data_field->displs[i] + data_field->rcvcnt[i];
+        data_field->gatherv_rcvcnt[i] = vect_sizes[i];
+        data_field->gatherv_displs[i+1] = data_field->gatherv_displs[i] + data_field->gatherv_rcvcnt[i];
     }
-    data_field->rcvcnt[comm_size-1] = vect_sizes[comm_size-1];
+    data_field->gatherv_rcvcnt[comm_size-1] = vect_sizes[comm_size-1];
 }
 
 static inline void comm_1_to_m_init (global_data_t *data_glob,
@@ -1119,8 +1119,8 @@ void melissa_send (const char *field_name,
                     local_vect_size,
                     MPI_DOUBLE,
                     global_data.buffer_data,
-                    field_data_ptr->rcvcnt,
-                    field_data_ptr->displs,
+                    field_data_ptr->gatherv_rcvcnt,
+                    field_data_ptr->gatherv_displs,
                     MPI_DOUBLE,
                     0,
                     global_data.comm);

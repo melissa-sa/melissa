@@ -48,6 +48,7 @@ struct melissa_server_s
     void                 *data_puller;
     void                 *text_puller;
     void                 *text_pusher;
+    void                 *text_requester;
     int                   first_init;
     int                  *first_send;
     int                   local_nb_messages;
@@ -110,7 +111,8 @@ int create_port_number (comm_data_t *comm_data,
                         const int    forbidden_port1,
                         const int    forbidden_port2,
                         const int    forbidden_port3,
-                        const int    forbidden_port4);
+                        const int    forbidden_port4,
+                        const int    forbidden_port5);
 
 int check_simu_state(melissa_field_t *field,
                      int              nb_fields,

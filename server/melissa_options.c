@@ -102,6 +102,7 @@ static inline void init_options (melissa_options_t *options)
     options->timeout_simu    = 300.0;
     options->txt_pull_port   = 5556;
     options->txt_push_port   = 5555;
+    options->txt_req_port    = 5554;
     options->data_port       = 2004;
     sprintf (options->restart_dir, ".");
     sprintf (options->launcher_name, "localhost");
@@ -407,6 +408,7 @@ void melissa_get_options (int                 argc,
                                 { "txt_push_port",  required_argument, NULL, 1000 },
                                 { "txt_pull_port",  required_argument, NULL, 1001 },
                                 { "data_port",      required_argument, NULL, 1002 },
+                                { "req_port",       required_argument, NULL, 1003 },
                                 { NULL,             0,                 NULL,  0  }};
 
     do
@@ -470,10 +472,15 @@ void melissa_get_options (int                 argc,
             break;
         case 1000:
             options->txt_push_port = atoi (optarg);
+            break;
         case 1001:
             options->txt_pull_port = atoi (optarg);
+            break;
         case 1002:
             options->data_port = atoi (optarg);
+            break;
+        case 1003:
+            options->txt_req_port = atoi (optarg);
             break;
         case 'h':
             stats_usage ();
