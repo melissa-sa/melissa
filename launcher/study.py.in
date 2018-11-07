@@ -182,12 +182,12 @@ class Responder(Thread):
                     simu = int(message[1])%self.batch_size
                     with groups[group].lock:
                         if groups[group].job_type == 4:
-                            buff.value = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
+                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
                         elif groups[group].job_type == 3:
-                            buff.value = "job "+str(groups[group].simu_id[i])+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
+                            message = "job "+str(groups[group].simu_id[i])+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
                         elif groups[group].job_type == 2:
-                            buff.value = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set) + "\000"
-                    melissa_message.send_resp_message(buff)
+                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set) + "\000"
+                    melissa_message.send_resp_message(message)
 
             logging.info('closing responder thread')
         except:
@@ -261,7 +261,8 @@ class Study(object):
         melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
         logging.debug('start status checker thread')
         self.state_checker.start()
-        self.responder.start()
+        if self.stdy_opt['learning']:
+            self.responder.start()
         for group in groups:
             self.fault_tolerance()
             while check_scheduler_load(self.usr_func) == False:
@@ -292,10 +293,12 @@ class Study(object):
         if server.job_status < FINISHED:
             server.cancel()
         self.messenger.running_study = False
-        self.responder.running_study = False
+        if self.stdy_opt['learning']:
+            self.responder.running_study = False
         self.state_checker.running_study = False
         self.messenger.join()
-        self.responder.join()
+        if self.stdy_opt['learning']:
+            self.responder.join()
         self.state_checker.join()
         postprocessing(self.usr_func)
         finalize(self.usr_func)
@@ -335,6 +338,9 @@ class Study(object):
 
         if (not 'data_port' in self.stdy_opt):
             self.stdy_opt['data_port'] = 2004
+
+        if (not 'learning' in self.stdy_opt):
+            self.stdy_opt['learning'] = False
 
         if (self.ml_stats['sobol_indices']):
             self.stdy_opt['batch_size'] = 1
@@ -446,11 +452,12 @@ class Study(object):
             self.state_checker.join()
             self.state_checker = StateChecker()
             self.state_checker.start()
-        if not self.responder.isAlive():
-            logging.error('Responder thread crashed')
-            self.responder.join()
-            self.responder = Responder()
-            self.responder.start()
+        if self.stdy_opt['learning']:
+            if not self.responder.isAlive():
+                logging.error('Responder thread crashed')
+                self.responder.join()
+                self.responder = Responder()
+                self.responder.start()
 
         sleep = False
         with server.lock:

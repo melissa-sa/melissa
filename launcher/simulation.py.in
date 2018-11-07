@@ -385,6 +385,8 @@ class Server(Job):
                                  '--txt_pull_port', str(Job.stdy_opt['send_port']),
                                  '--data_port', str(Job.stdy_opt['data_port']),
                                  '-n', str(buff.value)))
+        if Job.stdy_opt['learning']:
+            self.cmd_opt += " -l"
 
     def launch(self):
         """

@@ -161,8 +161,8 @@ int main( int argc, char **argv )
   if(next == np)     next=MPI_PROC_NULL;
   if(previous == -1) previous=MPI_PROC_NULL;
 
-  nx        = 10; // x axis grid subdivisions
-  ny        = 10; // y axis grid subdivisions
+  nx        = 100; // x axis grid subdivisions
+  ny        = 100; // y axis grid subdivisions
   lx        = 10.0; // x length
   ly        = 10.0; // y length
   d         = 1.0; // diffusion coefficient
