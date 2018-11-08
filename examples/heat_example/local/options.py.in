@@ -52,18 +52,18 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
     print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
-    server.job_id = subprocess.Popen(('mpirun ' +
-                                      ' -n '+str(NODES_SERVER) +
-                                      ' ' + server.path +
-                                      '/melissa_server ' +
-                                      server.cmd_opt +
-                                      ' &').split()).pid
     #server.job_id = subprocess.Popen(('mpirun ' +
                                       #' -n '+str(NODES_SERVER) +
                                       #' ' + server.path +
-                                      #'/melissa_server.py ' +
+                                      #'/melissa_server ' +
                                       #server.cmd_opt +
                                       #' &').split()).pid
+    server.job_id = subprocess.Popen(('mpirun ' +
+                                      ' -n '+str(NODES_SERVER) +
+                                      ' ' + server.path +
+                                      '/melissa_server.py ' +
+                                      server.cmd_opt +
+                                      ' &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 # The launch_group function to put in USER_FUNCTIONS['launch_group'].
@@ -207,7 +207,7 @@ STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
 STUDY_OPTIONS['batch_size'] = 1
-STUDY_OPTIONS['learning'] = False
+STUDY_OPTIONS['learning'] = True
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

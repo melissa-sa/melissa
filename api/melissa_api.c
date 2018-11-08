@@ -1340,9 +1340,9 @@ void melissa_finalize (void)
     }
 
     free_field_data(field_data);
-    melissa_print(VERBOSE_INFO, "Free ZMQ context...\n");
+    melissa_print(VERBOSE_DEBUG, "Free ZMQ context...\n");
     zmq_ctx_term (global_data.context);
-    melissa_print(VERBOSE_INFO, "Free ZMQ context OK\n");
+    melissa_print(VERBOSE_DEBUG, "Free ZMQ context OK\n");
     free (port_names);
 
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)

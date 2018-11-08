@@ -186,7 +186,6 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     if (server_ptr->melissa_options.learning == 1)
     {
         sprintf (txt_buffer, "tcp://%s:%d", server_ptr->melissa_options.launcher_name, server_ptr->melissa_options.txt_req_port);
-        printf ("%s\n", txt_buffer);
         zmq_setsockopt (server_ptr->text_requester, ZMQ_LINGER, &i, sizeof(int));
         i = 10000; // recv timeout
         zmq_setsockopt (server_ptr->text_requester, ZMQ_RCVTIMEO, &i, sizeof(int));
@@ -533,7 +532,6 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             {
                 // ask launcher for the simulation informations
                 sprintf (txt_buffer, "simu_info %d", simu_data->simu_id);
-                melissa_print(VERBOSE_DEBUG, "Ask \"%s\" to launcher\n", txt_buffer);
                 zmq_send(server_ptr->text_requester, txt_buffer, strlen(txt_buffer), 0);
                 sprintf (txt_buffer, "wait response...\n");
                 wait_launcher_msg = 1;
@@ -611,9 +609,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //                    server_ptr->last_msg_launcher = melissa_get_time();
 //                    process_txt_message(zmq_msg_data (&msg2), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
 //                    zmq_msg_close (&msg2);                wait_launcher_msg = 0;
-                    printf (" Waiting launcher message\n");
                     zmq_recv (server_ptr->text_requester, txt_buffer, 255, 0);
-                    printf (" -- > message: %s\n", txt_buffer);
                     server_ptr->last_msg_launcher = melissa_get_time();
                     process_txt_message(txt_buffer, &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
                 }
