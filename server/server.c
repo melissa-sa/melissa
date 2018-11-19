@@ -187,7 +187,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     {
         sprintf (txt_buffer, "tcp://%s:%d", server_ptr->melissa_options.launcher_name, server_ptr->melissa_options.txt_req_port);
         zmq_setsockopt (server_ptr->text_requester, ZMQ_LINGER, &i, sizeof(int));
-        i = 10000; // recv timeout
+        i = 100000; // recv timeout
         zmq_setsockopt (server_ptr->text_requester, ZMQ_RCVTIMEO, &i, sizeof(int));
         melissa_connect (server_ptr->text_requester, txt_buffer);
     }
@@ -362,7 +362,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", text, server_ptr->comm_data.rank);
             server_ptr->last_msg_launcher = melissa_get_time();
             process_txt_message(text, &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
-            server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
+            if (server_ptr->melissa_options.sampling_size < server_ptr->simulations.size)
+            {
+                server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
+            }
         }
 
         // === If message on the connexion port === //
@@ -501,7 +504,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 {
                     vector_add (&server_ptr->simulations, add_simulation());
                 }
-                server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
+                if (server_ptr->melissa_options.sampling_size < server_ptr->simulations.size)
+                {
+                    server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
+                }
             }
 
             data_ptr = server_ptr->fields[field_id].stats_data;

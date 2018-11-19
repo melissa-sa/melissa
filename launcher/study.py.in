@@ -184,7 +184,7 @@ class Responder(Thread):
                         if groups[group].job_type == 4:
                             message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
                         elif groups[group].job_type == 3:
-                            message = "job "+str(groups[group].simu_id[i])+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
+                            message = "job "+str(groups[group].simu_id[simu])+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
                         elif groups[group].job_type == 2:
                             message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set) + "\000"
                     melissa_message.send_resp_message(message)
@@ -218,7 +218,7 @@ class Study(object):
         Job.set_ml_stats(self.ml_stats)
         self.messenger = Messenger(self.stdy_opt['batch_size'])
         self.state_checker = StateChecker()
-        self.responder = Responder()
+        self.responder = Responder(self.stdy_opt['batch_size'])
 
     def run(self):
         """

@@ -148,7 +148,7 @@ def main():
         k = 0
 
     if model_is_init:
-        melissa_learning.model_finalize_parallel('.', 'model_insitu.h5')
+        melissa_learning.save_model_parallel('.', 'model_insitu.h5')
 
     melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))

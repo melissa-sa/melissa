@@ -40,6 +40,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras import backend as K
 import horovod.keras as hvd
+from mpi4py import MPI
 
 MODEL = Sequential()
 class melissa_helper:
@@ -140,19 +141,20 @@ def test_batch(handle):
     handle.test_y = []
     return res
 
-def model_finalize_minibatch(dirname, filename):
+def save_model(dirname, filename):
+    MODEL.save(dirname+"/"+filename)
+
+def save_model_minibatch(dirname, filename):
     if hvd.rank() == 0:
-        MODEL.save(dirname+"/"+filename)
+        save_model(dirname, filename)
     print "Horovod size: "+str(hvd.size())
     print "Horovod local rank: "+str(hvd.local_rank())
     print "Horovod rank: "+str(hvd.rank())
 
-
-def model_finalize_parallel(dirname, filename):
-#    if (not os.path.isdir(dirname+"/rank"+str(hvd.rank()))):
-#        os.mkdir(dirname+"/rank"+str(hvd.rank()))
-#    MODEL.save(dirname+"/rank"+str(hvd.rank())+"/"+filename)
-    pass
+def save_model_parallel(dirname, filename):
+    if (not os.path.isdir(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()))):
+        os.mkdir(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()))
+    save_model(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()),filename)
 
 
 

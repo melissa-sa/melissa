@@ -35,7 +35,7 @@ USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 EXECUTABLE='heatc'
-NODES_SERVER = 2
+NODES_SERVER = 3
 NODES_GROUP = 2
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
@@ -207,7 +207,7 @@ STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
 STUDY_OPTIONS['batch_size'] = 1
-STUDY_OPTIONS['learning'] = True
+STUDY_OPTIONS['learning'] = False
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
@@ -218,7 +218,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
