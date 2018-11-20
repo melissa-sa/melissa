@@ -188,6 +188,8 @@ class Responder(Thread):
                         elif groups[group].job_type == 2:
                             message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set) + "\000"
                     melissa_message.send_resp_message(message)
+                if message[0] == 'test_timeout':
+                    melissa_message.send_resp_message("alive")
 
             logging.info('closing responder thread')
         except:
@@ -258,7 +260,8 @@ class Study(object):
         server.write_node_name()
         # connect to server
         logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
-        melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
+        #melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
+        melissa_message.bind_message_snd(str(self.stdy_opt['send_port']))
         logging.debug('start status checker thread')
         self.state_checker.start()
         if self.stdy_opt['learning']:
