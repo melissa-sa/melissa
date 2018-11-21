@@ -101,7 +101,7 @@ def launch_group(group):
                                nb_param=str(STUDY_OPTIONS['nb_parameters']),
                                executable='@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE)
             file.close()
-            file=open("create_group"+str(group_id)+".py", "w")
+            file=open("create_group"+str(group.rank)+".py", "w")
             file.write(content)
             file.close()
             os.system('python create_group'+str(group.rank)+'.py')
