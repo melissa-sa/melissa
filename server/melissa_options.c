@@ -527,7 +527,8 @@ void melissa_check_options (melissa_options_t  *options)
         options->min_and_max_op == 0 &&
         options->threshold_op == 0 &&
         options->quantile_op == 0 &&
-        options->sobol_op == 0)
+        options->sobol_op == 0 &&
+        options->learning != 1)
     {
         // default values
         fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");

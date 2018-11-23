@@ -54,7 +54,7 @@ class simulation_data(ctypes.Structure):
                 ("nb_param", ctypes.c_int),
                 ("time_stamp", ctypes.c_int),
                 ("first_init", ctypes.c_int),
-                ("end", ctypes.c_int),
+                ("status", ctypes.c_int),
                 ("val", c_double_ptr),
                 ("val_size", ctypes.c_int),
                 ("max_val_size", ctypes.c_int)]
@@ -99,56 +99,70 @@ def main():
     ctypes.pythonapi.PyBuffer_FromMemory.restype = ctypes.py_object
 
     #get the data from the C structure
-    buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))
-    val_array = np.frombuffer(buff_val, float)
-    buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
-    param_array = np.frombuffer(buff_param, float)
-    param_array = np.append(param_array, getattr(data, 'time_stamp'))
+    server_status = getattr(data, 'status')
+    if server_status == 0:
+        buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))
+        val_array = np.frombuffer(buff_val, float)
+        buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
+        param_array = np.frombuffer(buff_param, float)
+        param_array = np.append(param_array, getattr(data, 'time_stamp'))
 
 
     i = 0
     j = 0
     k = 0
     model_is_init = False
-    #The while loop is executed only when going learning.
-    while getattr(data, 'end') != 1:
-        if not model_is_init:
-            learning_handle = melissa_learning.model_init_parallel(len(val_array), len(param_array))
+
+    #The while loop is executed only when doing learning.
+    while server_status != 1:
+        if server_status == 0:
+            if not model_is_init:
+                learning_handle = melissa_learning.model_init_parallel(len(val_array), len(param_array))
+                model_is_init = True
+                melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
+                i += 1
+            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                              ctypes.byref(data))
+
+            #get the data from the C structure. For now, doesn't work for multiple fields
+            server_status = getattr(data, 'status')
+            buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))
+            val_array = np.frombuffer(buff_val, float)
+            buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
+            param_array = np.frombuffer(buff_param, float)
+            param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
+
+            j += 1
+            if j == 10:
+                #add one out of ten result to a testing batch
+                melissa_learning.add_to_testing_set(param_array, val_array, learning_handle)
+                k += 1
+                if k == BATCH_SIZE:
+                    # when the batch is ready, test on it
+                    res = melissa_learning.test_batch(learning_handle)
+                    print "loss test = " + str(res)
+                    k = 0
+                j = 0
+            else:
+                #add nine out of ten result to a training batch
+                melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
+                #if val_size != getattr(data, 'val_size'):
+                    #print 'New val size: '+str(getattr(data, 'val_size'))+'; old val size: '+str(val_size)
+                    #new_np_array = np.ctypeslib.as_array(getattr(data, 'val'), shape=(getattr(data, 'val_size'),))
+                    #val_size = getattr(data, 'val_size')
+                i += 1
+                if i == BATCH_SIZE:
+                    # when the batch is ready, train on it
+                    res = melissa_learning.train_batch(learning_handle)
+                    print "loss train = " + str(res)
+                    i = 0
+        elif server_status == 2:
+            melissa_learning.save_model_parallel('.', 'model_insitu.h5')
+        elif server_status == 3:
+            melissa_learning.read_model_parallel('.', 'model_insitu.h5')
             model_is_init = True
-        melissa_server.melissa_server_run(ctypes.byref(simu_handle),
-                                          ctypes.byref(data))
-
-        #get the data from the C structure. For now, doesn't work for multiple fields
-        buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))
-        val_array = np.frombuffer(buff_val, float)
-        buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
-        param_array = np.frombuffer(buff_param, float)
-        param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
-
-        j += 1
-        if j == 10:
-            #add one out of ten result to a testing batch
-            melissa_learning.add_to_testing_set(param_array, val_array, learning_handle)
-            k += 1
-            if k == BATCH_SIZE:
-                # when the batch is ready, test on it
-                res = melissa_learning.test_batch(learning_handle)
-                print "loss test = " + str(res)
-                k = 0
-            j = 0
-        else:
-            #add nine out of ten result to a training batch
             melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
-            #if val_size != getattr(data, 'val_size'):
-                #print 'New val size: '+str(getattr(data, 'val_size'))+'; old val size: '+str(val_size)
-                #new_np_array = np.ctypeslib.as_array(getattr(data, 'val'), shape=(getattr(data, 'val_size'),))
-                #val_size = getattr(data, 'val_size')
             i += 1
-            if i == BATCH_SIZE:
-                # when the batch is ready, train on it
-                res = melissa_learning.train_batch(learning_handle)
-                print "loss train = " + str(res)
-                i = 0
 
     print "end server"
 

@@ -144,6 +144,23 @@ def test_batch(handle):
 def save_model(dirname, filename):
     MODEL.save(dirname+"/"+filename)
 
+def read_model(dirname, filename):
+    model=load_model(dirname+"/"+filename)
+    MODEL.append(model)
+
+def read_model_minibatch(dirname, filename):
+    if hvd.rank() == 0:
+        read_model(dirname, filename)
+    # Horovod: adjust learning rate based on number of GPUs.
+    opt = keras.optimizers.Adam()
+    # Horovod: add Horovod Distributed Optimizer.
+    opt = hvd.DistributedOptimizer(opt)
+
+    hvd.broadcast_global_variables(0)
+
+def read_model_parallel(dirname, filename):
+    read_model(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()),filename)
+
 def save_model_minibatch(dirname, filename):
     if hvd.rank() == 0:
         save_model(dirname, filename)

@@ -618,8 +618,9 @@ void melissa_init (const char *field_name,
             global_data.sobol_rank = *simu_id % (global_data.nb_parameters + 2);
             global_data.sample_id = *simu_id / (global_data.nb_parameters + 2);
 
-            // write master node name node name
-            if (*rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ)
+            master_node_name = getenv("MASTER_NODE_NAME");
+            // write master node name node name if not found in env
+            if (*rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && master_node_name == NULL)
             {
                 melissa_get_node_name (master_node_name);
                 sprintf (port_name, "master_name%d.txt", global_data.sample_id);
@@ -710,18 +711,17 @@ void melissa_init (const char *field_name,
                 if (*rank == 0)
                 {
                     master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
-                }
 #ifdef BUILD_WITH_MPI
+                }
                 if (*comm_size > 1)
                 {
                     MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
                 }
-#else // BUILD_WITH_MPI
                 else
                 {
+#endif // BUILD_WITH_MPI
                     memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
                 }
-#endif // BUILD_WITH_MPI
             }
             if (global_data.sobol_rank != 0)
             {
@@ -1137,7 +1137,7 @@ void melissa_send (const char *field_name,
 
     if (global_data.sobol == 1)
     {
-        melissa_print(VERBOSE_DEBUG, "Group %d gather data\n", &global_data.sample_id);
+        melissa_print(VERBOSE_DEBUG, "Group %d gather data (rank %d)\n", global_data.sample_id, global_data.rank);
         switch (global_data.coupling)
         {
 #ifdef BUILD_WITH_FLOWVR
@@ -1230,6 +1230,7 @@ void melissa_send (const char *field_name,
             }
         }
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     field_data_ptr->timestamp += 1;
     end_comm_time = melissa_get_time();
     total_comm_time += end_comm_time - start_comm_time;

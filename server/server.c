@@ -294,7 +294,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
     server_ptr = *server_handle;
 
     simu_data->first_init = 0;
-    simu_data->end = 0;
+    simu_data->status = 0;
 
     // =================== //
     // ===  Main loop  === //
@@ -302,16 +302,6 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
     while (1)
     {
-        server_ptr->start_wait_time = melissa_get_time();
-        zmq_pollitem_t items [] = {
-            { server_ptr->text_puller, 0, ZMQ_POLLIN, 0 },
-            { server_ptr->connexion_responder, 0, ZMQ_POLLIN, 0 },
-            { server_ptr->data_puller, 0, ZMQ_POLLIN, 0 },
-            { server_ptr->deconnexion_responder, 0, ZMQ_POLLIN, 0 }
-        };
-        zmq_poll (items, 4, 100);
-        server_ptr->end_wait_time = melissa_get_time();
-        server_ptr->total_wait_time += server_ptr->end_wait_time - server_ptr->start_wait_time;
 
         // === check timeouts === //
 
@@ -347,6 +337,44 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 melissa_print (VERBOSE_ERROR, "Waiting for remaining simulations to complete\n");
             }
         }
+
+        if (server_ptr->last_checkpoint_time  + server_ptr->melissa_options.check_interval < melissa_get_time() && server_ptr->last_checkpoint_time > 0.1)
+        {
+            server_ptr->start_save_time = melissa_get_time();
+            for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
+            {
+                save_stats (server_ptr->fields[i].stats_data, &server_ptr->comm_data, server_ptr->fields[i].name);
+                if (server_ptr->comm_data.rank == 0)
+                {
+                    char dir[256];
+                    getcwd(dir, 256*sizeof(char));
+                    melissa_print(VERBOSE_DEBUG, "Statistic field %s saved in %s\n", server_ptr->fields[i].name, dir);
+                }
+            }
+            save_simu_states (&server_ptr->simulations, &server_ptr->comm_data);
+            server_ptr->last_checkpoint_time = melissa_get_time();
+            server_ptr->end_save_time = melissa_get_time();
+            melissa_print(VERBOSE_DEBUG, "Chekpoint time: %g (proc %d)\n", server_ptr->end_save_time - server_ptr->start_save_time, server_ptr->comm_data.rank);
+            server_ptr->total_save_time += server_ptr->end_save_time - server_ptr->start_save_time;
+            simu_data->status = 2;
+            if (server_ptr->melissa_options.learning == 1)
+            {
+                break;
+            }
+        }
+
+        // poll on ZMQ ports
+
+        server_ptr->start_wait_time = melissa_get_time();
+        zmq_pollitem_t items [] = {
+            { server_ptr->text_puller, 0, ZMQ_POLLIN, 0 },
+            { server_ptr->connexion_responder, 0, ZMQ_POLLIN, 0 },
+            { server_ptr->data_puller, 0, ZMQ_POLLIN, 0 },
+            { server_ptr->deconnexion_responder, 0, ZMQ_POLLIN, 0 }
+        };
+        zmq_poll (items, 4, 100);
+        server_ptr->end_wait_time = melissa_get_time();
+        server_ptr->total_wait_time += server_ptr->end_wait_time - server_ptr->start_wait_time;
 
         // === If message on the text port === //
 
@@ -437,7 +465,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
             server_ptr->first_init = 0;
             simu_data->first_init = 1;
-            simu_data->end = 0;
+            simu_data->status = 0;
             simu_data->val_size = 0;
             simu_data->max_val_size = 0;
             simu_data->nb_param = server_ptr->melissa_options.nb_parameters;
@@ -532,6 +560,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     server_ptr->last_checkpoint_time = melissa_get_time();
                     server_ptr->end_read_time = melissa_get_time();
                     server_ptr->total_read_time += server_ptr->end_read_time - server_ptr->start_read_time;
+                    simu_data->status = 3;
                 }
             }
             simu_ptr = server_ptr->simulations.items[simu_data->simu_id];
@@ -699,27 +728,6 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
         }
 
-//        if (iteration % 100 == 0)
-        if (server_ptr->last_checkpoint_time  + server_ptr->melissa_options.check_interval < melissa_get_time() && server_ptr->last_checkpoint_time > 0.1)
-        {
-            server_ptr->start_save_time = melissa_get_time();
-            for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
-            {
-                save_stats (server_ptr->fields[i].stats_data, &server_ptr->comm_data, server_ptr->fields[i].name);
-                if (server_ptr->comm_data.rank == 0)
-                {
-                    char dir[256];
-                    getcwd(dir, 256*sizeof(char));
-                    melissa_print(VERBOSE_DEBUG, "Statistic field %s saved in %s\n", server_ptr->fields[i].name, dir);
-                }
-            }
-            save_simu_states (&server_ptr->simulations, &server_ptr->comm_data);
-            server_ptr->last_checkpoint_time = melissa_get_time();
-            server_ptr->end_save_time = melissa_get_time();
-            melissa_print(VERBOSE_DEBUG, "Chekpoint time: %g (proc %d)\n", server_ptr->end_save_time - server_ptr->start_save_time, server_ptr->comm_data.rank);
-            server_ptr->total_save_time += server_ptr->end_save_time - server_ptr->start_save_time;
-        }
-
         // === Signal handling === //
 
         if (end_signal == SIGINT || end_signal == SIGUSR1 || end_signal == SIGUSR2)
@@ -770,7 +778,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
         if (server_ptr->nb_finished_simulations >= server_ptr->melissa_options.sampling_size && server_ptr->nb_finished_simulations > 0)
         {
-            simu_data->end = 1;
+            simu_data->status = 1;
             break;
         }
 
@@ -895,7 +903,7 @@ int main (int argc, char **argv)
 {
     void* melissa_server_ptr;
     simulation_data_t simu_data;
-    simu_data.end = 0;
+    simu_data.status = 0;
     simu_data.val_size = 0;
     simu_data.max_val_size = 0;
     simu_data.val = melissa_malloc(0);
@@ -904,7 +912,7 @@ int main (int argc, char **argv)
     MPI_Init_thread (&argc, &argv, MPI_THREAD_FUNNELED , &i);
 #endif // BUILD_WITH_MPI
     melissa_server_init (argc, argv, &melissa_server_ptr);
-    while (simu_data.end != 1)
+    while (simu_data.status != 1)
     {
         melissa_server_run (&melissa_server_ptr, &simu_data);
     }

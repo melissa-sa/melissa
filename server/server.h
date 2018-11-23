@@ -91,7 +91,7 @@ struct simulation_data_s
     int     nb_param;      /**< number of parameters */
     int     time_stamp;
     int     first_init;
-    int     end;
+    int     status;
     double *val;
     int     val_size;
     int     max_val_size;
