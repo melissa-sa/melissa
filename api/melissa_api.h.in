@@ -28,7 +28,6 @@
 #define MELISSA_API_H
 
 #include "@ZEROMQ_INCLUDE_DIR@/zmq.h"
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
 
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
@@ -57,6 +56,5 @@ void melissa_send(const char *field_name,
                   double     *send_vect);
 
 void melissa_finalize(void);
-#endif // BUILD_WITH_MPI
 
 #endif // MELISSA_API_H

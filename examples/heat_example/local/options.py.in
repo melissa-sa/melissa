@@ -107,7 +107,7 @@ def launch_group(group):
             os.system('python create_group'+str(group.rank)+'.py')
             group.job_id = subprocess.Popen('flowvr group'+str(group.rank), shell=True).pid
         else:
-            os.environ['MASTER_NODE_NAME'] = socket.gethostname()
+            os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
             command = 'mpirun '
             for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
                 command += ' '.join(('-n',
@@ -135,7 +135,7 @@ def launch_group(group):
                                  ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
         print command[:-2]
-        os.environ['MASTER_NODE_NAME'] = socket.gethostname()
+        os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
         group.job_id = subprocess.Popen(command[:-2].split()).pid
 
     else:
@@ -206,9 +206,9 @@ STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
-STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_ZMQ" # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 1
+STUDY_OPTIONS['batch_size'] = 2
 STUDY_OPTIONS['learning'] = False
 
 MELISSA_STATS = {}

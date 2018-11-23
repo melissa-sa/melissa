@@ -618,7 +618,7 @@ void melissa_init (const char *field_name,
             global_data.sobol_rank = *simu_id % (global_data.nb_parameters + 2);
             global_data.sample_id = *simu_id / (global_data.nb_parameters + 2);
 
-            master_node_name = getenv("MASTER_NODE_NAME");
+            master_node_name = getenv("MELISSA_MASTER_NODE_NAME");
             // write master node name node name if not found in env
             if (*rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && master_node_name == NULL)
             {
@@ -725,7 +725,7 @@ void melissa_init (const char *field_name,
             }
             if (global_data.sobol_rank != 0)
             {
-                master_node_name = getenv("MASTER_NODE_NAME");
+                master_node_name = getenv("MELISSA_MASTER_NODE_NAME");
                 if (master_node_name == NULL)
                 {
                     master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME);
