@@ -34,7 +34,8 @@ int create_port_number (comm_data_t *comm_data,
                         const int    forbidden_port1,
                         const int    forbidden_port2,
                         const int    forbidden_port3,
-                        const int    forbidden_port4)
+                        const int    forbidden_port4,
+                        const int    forbidden_port5)
 {
     char *node_names;
     int   i;
@@ -58,7 +59,8 @@ int create_port_number (comm_data_t *comm_data,
             while (port == forbidden_port1
                    || port == forbidden_port2
                    || port == forbidden_port3
-                   || port == forbidden_port4)
+                   || port == forbidden_port4
+                   || port == forbidden_port5)
             {
                 port += 1;
             }

@@ -106,6 +106,7 @@ find_python_module(numpy REQUIRED)
 # ZeroMQ #
 
 find_package(ZeroMQ)
+include_directories(${ZEROMQ_INCLUDE_DIR})
 
 # MPI #
 

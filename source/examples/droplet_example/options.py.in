@@ -243,7 +243,7 @@ def launch_simu_slurm(simulation):
         contenu += "source ~/.bashrc\n"
         contenu += "source /scratch/cnt0027/ima0366/tterraz/telemac/barracuda/configs/pysource.sh\n"
         contenu += "export MELISSA_SERVER_NODE_NAME=\""+ simulation.server_node_name +"\"\n"
-        contenu += "export MASTER_NODE_NAME=$(hostname)\n"
+        contenu += "export MELISSA_MASTER_NODE_NAME=$(hostname)\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(i))):

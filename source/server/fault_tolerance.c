@@ -223,7 +223,6 @@ void process_txt_message (char      msg[255],
         }
         temp_char = strtok (NULL, s);
         i = 0;
-        melissa_print (VERBOSE_DEBUG, "simu %d parameters: %s\n", s);
         while( temp_char != NULL )
         {
             simu_ptr->parameters[i] = atof(temp_char);

@@ -13,7 +13,8 @@
 
 
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
-export MASTER_NODE_NAME=${HOSTNAME}
+export MELISSA_SERVER_NODE_NAME=${SERVER_NODE_NAME}
+export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
 date +\"%d/%m/%y %T\"
 ${SIMU_CMD}
 date +\"%d/%m/%y %T\"

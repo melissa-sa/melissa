@@ -121,8 +121,18 @@ class Messenger(Thread):
                             groups[group_id].job_status = PENDING
                 elif message[0] == 'group_state':
                     group_id = int(message[1])/self.batch_size
+                    simu_id = int(message[1])%self.batch_size
                     with groups[group_id].lock:
-                        groups[group_id].status = int(message[2])
+                        if groups[group_id].job_type == 3:
+                            if groups[group_id].status < 2:
+                                groups[group_id].status = int(message[2])
+                            print "group " +str(group_id)+ " simu "+str(simu_id)
+                            groups[group_id].simu_status[simu_id] = int(message[2])
+                            if all(simu_status == 2 for simu_status in groups[group_id].simu_status):
+                                groups[group_id].status = 2
+                                print 'Group ' + str(group_id) + ' status: ' + str(groups[group_id].status)
+                        else:
+                            groups[group_id].status = int(message[2])
                     logging.info('Group ' + message[1] + ' status: ' + message[2])
                 elif message[0] == 'server':
                     with server.lock:
@@ -149,6 +159,44 @@ class Messenger(Thread):
             traceback.print_exc()
             return
 
+class Responder(Thread):
+    """
+        Thread in charge of responding to server requests
+    """
+    def __init__(self, batch_size = 1):
+        Thread.__init__(self)
+        self.running_study = True
+        self.batch_size = batch_size
+
+    def run(self):
+        try:
+            while self.running_study:
+                buff = create_string_buffer('\000' * 256)
+                melissa_message.get_resp_message(buff)
+                if buff.value != 'nothing':
+                    logging.debug('message: '+buff.value)
+                    print 'message: '+buff.value
+                message = buff.value.split()
+                if message[0] == 'simu_info':
+                    group = int(message[1])/self.batch_size
+                    simu = int(message[1])%self.batch_size
+                    with groups[group].lock:
+                        if groups[group].job_type == 4:
+                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
+                        elif groups[group].job_type == 3:
+                            message = "job "+str(groups[group].simu_id[simu])+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
+                        elif groups[group].job_type == 2:
+                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set) + "\000"
+                    melissa_message.send_resp_message(message)
+                if message[0] == 'test_timeout':
+                    melissa_message.send_resp_message("alive")
+
+            logging.info('closing responder thread')
+        except:
+            print '=== Responder thread crashed ==='
+            traceback.print_exc()
+            return
+
 
 class Study(object):
     """
@@ -172,6 +220,7 @@ class Study(object):
         Job.set_ml_stats(self.ml_stats)
         self.messenger = Messenger(self.stdy_opt['batch_size'])
         self.state_checker = StateChecker()
+        self.responder = Responder(self.stdy_opt['batch_size'])
 
     def run(self):
         """
@@ -187,6 +236,7 @@ class Study(object):
         logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
         print 'bind to recv port '+str(self.stdy_opt['recv_port'])
         melissa_message.bind_message_rcv(str(self.stdy_opt['recv_port']))
+        melissa_message.bind_message_resp(str(5554))
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
@@ -209,10 +259,13 @@ class Study(object):
             self.stop()
         server.write_node_name()
         # connect to server
-        logging.debug('bind to send port '+str(self.stdy_opt['send_port']))
+        logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
+        #melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
         melissa_message.bind_message_snd(str(self.stdy_opt['send_port']))
         logging.debug('start status checker thread')
         self.state_checker.start()
+        if self.stdy_opt['learning']:
+            self.responder.start()
         for group in groups:
             self.fault_tolerance()
             while check_scheduler_load(self.usr_func) == False:
@@ -243,8 +296,12 @@ class Study(object):
         if server.job_status < FINISHED:
             server.cancel()
         self.messenger.running_study = False
+        if self.stdy_opt['learning']:
+            self.responder.running_study = False
         self.state_checker.running_study = False
         self.messenger.join()
+        if self.stdy_opt['learning']:
+            self.responder.join()
         self.state_checker.join()
         postprocessing(self.usr_func)
         finalize(self.usr_func)
@@ -279,8 +336,17 @@ class Study(object):
         if (not 'recv_port' in self.stdy_opt):
             self.stdy_opt['recv_port'] = 5555
 
+        if (not 'recv_port' in self.stdy_opt):
+            self.stdy_opt['resp_port'] = 5554
+
         if (not 'data_port' in self.stdy_opt):
             self.stdy_opt['data_port'] = 2004
+
+        if (not 'learning' in self.stdy_opt):
+            self.stdy_opt['learning'] = False
+
+        if (self.ml_stats['sobol_indices']):
+            self.stdy_opt['batch_size'] = 1
 
         if self.stdy_opt['send_port'] == self.stdy_opt['recv_port']:
             logging.error('Error: send_port and recv_port can not have the same value')
@@ -389,6 +455,12 @@ class Study(object):
             self.state_checker.join()
             self.state_checker = StateChecker()
             self.state_checker.start()
+        if self.stdy_opt['learning']:
+            if not self.responder.isAlive():
+                logging.error('Responder thread crashed')
+                self.responder.join()
+                self.responder = Responder()
+                self.responder.start()
 
         sleep = False
         with server.lock:
@@ -414,8 +486,21 @@ class Study(object):
                 print '=== Error while restarting server ==='
                 traceback.print_exc()
                 self.stop()
-            melissa_message.connect_message_snd(server.node_name+'\000')
+            logging.debug('wait server restart')
+            try:
+                server.wait_start()
+            except:
+                logging.error('Error while waiting server')
+                print '=== Error while waiting server ==='
+                traceback.print_exc()
+                self.stop()
+
             logging.info('server start')
+            server.write_node_name()
+            # connect to server
+            logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
+            melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
+
             time.sleep(1)
             for group in groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:

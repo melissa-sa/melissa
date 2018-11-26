@@ -1,0 +1,378 @@
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+
+"""
+    User defined options module
+"""
+import os
+import time
+import numpy as np
+import subprocess
+import getpass
+import imp
+#from matplotlib import pyplot as plt
+#from matplotlib import cm
+from string import Template
+from shutil import copyfile
+from lxml import etree
+
+USERNAME = getpass.getuser()
+BUILD_WITH_MPI = 'ON'.upper()
+NODES_SERVER = 1
+NODES_GROUP = 1
+WALLTIME_SERVER = "0:30:00"
+WALLTIME_SIMU = "0:05:00"
+NODES_SIMU = NODES_GROUP
+PROC_PER_NODE = 24
+XML_FILE_NAME = "case1.xml"
+
+
+def call_bash(string):
+    proc = subprocess.Popen(string,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    return{'out':remove_end_of_line(out),
+           'err':remove_end_of_line(err)}
+
+def remove_end_of_line(string):
+    if len(string) > 0:
+        return str(string[:len(string)-int(string[-1] == "\n")])
+    else:
+        return ""
+
+def draw_param_set():
+    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
+    RANGE_MIN_PARAM = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
+    RANGE_MAX_PARAM = np.ones(STUDY_OPTIONS['nb_parameters'], float)
+    RANGE_MIN_PARAM[0] = 200
+    RANGE_MAX_PARAM[0] = 500
+    RANGE_MIN_PARAM[1] = 1
+    RANGE_MAX_PARAM[1] = 2
+    for i in range(STUDY_OPTIONS['nb_parameters']):
+        param_set[i] = np.random.uniform(RANGE_MIN_PARAM[i],
+                                         RANGE_MAX_PARAM[i])
+    param_set[1]=param_set[1]*10**(-1*np.random.randint(0,5))
+    return param_set
+
+def launch_server(server):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/STATS")):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    #create_run_server(server)
+    server_cmd = server.path+"/melissa_server.py "+server.cmd_opt+" &"
+    #server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
+
+    content = ""
+    file=open("/scratch/cnt0027/ima0366/tterraz/test_learning/fluid_example/scripts/run_server.sh", "r")
+    content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
+                                               NODES_SERVER=str(NODES_SERVER),
+                                               PROC_PER_NODE=str(PROC_PER_NODE),
+                                               SERVER_CMD=str(server_cmd),
+                                               SLURM_JOB_ID="${SLURM_JOB_ID}")
+    file.close()
+    file=open("run_server.sh", "w")
+    file.write(content)
+    file.close()
+    os.system("chmod 744 run_server.sh")
+
+    proc = subprocess.Popen('sbatch "./run_server.sh"',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+    # get the job ID
+    (out, err) = proc.communicate()
+    if len(out.split()) > 0:
+        server.job_id = out.split()[-1]
+    else:
+        print err
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+def create_coupling_parameters (n_procs_weight,
+                                n_procs_min,
+                                n_procs_max,
+                                n_simu):
+    content=""
+    fichier=open("coupling_parameters.py", "w")
+    content += "# -*- coding: utf-8 -*-                                                          \n"
+    content += "                                                                                 \n"
+    content += "#=============================================================================== \n"
+    content += "# User variable settings to specify a coupling computation environnement.        \n"
+    content += "                                                                                 \n"
+    content += "# A coupling case is defined by a dictionnary, containing the following:         \n"
+    content += "                                                                                 \n"
+    content += "# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'Code_Aster')         \n"
+    content += "# Domain directory name                                                          \n"
+    content += "# Run parameter setting file                                                     \n"
+    content += "# Number of processors (or None for automatic setting)                           \n"
+    content += "# Optional command line parameters. If not useful = None                         \n"
+    content += "#=============================================================================== \n"
+    content += "                                                                                 \n"
+    content += "# Define coupled domains                                                         \n"
+    content += "                                                                                 \n"
+    content += "domains = [                                                                      \n"
+    content += "                                                                                 \n"
+    content += "    {'solver': 'Code_Saturne',                                                   \n"
+    content += "     'domain': 'rank"+str(0)+"',                                                 \n"
+    content += "     'script': 'runcase',                                                        \n"
+    content += "     'n_procs_weight': "+str(n_procs_weight)+",                                  \n"
+    content += "     'n_procs_min': "+str(n_procs_min)+",                                        \n"
+    content += "     'n_procs_max': "+str(n_procs_max)+"}                                        \n"
+    content += "                                                                                 \n"
+    for j in range(n_simu-1):
+        content += "    ,                                                                            \n"
+        content += "    {'solver': 'Code_Saturne',                                                   \n"
+        content += "     'domain': 'rank"+str(j+1)+"',                                               \n"
+        content += "     'script': 'runcase',                                                        \n"
+        content += "     'n_procs_weight': "+str(n_procs_weight)+",                                  \n"
+        content += "     'n_procs_min': "+str(n_procs_min)+",                                        \n"
+        content += "     'n_procs_max': "+str(n_procs_max)+"}                                        \n"
+        content += "                                                                                 \n"
+    content += "    ]                                                                            \n"
+    content += "                                                                                 \n"
+    fichier.write(content)
+    fichier.close()
+    os.system("chmod 744 coupling_parameters.py")
+
+def create_run_coupling (n_simu):
+    content=""
+    fichier=open("run_cas_couple.sh", "w")
+    content += "#!/bin/bash                                                                     \n"
+    content += "#SBATCH -N "+str(NODES_SIMU*n_simu)+"                                           \n"
+    content += "#SBATCH --ntasks="+str(PROC_PER_NODE*NODES_SIMU*n_simu)+"                       \n"
+    content += "#SBATCH --time="+WALLTIME_SIMU+"                                                \n"
+    content += "#SBATCH -o coupling.%j.log                                                      \n"
+    content += "#SBATCH -e coupling.%j.err                                                      \n"
+    content += "source ~/.bashrc                                                                \n"
+    content += "GROUP=$(basename `pwd` | cut -dp -f2)                                           \n"
+    content += "cd "+STUDY_OPTIONS['working_directory']+"/group${GROUP}                         \n"
+    content += "export OMP_NUM_THREADS=1                                                        \n"
+    content += "export MELISSA_MASTER_NODE_NAME=${HOSTNAME}                                             \n"
+    content += "export PATH="+STUDY_OPTIONS['saturne_path']+"/:$PATH                            \n"
+    content += "cp "+STUDY_OPTIONS['working_directory']+"/server_name.txt ./RESU_COUPLING/      \n"
+    content += "date +\"%d/%m/%y %T\"                                                           \n"
+    content += "\code_saturne run --coupling coupling_parameters.py                             \n"
+    content += "date +\"%d/%m/%y %T\"                                                           \n"
+    content += "exit $?                                                                         \n"
+    fichier.write(content)
+    fichier.close()
+    os.system("chmod 744 run_cas_couple.sh")
+
+def create_runcase (simu):
+    content=""
+    fichier=open("runcase", "w")
+    content += "#!/bin/bash                                                        \n"
+    content += "#SBATCH -N "+str(NODES_SIMU)+"                                     \n"
+    content += "#SBATCH --ntasks="+str(PROC_PER_NODE*NODES_SIMU)+"                 \n"
+    content += "#SBATCH --time="+WALLTIME_SIMU+"                                   \n"
+    content += "#SBATCH -o saturne.%j.log                                          \n"
+    content += "#SBATCH -e saturne.%j.err                                          \n"
+    content += "source ~/.bashrc                                                   \n"
+    content += "export OMP_NUM_THREADS=1                                           \n"
+    content += "export MELISSA_SERVER_NODE_NAME="+simu.server_node_name+"          \n"
+    content += "export PATH="+STUDY_OPTIONS['saturne_path']+"/:$PATH               \n"
+    content += "cp "+STUDY_OPTIONS['working_directory']+"/server_name.txt .        \n"
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += "\code_saturne run --param "+XML_FILE_NAME+"                        \n"
+    content += "date +\"%d/%m/%y %T\"                                              \n"
+    content += "exit $?                                                            \n"
+    fichier.write(content)
+    fichier.close()
+    os.system("chmod 744 runcase")
+
+def create_study():
+    if not os.path.isdir(STUDY_OPTIONS['working_directory']+"/STATS"):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/STATS")
+    if MELISSA_STATS['sobol_indices']:
+        create_run_coupling (STUDY_OPTIONS['nb_parameters'] + 2)
+    elif STUDY_OPTIONS['batch_size']>0:
+        create_run_coupling (STUDY_OPTIONS['batch_size'])
+
+def create_simu(simulation):
+    os.chdir(STUDY_OPTIONS['working_directory'])
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))):
+        create_case_str = STUDY_OPTIONS['saturne_path'] + "/code_saturne create --noref -s group" + \
+                str(simulation.rank) + " -c rank0"
+        if MELISSA_STATS['sobol_indices']:
+            for j in range(STUDY_OPTIONS['nb_parameters'] + 1):
+                create_case_str += " -c rank" + str(j+1)
+        elif STUDY_OPTIONS['batch_size']>0:
+            for j in range(STUDY_OPTIONS['batch_size'] - 1):
+                create_case_str += " -c rank" + str(j+1)
+        os.system(create_case_str)
+
+    casedirlist = []
+    if MELISSA_STATS['sobol_indices']:
+        for j in range(STUDY_OPTIONS['nb_parameters'] + 2):
+            casedirlist.append(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(j))
+    elif STUDY_OPTIONS['batch_size']>0:
+        for j in range(STUDY_OPTIONS['batch_size']):
+            casedirlist.append(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(j))
+    else:
+        casedirlist.append(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0")
+
+    j = 0
+    for casedir in casedirlist:
+        #os.system("cp "+STUDY_OPTIONS['working_directory']+"/../case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
+
+        os.chdir(casedir+"/SCRIPTS")
+        create_runcase(simulation)
+
+        os.chdir(casedir+"/SRC")
+
+        #modif xml file
+        tree = etree.parse(STUDY_OPTIONS['working_directory']+'/../case1/DATA/'+XML_FILE_NAME)
+        root = tree.getroot()
+        # modif parameters
+        if STUDY_OPTIONS['batch_size']>0 or MELISSA_STATS['sobol_indices']:
+            param0 = 'temperature = '+str(simulation.param_set[j][0])+';'
+            root.find('thermophysical_models').find('thermal_scalar').find('variable').find('formula').text = param0
+            root.find('physical_properties').find('fluid_properties').find("property/[@name='molecular_viscosity']").find('initial_value').text = str(simulation.param_set[j][1])
+            root.find('analysis_control').find('output').find("writer/[@label='results']").find("format/[@name='melissa']").set('options',str(simulation.simu_id[j]))
+            j += 1
+        else:
+            param0 = 'temperature = '+str(simulation.param_set[0])+';'
+            root.find('thermophysical_models').find('thermal_scalar').find('variable').find('formula').text = param0
+            root.find('physical_properties').find('fluid_properties').find("property/[@name='molecular_viscosity']").find('initial_value').text = str(simulation.param_set[1])
+            root.find('analysis_control').find('output').find("writer/[@label='results']").find("format/[@name='melissa']").set('options',str(simulation.rank))
+        # modif path to mesh file directory
+        meshlist = root.find('solution_domain').find('meshes_list')
+        if meshlist.find('meshdir') is None:
+            meshdir=etree.SubElement(meshlist, 'meshdir')
+            meshdir.set('name', '../../MESH')
+        else:
+            meshlist.find('meshdir').set('name', '../../../MESH')
+
+        # we do that because Code_Saturne needs double quotes...
+        xml_str = ('<?xml version="1.0" encoding="utf-8"?>' +
+                   etree.tostring(root, encoding="utf-8", pretty_print=True, xml_declaration=False))
+        with open(casedir+'/DATA/'+XML_FILE_NAME, 'wb') as xml_file:
+            xml_file.write(xml_str)
+
+    os.chdir(STUDY_OPTIONS['working_directory'])
+    return 0
+
+def launch_simu(simu):
+    create_simu(simu)
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simu.rank))
+    if MELISSA_STATS['sobol_indices']:
+        create_coupling_parameters("None",
+                                   NODES_SIMU * PROC_PER_NODE,
+                                   "None",
+                                   STUDY_OPTIONS['nb_parameters'] + 2)
+        command = 'sbatch --exclusive --constraint HSW24 "../STATS/run_cas_couple.sh" --job-name=Sat'+str(simu.rank)
+    elif STUDY_OPTIONS['batch_size']>0:
+        create_coupling_parameters("None",
+                                   NODES_SIMU,
+                                   "None",
+                                   STUDY_OPTIONS['batch_size'])
+        command = 'sbatch --exclusive --constraint HSW24 "../STATS/run_cas_couple.sh" --job-name=Sat'+str(simu.rank)
+    else:
+        os.chdir("./rank0/SCRIPTS")
+        command = 'sbatch --job-name="Sat'+str(simu.rank)+'" --exclusive --constraint HSW24 "./runcase" '
+    proc = subprocess.Popen(command,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    simu.job_id = int(out.split()[-1])
+
+def check_job(job):
+    state = 0
+    proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    if (not "PENDING" in out):
+        state = 1
+        proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        if (not "RUNNING" in out):
+            state = 2
+    job.job_status = state
+
+def check_load():
+    proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    running_jobs = int(out)
+    return running_jobs < 4
+
+def kill_job(job):
+    print 'killing job ...'
+    os.system("scancel "+str(job.job_id))
+
+STUDY_OPTIONS = {}
+STUDY_OPTIONS['user_name'] = USERNAME
+STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/fluid_example/STATS'
+STUDY_OPTIONS['nb_parameters'] = 2                 # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 30              # initial number of parameter sets
+STUDY_OPTIONS['nb_time_steps'] = 75                # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['threshold_values'] = 400.0
+STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
+STUDY_OPTIONS['field_names'] = ["TempC"]           # list of field names
+STUDY_OPTIONS['simulation_timeout'] = 400           # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 30          # server checkpoints every 30 seconds
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['xml_name'] = "case1.xml"
+STUDY_OPTIONS['saturne_path'] = "Code_Saturne/install/bin"
+STUDY_OPTIONS['verbosity'] = 2
+STUDY_OPTIONS['batch_size'] = 3
+
+MELISSA_STATS = {}
+MELISSA_STATS['mean'] = True
+MELISSA_STATS['variance'] = True
+MELISSA_STATS['skewness'] = True
+MELISSA_STATS['kurtosis'] = True
+MELISSA_STATS['min'] = True
+MELISSA_STATS['max'] = True
+MELISSA_STATS['threshold_exceedance'] = False
+MELISSA_STATS['quantiles'] = False
+# This local example does not work for Sobol' indices yet.
+MELISSA_STATS['sobol_indices'] = False
+
+USER_FUNCTIONS = {}
+USER_FUNCTIONS['create_study'] = create_study
+USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
+USER_FUNCTIONS['create_group'] = None
+#if MELISSA_STATS['sobol_indices']:
+#    USER_FUNCTIONS['launch_group'] = launch_group
+#else:
+USER_FUNCTIONS['launch_group'] = launch_simu
+USER_FUNCTIONS['launch_server'] = launch_server
+USER_FUNCTIONS['check_server_job'] = check_job
+USER_FUNCTIONS['check_group_job'] = check_job
+USER_FUNCTIONS['restart_server'] = launch_server
+USER_FUNCTIONS['restart_group'] = None
+USER_FUNCTIONS['check_scheduler_load'] = check_load
+USER_FUNCTIONS['cancel_job'] = kill_job
+USER_FUNCTIONS['postprocessing'] = None
+USER_FUNCTIONS['finalize'] = None

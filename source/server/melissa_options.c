@@ -102,6 +102,7 @@ static inline void init_options (melissa_options_t *options)
     options->timeout_simu    = 300.0;
     options->txt_pull_port   = 5556;
     options->txt_push_port   = 5555;
+    options->txt_req_port    = 5554;
     options->data_port       = 2004;
     sprintf (options->restart_dir, ".");
     sprintf (options->launcher_name, "localhost");
@@ -407,11 +408,12 @@ void melissa_get_options (int                 argc,
                                 { "txt_push_port",  required_argument, NULL, 1000 },
                                 { "txt_pull_port",  required_argument, NULL, 1001 },
                                 { "data_port",      required_argument, NULL, 1002 },
+                                { "req_port",       required_argument, NULL, 1003 },
                                 { NULL,             0,                 NULL,  0  }};
 
     do
     {
-        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:v:w:", longopts, NULL);
+        opt = getopt_long (argc, argv, "c:e:f:hlm::n:o:p:q:r::s:t:v:w:", longopts, NULL);
 
         switch (opt) {
         case 'r':
@@ -451,7 +453,7 @@ void melissa_get_options (int                 argc,
             options->sampling_size = atoi (optarg);
             break;
         case 'l':
-            // learning
+            options->learning = 1;
             break;
         case 'n':
             sprintf (options->launcher_name, "%s", optarg);
@@ -470,10 +472,15 @@ void melissa_get_options (int                 argc,
             break;
         case 1000:
             options->txt_push_port = atoi (optarg);
+            break;
         case 1001:
             options->txt_pull_port = atoi (optarg);
+            break;
         case 1002:
             options->data_port = atoi (optarg);
+            break;
+        case 1003:
+            options->txt_req_port = atoi (optarg);
             break;
         case 'h':
             stats_usage ();
@@ -520,7 +527,8 @@ void melissa_check_options (melissa_options_t  *options)
         options->min_and_max_op == 0 &&
         options->threshold_op == 0 &&
         options->quantile_op == 0 &&
-        options->sobol_op == 0)
+        options->sobol_op == 0 &&
+        options->learning != 1)
     {
         // default values
         fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");

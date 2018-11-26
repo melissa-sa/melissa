@@ -57,6 +57,7 @@ class Job(object):
         self.job_id = 0
         self.cmd_opt = ''
         self.start_time = 0.0
+        self.job_type = 0
 
     def set_usr_func(usr_func):
         Job.usr_func = usr_func
@@ -162,12 +163,12 @@ class SingleSimuGroup(Group):
         self.simu_id = self.rank
         self.param_set = numpy.copy(param_set)
         self.coupling = 0
+        self.job_type = 2
 
     def launch(self):
         Group.launch(self)
-        melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id))
+        message_str = "job "+str(self.rank)+" " +str(self.job_id)
         param_str = " ".join(str(i) for i in self.param_set)
-        print message_str+" " +param_str
         melissa_message.send_message(message_str+" " +param_str+"\000")
 
     def restart(self):
@@ -210,19 +211,20 @@ class MultiSimuGroup(Group):
         self.param_set = list()
         self.simu_id = list()
         self.size = len(param_sets)
+        self.simu_status = list()
         self.coupling = 0
+        self.job_type = 3
         for i in range(self.size):
             self.param_set.append(numpy.copy(param_sets[i]))
             self.simu_id.append(MultiSimuGroup.nb_simu)
+            self.simu_status.append(0)
             MultiSimuGroup.nb_simu += 1
 
     def launch(self):
         Group.launch(self)
         for i in range(self.size):
-            #melissa_message.send_message("job "+str(self.simu_id[i])+" " +str(self.job_id)+"\000")
             message_str = "job "+str(self.simu_id[i])+" " +str(self.job_id)
             param_str = " ".join(str(j) for j in self.param_set[i])
-            print message_str+" " +param_str
             melissa_message.send_message(message_str+" " +param_str+"\000")
 
     def restart(self):
@@ -265,6 +267,7 @@ class SobolGroup(Group):
         Group.__init__(self)
         self.param_set = list()
         self.simu_id = list()
+        self.job_type = 4
         self.param_set.append(numpy.copy(param_set_a))
         self.simu_id.append(self.rank*(len(param_set_a)+2))
         self.param_set.append(numpy.copy(param_set_b))
@@ -273,10 +276,13 @@ class SobolGroup(Group):
             self.param_set.append(numpy.copy(self.param_set[0]))
             self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             self.simu_id.append(self.rank*(len(param_set_a)+2)+i+2)
+        self.size = len(self.param_set)
 
     def launch(self):
         Group.launch(self)
-        melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
+        message_str = "job "+str(self.rank)+" " +str(self.job_id)
+        param_str = " ".join(str(j) for j in self.param_set[0])
+        melissa_message.send_message(message_str+" " +param_str+"\000")
 
     def restart(self):
         """
@@ -302,7 +308,9 @@ class SobolGroup(Group):
         if "restart_group" in Job.usr_func.keys() \
         and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
-            melissa_message.send_message("job "+str(self.rank)+" " +str(self.job_id)+"\000")
+            message_str = "job "+str(self.rank)+" " +str(self.job_id)
+            param_str = " ".join(str(j) for j in self.param_set[0])
+            melissa_message.send_message(message_str+" " +param_str+"\000")
         else:
             logging.warning('warning: no \'restart_group\''
                             +' function provided,'
@@ -325,6 +333,7 @@ class Server(Job):
 #        self.create_options()
         self.lock = RLock()
         self.path = '@CMAKE_INSTALL_PREFIX@/bin'
+        self.job_type = 1
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir
@@ -376,6 +385,8 @@ class Server(Job):
                                  '--txt_pull_port', str(Job.stdy_opt['send_port']),
                                  '--data_port', str(Job.stdy_opt['data_port']),
                                  '-n', str(buff.value)))
+        if Job.stdy_opt['learning']:
+            self.cmd_opt += " -l"
 
     def launch(self):
         """
@@ -414,7 +425,7 @@ class Server(Job):
             Restarts the server
         """
         if not "-r" in self.cmd_opt:
-            self.cmd_opt += ' -r ' + self.directory
+            self.cmd_opt += ' -r . '
         os.chdir(self.directory)
         if "restart_server" in Job.usr_func.keys() \
         and Job.usr_func['restart_server']:
@@ -427,7 +438,6 @@ class Server(Job):
             self.status = WAITING
             self.job_status = PENDING
         self.start_time = 0.0
-        self.wait_start()
 
     def check_job(self):
         """

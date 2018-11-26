@@ -110,7 +110,8 @@ def launch_simu(simulation):
                                                PROC_PER_NODE=str(PROC_PER_NODE),
                                                SIMU_ID=str(simulation.rank),
                                                SIMU_CMD=str(command),
-                                               SERVER_NODE_NAME=simulation.server_node_name)
+                                               SERVER_NODE_NAME=simulation.server_node_name,
+                                               HOSTNAME=str("$(hostname)"))
     file.close()
     file=open("run_simu.sh", "w")
     file.write(content)

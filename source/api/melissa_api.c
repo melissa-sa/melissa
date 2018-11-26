@@ -77,8 +77,9 @@ struct global_data_s
     void    *connexion_requester;   /**< connexion ZeroMQ port                     */
     void    *deconnexion_requester; /**< connexion ZeroMQ port                     */
     void   **sobol_requester;       /**< data ZeroMQ Sobol port                    */
-    int      rinit_tab[4];          /**< array used to receive data                */
+    int      rinit_tab[5];          /**< array used to receive data                */
     int      sobol;                 /**< 1 if sobol computation, 0 otherwhise      */
+    int      learning;              /**< 1 if learning, 0 otherwhise               */
     MPI_Comm comm;                  /**< simulation mpi communicator               */
     int      rank;                  /**< mpi rank in comm                          */
     int      comm_size;             /**< mpi comm size                             */
@@ -87,7 +88,7 @@ struct global_data_s
     int      nb_proc_server;        /**< number of MPI processes of the library    */
     int      nb_parameters;         /**< number of parameters of the study         */
     char    *buffer;                /**< buffer used to send data to the library   */
-    double  *buffer_sobol;          /**< buffer used to store data on sobol rank 0 */
+    double  *buffer_data;          /**< buffer used to store data on sobol rank 0 */
     int      buff_size;             /**< size of sobol buffer                      */
     int      coupling;              /**< coupling method                           */
     MPI_Comm comm_sobol;            /**< inter-groups communicator                 */
@@ -121,10 +122,13 @@ struct field_data_s
     int                   local_nb_messages;            /**< local number of messages                                   */
     int                   timestamp;                    /**< melissa internal timestamp                                 */
     void                **data_pusher;                  /**< push data ZeroMQ ports                                     */
+    int                  *gatherv_rcvcnt;
+    int                  *gatherv_displs;
     struct field_data_s  *next;                         /**< next field_data_struct                                     */
 };
 
 typedef struct field_data_s field_data_t; /**< type corresponding to field_data_s */
+
 
 static global_data_t global_data;
 static field_data_t *field_data;
@@ -163,6 +167,12 @@ static field_data_t* get_last_field(field_data_t *data)
 
 static void free_field_data(field_data_t *data)
 {
+
+    if (global_data.learning == 1)
+    {
+        melissa_free (data->gatherv_rcvcnt);
+        melissa_free (data->gatherv_displs);
+    }
     if (data != NULL)
     {
         if (data->next != NULL)
@@ -231,21 +241,64 @@ static void print_zmq_error(int ret)
     exit(0);
 }
 
-static inline void comm_1_to_m_init (field_data_t *data,
-                                     int            nb_proc_server)
+static inline void gatherv_init(field_data_t  *data_field,
+                                int           *vect_sizes,
+                                int            comm_size)
+{
+    int i;
+    data_field->gatherv_rcvcnt = melissa_malloc (comm_size * sizeof(int));
+    data_field->gatherv_displs = melissa_malloc (comm_size * sizeof(int));
+    data_field->gatherv_displs[0] = 0;
+    for (i=0; i<comm_size-1; i++)
+    {
+        data_field->gatherv_rcvcnt[i] = vect_sizes[i];
+        data_field->gatherv_displs[i+1] = data_field->gatherv_displs[i] + data_field->gatherv_rcvcnt[i];
+    }
+    data_field->gatherv_rcvcnt[comm_size-1] = vect_sizes[comm_size-1];
+}
+
+static inline void comm_1_to_m_init (global_data_t *data_glob,
+                                     field_data_t  *data_field,
+                                     const int      rank)
 {
     int  i;
+    int  nb_proc_server = data_glob->nb_proc_server;
 
-    data->sdispls[0] = 0;
-    for (i=0; i<nb_proc_server-1; i++)
+    data_field->push_rank = melissa_malloc (nb_proc_server * sizeof(int));
+    data_field->pull_rank = melissa_malloc (nb_proc_server * sizeof(int));
+
+    for (i=0; i<nb_proc_server; i++)
     {
-        data->send_counts[i] = data->server_vect_size[i];
-        data->sdispls[i+1] = data->sdispls[i] + data->send_counts[i];
+        data_field->push_rank[i] = 0;
+        data_field->pull_rank[i] = i;
     }
-    data->send_counts[nb_proc_server-1] = data->server_vect_size[nb_proc_server-1];
 
-    data->total_nb_messages = nb_proc_server;
-    data->local_nb_messages = nb_proc_server;
+    data_field->sdispls[0] = 0;
+    if (rank == 0)
+    {
+        for (i=0; i<nb_proc_server-1; i++)
+        {
+            data_field->send_counts[i] = data_field->server_vect_size[i];
+            data_field->sdispls[i+1] = data_field->sdispls[i] + data_field->send_counts[i];
+        }
+        data_field->send_counts[nb_proc_server-1] = data_field->server_vect_size[nb_proc_server-1];
+
+        data_field->total_nb_messages = nb_proc_server;
+        data_field->local_nb_messages = nb_proc_server;
+    }
+    else
+    {
+        for (i=0; i<nb_proc_server-1; i++)
+        {
+            data_field->send_counts[i] = 0;
+            data_field->sdispls[i+1] = 0;
+        }
+        data_field->send_counts[nb_proc_server-1] = 0;
+
+        data_field->total_nb_messages = nb_proc_server;
+        data_field->local_nb_messages = 0;
+    }
+
 }
 
 static inline void comm_n_to_m_init (global_data_t *data_glob,
@@ -318,8 +371,8 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
 
     new_message = 0;
 
-    data_field->push_rank = malloc (data_field->total_nb_messages * sizeof(int));
-    data_field->pull_rank = malloc (data_field->total_nb_messages * sizeof(int));
+    data_field->push_rank = melissa_malloc (data_field->total_nb_messages * sizeof(int));
+    data_field->pull_rank = melissa_malloc (data_field->total_nb_messages * sizeof(int));
 
     data_field->push_rank[0] = 0;
     data_field->pull_rank[0] = 0;
@@ -404,7 +457,7 @@ void melissa_init (const char *field_name,
 {
     char          *server_node_name;
     char           port_name[MPI_MAX_PROCESSOR_NAME] = {0};
-    int            port_no, i, j, ret;
+    int            i, j, ret;
     FILE*          file = NULL;
     int            linger = -1;
     char          *master_node_name;
@@ -493,8 +546,8 @@ void melissa_init (const char *field_name,
             print_zmq_error(ret);
         }
         buf_ptr = zmq_msg_data (&msg);
-        memcpy(global_data.rinit_tab, buf_ptr, 4 * sizeof(int));
-        buf_ptr += 4 * sizeof(int);
+        memcpy(global_data.rinit_tab, buf_ptr, 5 * sizeof(int));
+        buf_ptr += 5 * sizeof(int);
     }
 
     // init data structure
@@ -535,7 +588,7 @@ void melissa_init (const char *field_name,
     {
         if (first_init != 0)
         {
-            MPI_Bcast(global_data.rinit_tab, 3, MPI_INT, 0, *comm);
+            MPI_Bcast(global_data.rinit_tab, 5, MPI_INT, 0, *comm);
         }
         i = *local_vect_size;
         MPI_Allgather(&i, 1, MPI_INT, field_data_ptr->local_vect_sizes, 1, MPI_INT, *comm);
@@ -556,22 +609,20 @@ void melissa_init (const char *field_name,
         port_names = NULL;
         global_data.nb_proc_server = global_data.rinit_tab[0];
         global_data.sobol = global_data.rinit_tab[1];
-        global_data.nb_parameters = global_data.rinit_tab[2];
-        init_verbose_lvl (global_data.rinit_tab[3]);
+        global_data.learning = global_data.rinit_tab[2];
+        global_data.nb_parameters = global_data.rinit_tab[3];
+        init_verbose_lvl (global_data.rinit_tab[4]);
         if (global_data.sobol == 1)
         {
-            melissa_get_node_name (master_node_name);
-            if (strcmp(getenv("MASTER_NODE_NAME"), master_node_name) != 0)
-            {
-                melissa_print (VERBOSE_ERROR, "Wrong master node name\n");
-                return(-1);
-            }
-            global_data.sobol_rank = *simu_id % (global_data.rinit_tab[2] +2);
-            global_data.sample_id = *simu_id / (global_data.rinit_tab[2]+2);
+            master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME * sizeof(char));
+            global_data.sobol_rank = *simu_id % (global_data.nb_parameters + 2);
+            global_data.sample_id = *simu_id / (global_data.nb_parameters + 2);
 
-            // write master node name node name
-            if (*rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ)
+            master_node_name = getenv("MELISSA_MASTER_NODE_NAME");
+            // write master node name node name if not found in env
+            if (*rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && master_node_name == NULL)
             {
+                melissa_get_node_name (master_node_name);
                 sprintf (port_name, "master_name%d.txt", global_data.sample_id);
                 file = fopen(port_name, "w");
                 fputs(master_node_name, file);
@@ -599,13 +650,25 @@ void melissa_init (const char *field_name,
     field_data_ptr->send_counts = calloc (global_data.nb_proc_server, sizeof(int));
     field_data_ptr->sdispls     = calloc (global_data.nb_proc_server, sizeof(int));
 
-    comm_n_to_m_init (&global_data,
-                      field_data_ptr,
-                      *rank);
+    if (global_data.learning == 1)
+    {
+        comm_1_to_m_init (&global_data,
+                          field_data_ptr,
+                          *rank);
+        gatherv_init(field_data_ptr,
+                     field_data_ptr->local_vect_sizes,
+                     *comm_size);
+    }
+    else
+    {
+        comm_n_to_m_init (&global_data,
+                          field_data_ptr,
+                          *rank);
+    }
 
     if (*rank == 0 && first_init != 0)
     {
-        memcpy(port_names, buf_ptr, global_data.rinit_tab[0] * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+        memcpy(port_names, buf_ptr, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
         buf_ptr = NULL;
         zmq_msg_close (&msg);
     }
@@ -648,22 +711,21 @@ void melissa_init (const char *field_name,
                 if (*rank == 0)
                 {
                     master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * *comm_size * sizeof(char));
-                }
 #ifdef BUILD_WITH_MPI
+                }
                 if (*comm_size > 1)
                 {
                     MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, *comm);
                 }
-#else // BUILD_WITH_MPI
                 else
                 {
+#endif // BUILD_WITH_MPI
                     memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
                 }
-#endif // BUILD_WITH_MPI
             }
             if (global_data.sobol_rank != 0)
             {
-                master_node_name = getenv("MASTER_NODE_NAME");
+                master_node_name = getenv("MELISSA_MASTER_NODE_NAME");
                 if (master_node_name == NULL)
                 {
                     master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME);
@@ -828,16 +890,84 @@ void melissa_init (const char *field_name,
     }
     if (global_data.sobol)
     {
-        if (global_data.sobol_rank == 0)
+        if (global_data.learning == 1)
+        {
+            if (*rank == 0)
+            {
+                if (global_data.sobol_rank == 0)
+                {
+                    if (first_init != 0)
+                    {
+                        global_data.buff_size = (global_data.nb_parameters+2) * field_data_ptr->global_vect_size * sizeof (double);
+                        global_data.buffer_data = malloc ((global_data.nb_parameters+2) * field_data_ptr->global_vect_size * sizeof (double));
+                    }
+                    else if ((global_data.nb_parameters+2) * field_data_ptr->global_vect_size * sizeof (double) > global_data.buff_size)
+                    {
+                        global_data.buff_size = (global_data.nb_parameters+2) * field_data_ptr->global_vect_size * sizeof (double);
+                        global_data.buffer_data = realloc (global_data.buffer_data, (global_data.nb_parameters+2) * field_data_ptr->global_vect_size * sizeof (double));
+                    }
+                }
+                else
+                {
+                    if (first_init != 0)
+                    {
+                        global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
+                        global_data.buffer_data = malloc (field_data_ptr->global_vect_size * sizeof (double));
+                    }
+                    else if ((global_data.nb_parameters+2) * field_data_ptr->global_vect_size * sizeof (double) > global_data.buff_size)
+                    {
+                        global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
+                        global_data.buffer_data = realloc (global_data.buffer_data, field_data_ptr->global_vect_size * sizeof (double));
+                    }
+                }
+            }
+            else
+            {
+                if (first_init != 0)
+                {
+                    global_data.buff_size = 0;
+                    global_data.buffer_data = malloc (sizeof (double));
+                }
+            }
+        }
+        else
+        {
+            if (global_data.sobol_rank == 0)
+            {
+                if (first_init != 0)
+                {
+                    global_data.buff_size = (global_data.nb_parameters+2) * *local_vect_size * sizeof (double);
+                    global_data.buffer_data = malloc ((global_data.nb_parameters+2) * *local_vect_size * sizeof (double));
+                }
+                else if ((global_data.nb_parameters+2) * *local_vect_size * sizeof (double) > global_data.buff_size)
+                {
+                    global_data.buff_size = (global_data.nb_parameters+2) * *local_vect_size * sizeof (double);
+                    global_data.buffer_data = realloc (global_data.buffer_data, (global_data.nb_parameters+2) * *local_vect_size * sizeof (double));
+                }
+            }
+        }
+    }
+    else if (global_data.learning == 1)
+    {
+        if (*rank == 0)
         {
             if (first_init != 0)
             {
-                global_data.buffer_sobol = malloc ((global_data.nb_parameters+2) * *local_vect_size * sizeof (double));
+                global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
+                global_data.buffer_data = malloc (field_data_ptr->global_vect_size * sizeof (double));
             }
-            else if ((global_data.nb_parameters+2) * *local_vect_size * sizeof (double) > global_data.buff_size)
+            else if (field_data_ptr->global_vect_size * sizeof (double) > global_data.buff_size)
             {
-                global_data.buff_size = (global_data.nb_parameters+2) * *local_vect_size * sizeof (double);
-                global_data.buffer_sobol = realloc (global_data.buffer_sobol, (global_data.nb_parameters+2) * *local_vect_size * sizeof (double));
+                global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
+                global_data.buffer_data = realloc (global_data.buffer_data, field_data_ptr->global_vect_size * sizeof (double));
+            }
+        }
+        else
+        {
+            if (first_init != 0)
+            {
+                global_data.buff_size = 0;
+                global_data.buffer_data = malloc (0);
             }
         }
     }
@@ -960,10 +1090,11 @@ void melissa_init_no_mpi (const char *field_name,
 void melissa_send (const char *field_name,
                    double     *send_vect)
 {
-    int   i=0, j=0, k, ret;
-    int   buff_size;
-    char *buff_ptr;
-    int local_vect_size = 0;
+    int     i=0, j=0, k, ret;
+    int     buff_size;
+    char   *buff_ptr;
+    int     local_vect_size = 0;
+    double *send_vect_ptr;
     field_data_t  *field_data_ptr = NULL;
 //    MPI_Request *request;
 //    MPI_Status *status;
@@ -978,11 +1109,35 @@ void melissa_send (const char *field_name,
         fprintf (stdout, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
         return;
     }
+
     local_vect_size = field_data_ptr->local_vect_sizes[global_data.rank];
+    send_vect_ptr = send_vect;
+
+    if (global_data.learning == 1)
+    {
+        MPI_Gatherv(send_vect,
+                    local_vect_size,
+                    MPI_DOUBLE,
+                    global_data.buffer_data,
+                    field_data_ptr->gatherv_rcvcnt,
+                    field_data_ptr->gatherv_displs,
+                    MPI_DOUBLE,
+                    0,
+                    global_data.comm);
+        send_vect_ptr = global_data.buffer_data;
+        if (global_data.rank == 0)
+        {
+            local_vect_size = field_data_ptr->global_vect_size;
+        }
+        else
+        {
+            local_vect_size = 0;
+        }
+    }
 
     if (global_data.sobol == 1)
     {
-        melissa_print(VERBOSE_DEBUG, "Group %d gather data\n", &global_data.sample_id);
+        melissa_print(VERBOSE_DEBUG, "Group %d gather data (rank %d)\n", global_data.sample_id, global_data.rank);
         switch (global_data.coupling)
         {
 #ifdef BUILD_WITH_FLOWVR
@@ -990,12 +1145,12 @@ void melissa_send (const char *field_name,
             // gather data from other ranks of the sobol group
             if (global_data.sobol_rank == 0)
             {
-                recv_from_group ((void*)&global_data.buffer_sobol[local_vect_size]);
+                recv_from_group ((void*)&global_data.buffer_data[local_vect_size]);
             }
             else // *sobol_rank != 0
             {
                 //send data to rank 0 of the sobol group
-                send_to_group (send_vect, local_vect_size * sizeof(double));
+                send_to_group (send_vect_ptr, local_vect_size * sizeof(double));
             }
             break;
 #endif // BUILD_WITH_FLOWVR
@@ -1005,19 +1160,19 @@ void melissa_send (const char *field_name,
             {
                 for (i=0; i<global_data.nb_parameters + 1; i++)
                 {
-                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_sobol[(i+1)*local_vect_size], local_vect_size * sizeof(double), 0);
+                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_data[(i+1)*local_vect_size], local_vect_size * sizeof(double), 0);
                 }
             }
             else // *sobol_rank != 0
             {
                 //send data to rank 0 of the sobol group
-                zmq_send (global_data.sobol_requester[0], send_vect, local_vect_size * sizeof(double), 0);
+                zmq_send (global_data.sobol_requester[0], send_vect_ptr, local_vect_size * sizeof(double), 0);
             }
             break;
 
 #ifdef BUILD_WITH_MPI
         case MELISSA_COUPLING_MPI:
-            MPI_Gather(send_vect, local_vect_size, MPI_DOUBLE, global_data.buffer_sobol, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
+            MPI_Gather(send_vect_ptr, local_vect_size, MPI_DOUBLE, global_data.buffer_data, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
             break;
 #endif // BUILD_WITH_MPI
         }
@@ -1052,13 +1207,13 @@ void melissa_send (const char *field_name,
                 buff_ptr += sizeof(int);
                 memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
                 buff_ptr += MAX_FIELD_NAME * sizeof(char);
-                memcpy (buff_ptr, &send_vect[field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]], field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
+                memcpy (buff_ptr, &send_vect_ptr[field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]], field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
                 if (global_data.sobol == 1)
                 {
                     for (k=1; k<global_data.nb_parameters + 2; k++)
                     {
                         buff_ptr += field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
-                        memcpy (buff_ptr, &global_data.buffer_sobol[k*local_vect_size + field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]],
+                        memcpy (buff_ptr, &global_data.buffer_data[k*local_vect_size + field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]],
                                 field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
                     }
                 }
@@ -1075,6 +1230,7 @@ void melissa_send (const char *field_name,
             }
         }
     }
+    MPI_Barrier(MPI_COMM_WORLD);
     field_data_ptr->timestamp += 1;
     end_comm_time = melissa_get_time();
     total_comm_time += end_comm_time - start_comm_time;
@@ -1125,7 +1281,7 @@ void melissa_finalize (void)
     }
 #endif // BUILD_WITH_MPI
 
-    if (global_data.rank == 0)
+    if (global_data.rank == 0 && global_data.sobol_rank == 0)
     {
         sleep(2);
         i = 0;
@@ -1185,14 +1341,14 @@ void melissa_finalize (void)
     }
 
     free_field_data(field_data);
-    melissa_print(VERBOSE_INFO, "Free ZMQ context...\n");
+    melissa_print(VERBOSE_DEBUG, "Free ZMQ context...\n");
     zmq_ctx_term (global_data.context);
-    melissa_print(VERBOSE_INFO, "Free ZMQ context OK\n");
+    melissa_print(VERBOSE_DEBUG, "Free ZMQ context OK\n");
     free (port_names);
 
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)
     {
-        free(global_data.buffer_sobol);
+        free(global_data.buffer_data);
     }
 
     melissa_print(VERBOSE_INFO, " --- Simulation comm time: %g s\n",total_comm_time);
