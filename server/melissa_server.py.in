@@ -157,12 +157,23 @@ def main():
                     print "loss train = " + str(res)
                     i = 0
         elif server_status == 2:
+            print "save model"
             melissa_learning.save_model_parallel('.', 'model_insitu.h5')
+            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                              ctypes.byref(data))
+
+            #get the data from the C structure. For now, doesn't work for multiple fields
+            server_status = getattr(data, 'status')
         elif server_status == 3:
             melissa_learning.read_model_parallel('.', 'model_insitu.h5')
             model_is_init = True
             melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
             i += 1
+            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                              ctypes.byref(data))
+
+            #get the data from the C structure. For now, doesn't work for multiple fields
+            server_status = getattr(data, 'status')
 
     print "end server"
 
