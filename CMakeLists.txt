@@ -209,19 +209,21 @@ endif(DOXYGEN_FOUND)
 
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
-include_directories(AFTER "${PROJECT_SOURCE_DIR}/utils")
+# Load local include directories before. This ensures that no old installed headers are
+# loaded.
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/utils")
 
 add_subdirectory(utils)
 
-include_directories(AFTER "${CMAKE_BINARY_DIR}/api")
+include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
 
 add_subdirectory(api)
 
-include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/stats")
 
 add_subdirectory(stats)
 
-include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)
 
