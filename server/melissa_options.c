@@ -96,6 +96,7 @@ static inline void init_options (melissa_options_t *options)
     options->nb_quantiles    = 0;
     options->sobol_op        = 0;
     options->sobol_order     = 0;
+    options->learning_op     = 0;
     options->restart         = 0;
     options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
@@ -250,6 +251,7 @@ static inline void get_operations (char              *name,
     options->threshold_op    = 0;
     options->quantile_op     = 0;
     options->sobol_op        = 0;
+    options->learning_op     = 0;
     /* get the first token */
     temp_char = strtok (name, s);
 
@@ -292,6 +294,10 @@ static inline void get_operations (char              *name,
         else if (0 == strcmp(temp_char, "sobol") || 0 == strcmp(temp_char, "sobol_indices"))
         {
             options->sobol_op = 1;
+        }
+        else if (0 == strcmp(temp_char, "learning"))
+        {
+            options->learning_op = 1;
         }
         else
         {
@@ -345,6 +351,8 @@ void melissa_print_options (melissa_options_t *options)
         melissa_print(VERBOSE_INFO, "    quantiles (%d values)\n", options->nb_quantiles);
     if (options->sobol_op != 0)
         melissa_print(VERBOSE_INFO, "    sobol indices\n");
+    if (options->learning_op != 0)
+        melissa_print(VERBOSE_INFO, "    learning\n");
 //    if (options->restart != 0)
 //        fprintf(stdout, "using options.save restart file\n");
     melissa_print(VERBOSE_DEBUG, "Melissa launcher node name: %s\n", options->launcher_name);
@@ -528,6 +536,7 @@ void melissa_check_options (melissa_options_t  *options)
         options->threshold_op == 0 &&
         options->quantile_op == 0 &&
         options->sobol_op == 0 &&
+        options->learning_op == 0 &&
         options->learning != 1)
     {
         // default values

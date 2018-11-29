@@ -53,6 +53,17 @@ install(FILES ${CMAKE_BINARY_DIR}/server/melissa_server.py
                     WORLD_READ
                     WORLD_EXECUTE)
 
+configure_file(melissa_server_tf.py.in melissa_server_tf.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/server/melissa_server_tf.py
+        DESTINATION bin
+        PERMISSIONS OWNER_WRITE
+                    OWNER_READ
+                    OWNER_EXECUTE
+                    GROUP_READ
+                    GROUP_EXECUTE
+                    WORLD_READ
+                    WORLD_EXECUTE)
+
 install(FILES melissa_learning.py
         DESTINATION lib
         PERMISSIONS OWNER_WRITE

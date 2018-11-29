@@ -1,0 +1,388 @@
+#!@PYTHON_EXECUTABLE@
+
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+# -*- coding: utf-8 -*-
+
+"""
+    Python sequential version of melissa_server.
+
+    usage:
+    python melissa_server.py <options>
+"""
+
+from __future__ import absolute_import, division
+#from __future__ import print_function
+import tensorflow as tf
+import os
+import sys
+import signal
+import imp
+import getopt
+import numpy as np
+import ctypes
+from mpi4py import MPI
+
+# Set Eager API
+tf.enable_eager_execution()
+tfe = tf.contrib.eager
+
+melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/')
+
+c_char_ptr = ctypes.POINTER(ctypes.c_char)
+c_char_ptr_ptr = ctypes.POINTER(c_char_ptr)
+c_double_ptr = ctypes.POINTER(ctypes.c_double)
+c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
+
+# size of the training and testing batches
+BATCH_SIZE = 5
+
+# Class to transfer data between Python and C
+class simulation_data(ctypes.Structure):
+    _fields_ = [("simu_id", ctypes.c_int),
+                ("parameters", c_double_ptr),
+                ("nb_param", ctypes.c_int),
+                ("time_stamp", ctypes.c_int),
+                ("first_init", ctypes.c_int),
+                ("status", ctypes.c_int),
+                ("val", c_double_ptr),
+                ("val_size", ctypes.c_int),
+                ("max_val_size", ctypes.c_int)]
+
+class melissa_helper_tf:
+    def __init__(self, nb_parameters):
+        self.train_x = []
+        self.train_y = []
+        self.test_x = []
+        self.test_y = []
+        self.nb_parameters = nb_parameters
+
+def add_to_training_set(x, y, handle):
+    handle.train_y.append(np.array(y))
+    handle.train_x.append(np.array(x))
+
+def add_to_testing_set(x, y, handle):
+    handle.test_y.append(np.array(y))
+    handle.test_x.append(np.array(x))
+
+# Define the neural network. To use eager API and tf.layers API together,
+# we must instantiate a tfe.Network class as follow:
+class NeuralNet(tfe.Network):
+    def __init__(self, input_size, output_size):
+        # Define each layer
+        super(NeuralNet, self).__init__()
+        self.layer1 = self.track_layer(
+            tf.layers.Dense(output_size*2, activation=tf.nn.relu))
+        self.layer2 = self.track_layer(
+            tf.layers.Dense(output_size*3, activation=tf.nn.relu))
+        self.layer3 = self.track_layer(
+            tf.layers.Dense(output_size*4, activation=tf.nn.relu))
+        self.layer4 = self.track_layer(
+            tf.layers.Dense(output_size*3, activation=tf.nn.relu))
+        self.layer5 = self.track_layer(
+            tf.layers.Dense(output_size*2, activation=tf.nn.relu))
+        self.layer6 = self.track_layer(
+            tf.layers.Dense(output_size, activation=tf.nn.relu))
+        # Output fully connected layer with a neuron for each output
+        self.out_layer = self.track_layer(tf.layers.Dense(output_size))
+
+    def call(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.layer5(x)
+        x = self.layer6(x)
+        return self.out_layer(x)
+
+# loss function
+def loss_fn(inference_fn, inputs, labels):
+    prediction = inference_fn(inputs)
+    correct_pred = tf.square(prediction - labels)
+    return tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+# Calculate accuracy
+def accuracy_fn(inference_fn, inputs, labels):
+    prediction = inference_fn(inputs)
+    correct_pred = tf.square(prediction - labels)
+    return tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+
+def main():
+
+    # handle to a simulation_data structure that will travel between the C calls
+    simu_data_ptr = ctypes.POINTER(simulation_data)
+
+    # C prototypes
+    melissa_server.melissa_server_init.argtypes = (ctypes.c_int, # argc
+                                                   c_char_ptr_ptr, # argv
+                                                   c_void_ptr_ptr)
+
+    melissa_server.melissa_server_run.argtypes = (c_void_ptr_ptr,
+                                                  simu_data_ptr)
+
+    melissa_server.melissa_server_finalize.argtypes = (c_void_ptr_ptr,
+                                                       simu_data_ptr)
+
+    # get the command line
+    argc = len(sys.argv)
+    argv = (c_char_ptr * (argc + 1))()
+    for i, arg in enumerate(sys.argv):
+        enc_arg = arg.encode('utf-8')
+        argv[i] = ctypes.create_string_buffer(enc_arg)
+
+    #create a handle for the internal server structure (noc used in the Python side)
+    simu_handle = ctypes.c_void_p()
+
+    data = simulation_data()
+
+    #init the server
+    melissa_server.melissa_server_init(argc,
+                                       argv,
+                                       ctypes.byref(simu_handle))
+
+    #run the server, only the first iteration if learning enabled
+    melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                      ctypes.byref(data))
+
+    ctypes.pythonapi.PyBuffer_FromMemory.restype = ctypes.py_object
+
+    #get the data from the C structure
+    server_status = getattr(data, 'status')
+    if server_status == 0:
+        vect_size = getattr(data, 'val_size')
+        buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*vect_size)
+        val_array = np.frombuffer(buff_val, float)
+        nb_parameters = getattr(data, 'nb_param')
+        buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*nb_parameters)
+        param_array = np.frombuffer(buff_param, float)
+        param_array = np.append(param_array, getattr(data, 'time_stamp'))
+
+
+    i = 0
+    j = 0
+    k = 0
+    average_loss = 0.
+    average_acc = 0.
+    model_is_init = False
+    learning_rate = 0.001
+    learning_handle = melissa_helper_tf(nb_parameters)
+    # adam Optimizer
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+    # Compute gradients
+    grad = tfe.implicit_gradients(loss_fn)
+    checkpoint_dir = './'
+    checkpoint_prefix = checkpoint_dir + 'nn'
+
+    #The while loop is executed only when doing learning.
+    while server_status != 1:
+        if server_status == 0:
+            if not model_is_init:
+                # Parameters
+
+                neural_net = NeuralNet(nb_parameters+1, vect_size)
+
+                model_is_init = True
+                add_to_training_set(param_array, val_array, learning_handle)
+                i += 1
+
+            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                              ctypes.byref(data))
+
+            #get the data from the C structure. For now, doesn't work for multiple fields
+            server_status = getattr(data, 'status')
+            buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*vect_size)
+            val_array = np.frombuffer(buff_val, float)
+            buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
+            param_array = np.frombuffer(buff_param, float)
+            param_array = np.append(param_array, float(getattr(data, 'time_stamp'))/100)
+
+            j += 1
+            if j >= 10:
+                #add one out of ten result to a testing batch
+                add_to_testing_set(param_array, val_array, learning_handle)
+                k += 1
+                if k >= BATCH_SIZE:
+                    # when the batch is ready, test on it
+                    x_batch=np.stack(learning_handle.test_x, axis=0)
+                    y_batch=np.stack(learning_handle.test_y, axis=0)
+                    dataset = tf.data.Dataset.from_tensor_slices(
+                        (x_batch, y_batch))
+                    dataset = dataset.repeat().batch(BATCH_SIZE).prefetch(BATCH_SIZE)
+                    dataset_iter = tfe.Iterator(dataset)
+                    # Iterate through the dataset
+                    d = dataset_iter.next()
+                    # Images
+                    x_batch = d[0]
+                    # Labels
+                    y_batch = tf.cast(d[1], dtype=tf.float64)
+
+                    #print type(x_batch)
+                    #print x_batch
+                    #print x_batch.ndim
+
+                    batch_loss = loss_fn(neural_net, x_batch, y_batch)
+                    average_loss += batch_loss
+                    # Compute the batch accuracy
+                    batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+                    average_acc += batch_accuracy
+                    learning_handle.test_x = []
+                    learning_handle.test_y = []
+                    average_loss /= BATCH_SIZE
+                    average_acc /= BATCH_SIZE
+                    print("test loss=",
+                          "{:.9f}".format(average_loss), " accuracy=",
+                          "{:.4f}".format(average_acc))
+                    average_loss = 0.
+                    average_acc = 0.
+                    learning_handle.test_x = []
+                    learning_handle.test_y = []
+                    k = 0
+                j = 0
+            else:
+                #add nine out of ten result to a training batch
+                add_to_training_set(param_array, val_array, learning_handle)
+                i += 1
+                if i >= BATCH_SIZE:
+                    # when the batch is ready, train on it
+                    # Compute the batch loss
+                    x_batch=np.stack(learning_handle.train_x, axis=0)
+                    y_batch=np.stack(learning_handle.train_y, axis=0)
+                    dataset = tf.data.Dataset.from_tensor_slices(
+                        (x_batch, y_batch))
+                    dataset = dataset.repeat().batch(BATCH_SIZE).prefetch(BATCH_SIZE)
+                    dataset_iter = tfe.Iterator(dataset)
+                    # Iterate through the dataset
+                    d = dataset_iter.next()
+                    # Images
+                    x_batch = d[0]
+                    # Labels
+                    y_batch = tf.cast(d[1], dtype=tf.float64)
+
+                    #print type(x_batch)
+                    #print x_batch
+                    #print x_batch.ndim
+
+                    batch_loss = loss_fn(neural_net, x_batch, y_batch)
+                    average_loss += batch_loss
+                    # Compute the batch accuracy
+                    batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+                    average_acc += batch_accuracy
+                    optimizer.apply_gradients(grad(neural_net, x_batch, y_batch))
+                    learning_handle.train_x = []
+                    learning_handle.train_y = []
+                    average_loss /= BATCH_SIZE
+                    average_acc /= BATCH_SIZE
+                    print("train loss=",
+                          "{:.9f}".format(average_loss), " accuracy=",
+                          "{:.4f}".format(average_acc))
+                    average_loss = 0.
+                    average_acc = 0.
+
+                    i = 0
+        elif server_status == 2:
+            tf.contrib.eager.save_network_checkpoint(neural_net,checkpoint_prefix)
+            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                              ctypes.byref(data))
+
+            #get the data from the C structure. For now, doesn't work for multiple fields
+            server_status = getattr(data, 'status')
+        elif server_status == 3:
+            tf.contrib.eager.restore_network_checkpoint(neural_net,checkpoint_prefix)
+            model_is_init = True
+            add_to_training_set(param_array, val_array, learning_handle)
+            i += 1
+            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                              ctypes.byref(data))
+
+            #get the data from the C structure. For now, doesn't work for multiple fields
+            server_status = getattr(data, 'status')
+
+    print "end server"
+
+    #clear the remaining train and test samples
+    if i != 0:
+        x_batch=np.stack(learning_handle.train_x, axis=0)
+        y_batch=np.stack(learning_handle.train_y, axis=0)
+        dataset = tf.data.Dataset.from_tensor_slices(
+            (x_batch, y_batch))
+        dataset = dataset.repeat().batch(i).prefetch(i)
+        dataset_iter = tfe.Iterator(dataset)
+        # Iterate through the dataset
+        d = dataset_iter.next()
+        # Images
+        x_batch = d[0]
+        # Labels
+        y_batch = tf.cast(d[1], dtype=tf.float64)
+
+        batch_loss = loss_fn(neural_net, x_batch, y_batch)
+        average_loss += batch_loss
+        # Compute the batch accuracy
+        batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+        average_acc += batch_accuracy
+        optimizer.apply_gradients(grad(neural_net, x_batch, y_batch))
+        learning_handle.train_x = []
+        learning_handle.train_y = []
+        average_loss /= i
+        average_acc /= i
+        print("train loss=",
+              "{:.9f}".format(average_loss), " accuracy=",
+              "{:.4f}".format(average_acc))
+        average_loss = 0.
+        average_acc = 0.
+        i = 0
+
+    if k != 0:
+        x_batch=np.stack(learning_handle.test_x, axis=0)
+        y_batch=np.stack(learning_handle.test_y, axis=0)
+        dataset = tf.data.Dataset.from_tensor_slices(
+            (x_batch, y_batch))
+        dataset = dataset.repeat().batch(k).prefetch(k)
+        dataset_iter = tfe.Iterator(dataset)
+        # Iterate through the dataset
+        d = dataset_iter.next()
+        # Images
+        x_batch = d[0]
+        # Labels
+        y_batch = tf.cast(d[1], dtype=tf.float64)
+
+        batch_loss = loss_fn(neural_net, x_batch, y_batch)
+        average_loss += batch_loss
+        # Compute the batch accuracy
+        batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+        average_acc += batch_accuracy
+        learning_handle.test_x = []
+        learning_handle.test_y = []
+        average_loss /= i
+        average_acc /= i
+        print("test loss=",
+              "{:.9f}".format(average_loss), " accuracy=",
+              "{:.4f}".format(average_acc))
+        average_loss = 0.
+        average_acc = 0.
+        k = 0
+
+    # write the NN
+    if model_is_init:
+        tf.contrib.eager.save_network_checkpoint(neural_net,checkpoint_prefix)
+
+    melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
+                                           ctypes.byref(data))
+
+
+if __name__ == '__main__':
+    main()
