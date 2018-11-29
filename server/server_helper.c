@@ -223,15 +223,15 @@ long int count_mbytes_written (melissa_options_t  *options)
 int string_recv (void  *socket,
                  char  *recv_buff)
 {
-    char buffer [256];
-    int size = zmq_recv (socket, buffer, 255, 0);
+    char buffer [MELISSA_MESSAGE_LEN];
+    int size = zmq_recv (socket, buffer, MELISSA_MESSAGE_LEN-1, 0);
     if (size == -1)
     {
         recv_buff[0] = 0;
         return 0;
     }
-    if (size > 255)
-        size = 255;
+    if (size > MELISSA_MESSAGE_LEN-1)
+        size = MELISSA_MESSAGE_LEN-1;
     buffer [size] = 0;
     memcpy (recv_buff, buffer, size * sizeof(char));
     return size;

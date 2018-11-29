@@ -146,8 +146,8 @@ void bind_message_resp(char* port_number)
 
 void wait_message(char* msg)
 {
-    char text[256];
-    int size = zmq_recv (message.message_puller, text, 255, 0);
+    char text[MELISSA_MESSAGE_LEN];
+    int size = zmq_recv (message.message_puller, text, MELISSA_MESSAGE_LEN-1, 0);
     if (size < 1)
     {
         sprintf (msg, "%s", "nothing");
@@ -161,8 +161,8 @@ void wait_message(char* msg)
 
 void get_resp_message(char* msg)
 {
-    char text[256];
-    int size = zmq_recv (message.message_resp, text, 255, 0);
+    char text[MELISSA_MESSAGE_LEN];
+    int size = zmq_recv (message.message_resp, text, MELISSA_MESSAGE_LEN-1, 0);
     if (size < 1)
     {
         sprintf (msg, "%s", "nothing");
@@ -176,16 +176,16 @@ void get_resp_message(char* msg)
 
 void send_message(char* msg)
 {
-    char text[256];
+    char text[MELISSA_MESSAGE_LEN];
     sprintf (text, "%s", msg);
-    zmq_send (message.message_pusher, text, 255, 0);
+    zmq_send (message.message_pusher, text, MELISSA_MESSAGE_LEN-1, 0);
 }
 
 void send_resp_message(char* msg)
 {
-    char text[256];
+    char text[MELISSA_MESSAGE_LEN];
     sprintf (text, "%s", msg);
-    zmq_send (message.message_resp, text, 255, 0);
+    zmq_send (message.message_resp, text, MELISSA_MESSAGE_LEN-1, 0);
 }
 
 void close_message()

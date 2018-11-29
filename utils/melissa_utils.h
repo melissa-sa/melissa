@@ -51,6 +51,10 @@
 #define VERBOSE_INFO MELISSA_INFO, __func__       /**< display usefull messages */
 #define VERBOSE_DEBUG MELISSA_DEBUG, __func__     /**< display all messages */
 
+extern int MELISSA_MESSAGE_LEN;
+
+int melissa_get_message_len();
+
 void melissa_logo ();
 
 void* melissa_malloc (size_t size);

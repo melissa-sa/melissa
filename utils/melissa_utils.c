@@ -43,7 +43,15 @@
 #include <zmq.h>
 #include "melissa_utils.h"
 
+int MELISSA_MESSAGE_LEN = 1024;
+
 static int verbose_lvl; /**< verbosity lvl requested by user */
+
+// To get MELISSA_MESSAGE_LEN into python
+int melissa_get_message_len()
+{
+  return MELISSA_MESSAGE_LEN;
+}
 
 static void print_zmq_error(int         ret,
                             const char* port_name)
