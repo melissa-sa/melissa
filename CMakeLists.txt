@@ -223,7 +223,7 @@ include_directories(BEFORE "${PROJECT_SOURCE_DIR}/stats")
 
 add_subdirectory(stats)
 
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/output")
 
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
 
