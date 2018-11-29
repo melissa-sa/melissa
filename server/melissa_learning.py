@@ -25,6 +25,7 @@
     python melissa_server.py <options>
 """
 
+#from __future__ import print_function
 import shutil
 import numpy as np
 import tensorflow as tf
@@ -44,6 +45,17 @@ from mpi4py import MPI
 
 MODEL = Sequential()
 class melissa_helper:
+    def __init__(self, nb_parameters):
+        self.train_x = []
+        self.train_y = []
+        self.test_x = []
+        self.test_y = []
+        self.nb_parameters = nb_parameters
+        for i in range(nb_parameters):
+            self.train_x.append([])
+            self.test_x.append([])
+
+class melissa_helper_tf:
     def __init__(self, nb_parameters):
         self.train_x = []
         self.train_y = []
@@ -96,6 +108,74 @@ def model_init_parallel(vect_size, nb_parameters):
     MODEL.add(Dense(vect_size, kernel_initializer='normal'))
 
     MODEL.compile(optimizer='adam', loss='mse', metrics=['mse'])
+
+    return melissa_helper(nb_parameters)
+
+def model_init_tf(vect_size, nb_parameters):
+    # Parameters
+    helper = melissa_helper(nb_parameters)
+    learning_rate = 0.1
+
+    # Network Parameters
+    n_hidden_1 = vect_size*2 # 1st layer number of neurons
+    n_hidden_2 = vect_size*3 # 2nd layer number of neurons
+    n_hidden_3 = vect_size*4 # 3nd layer number of neurons
+    n_hidden_4 = vect_size*3 # 4nd layer number of neurons
+    n_hidden_5 = vect_size*2 # 5nd layer number of neurons
+    n_hidden_6 = vect_size # 6nd layer number of neurons
+    num_input = nb_parameters # data input
+    num_output = vect_size # total output
+
+    # tf Graph input
+    X = tf.placeholder("float", [None, num_input])
+    Y = tf.placeholder("float", [None, num_output])
+
+    # Store layers weight & bias
+    weights = {
+        'h1': tf.Variable(tf.random_normal([num_input, n_hidden_1])),
+        'h2': tf.Variable(tf.random_normal([n_hidden_1, n_hidden_2])),
+        'h3': tf.Variable(tf.random_normal([n_hidden_2, n_hidden_3])),
+        'h4': tf.Variable(tf.random_normal([n_hidden_3, n_hidden_4])),
+        'h5': tf.Variable(tf.random_normal([n_hidden_4, n_hidden_5])),
+        'h6': tf.Variable(tf.random_normal([n_hidden_5, n_hidden_6])),
+        'out': tf.Variable(tf.random_normal([n_hidden_6, num_output]))
+    }
+    biases = {
+        'b1': tf.Variable(tf.random_normal([n_hidden_1])),
+        'b2': tf.Variable(tf.random_normal([n_hidden_2])),
+        'b3': tf.Variable(tf.random_normal([n_hidden_3])),
+        'b4': tf.Variable(tf.random_normal([n_hidden_4])),
+        'b5': tf.Variable(tf.random_normal([n_hidden_5])),
+        'b6': tf.Variable(tf.random_normal([n_hidden_6])),
+        'out': tf.Variable(tf.random_normal([num_classes]))
+    }
+    # Hidden fully connected layer
+    layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
+    # Hidden fully connected layer
+    layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
+    # Hidden fully connected layer
+    layer_3 = tf.add(tf.matmul(layer_2, weights['h3']), biases['b3'])
+    # Hidden fully connected layer
+    layer_4 = tf.add(tf.matmul(layer_3, weights['h4']), biases['b4'])
+    # Hidden fully connected layer
+    layer_5 = tf.add(tf.matmul(layer_4, weights['h5']), biases['b5'])
+    # Hidden fully connected layer
+    layer_6 = tf.add(tf.matmul(layer_5, weights['h6']), biases['b6'])
+    # Output fully connected layer
+    out_layer = tf.matmul(layer_6, weights['out']) + biases['out']
+
+    # Define loss and optimizer
+    loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+        logits=out_layer, labels=Y))
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+    train_op = optimizer.minimize(loss_op)
+
+    # Evaluate model (with test logits, for dropout to be disabled)
+    correct_pred = tf.equal(tf.argmax(logits, 1), tf.argmax(Y, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+    # Initialize the variables (i.e. assign their default value)
+    init = tf.global_variables_initializer()
 
     return melissa_helper(nb_parameters)
 
