@@ -18,7 +18,6 @@ file(GLOB
      ALL_API
      RELATIVE
      ${CMAKE_CURRENT_SOURCE_DIR}
-     *.h
      *.c
      )
 

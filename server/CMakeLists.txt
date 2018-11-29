@@ -21,7 +21,6 @@ file(GLOB
      RELATIVE
      ${CMAKE_CURRENT_SOURCE_DIR}
      *.c
-     *.h
      )
 
 add_executable(melissa_server ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
