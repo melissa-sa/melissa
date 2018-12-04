@@ -178,9 +178,9 @@ inline void writeVar(const char         *variable_name,
   MPI_Status  status;
 #endif // BUILD_WITH_MPI
   // TODO: use values from a confiuration file!
-  int nX = 4;
-  int nY = 5;
-  int nZ = 10;
+  int nX = 1;
+  int nY = 6;
+  int nZ = 11;
 
   // iterators:
   long int i, j;
@@ -298,10 +298,10 @@ inline void writeVar(const char         *variable_name,
  *
  *******************************************************************************/
 // for testing:
-void write_stats_txt (melissa_data_t    **data,
-    melissa_options_t  *options,
-    comm_data_t        *comm_data,
-    char               *field);
+//void write_stats_txt (melissa_data_t    **data,
+//    melissa_options_t  *options,
+//    comm_data_t        *comm_data,
+//    char               *field);
 
 void write_stats_parflow_netcdf (melissa_data_t    **data,
     melissa_options_t  *options,
@@ -309,7 +309,7 @@ void write_stats_parflow_netcdf (melissa_data_t    **data,
     char               *field)
 {
   // for testing:
-  write_stats_txt(data, options, comm_data, field);
+  //write_stats_txt(data, options, comm_data, field);
 #ifdef BUILD_WITH_MPI
   MPI_Status  status;
 #endif // BUILD_WITH_MPI
