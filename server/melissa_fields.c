@@ -53,6 +53,7 @@ void melissa_get_output_lib(char* lib_name,
     {
         perror("cannot load library:");
         fprintf(stdout, "ERROR: Cannot load output library\n");
+        fprintf(stdout, "%s\n", dlerror());
         exit(1);
     }
     melissa_print (VERBOSE_DEBUG, "load func  %s\n", func_name);
