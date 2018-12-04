@@ -50,7 +50,8 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     melissa_server_t     *server_ptr;
 #if MELISSA4PY != 1
     char*                 melissa_output_lib  = INSTALL_PREFIX"/lib/libmelissa_output.so";
-    char*                 melissa_output_func = "write_stats_txt";
+    char*                 melissa_output_func = "write_stats_parflow_netcdf";
+    //char*                 melissa_output_func = "write_stats_txt";
 #endif // MELISSA4PY
     int                   i;
     melissa_simulation_t *simu_ptr;
@@ -87,7 +88,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     server_ptr->last_timeout_check = 0;
     server_ptr->nb_finished_simulations = 0;
     server_ptr->last_checkpoint_time = 0.0;
-    server_ptr->timeout_launcher = 50;
+    server_ptr->timeout_launcher = 250;
 
     // === init ZMQ context === //
 
