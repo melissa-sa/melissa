@@ -177,9 +177,10 @@ class SingleSimuGroup(Group):
         """
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
+        crashs_before_redraw = 5
+        if self.nb_restarts >= crashs_before_redraw:
             logging.warning('Simulation ' + str(self.rank) +
-                            'crashed 5 times, drawing new parameter set')
+                            'crashed %d times, drawing new parameter set' % crashs_before_redraw)
             logging.info('old parameter set: ' + str(self.param_set))
             self.param_set = Job.usr_func['draw_parameter_set']()
             logging.info('new parameter set: ' + str(self.param_set))
