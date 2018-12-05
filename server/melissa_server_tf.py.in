@@ -195,6 +195,7 @@ def main():
                 # Parameters
 
                 neural_net = NeuralNet(nb_parameters+1, vect_size)
+                print "vect_size: "+str(vect_size)
 
                 model_is_init = True
                 add_to_training_set(param_array, val_array, learning_handle)

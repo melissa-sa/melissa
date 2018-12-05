@@ -98,18 +98,6 @@ void compute_stats (melissa_data_t  *data,
         }
     }
 
-//    if (data->options->sobol_op != 1)
-//    {
-//        if (data->options->mean_op == 1 && data->options->variance_op == 0)
-//        {
-//            increment_mean (&(data->means[time_step]), in_vect_tab[0], data->vect_size);
-//        }
-
-//        if (data->options->variance_op == 1)
-//        {
-//            increment_mean_and_variance (&(data->variances[time_step]), in_vect_tab[0], data->vect_size);
-//        }
-//    }
     if (data->options->sobol_op == 1)
     {
         if (nb_vect != data->options->nb_parameters + 2)
@@ -123,22 +111,6 @@ void compute_stats (melissa_data_t  *data,
                                data->vect_size);
 
         increment_moments(&(data->moments[time_step]), in_vect_tab[1], data->vect_size);
-
-//        if (data->options->mean_op == 1 && data->options->variance_op == 0)
-//        {
-//            update_mean(&(data->sobol_indices[time_step].variance_a.mean_structure),
-//                        &(data->sobol_indices[time_step].variance_b.mean_structure),
-//                        &(data->means[time_step]),
-//                        data->vect_size);
-//        }
-
-//        if (data->options->variance_op == 1)
-//        {
-//            update_variance(&(data->sobol_indices[time_step].variance_a),
-//                            &(data->sobol_indices[time_step].variance_b),
-//                            &(data->variances[time_step]),
-//                            data->vect_size);
-//        }
 
         if (data->options->min_and_max_op == 1)
         {

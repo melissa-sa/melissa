@@ -221,13 +221,15 @@ include_directories(AFTER "${PROJECT_SOURCE_DIR}/stats")
 
 add_subdirectory(stats)
 
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/output")
+
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/server")
+
+add_subdirectory(output)
 
 add_subdirectory(server)
 
 add_subdirectory(launcher)
-
-add_subdirectory(output)
 
 add_subdirectory(tests)
 

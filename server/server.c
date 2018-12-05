@@ -48,10 +48,10 @@ void sig_handler(int signo) {
 void melissa_server_init (int argc, char **argv, void **server_handle)
 {
     melissa_server_t     *server_ptr;
-#if MELISSA4PY != 1
-    char*                 melissa_output_lib  = INSTALL_PREFIX"/lib/libmelissa_output.so";
-    char*                 melissa_output_func = "write_stats_txt";
-#endif // MELISSA4PY
+//#if MELISSA4PY != 1
+//    char*                 melissa_output_lib  = INSTALL_PREFIX"/lib/libmelissa_output.so";
+//    char*                 melissa_output_func = "melissa_write_stats_seq";
+//#endif // MELISSA4PY
     int                   i;
     melissa_simulation_t *simu_ptr;
     char                  txt_buffer[MPI_MAX_PROCESSOR_NAME];
@@ -146,9 +146,9 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     // === load the output library === //
 
-#if MELISSA4PY != 1
-    melissa_get_output_lib (melissa_output_lib, melissa_output_func);
-#endif // MELISSA4PY
+//#if MELISSA4PY != 1
+//    melissa_get_output_lib (melissa_output_lib, melissa_output_func);
+//#endif // MELISSA4PY
 
     server_ptr->fields = melissa_malloc (server_ptr->melissa_options.nb_fields * sizeof(melissa_field_t));
     melissa_get_fields (argc, argv, server_ptr->fields, server_ptr->melissa_options.nb_fields);
@@ -874,9 +874,9 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
 //        melissa_print (VERBOSE_INFO, " \n");
     }
 
-#if MELISSA4PY != 1
-    melissa_close_output_lib();
-#endif // MELISSA4PY
+//#if MELISSA4PY != 1
+//    melissa_close_output_lib();
+//#endif // MELISSA4PY
 
     // === Sockets deconnexion === //
 

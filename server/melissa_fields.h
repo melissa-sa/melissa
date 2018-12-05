@@ -45,10 +45,10 @@ struct melissa_field_s /**< Structure for a linked list of output fields */
 
 typedef struct melissa_field_s melissa_field_t; /**< type corresponding to field_s */
 
-#if MELISSA4PY != 1
-void melissa_get_output_lib(char* lib_name,
-                            char* func_name);
-#endif // MELISSA4PY
+//#if MELISSA4PY != 1
+//void melissa_get_output_lib(char* lib_name,
+//                            char* func_name);
+//#endif // MELISSA4PY
 
 void melissa_get_fields (int               argc,
                          char            **argv,
@@ -72,8 +72,8 @@ void finalize_field_data (melissa_field_t   *fields,
                           melissa_options_t *options,
                           double *write_time);
 
-#if MELISSA4PY != 1
-void melissa_close_output_lib();
-#endif // MELISSA4PY
+//#if MELISSA4PY != 1
+//void melissa_close_output_lib();
+//#endif // MELISSA4PY
 
 #endif // MELISSA_FIELDS_H
