@@ -53,3 +53,19 @@ void write_stats_ensight(melissa_data_t    **data,
                          melissa_options_t  *options,
                          comm_data_t        *comm_data,
                          char               *field);
+
+
+
+void write_output_d_netcdf(const char   *file_name,
+                        const char   *field,
+                        const char   *statisics_name,
+                        const int     t,
+                        const size_t  vec_size,
+                        const double  vec[]);
+
+void write_output_i_netcdf(const char   *file_name,
+                        const char   *field,
+                        const char   *statisics_name,
+                        const int     t,
+                        const size_t  vec_size,
+                        const int     vec[]);
