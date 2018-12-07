@@ -181,10 +181,37 @@ void write_netcdf(const char   *statistics_name,
 #define MAX_DIMS 10
 
     // nice value when dimensions turn out to be 0.
-    int n[MAX_DIMS];
+    size_t n[MAX_DIMS];
     n[0] = vec_size;
     size_t dims;
     getDimsFromEnv(&dims, n);
+    // sometimes we get only 2D slizes... handle them nicely!
+    printf("\nshape: %d %d %d == %d\n", n[0], n[1], n[2], vec_size);
+    if (vec_size == n[1] * n[2])
+    {
+        printf("2D");
+        dims = 2;
+        n[0] = n[1];
+        n[1] = n[2];
+    }
+    else
+    {
+        int prod = 1;
+        int i;
+        for (i = 0; i < dims; ++i)
+        {
+            prod *= n[i];
+        }
+        if (prod != vec_size)
+        {
+            printf("1D");
+            n[0] = vec_size;
+            dims=1;
+        }
+    }
+
+            // just write vector
+
     //          nz ny nx
     //size_t n[3] = {10, 5, 4};
     //int n[dims] = {11, 6, 1}
