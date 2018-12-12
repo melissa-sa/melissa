@@ -1230,7 +1230,6 @@ void melissa_send (const char *field_name,
             }
         }
     }
-    MPI_Barrier(MPI_COMM_WORLD);
     field_data_ptr->timestamp += 1;
     end_comm_time = melissa_get_time();
     total_comm_time += end_comm_time - start_comm_time;

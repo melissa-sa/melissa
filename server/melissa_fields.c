@@ -35,36 +35,39 @@
 #include "melissa_data.h"
 #include "melissa_io.h"
 #include "compute_stats.h"
+#include "melissa_output.h"
 
-#if MELISSA4PY != 1
-void (*write_stats)(melissa_data_t**,
-                    melissa_options_t*,
-                    comm_data_t*,
-                    char*);
-void* output_lib;
 
-void melissa_get_output_lib(char* lib_name,
-                            char* func_name)
-{
-    write_stats = NULL;
-    melissa_print (VERBOSE_DEBUG, "open lib %s\n", lib_name);
-    output_lib = dlopen(lib_name, RTLD_NOW);
-    if (output_lib == NULL)
-    {
-        perror("cannot load library:");
-        fprintf(stdout, "ERROR: Cannot load output library\n");
-        fprintf(stdout, "%s\n", dlerror());
-        exit(1);
-    }
-    melissa_print (VERBOSE_DEBUG, "load func  %s\n", func_name);
-    write_stats = dlsym(output_lib, func_name);
-    if (write_stats == NULL)
-    {
-        fprintf(stdout, "ERROR: Cannot load output function\n");
-        exit(1);
-    }
-}
-#endif // MELISSA4PY
+//#if MELISSA4PY != 1
+//void (*write_stats)(melissa_data_t**,
+//                    melissa_options_t*,
+//                    comm_data_t*,
+//                    write_output_d_txt,
+//                    write_output_i_txt,
+//                    char*);
+//void* output_lib;
+
+//void melissa_get_output_lib(char* lib_name,
+//                            char* func_name)
+//{
+//    write_stats = NULL;
+//    melissa_print (VERBOSE_DEBUG, "open lib %s\n", lib_name);
+//    output_lib = dlopen(lib_name, RTLD_NOW);
+//    if (output_lib == NULL)
+//    {
+//        perror("cannot load library:");
+//        fprintf(stdout, "ERROR: Cannot load output library\n");
+//        exit(1);
+//    }
+//    melissa_print (VERBOSE_DEBUG, "load func  %s\n", func_name);
+//    write_stats = dlsym(output_lib, func_name);
+//    if (write_stats == NULL)
+//    {
+//        fprintf(stdout, "ERROR: Cannot load output function\n");
+//        exit(1);
+//    }
+//}
+//#endif // MELISSA4PY
 
 /**
  *******************************************************************************
@@ -301,30 +304,16 @@ void finalize_field_data (melissa_field_t   *fields,
             }
         }
 
-#if MELISSA4PY != 1
         start_write_time = melissa_get_time();
         for (j=0; j<options->nb_fields; j++)
         {
-//            write_stats_bin (&(fields[j].stats_data),
-//                             options,
-//                             comm_data,
-//                             fields[j].name);
-//            write_stats_txt (&(fields[j].stats_data),
-//                             options,
-//                             comm_data,
-//                             fields[j].name);
-//            write_stats_ensight (&(fields[j].stats_data),
-//                                 options,
-//                                 comm_data,
-//                                 fields[j].name);
-            write_stats (&(fields[j].stats_data),
-                         options,
-                         comm_data,
-                         fields[j].name);
+            melissa_write_stats_seq (&(fields[j].stats_data),
+                                      options,
+                                      comm_data,
+                                      fields[j].name);
         }
         end_write_time = melissa_get_time();
         *total_write_time += end_write_time - start_write_time;
-#endif // MELISSA4PY
 
         for (j=0; j<options->nb_fields; j++)
         {
@@ -341,9 +330,9 @@ void finalize_field_data (melissa_field_t   *fields,
     return;
 }
 
-#if MELISSA4PY != 1
-void melissa_close_output_lib()
-{
-    dlclose(output_lib);
-}
-#endif // MELISSA4PY
+//#if MELISSA4PY != 1
+//void melissa_close_output_lib()
+//{
+//    dlclose(output_lib);
+//}
+//#endif // MELISSA4PY
