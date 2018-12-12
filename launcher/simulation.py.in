@@ -178,6 +178,7 @@ class SingleSimuGroup(Group):
         self.cancel()
         self.nb_restarts += 1
         crashs_before_redraw = 5
+        crashs_before_redraw = 1
         if self.nb_restarts >= crashs_before_redraw:
             logging.warning('Simulation ' + str(self.rank) +
                             'crashed %d times, drawing new parameter set' % crashs_before_redraw)
@@ -318,7 +319,7 @@ class SobolGroup(Group):
                             +' using \'launch_group\' instead')
             self.launch()
         self.job_status = PENDING
-        self.status = WAITING
+        #self.status = WAITING
 
 class Server(Job):
     """
