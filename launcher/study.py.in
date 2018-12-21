@@ -470,7 +470,7 @@ class Study(object):
             time.sleep(3)
             sleep = False
 
-        if ((server.status != RUNNING or server.job_status != RUNNING)
+        if (((server.status != RUNNING or server.job_status != RUNNING) and server.status != FINISHED)
                 and not all([i.status == FINISHED for i in groups])):
             print 'server status: '+str(server.status)+' job_status: '+str(server.job_status)
             for group in groups:

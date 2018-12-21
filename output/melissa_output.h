@@ -25,11 +25,9 @@
  *
  **/
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
+#ifndef SERVER_OUTPUT_H
+#define SERVER_OUTPUT_H
+
 //#include "hdf5.h"
 #include "melissa_data.h"
 #include "melissa_utils.h"
@@ -53,3 +51,5 @@ void write_stats_ensight(melissa_data_t    **data,
                          melissa_options_t  *options,
                          comm_data_t        *comm_data,
                          char               *field);
+
+#endif // SERVER_OUTPUT_H

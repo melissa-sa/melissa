@@ -52,18 +52,18 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
     print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
-    #server.job_id = subprocess.Popen(('mpirun ' +
-                                      #' -n '+str(NODES_SERVER) +
-                                      #' ' + server.path +
-                                      #'/melissa_server ' +
-                                      #server.cmd_opt +
-                                      #' &').split()).pid
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/melissa_server.py ' +
+                                      '/melissa_server ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
+    #server.job_id = subprocess.Popen(('mpirun ' +
+                                      #' -n '+str(NODES_SERVER) +
+                                      #' ' + server.path +
+                                      #'/melissa_server.py ' +
+                                      #server.cmd_opt +
+                                      #' &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 # The launch_group function to put in USER_FUNCTIONS['launch_group'].
@@ -199,7 +199,7 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 4                # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 6                # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
@@ -208,7 +208,7 @@ STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted i
 STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 2
+STUDY_OPTIONS['batch_size'] = 3
 STUDY_OPTIONS['learning'] = False
 
 MELISSA_STATS = {}
@@ -220,7 +220,7 @@ MELISSA_STATS['min'] = False
 MELISSA_STATS['max'] = False
 MELISSA_STATS['threshold_exceedance'] = True
 MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = True
+MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

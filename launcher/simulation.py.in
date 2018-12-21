@@ -317,7 +317,7 @@ class SobolGroup(Group):
                             +' using \'launch_group\' instead')
             self.launch()
         self.job_status = PENDING
-        self.status = WAITING
+        self.status = WAITING # TODO something is wrong here. Server doesn't know this info.
 
 class Server(Job):
     """

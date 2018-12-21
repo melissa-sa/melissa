@@ -550,12 +550,12 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     server_ptr->start_read_time = melissa_get_time();
                     if (server_ptr->comm_data.rank == 0)
                     {
-                        melissa_print (VERBOSE_INFO, "reading checkpoint files...");
+                        melissa_print (VERBOSE_INFO, "reading checkpoint files...\n");
                     }
                     read_saved_stats (data_ptr, &server_ptr->comm_data, field_name_ptr, client_rank);
                     if (server_ptr->comm_data.rank == 0)
                     {
-                        melissa_print (VERBOSE_INFO, "reading checkpoint files ok");
+                        melissa_print (VERBOSE_INFO, "reading checkpoint files ok\n");
                     }
                     server_ptr->last_checkpoint_time = melissa_get_time();
                     server_ptr->end_read_time = melissa_get_time();
