@@ -45,6 +45,19 @@ void sig_handler(int signo) {
         end_signal = signo;
 }
 
+void log_confidence_sobol_martinez(sobol_array_t *sobol_array,
+                               int            nb_parameters,
+                               int            vect_size)
+{
+    int j;
+    // TODO: later we want to know the sobol from different timesteps t...
+    for (j=0; j< nb_parameters; j++)
+    {
+        melissa_print(VERBOSE_INFO, "sobol confidence min(timestep) - Parameter %d: %.4f\n",
+            j, sobol_array->sobol_martinez[j].confidence_interval[1]);
+    }
+}
+
 void melissa_server_init (int argc, char **argv, void **server_handle)
 {
     melissa_server_t     *server_ptr;
@@ -338,12 +351,12 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
         }
 
-        if (server_ptr->last_checkpoint_time  + server_ptr->melissa_options.check_interval < melissa_get_time() && server_ptr->last_checkpoint_time > 0.1)
+        if (server_ptr->last_checkpoint_time + server_ptr->melissa_options.check_interval < melissa_get_time() && server_ptr->last_checkpoint_time > 0.1)
         {
             server_ptr->start_save_time = melissa_get_time();
             for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
             {
-                save_stats (server_ptr->fields[i].stats_data, &server_ptr->comm_data, server_ptr->fields[i].name);
+                save_stats(server_ptr->fields[i].stats_data, &server_ptr->comm_data, server_ptr->fields[i].name);
                 if (server_ptr->comm_data.rank == 0)
                 {
                     char dir[256];
@@ -624,6 +637,9 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                                    server_ptr->buff_tab_ptr,
                                    simu_data->simu_id);
                     confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+                                               server_ptr->melissa_options.nb_parameters,
+                                               data_ptr[client_rank].vect_size);
+                    log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
                                                server_ptr->melissa_options.nb_parameters,
                                                data_ptr[client_rank].vect_size);
                     server_ptr->nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
