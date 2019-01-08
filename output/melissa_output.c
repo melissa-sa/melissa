@@ -165,6 +165,66 @@ void write_output_i_ensight(const char   *file_name,
     melissa_free (s_buffer);
 }
 
+static inline void dgather_data(comm_data_t *comm_data,
+                               int *local_vect_sizes,
+                               double *d_buffer)
+{
+    int temp_offset = 0;
+    int j;
+#ifdef BUILD_WITH_MPI
+    MPI_Status  status;
+    if (comm_data->rank == 0)
+    {
+        for (j=1; j<comm_data->comm_size; j++)
+        {
+            temp_offset += local_vect_sizes[j-1];
+            if (local_vect_sizes[j] > 0)
+            {
+                MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+            }
+        }
+        temp_offset = 0;
+    }
+    else
+    {
+        if (local_vect_sizes[comm_data->rank] > 0)
+        {
+            MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+        }
+    }
+#endif // BUILD_WITH_MPI
+}
+
+static inline void igather_data(comm_data_t *comm_data,
+                               int *local_vect_sizes,
+                               int *i_buffer)
+{
+    int temp_offset = 0;
+    int j;
+#ifdef BUILD_WITH_MPI
+    MPI_Status  status;
+    if (comm_data->rank == 0)
+    {
+        for (j=1; j<comm_data->comm_size; j++)
+        {
+            temp_offset += local_vect_sizes[j-1];
+            if (local_vect_sizes[j] > 0)
+            {
+                MPI_Recv (&i_buffer[temp_offset], local_vect_sizes[j], MPI_INT, j, j+121, comm_data->comm, &status);
+            }
+        }
+        temp_offset = 0;
+    }
+    else
+    {
+        if (local_vect_sizes[comm_data->rank] > 0)
+        {
+            MPI_Send(i_buffer, local_vect_sizes[comm_data->rank], MPI_INT, 0, comm_data->rank+121, comm_data->comm);
+        }
+    }
+#endif // BUILD_WITH_MPI
+}
+
 /**
  *******************************************************************************
  *
@@ -257,21 +317,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                 }
             }
             temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&(d_buffer[temp_offset]), local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                }
-                temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
+            dgather_data (comm_data, local_vect_sizes, d_buffer);
             if (comm_data->rank == 0)
             {
                 (*write_output_d)(file_name,
@@ -298,21 +344,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                 }
             }
             temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                }
-                temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
+            dgather_data (comm_data, local_vect_sizes, d_buffer);
             if (comm_data->rank == 0)
             {
                 (*write_output_d)(file_name,
@@ -339,21 +371,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                 }
             }
             temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                }
-                temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
+            dgather_data (comm_data, local_vect_sizes, d_buffer);
             if (comm_data->rank == 0)
             {
                 (*write_output_d)(file_name,
@@ -380,21 +398,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                 }
             }
             temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                }
-                temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
+            dgather_data (comm_data, local_vect_sizes, d_buffer);
             if (comm_data->rank == 0)
             {
                 (*write_output_d)(file_name,
@@ -421,21 +425,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                 }
             }
             temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                }
-                temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
+            dgather_data (comm_data, local_vect_sizes, d_buffer);
             if (comm_data->rank == 0)
             {
                 (*write_output_d)(file_name,
@@ -459,21 +449,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                 }
             }
             temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                }
-                temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
+            dgather_data (comm_data, local_vect_sizes, d_buffer);
             if (comm_data->rank == 0)
             {
                 (*write_output_d)(file_name,
@@ -501,21 +477,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                 }
             }
             temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-            if (comm_data->rank == 0)
-            {
-                for (j=1; j<comm_data->comm_size; j++)
-                {
-                    temp_offset += local_vect_sizes[j-1];
-                    MPI_Recv (&i_buffer[temp_offset], local_vect_sizes[j], MPI_INT, j, j+121, comm_data->comm, &status);
-                }
-                temp_offset = 0;
-            }
-            else
-            {
-                MPI_Send(i_buffer, local_vect_sizes[comm_data->rank], MPI_INT, 0, comm_data->rank+121, comm_data->comm);
-            }
-#endif // BUILD_WITH_MPI
+            igather_data (comm_data, local_vect_sizes, i_buffer);
             if (comm_data->rank == 0)
             {
                 (*write_output_i)(file_name,
@@ -545,21 +507,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                     }
                 }
                 temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-                if (comm_data->rank == 0)
-                {
-                    for (j=1; j<comm_data->comm_size; j++)
-                    {
-                        temp_offset += local_vect_sizes[j-1];
-                        MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                    }
-                    temp_offset = 0;
-                }
-                else
-                {
-                    MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-                }
-#endif // BUILD_WITH_MPI
+                dgather_data (comm_data, local_vect_sizes, d_buffer);
                 if (comm_data->rank == 0)
                 {
                   char statistics_name[256];
@@ -591,21 +539,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                     }
                 }
                 temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-                if (comm_data->rank == 0)
-                {
-                    for (j=1; j<comm_data->comm_size; j++)
-                    {
-                        temp_offset += local_vect_sizes[j-1];
-                        MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                    }
-                    temp_offset = 0;
-                }
-                else
-                {
-                    MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-                }
-#endif // BUILD_WITH_MPI
+                dgather_data (comm_data, local_vect_sizes, d_buffer);
                 if (comm_data->rank == 0)
                 {
                     char statistics_name[256];
@@ -633,21 +567,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                     }
                 }
                 temp_offset = 0;
-#ifdef BUILD_WITH_MPI
-                if (comm_data->rank == 0)
-                {
-                    for (j=1; j<comm_data->comm_size; j++)
-                    {
-                        temp_offset += local_vect_sizes[j-1];
-                        MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
-                    }
-                    temp_offset = 0;
-                }
-                else
-                {
-                    MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
-                }
-#endif // BUILD_WITH_MPI
+                dgather_data (comm_data, local_vect_sizes, d_buffer);
                 if (comm_data->rank == 0)
                 {
                     char statistics_name[256];
