@@ -672,6 +672,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             // check the simulation progress //
             old_simu_state = simu_ptr->status;
             simu_ptr->status = check_simu_state(server_ptr->fields, server_ptr->melissa_options.nb_fields, simu_data->simu_id, server_ptr->melissa_options.nb_time_steps, &server_ptr->comm_data);
+            simu_ptr->job_status = 1;
             melissa_print(VERBOSE_DEBUG, "Group %d, rank %d, status %d\n", simu_data->simu_id, server_ptr->comm_data.rank, simu_ptr->status);
 
             // check if we recieved all the last timestep messages //
