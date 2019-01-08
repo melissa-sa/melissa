@@ -113,9 +113,9 @@ class melissa_helper:
         self.test_y = []
         self.nb_parameters = nb_parameters
         self.model = MyModel(nb_parameters, vect_size)
-        for i in range(nb_parameters):
-            self.train_x.append([])
-            self.test_x.append([])
+#        for i in range(nb_parameters):
+#            self.train_x.append([])
+#            self.test_x.append([])
 
 class melissa_helper_tf:
     def __init__(self, nb_parameters):
@@ -124,9 +124,9 @@ class melissa_helper_tf:
         self.test_x = []
         self.test_y = []
         self.nb_parameters = nb_parameters
-        for i in range(nb_parameters):
-            self.train_x.append([])
-            self.test_x.append([])
+#        for i in range(nb_parameters):
+#            self.train_x.append([])
+#            self.test_x.append([])
 
 
 def model_init_minibatch(vect_size, nb_parameters):
@@ -242,43 +242,48 @@ def model_init_tf(vect_size, nb_parameters):
 
 def add_to_training_set(x, y, handle):
     handle.train_y.append(y)
-    for i in range(handle.nb_parameters):
-        handle.train_x[i].append(x[i])
+#    for i in range(handle.nb_parameters):
+#        handle.train_x[i].append(x[i])
+    handle.train_x.append(x)
 
 def add_to_testing_set(x, y, handle):
     handle.test_y.append(np.array(y))
-    for i in range(handle.nb_parameters):
-        handle.test_x[i].append(x[i])
+#    for i in range(handle.nb_parameters):
+#        handle.test_x[i].append(x[i])
+    handle.test_x.append(x)
 
 def train_batch(handle):
-    for i in range (handle.nb_parameters):
-        X_temp=np.array(handle.train_x[i])
-        X_temp=np.expand_dims(X_temp, 1)
-        if i>0 :
-            X_train =np.concatenate((X_train,X_temp), axis=1)
-        else:
-            X_train = X_temp
+#    for i in range (handle.nb_parameters):
+#        X_temp=np.array(handle.train_x[i])
+#        X_temp=np.expand_dims(X_temp, 1)
+#        if i>0 :
+#            X_train =np.concatenate((X_train,X_temp), axis=1)
+#        else:
+#            X_train = X_temp
+    X_train=np.array(handle.train_x)
+#    print X_train.shape
     Y_train=np.array(handle.train_y)
     res = handle.model.train_on_batch(X_train,Y_train)
     handle.train_x = []
-    for i in range(handle.nb_parameters):
-        handle.train_x.append([])
+#    for i in range(handle.nb_parameters):
+#        handle.train_x.append([])
     handle.train_y = []
     return res
 
 def test_batch(handle):
-    for i in range (handle.nb_parameters):
-        X_temp=np.array(handle.test_x[i])
-        X_temp=np.expand_dims(X_temp, 1)
-        if i>0 :
-            X_test =np.concatenate((X_test,X_temp), axis=1)
-        else:
-            X_test = X_temp
+#    for i in range (handle.nb_parameters):
+#        X_temp=np.array(handle.test_x[i])
+#        X_temp=np.expand_dims(X_temp, 1)
+#        if i>0 :
+#            X_test =np.concatenate((X_test,X_temp), axis=1)
+#        else:
+#            X_test = X_temp
+    X_test=np.array(handle.test_x)
     Y_test=np.array(handle.test_y)
     res = handle.model.test_on_batch(X_test,Y_test)
     handle.test_x = []
-    for i in range(handle.nb_parameters):
-        handle.test_x.append([])
+#    for i in range(handle.nb_parameters):
+#        handle.test_x.append([])
     handle.test_y = []
     return res
 

@@ -112,7 +112,7 @@ int check_timeouts (vector_t *simulations,
     for (i=0; i<simulations->size; i++)
     {
         simu_ptr = vector_get (simulations, i);
-        if (simu_ptr->status == 1)
+        if (simu_ptr->status == 1 && simu_ptr->job_status > 0)
         {
             if (simu_ptr->last_message + timeout_simu < current_time)
             {
@@ -229,6 +229,16 @@ void process_txt_message (char      msg[255],
             i++;
             temp_char = strtok (NULL, s);
         }
+    }
+    else if (0 == strcmp(temp_char, "drop"))
+    {
+        temp_char = strtok (NULL, s);
+        simu_id = atoi(temp_char);
+        simu_ptr = vector_get (simulations, simu_id);
+        temp_char = strtok (NULL, s);
+        strcpy(simu_ptr->job_id, temp_char);
+        simu_ptr->job_status = 1;
+        simu_ptr->status = 2;
     }
 }
 

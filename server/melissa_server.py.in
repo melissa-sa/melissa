@@ -45,7 +45,7 @@ c_double_ptr = ctypes.POINTER(ctypes.c_double)
 c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # size of the training and testing batches
-BATCH_SIZE = 5
+BATCH_SIZE = 40
 
 # Class to transfer data between Python and C
 class simulation_data(ctypes.Structure):
