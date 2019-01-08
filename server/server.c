@@ -53,7 +53,7 @@ void log_confidence_sobol_martinez(sobol_array_t *sobol_array,
     // TODO: later we want to know the sobol from different timesteps t...
     for (j=0; j< nb_parameters; j++)
     {
-        melissa_print(VERBOSE_INFO, "sobol confidence min(timestep) - Parameter %d: %.4f\n",
+        melissa_print(VERBOSE_INFO, "sobol confidence - Parameter %d: %.4f\n",
             j, sobol_array->sobol_martinez[j].confidence_interval[1]);
     }
 }
