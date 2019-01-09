@@ -53,7 +53,7 @@ void log_confidence_sobol_martinez(sobol_array_t *sobol_array,
     // TODO: later we want to know the sobol from different timesteps t...
     for (j=0; j< nb_parameters; j++)
     {
-        melissa_print(VERBOSE_INFO, "sobol confidence - Parameter %d: %.4f\n",
+        melissa_print(VERBOSE_DEBUG, "sobol confidence - parameter %d: %.4f\n",
             j, sobol_array->sobol_martinez[j].confidence_interval[1]);
     }
 }
@@ -933,6 +933,7 @@ int main (int argc, char **argv)
     {
         melissa_server_run (&melissa_server_ptr, &simu_data);
     }
+    melissa_print(VERBOSE_INFO, "Finalizing, writing results...\n");
     melissa_server_finalize (&melissa_server_ptr, &simu_data);
 #ifdef BUILD_WITH_MPI
     MPI_Finalize ();

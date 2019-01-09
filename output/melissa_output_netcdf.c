@@ -276,6 +276,10 @@ void write_netcdf(const char   *statistics_name,
     char file_name[256];
 
     sprintf(file_name, "%s_%s.nc", variable_name, statistics_name);
+    if (t == 0)
+    {
+      printf("Start writing %s\n", file_name);
+    }
 
     CacheEntry *c;
     if (t == 0)
@@ -326,7 +330,8 @@ void write_netcdf(const char   *statistics_name,
     if (t == nb_timesteps-1)
     {
         nc_close(c->ncID);
-        D("Closed file!");
+        printf("Finished writing %s\n", file_name);
+        //D("Closed file!");
     }
 }
 
