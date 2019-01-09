@@ -180,7 +180,11 @@ static inline void dgather_data(comm_data_t *comm_data,
             temp_offset += local_vect_sizes[j-1];
             if (local_vect_sizes[j] > 0)
             {
-                MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                int result = MPI_Recv (&d_buffer[temp_offset], local_vect_sizes[j], MPI_DOUBLE, j, j+121, comm_data->comm, &status);
+                if (result != MPI_SUCCESS)
+                {
+                  printf("MPI_ERROR_CODE: %d\n", result);
+                }
             }
         }
         temp_offset = 0;
@@ -189,9 +193,14 @@ static inline void dgather_data(comm_data_t *comm_data,
     {
         if (local_vect_sizes[comm_data->rank] > 0)
         {
-            MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            int result = MPI_Send(d_buffer, local_vect_sizes[comm_data->rank], MPI_DOUBLE, 0, comm_data->rank+121, comm_data->comm);
+            if (result != MPI_SUCCESS)
+            {
+              printf("MPI_ERROR_CODE: %d\n", result);
+            }
         }
     }
+
 #endif // BUILD_WITH_MPI
 }
 
@@ -582,6 +591,14 @@ void melissa_write_stats_seq(melissa_data_t    **data,
             }
         }
     }
+
+    // looks like we have mpi buffer overflows if we are on large scale...
+    // The slave processes (rank != 0) quit already while the master is still writing.
+    // This leads to a deadlock in MPI_Recv..
+    // so lets sync here.
+    // REM: if this happens again sync in each statistic ;)
+    MPI_Barrier(comm_data->comm);
+
     melissa_free (d_buffer);
     melissa_free (offsets);
     melissa_free (local_vect_sizes);
