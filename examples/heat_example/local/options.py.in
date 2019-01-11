@@ -132,6 +132,7 @@ def launch_group(group):
                                  str(NODES_GROUP),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(group.simu_id[i]),
+                                 str(group.coupling),
                                  ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
         print command[:-2]
@@ -149,11 +150,13 @@ def launch_group(group):
                                  str(NODES_GROUP),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(group.simu_id),
+                                 str(group.coupling),
                                  ' '.join(str(i) for i in group.param_set)))
         else:
             command = ' '.join(('@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                 str(0),
                                 str(group.simu_id),
+                                str(group.coupling),
                                 ' '.join(str(i) for i in group.param_set)))
         print command
 
@@ -198,29 +201,29 @@ def draw_param_set():
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
-STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 6                # initial number of parameter sets
+STUDY_OPTIONS['nb_parameters'] = 1                 # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 300              # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 100          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 3
+STUDY_OPTIONS['batch_size'] = 6
 STUDY_OPTIONS['learning'] = False
 
 MELISSA_STATS = {}
-MELISSA_STATS['mean'] = True
-MELISSA_STATS['variance'] = True
+MELISSA_STATS['mean'] = False
+MELISSA_STATS['variance'] = False
 MELISSA_STATS['skewness'] = False
 MELISSA_STATS['kurtosis'] = False
 MELISSA_STATS['min'] = False
 MELISSA_STATS['max'] = False
 MELISSA_STATS['threshold_exceedance'] = True
 MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
