@@ -53,8 +53,8 @@ void log_confidence_sobol_martinez(sobol_array_t *sobol_array,
     // TODO: later we want to know the sobol from different timesteps t...
     for (j=0; j< nb_parameters; j++)
     {
-        melissa_print(VERBOSE_DEBUG, "sobol confidence - parameter %d: %.4f\n",
-            j, sobol_array->sobol_martinez[j].confidence_interval[1]);
+        melissa_print(VERBOSE_INFO, "sobol confidence 1st order - parameter %d: %g\n",
+            j, sobol_array->sobol_martinez[j].confidence_interval[0]);
     }
 }
 
@@ -498,6 +498,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
 
 //            memcpy(&time_step, buf_ptr, sizeof(int));
+//          TODO: why not using apacked stuct here??
             memcpy(&simu_data->time_stamp, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));
@@ -639,9 +640,17 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
                                                server_ptr->melissa_options.nb_parameters,
                                                data_ptr[client_rank].vect_size);
-                    log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+
+                    if (server_ptr->comm_data.rank == 0 &&
+                          simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps -1)
+                    {
+                        // REM: atm only showing for last timestep on 0 rank
+                        log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
                                                server_ptr->melissa_options.nb_parameters,
                                                data_ptr[client_rank].vect_size);
+
+                    }
+
                     server_ptr->nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
                                                                                         0.01,
                                                                                         server_ptr->melissa_options.nb_time_steps,
@@ -691,7 +700,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 }
             }
 
-            // === Send a message to the Python master in case of simulation status update === //
+            // === Send a message to the Python master in case of simulation status update === //  TODO: can't we put all this stuff into functions?  technical debt?
             if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0 && simu_ptr->status == 1)
             {
                 sprintf (txt_buffer, "group_state %d %d", simu_data->simu_id, simu_ptr->status);
