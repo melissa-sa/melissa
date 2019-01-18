@@ -33,19 +33,19 @@ import timeit
 import sys
 import os
 import os.path
-import scipy as sp
+#import scipy as sp
 import time
 import random
 import keras
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 #from keras.models import Sequential
 #from keras.layers import Dense, Activation
 #from keras import backend as K
-import horovod.tensorflow as hvd
+#import horovod.tensorflow as hvd
 from mpi4py import MPI
 
 def rescale_params(param_set):
-    param_set[-1] = param_set[-1]/100
+#    param_set[-1] = param_set[-1]/100
     return param_set
 
 
@@ -222,6 +222,17 @@ class MyModel(tf.keras.Model):
         return self.out(x)
 #        return x
 
+
+def InitModelSubashiny(nb_parameters, vect_size):
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Dense(vect_size*2, input_dim=nb_parameters, activation='relu'))
+    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
+    model.add(tf.keras.layers.Dense(vect_size*4, kernel_initializer='normal', activation='relu'))
+    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
+    model.add(tf.keras.layers.Dense(vect_size*2, kernel_initializer='normal', activation='relu'))
+    model.add(tf.keras.layers.Dense(vect_size, kernel_initializer='normal'))
+    return model
+
 class melissa_helper:
     def __init__(self, nb_parameters, vect_size):
         self.train_x = []
@@ -229,7 +240,8 @@ class melissa_helper:
         self.test_x = []
         self.test_y = []
         self.nb_parameters = nb_parameters
-        self.model = MyModel(nb_parameters, vect_size)
+#        self.model = MyModel(nb_parameters, vect_size)
+        self.model = InitModelSubashiny(nb_parameters, vect_size)
 
 def model_init_minibatch(vect_size, nb_parameters):
     hvd.init()
@@ -268,15 +280,6 @@ def add_to_testing_set(x, y, handle):
 def train_batch(handle):
     X_train=np.array(handle.train_x)
     Y_train=np.array(handle.train_y)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
-    res = handle.model.train_on_batch(X_train, Y_train)
     res = handle.model.train_on_batch(X_train, Y_train)
     handle.train_x = []
     handle.train_y = []
@@ -328,8 +331,8 @@ def test_model(handle):
     param_set[0] = 0.99
     param_set[-1] = 0.9
     param_set=np.expand_dims(param_set, 0)
-    res = handle.model.predict(param_set, batch_size=1)
-    c = res.reshape(50, 50)
-    plt.matshow(c)
-    plt.show()
+#    res = handle.model.predict(param_set, batch_size=1)
+#    c = res.reshape(50, 50)
+#    plt.matshow(c)
+#    plt.show()
 

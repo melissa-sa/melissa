@@ -35,7 +35,7 @@ from matplotlib import pyplot as plt
 import ctypes
 from mpi4py import MPI
 
-melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/')
+melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/libmelissa_server4py.so')
 
 imp.load_source("melissa_learning", "@CMAKE_INSTALL_PREFIX@/lib/melissa_learning.py")
 import melissa_learning
@@ -46,7 +46,7 @@ c_double_ptr = ctypes.POINTER(ctypes.c_double)
 c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # size of the training and testing batches
-BATCH_SIZE = 10
+BATCH_SIZE = 8
 
 # Class to transfer data between Python and C
 class simulation_data(ctypes.Structure):

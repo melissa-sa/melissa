@@ -132,6 +132,86 @@ int check_simu_state(melissa_field_t *fields,
     return 2;
 }
 
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_fault_tolerance
+ *
+ * This function parses messages from launcher
+ *
+ *******************************************************************************
+ *
+ * @param[in] msg message from launcher
+ * number of timeouts detected
+ *
+ * @param[in] *simulations
+ * pointer to the simulation vector
+ *
+ *******************************************************************************/
+
+void process_txt_message (char      msg[255],
+                          melissa_server_t *server_ptr,
+                          int       nb_param)
+{
+    vector_t *simulations;
+
+    melissa_simulation_t *simu_ptr;
+    int                   simu_id, i;
+    const char            s[2] = " ";
+    char                 *temp_char;
+
+    simulations = &server_ptr->simulations;
+    temp_char = strtok (msg, s);
+    if (0 == strcmp(temp_char, "job"))
+    {
+        temp_char = strtok (NULL, s);
+        simu_id = atoi(temp_char);
+        if (simu_id > simulations->size)
+        {
+            for (i=simulations->size; i<simu_id; i++)
+            {
+                vector_add (simulations, add_simulation());
+            }
+        }
+        simu_ptr = vector_get (simulations, simu_id);
+        temp_char = strtok (NULL, s);
+        strcpy(simu_ptr->job_id, temp_char);
+        simu_ptr->job_status = 0;
+        if (simu_ptr->parameters == NULL)
+        {
+            simu_ptr->parameters = melissa_malloc (nb_param * sizeof(double));
+        }
+        temp_char = strtok (NULL, s);
+        i = 0;
+        while( temp_char != NULL )
+        {
+            simu_ptr->parameters[i] = atof(temp_char);
+            i++;
+            temp_char = strtok (NULL, s);
+        }
+    }
+    else if (0 == strcmp(temp_char, "drop"))
+    {
+        temp_char = strtok (NULL, s);
+        simu_id = atoi(temp_char);
+        simu_ptr = vector_get (simulations, simu_id);
+        temp_char = strtok (NULL, s);
+        strcpy(simu_ptr->job_id, temp_char);
+        simu_ptr->job_status = 1;
+        simu_ptr->status = 2;
+
+        if (server_ptr->comm_data.rank != 0)
+        {
+            simu_ptr->status = 3;
+            server_ptr->nb_finished_simulations += 1;
+            melissa_print(VERBOSE_INFO, "Drop simulation %d\n", simu_id);
+            melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", server_ptr->nb_finished_simulations, server_ptr->simulations.size);
+
+        }
+    }
+}
+
 int check_last_timestep(melissa_field_t *fields,
                         int              nb_fields,
                         int              group_id,

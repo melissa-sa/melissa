@@ -391,7 +391,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             zmq_recv (server_ptr->text_puller, text, 255, 0);
             melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", text, server_ptr->comm_data.rank);
             server_ptr->last_msg_launcher = melissa_get_time();
-            process_txt_message(text, &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
+            process_txt_message(text, server_ptr, server_ptr->melissa_options.nb_parameters);
             if (server_ptr->melissa_options.sampling_size < server_ptr->simulations.size)
             {
                 server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
@@ -648,7 +648,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //                    zmq_msg_close (&msg2);                wait_launcher_msg = 0;
                     zmq_recv (server_ptr->text_requester, txt_buffer, 255, 0);
                     server_ptr->last_msg_launcher = melissa_get_time();
-                    process_txt_message(txt_buffer, &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
+                    process_txt_message(txt_buffer, server_ptr, server_ptr->melissa_options.nb_parameters);
                 }
                 memcpy(simu_data->parameters ,simu_ptr->parameters, sizeof(double)*server_ptr->melissa_options.nb_parameters);
             }

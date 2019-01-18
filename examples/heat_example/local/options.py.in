@@ -55,7 +55,7 @@ def launch_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/melissa_server ' +
+                                      '/melissa_server.py ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
     #server.job_id = subprocess.Popen(('mpirun ' +
@@ -211,8 +211,8 @@ STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted i
 STUDY_OPTIONS['checkpoint_interval'] = 100          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 6
-STUDY_OPTIONS['learning'] = False
+STUDY_OPTIONS['batch_size'] = 1
+STUDY_OPTIONS['learning'] = True
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = False
@@ -223,7 +223,7 @@ MELISSA_STATS['min'] = False
 MELISSA_STATS['max'] = False
 MELISSA_STATS['threshold_exceedance'] = True
 MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = True
+MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

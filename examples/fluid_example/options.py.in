@@ -76,7 +76,7 @@ def launch_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/melissa_server_tf.py ' +
+                                      '/melissa_server.py ' +
                                       server.cmd_opt ).split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
@@ -148,7 +148,7 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/fluid_example/STATS'
 STUDY_OPTIONS['nb_parameters'] = 2                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 10              # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 20              # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 75                # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 400.0
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]

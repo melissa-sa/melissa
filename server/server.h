@@ -120,6 +120,11 @@ int check_simu_state(melissa_field_t *field,
                      int              nb_time_steps,
                      comm_data_t     *comm_data);
 
+
+void process_txt_message (char              msg[255],
+                          melissa_server_t *server_ptr,
+                          int               nb_param);
+
 int check_last_timestep(melissa_field_t *fields,
                         int              nb_fields,
                         int              group_id,
