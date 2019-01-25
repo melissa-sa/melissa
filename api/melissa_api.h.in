@@ -53,7 +53,7 @@ void melissa_init_f(const char *field_name,
                     int        *coupling);
 
 void melissa_send(const char *field_name,
-                  double     *send_vect);
+                  const double *send_vect);
 
 void melissa_finalize(void);
 

@@ -25,7 +25,7 @@ void ERROR(const char * message)
  * export MELISSA_NETCDF_DIMENSIONS="<dimlen z>;<dimlen y>;<dimlen x>;"
  * export MELISSA_NETCDF_DIMENSIONS="<dimlen y>;<dimlen x>;"
  * ...
- * For one dimensiont MELISSA_NETCDF_DIMENSIONS can left unset.
+ * For one dimension MELISSA_NETCDF_DIMENSIONS can left unset.
  */
 void getDimsFromEnv(size_t * dims, size_t * n)
 {
@@ -68,6 +68,11 @@ int getDim(int ncID, const char *name, size_t len, int *idp)
     {
         res = nc_inq_varid(ncID, name, idp);
     }
+    if (res != NC_NOERR)
+    {
+        printf("Netcdf Error code: %d\n", res);
+        ERROR("Could not create dimenstion");
+    }
     return res;
 }
 
@@ -90,7 +95,7 @@ void getVar(const int ncID, const char *name, const int ndims, const int dimids[
     if (res != NC_NOERR)
     {
         printf("Netcdf Error code: %d\n", res);
-        ERROR("Could not get variable");
+        ERROR("Could not create variable");
     }
 }
 
