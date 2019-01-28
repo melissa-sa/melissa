@@ -26,7 +26,7 @@ if(${srcdir} STREQUAL ${bindir})
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
-project(Melissa VERSION 0.4.0 LANGUAGES C CXX Fortran)
+project(Melissa VERSION 0.4.0 LANGUAGES C Fortran CXX)
 
 cmake_minimum_required(VERSION 3.2.2)
 
@@ -116,7 +116,7 @@ if(BUILD_WITH_MPI)
   find_package(MPI QUIET)
   if(MPI_C_FOUND AND MPI_Fortran_FOUND)
       set(EXTRA_LIBS ${EXTRA_LIBS}
-                     ${MPI_LIBRARIES} mpi)
+                     ${MPI_C_LIBRARIES})
       add_definitions( -DBUILD_WITH_MPI )
       include_directories( ${MPI_INCLUDE_PATH} )
       add_definitions(${MPI_Fortran_COMPILE_FLAGS})
