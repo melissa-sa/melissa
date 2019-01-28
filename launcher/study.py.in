@@ -236,7 +236,7 @@ class Study(object):
         logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
         print 'bind to recv port '+str(self.stdy_opt['recv_port'])
         melissa_message.bind_message_rcv(str(self.stdy_opt['recv_port']))
-        melissa_message.bind_message_resp(str(5554))
+        melissa_message.bind_message_resp(str(self.stdy_opt['resp_port']))
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
@@ -336,7 +336,7 @@ class Study(object):
         if (not 'recv_port' in self.stdy_opt):
             self.stdy_opt['recv_port'] = 5555
 
-        if (not 'recv_port' in self.stdy_opt):
+        if (not 'resp_port' in self.stdy_opt):
             self.stdy_opt['resp_port'] = 5554
 
         if (not 'data_port' in self.stdy_opt):
