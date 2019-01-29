@@ -314,6 +314,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->mean_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, (int)t+1);
@@ -341,6 +342,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->variance_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_variance.%.*d", field, max_size_time, (int)t+1);
@@ -368,6 +370,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->skewness_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_skewness.%.*d", field, max_size_time, (int)t+1);
@@ -395,6 +398,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->kurtosis_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_kurtosis.%.*d", field, max_size_time, (int)t+1);
@@ -422,6 +426,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->min_and_max_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_min.%.*d", field, max_size_time, (int)t+1);
@@ -446,6 +451,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
             }
         }
 
+        MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_max.%.*d", field, max_size_time, (int)t+1);
@@ -473,6 +479,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->threshold_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         i_buffer = (int*)d_buffer;
         for (t=0; t<options->nb_time_steps; t++)
         {
@@ -501,6 +508,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->quantile_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         int value;
         for (value=0; value<options->nb_quantiles; value++)
         {
@@ -534,6 +542,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 
     if (options->sobol_op == 1)
     {
+        MPI_Barrier(comm_data->comm);
         for (p=0; p<options->nb_parameters; p++)
         {
             for (t=0; t<options->nb_time_steps; t++)
@@ -597,6 +606,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
     // This leads to a deadlock in MPI_Recv..
     // so lets sync here.
     // REM: if this happens again sync in each statistic ;)
+    // -> it happend again. so now their are many many MPI_Barriers
     MPI_Barrier(comm_data->comm);
 
     melissa_free (d_buffer);
