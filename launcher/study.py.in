@@ -182,11 +182,11 @@ class Responder(Thread):
                     simu = int(message[1])%self.batch_size
                     with groups[group].lock:
                         if groups[group].job_type == 4:
-                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
+                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
                         elif groups[group].job_type == 3:
-                            message = "job "+str(groups[group].simu_id[simu])+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
+                            message = "job "+str(groups[group].simu_id[simu])+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
                         elif groups[group].job_type == 2:
-                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " ".join(str(j) for j in groups[group].param_set) + "\000"
+                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set) + "\000"
                     melissa_message.send_resp_message(message)
                 if message[0] == 'test_timeout':
                     melissa_message.send_resp_message("alive")
