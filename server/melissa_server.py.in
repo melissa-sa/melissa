@@ -46,7 +46,7 @@ c_double_ptr = ctypes.POINTER(ctypes.c_double)
 c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # size of the training and testing batches
-BATCH_SIZE = 8
+BATCH_SIZE = 50
 
 # Class to transfer data between Python and C
 class simulation_data(ctypes.Structure):
@@ -106,8 +106,7 @@ def main():
         val_array = np.frombuffer(buff_val, float)
         buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
         param_array = np.frombuffer(buff_param, float)
-        param_array = np.append(param_array, getattr(data, 'time_stamp'))
-        print param_array
+        #param_array = np.append(param_array, getattr(data, 'time_stamp'))
 
 
     i = 0
@@ -134,7 +133,7 @@ def main():
             val_array = np.frombuffer(buff_val, float)
             buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
             param_array = np.frombuffer(buff_param, float)
-            param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
+            #param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
 
             j += 1
             if j == 10:
@@ -160,7 +159,7 @@ def main():
                     # when the batch is ready, train on it
                     res = melissa_learning.train_batch(learning_handle)
                     accuracy.append(res[1])
-                    print "loss train = " + str(res)
+                    #print "loss train = " + str(res)
                     i = 0
         elif server_status == 2:
             print "save model"
@@ -211,6 +210,7 @@ def main():
         axis = []
         for i, acc in enumerate(accuracy):
             content += str(acc) + "\n"
+            accuracy[i] = min(10000, acc)
             axis.append(i)
         file.write(content)
         file.close()

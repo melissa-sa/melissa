@@ -44,9 +44,25 @@ import keras
 #import horovod.tensorflow as hvd
 from mpi4py import MPI
 
-def rescale_params(param_set):
-#    param_set[-1] = param_set[-1]/100
+def rescale_params_fluid(param_set):
+    param_set[0] = (param_set[0]-200)/300
+    param_set[-1] = param_set[-1]/75
     return param_set
+
+def rescale_params_heat(param_set):
+#    param_set[-1] = float(param_set[-1])/100.
+    return param_set
+
+def rescale_params(param_set):
+    return rescale_params_heat(param_set)
+
+def rescale_data_fluid(data):
+    for i in data:
+        i = (i-200)/300
+    return data
+
+def rescale_data(data):
+    return data
 
 
 def neighbors_square(size):
@@ -164,7 +180,7 @@ class MySparseLayer(tf.keras.layers.Layer):
     def __init__(self, size, trainable=True):
         super(MySparseLayer, self).__init__()
         self.size = size
-        self.indices = neighbors_square(size)
+#        self.indices = neighbors_square(size)
         #self.indices = reighbors_read()
         #print "value shape: " + str(self.sparse_tensor.values.shape)
         #print "indices: " + str(self.sparse_tensor.indices)
@@ -222,16 +238,47 @@ class MyModel(tf.keras.Model):
         return self.out(x)
 #        return x
 
+class DenseModel(tf.keras.Model):
+    def __init__(self, nb_parameters, vect_size, nb_layers = 10):
+        super(DenseModel, self).__init__()
+        self.first_layer = tf.keras.layers.Dense(vect_size, input_dim=nb_parameters, kernel_initializer='normal', activation='relu')
+        self.dense_layers = []
+        for i in range(nb_layers):
+            self.dense_layers.append(tf.keras.layers.Dense(vect_size, input_dim=vect_size, kernel_initializer='normal', activation='relu'))
+
+    def call(self, inputs):
+        x = self.first_layer(inputs)
+        x_saved = tf.identity(x)
+        for i in range(len(self.dense_layers)):
+            x = self.dense_layers[i](x)
+            if (i%2 == 0 and i > 0):
+                x = tf.keras.layers.add([x, x_saved])
+                x = tf.keras.activations.relu(x)
+                x_saved = tf.identity(x)
+        return x
+
 
 def InitModelSubashiny(nb_parameters, vect_size):
     model = tf.keras.models.Sequential()
-    model.add(tf.keras.layers.Dense(vect_size*2, input_dim=nb_parameters, activation='relu'))
-    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
-    model.add(tf.keras.layers.Dense(vect_size*4, kernel_initializer='normal', activation='relu'))
-    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
-    model.add(tf.keras.layers.Dense(vect_size*2, kernel_initializer='normal', activation='relu'))
+#    model.add(tf.keras.layers.BatchNormalization())
+#    model.add(tf.keras.layers.Dense(vect_size*2, input_dim=nb_parameters))
+#    model.add(tf.keras.layers.BatchNormalization())
+#    model.add(tf.keras.layers.Activation('relu'))
+#    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
+#    model.add(tf.keras.layers.BatchNormalization())
+#    model.add(tf.keras.layers.Activation('relu'))
+#    model.add(tf.keras.layers.Dense(vect_size*4, kernel_initializer='normal'))
+#    model.add(tf.keras.layers.BatchNormalization())
+#    model.add(tf.keras.layers.Activation('relu'))
+#    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
+#    model.add(tf.keras.layers.BatchNormalization())
+#    model.add(tf.keras.layers.Activation('relu'))
+#    model.add(tf.keras.layers.Dense(vect_size*2, kernel_initializer='normal'))
+#    model.add(tf.keras.layers.BatchNormalization())
+#    model.add(tf.keras.layers.Activation('relu'))
     model.add(tf.keras.layers.Dense(vect_size, kernel_initializer='normal'))
     return model
+
 
 class melissa_helper:
     def __init__(self, nb_parameters, vect_size):
@@ -241,6 +288,7 @@ class melissa_helper:
         self.test_y = []
         self.nb_parameters = nb_parameters
 #        self.model = MyModel(nb_parameters, vect_size)
+#        self.model = DenseModel(nb_parameters, vect_size, nb_layers = 5)
         self.model = InitModelSubashiny(nb_parameters, vect_size)
 
 def model_init_minibatch(vect_size, nb_parameters):
@@ -258,6 +306,7 @@ def model_init_minibatch(vect_size, nb_parameters):
     # Horovod: add Horovod Distributed Optimizer.
     optimizer = hvd.DistributedOptimizer(opt)
     helper.model.compile(optimizer=optimizer, loss='mse', metrics=['mse'])
+    helper.model.summary()
     hvd.broadcast_global_variables(0)
     return helper
 
@@ -265,21 +314,23 @@ def model_init_parallel(vect_size, nb_parameters):
     print "vect_size = "+str(vect_size)
     print "nb_parameters = "+str(nb_parameters)
     helper = melissa_helper(nb_parameters, vect_size)
-    optimizer = tf.keras.optimizers.Adam(lr=0.01)
+    optimizer = tf.keras.optimizers.Adam(lr=0.001)
     helper.model.compile(optimizer=optimizer, loss='mse', metrics=['mse'])
+#    helper.model.summary()
     return helper
 
 def add_to_training_set(x, y, handle):
-    handle.train_y.append(y)
+    handle.train_y.append(rescale_data(y))
     handle.train_x.append(rescale_params(x))
 
 def add_to_testing_set(x, y, handle):
-    handle.test_y.append(y)
+    handle.test_y.append(rescale_data(y))
     handle.test_x.append(rescale_params(x))
 
 def train_batch(handle):
     X_train=np.array(handle.train_x)
     Y_train=np.array(handle.train_y)
+#    print "train" + str(X_train)
     res = handle.model.train_on_batch(X_train, Y_train)
     handle.train_x = []
     handle.train_y = []
@@ -288,6 +339,7 @@ def train_batch(handle):
 def test_batch(handle):
     X_test=np.array(handle.test_x)
     Y_test=np.array(handle.test_y)
+#    print "X_test = "+str(X_test)
     res = handle.model.test_on_batch(X_test,Y_test)
     handle.test_x = []
     handle.test_y = []
@@ -321,6 +373,8 @@ def save_model_minibatch(handle, dirname, filename):
     print "Horovod rank: "+str(hvd.rank())
 
 def save_model_parallel(handle, dirname, filename):
+    handle.model.summary()
+    keras.utils.plot_model(handle.model, to_file='model.png')
     if (not os.path.isdir(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()))):
         os.mkdir(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()))
     save_model(handle, dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()),filename)
