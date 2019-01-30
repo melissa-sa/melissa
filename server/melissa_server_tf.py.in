@@ -29,13 +29,18 @@ from __future__ import absolute_import, division
 #from __future__ import print_function
 import tensorflow as tf
 import os
+import time
 import sys
 import signal
 import imp
 import getopt
 import numpy as np
 import ctypes
+import MEDLoader as ml
+import MEDCoupling as mc
 from mpi4py import MPI
+
+import matplotlib.pyplot as plt
 
 # Set Eager API
 tf.enable_eager_execution()
@@ -49,7 +54,7 @@ c_double_ptr = ctypes.POINTER(ctypes.c_double)
 c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # size of the training and testing batches
-BATCH_SIZE = 5
+BATCH_SIZE = 20
 
 # Class to transfer data between Python and C
 class simulation_data(ctypes.Structure):
@@ -79,47 +84,150 @@ def add_to_testing_set(x, y, handle):
     handle.test_y.append(np.array(y))
     handle.test_x.append(np.array(x))
 
+
+def neighbors_MED():
+    indices = []
+    mesh = ml.ReadUMeshFromFile("/home/tterraz/Documents/deep_learning_subashuny/final_output/von_karman/MESH/COARSE/Cylinder_7361.med","Cylinder_1",0)
+    tab1, tab2 = mesh.computeNeighborsOfCells()
+    for i in range(len(tab2)-1): # cell
+        diag_inserted = False
+        for k in tab1[tab2[i]:tab2[i+1]]: # neighbors
+            if k[0] > i and not diag_inserted:
+                indices.append([i,i])
+                diag_inserted = True
+            indices.append([i,k[0]])
+        if not diag_inserted:
+            indices.append([i,i])
+    return indices
+
+def neighbors_read():
+    indices = [[0, 0]]
+    file = open("VKindices", "r")
+    for line in file:
+        indices.append([int(i) for i in line.split()])
+    file.close()
+    return indices
+
+def neighbors_write(indices):
+    file = open("VKindices", "w")
+    for i in indices:
+        file.write(str(i[0])+" "+str(i[1])+"\n")
+    file.close()
+
+def neighbors_square(size):
+    x = int(np.sqrt(size))
+    y = int(np.sqrt(size))
+    indices = []
+    for i in range(size): # row
+        k = i%x # col
+        l = np.floor(i/x) # row
+        indices.append([i,i])
+        if l > 0:
+            indices.append([i,i-x])
+        if k > 0:
+            indices.append([i,i-1])
+        if k < x-1:
+            indices.append([i,i+1])
+        if l < y-1:
+            indices.append([i,i+x])
+    return indices
+
+class MySparseLayer(tf.keras.layers.Layer):
+    def __init__(self, size, trainable=True):
+        super(MySparseLayer, self).__init__()
+        self.size = size
+        self.indices = neighbors_square(size)
+        #self.indices = reighbors_read()
+        #print "value shape: " + str(self.sparse_tensor.values.shape)
+        #print "indices: " + str(self.sparse_tensor.indices)
+        indice_size = len(self.indices)
+        self.values = self.add_variable("values",
+                                         shape=[len(self.indices)],
+                                         dtype=tf.float64)
+        self.biases = self.add_variable("biases", shape=[self.size], dtype=tf.float64, trainable=True)
+        print self.variables
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], self.size)
+
+    def call(self, input):
+        sparse_tensor = tf.SparseTensor(self.indices, self.values.read_value(), [self.size, self.size])
+        return tf.nn.relu(tf.nn.bias_add(tf.linalg.transpose(tf.sparse_tensor_dense_matmul(sparse_tensor, tf.linalg.transpose(input))), self.biases))
+
+
+class MySparseLayer2(tf.keras.layers.Layer):
+    def __init__(self, vect_size, trainable=True):
+        super(MySparseLayer2, self).__init__()
+        self.size = vect_size
+        self.indices = neighbours_square(self.size)
+        #print "value shape: " + str(self.sparse_tensor.values.shape)
+        #print "indices: " + str(self.sparse_tensor.indices)
+        self.values = self.add_variable("values",
+                                         shape=[len(self.indices)],
+                                         dtype=tf.float64)
+        self.biases = self.add_variable("biases", shape=[self.size], dtype=tf.float64, trainable=True)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], self.size)
+
+    def call(self, input):
+        out = np.zeros(input.shape)
+        print type(out)
+        print out.shape
+        for i in range(len(self.indices)):
+            out[:, self.indices[i][0]] = tf.multiply(input[:, self.indices[i][1]], self.values[i])
+        return tf.nn.relu(tf.nn.bias_add(out, self.biases))
+
 # Define the neural network. To use eager API and tf.layers API together,
 # we must instantiate a tfe.Network class as follow:
 class NeuralNet(tfe.Network):
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, vect_size):
         # Define each layer
         super(NeuralNet, self).__init__()
-        self.layer1 = self.track_layer(
-            tf.layers.Dense(output_size*2, activation=tf.nn.relu))
-        self.layer2 = self.track_layer(
-            tf.layers.Dense(output_size*3, activation=tf.nn.relu))
-        self.layer3 = self.track_layer(
-            tf.layers.Dense(output_size*4, activation=tf.nn.relu))
-        self.layer4 = self.track_layer(
-            tf.layers.Dense(output_size*3, activation=tf.nn.relu))
-        self.layer5 = self.track_layer(
-            tf.layers.Dense(output_size*2, activation=tf.nn.relu))
-        self.layer6 = self.track_layer(
-            tf.layers.Dense(output_size, activation=tf.nn.relu))
-        # Output fully connected layer with a neuron for each output
-        self.out_layer = self.track_layer(tf.layers.Dense(output_size))
+        self.input_size = input_size
+        self.my_layers = []
+        self.out_layers = []
+        #self.x = x
+        #self.y = y
+        self.output_size = vect_size
+        self.layer_dense = self.track_layer(tf.layers.Dense(self.output_size, activation=tf.nn.relu, trainable = False))
+        #for i in range(50):
+            #self.my_layers.append(tf.layers.Conv1D(1,
+                                                   #5,
+                                                   #padding='same'))
+            ##self.my_layers.append(MySparseLayer(x, y))
+        for i in range(30):
+            self.out_layers.append(MySparseLayer(vect_size))
 
     def call(self, x):
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-        x = self.layer5(x)
-        x = self.layer6(x)
-        return self.out_layer(x)
+        x = self.layer_dense(x)
+        x = tf.reshape(x, [-1, self.output_size, 1])
+        x_saved = x
+        #for i in range(len(self.my_layers)):
+            #x = self.my_layers[i](x)
+            #if (i%2 == 0 and i > 0):
+                #x = tf.add(x, x_saved)
+                #x_saved = x
+
+        #return tf.reshape(self.out_layer(x), [-1, self.output_size])
+        x = tf.reshape(x, [-1, self.output_size])
+        for i in range(len(self.out_layers)):
+            x = self.out_layers[i](x)
+        return x
+
+
+
 
 # loss function
-def loss_fn(inference_fn, inputs, labels):
-    prediction = inference_fn(inputs)
+def loss_fn(inference_fn, params, labels):
+    prediction = inference_fn(params)
     correct_pred = tf.square(prediction - labels)
     return tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # Calculate accuracy
-def accuracy_fn(inference_fn, inputs, labels):
-    prediction = inference_fn(inputs)
+def accuracy_fn(inference_fn, prediction, labels):
     correct_pred = tf.square(prediction - labels)
-    return tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+    return tf.reduce_max(tf.cast(correct_pred, tf.float32))
 
 
 def main():
@@ -170,7 +278,8 @@ def main():
         nb_parameters = getattr(data, 'nb_param')
         buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*nb_parameters)
         param_array = np.frombuffer(buff_param, float)
-        param_array = np.append(param_array, getattr(data, 'time_stamp'))
+        param_array = np.append(param_array, float(getattr(data, 'time_stamp'))/100)
+        #param_array = np.expand_dims(param_array, axis=1)
 
 
     i = 0
@@ -194,7 +303,10 @@ def main():
             if not model_is_init:
                 # Parameters
 
+                accuracy = []
+                #neural_net = NeuralNet(nb_parameters+1, vect_size)
                 neural_net = NeuralNet(nb_parameters+1, vect_size)
+                #neural_net = create_model(nb_parameters+1, vect_size)
                 print "vect_size: "+str(vect_size)
 
                 model_is_init = True
@@ -211,6 +323,7 @@ def main():
             buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
             param_array = np.frombuffer(buff_param, float)
             param_array = np.append(param_array, float(getattr(data, 'time_stamp'))/100)
+            #param_array = np.expand_dims(param_array, axis=1)
 
             j += 1
             if j >= 10:
@@ -236,10 +349,15 @@ def main():
                     #print x_batch
                     #print x_batch.ndim
 
-                    batch_loss = loss_fn(neural_net, x_batch, y_batch)
-                    average_loss += batch_loss
+                    t1 = time.time()
+                    prediction = neural_net(x_batch)
+                    t2 = time.time()
+                    print "eval_time=", "{:.9f}".format(t2-t1)
                     # Compute the batch accuracy
-                    batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+                    batch_accuracy = accuracy_fn(neural_net, prediction, y_batch)
+                    accuracy.append(batch_accuracy.numpy())
+                    batch_loss = batch_accuracy
+                    average_loss += batch_loss
                     average_acc += batch_accuracy
                     learning_handle.test_x = []
                     learning_handle.test_y = []
@@ -278,12 +396,20 @@ def main():
                     #print x_batch
                     #print x_batch.ndim
 
-                    batch_loss = loss_fn(neural_net, x_batch, y_batch)
-                    average_loss += batch_loss
+                    t1 = time.time()
+                    prediction = neural_net(x_batch)
+                    t2 = time.time()
+                    print "eval_time=", "{:.9f}".format(t2-t1)
                     # Compute the batch accuracy
-                    batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+                    batch_accuracy = accuracy_fn(neural_net, prediction, y_batch)
+                    accuracy.append(batch_accuracy.numpy())
+                    batch_loss = batch_accuracy
+                    average_loss += batch_loss
                     average_acc += batch_accuracy
+                    t1 = time.time()
                     optimizer.apply_gradients(grad(neural_net, x_batch, y_batch))
+                    t2 = time.time()
+                    print "train_time=", "{:.9f}".format(t2-t1)
                     learning_handle.train_x = []
                     learning_handle.train_y = []
                     average_loss /= BATCH_SIZE
@@ -330,11 +456,19 @@ def main():
         # Labels
         y_batch = tf.cast(d[1], dtype=tf.float64)
 
-        batch_loss = loss_fn(neural_net, x_batch, y_batch)
-        average_loss += batch_loss
+        t1 = time.time()
+        prediction = neural_net(x_batch)
+        t2 = time.time()
+        print "eval_time=", "{:.9f}".format(t2-t1)
         # Compute the batch accuracy
-        batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+        batch_accuracy = accuracy_fn(neural_net, prediction, y_batch)
+        t2 = time.time()
+        print "train_time=", "{:.9f}".format(t2-t1)
+        accuracy.append(batch_accuracy.numpy())
+        batch_loss = batch_accuracy
+        average_loss += batch_loss
         average_acc += batch_accuracy
+        t1 = time.time()
         optimizer.apply_gradients(grad(neural_net, x_batch, y_batch))
         learning_handle.train_x = []
         learning_handle.train_y = []
@@ -360,11 +494,15 @@ def main():
         x_batch = d[0]
         # Labels
         y_batch = tf.cast(d[1], dtype=tf.float64)
-
-        batch_loss = loss_fn(neural_net, x_batch, y_batch)
-        average_loss += batch_loss
+        t1 = time.time()
+        prediction = neural_net(x_batch)
+        t2 = time.time()
+        print "eval_time=", "{:.9f}".format(t2-t1)
         # Compute the batch accuracy
-        batch_accuracy = accuracy_fn(neural_net, x_batch, y_batch)
+        batch_accuracy = accuracy_fn(neural_net, prediction, y_batch)
+        accuracy.append(batch_accuracy.numpy())
+        batch_loss = batch_accuracy
+        average_loss += batch_loss
         average_acc += batch_accuracy
         learning_handle.test_x = []
         learning_handle.test_y = []
@@ -380,6 +518,18 @@ def main():
     # write the NN
     if model_is_init:
         tf.contrib.eager.save_network_checkpoint(neural_net,checkpoint_prefix)
+
+    file = open("accuracy.txt", "w")
+    content = ""
+    axis = []
+    for i, acc in enumerate(accuracy):
+        content += str(acc) + "\n"
+        axis.append(i)
+    file.write(content)
+    file.close()
+
+    plt.plot(axis, accuracy)
+    plt.show()
 
     melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))

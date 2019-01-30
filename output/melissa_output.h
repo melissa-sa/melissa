@@ -30,6 +30,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
+#ifndef SERVER_OUTPUT_H
+#define SERVER_OUTPUT_H
+
 //#include "hdf5.h"
 #include "melissa_data.h"
 #include "melissa_utils.h"
@@ -69,3 +72,4 @@ void write_output_i(const char   *file_name,
                         const int     t,
                         const size_t  vec_size,
                         const int     vec[]);
+#endif // SERVER_OUTPUT_H

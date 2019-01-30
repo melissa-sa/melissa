@@ -31,10 +31,11 @@ import signal
 import imp
 import getopt
 import numpy as np
+from matplotlib import pyplot as plt
 import ctypes
 from mpi4py import MPI
 
-melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/')
+melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/libmelissa_server4py.so')
 
 imp.load_source("melissa_learning", "@CMAKE_INSTALL_PREFIX@/lib/melissa_learning.py")
 import melissa_learning
@@ -45,7 +46,7 @@ c_double_ptr = ctypes.POINTER(ctypes.c_double)
 c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # size of the training and testing batches
-BATCH_SIZE = 40
+BATCH_SIZE = 8
 
 # Class to transfer data between Python and C
 class simulation_data(ctypes.Structure):
@@ -106,6 +107,7 @@ def main():
         buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
         param_array = np.frombuffer(buff_param, float)
         param_array = np.append(param_array, getattr(data, 'time_stamp'))
+        print param_array
 
 
     i = 0
@@ -117,6 +119,8 @@ def main():
     while server_status != 1:
         if server_status == 0:
             if not model_is_init:
+                accuracy = []
+                print "Vect Size :" + str(len(val_array))
                 learning_handle = melissa_learning.model_init_parallel(len(val_array), len(param_array))
                 model_is_init = True
                 melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
@@ -140,6 +144,7 @@ def main():
                 if k == BATCH_SIZE:
                     # when the batch is ready, test on it
                     res = melissa_learning.test_batch(learning_handle)
+                    accuracy.append(res[1])
                     print "loss test = " + str(res)
                     k = 0
                 j = 0
@@ -154,18 +159,22 @@ def main():
                 if i == BATCH_SIZE:
                     # when the batch is ready, train on it
                     res = melissa_learning.train_batch(learning_handle)
+                    accuracy.append(res[1])
                     print "loss train = " + str(res)
                     i = 0
         elif server_status == 2:
             print "save model"
-            melissa_learning.save_model_parallel('.', 'model_insitu.h5')
-            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
-                                              ctypes.byref(data))
+            if model_is_init:
+                melissa_learning.save_model_parallel(learning_handle, '.', 'model_insitu.h5')
+                melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                                                  ctypes.byref(data))
 
             #get the data from the C structure. For now, doesn't work for multiple fields
             server_status = getattr(data, 'status')
         elif server_status == 3:
-            melissa_learning.read_model_parallel('.', 'model_insitu.h5')
+            accuracy = []
+            learning_handle = melissa_learning.model_init_parallel(len(val_array), len(param_array))
+            melissa_learning.read_model_parallel(learning_handle, '.', 'model_insitu.h5')
             model_is_init = True
             melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
             i += 1
@@ -180,17 +189,34 @@ def main():
     #clear the remaining train and test samples
     if i != 0:
         res = melissa_learning.train_batch(learning_handle)
+        accuracy.append(res[1])
         print "loss train = " + str(res)
         i = 0
 
     if k == BATCH_SIZE:
         res = melissa_learning.test_batch(learning_handle)
+        accuracy.append(res[1])
         print "loss test = " + str(res)
         k = 0
 
     # write the NN
     if model_is_init:
-        melissa_learning.save_model_parallel('.', 'model_insitu.h5')
+        melissa_learning.save_model_parallel(learning_handle, '.', 'model_insitu.h5')
+
+    if model_is_init:
+        melissa_learning.test_model(learning_handle)
+
+        file = open("accuracy.txt", "w")
+        content = ""
+        axis = []
+        for i, acc in enumerate(accuracy):
+            content += str(acc) + "\n"
+            axis.append(i)
+        file.write(content)
+        file.close()
+
+        plt.plot(axis, accuracy)
+        plt.show()
 
     melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))

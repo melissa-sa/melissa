@@ -63,10 +63,6 @@ void send_timeouts (int       detected_timeouts,
                     vector_t *simulations,
                     void     *python_pusher);
 
-void process_txt_message (char      msg[255],
-                          vector_t *simulations,
-                          int nb_param);
-
 
 int count_job_status(vector_t *simulations,
                       int       job_status);
