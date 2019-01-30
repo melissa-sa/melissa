@@ -1088,7 +1088,7 @@ void melissa_init_no_mpi (const char *field_name,
  *******************************************************************************/
 
 void melissa_send (const char *field_name,
-                   double     *send_vect)
+                   const double     *send_vect)
 {
     int     i=0, j=0, k, ret;
     int     buff_size;

@@ -101,7 +101,7 @@ class Messenger(Thread):
             last_msg_to_server = 0
             while self.running_study:
 #                if np.random.rand() < 0.2: print 'r' + 1
-                buff = create_string_buffer('\000' * 256)
+                buff = create_string_buffer('\000' * melissa_message.melissa_get_message_len())
                 melissa_message.wait_message(buff)
                 if buff.value != 'nothing':
                     logging.debug('message: '+buff.value)
@@ -171,7 +171,7 @@ class Responder(Thread):
     def run(self):
         try:
             while self.running_study:
-                buff = create_string_buffer('\000' * 256)
+                buff = create_string_buffer('\000' * melissa_message.melissa_get_message_len())
                 melissa_message.get_resp_message(buff)
                 if buff.value != 'nothing':
                     logging.debug('message: '+buff.value)
@@ -532,8 +532,8 @@ class Study(object):
                         try:
                             group.restart()
                         except:
-                            logging.error('Error while restarting group '+group.rank)
-                            print '=== Error while restarting group '+group.rank+' ==='
+                            logging.error('Error while restarting group '+str(group.rank))
+                            print '=== Error while restarting group '+str(group.rank)+' ==='
                             traceback.print_exc()
                             self.stop()
             with group.lock:

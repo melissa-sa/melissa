@@ -25,6 +25,11 @@
  *
  **/
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <math.h>
 #ifndef SERVER_OUTPUT_H
 #define SERVER_OUTPUT_H
 
@@ -52,4 +57,19 @@ void write_stats_ensight(melissa_data_t    **data,
                          comm_data_t        *comm_data,
                          char               *field);
 
+
+
+void write_output_d(const char   *file_name,
+                        const char   *field,
+                        const char   *statisics_name,
+                        const int     t,
+                        const size_t  vec_size,
+                        const double  vec[]);
+
+void write_output_i(const char   *file_name,
+                        const char   *field,
+                        const char   *statisics_name,
+                        const int     t,
+                        const size_t  vec_size,
+                        const int     vec[]);
 #endif // SERVER_OUTPUT_H

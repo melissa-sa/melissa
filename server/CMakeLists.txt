@@ -16,12 +16,13 @@
 
 add_definitions(-DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
+set(MELISSA_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
+
 file(GLOB
      ALL_SERVER
      RELATIVE
      ${CMAKE_CURRENT_SOURCE_DIR}
      *.c
-     *.h
      )
 
 add_executable(melissa_server ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)

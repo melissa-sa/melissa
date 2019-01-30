@@ -177,15 +177,12 @@ class SingleSimuGroup(Group):
         """
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
-            #logging.warning('Simulation ' + str(self.rank) +
-                            #'crashed 5 times, drawing new parameter set')
-            #logging.info('old parameter set: ' + str(self.param_set))
-            #self.param_set = Job.usr_func['draw_parameter_set']()
-            #logging.info('new parameter set: ' + str(self.param_set))
-            #self.nb_restarts = 0
+        crashs_before_redraw = 5
+        crashs_before_redraw = 1
+        if self.nb_restarts >= crashs_before_redraw:
             logging.warning('Simulation ' + str(self.rank) +
-                            'crashed 5 times, remove simulation')
+                                        'crashed %d times, drawing new parameter set' % crashs_before_redraw)
+
             logging.warning('Bad parameter set: ' + str(self.param_set))
             melissa_message.send_message("drop "+str(self.rank)+" " +str(self.job_id)+"\000")
             self.job_status = FINISHED
@@ -327,6 +324,8 @@ class SobolGroup(Group):
             self.job_status = FINISHED
             self.status = FINISHED
             return
+
+        param_str = ""
 
         if "restart_group" in Job.usr_func.keys() \
         and Job.usr_func['restart_group']:

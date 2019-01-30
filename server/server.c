@@ -45,6 +45,19 @@ void sig_handler(int signo) {
         end_signal = signo;
 }
 
+void log_confidence_sobol_martinez(sobol_array_t *sobol_array,
+                               int            nb_parameters,
+                               int            vect_size)
+{
+    int j;
+    // TODO: later we want to know the sobol from different timesteps t...
+    for (j=0; j< nb_parameters; j++)
+    {
+        melissa_print(VERBOSE_INFO, "sobol confidence 1st order - parameter %d: %g\n",
+            j, sobol_array->sobol_martinez[j].confidence_interval[0]);
+    }
+}
+
 void melissa_server_init (int argc, char **argv, void **server_handle)
 {
     melissa_server_t     *server_ptr;
@@ -87,7 +100,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     server_ptr->last_timeout_check = 0;
     server_ptr->nb_finished_simulations = 0;
     server_ptr->last_checkpoint_time = 0.0;
-    server_ptr->timeout_launcher = 50;
+    server_ptr->timeout_launcher = 250;
 
     // === init ZMQ context === //
 
@@ -141,7 +154,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         melissa_print_options (&server_ptr->melissa_options);
 //        melissa_write_options (&melissa_options);
 
-        server_ptr->port_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * server_ptr->comm_data.comm_size);        
+        server_ptr->port_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * server_ptr->comm_data.comm_size);
     }
 
     // === load the output library === //
@@ -338,12 +351,12 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
         }
 
-        if (server_ptr->last_checkpoint_time  + server_ptr->melissa_options.check_interval < melissa_get_time() && server_ptr->last_checkpoint_time > 0.1)
+        if (server_ptr->last_checkpoint_time + server_ptr->melissa_options.check_interval < melissa_get_time() && server_ptr->last_checkpoint_time > 0.1)
         {
             server_ptr->start_save_time = melissa_get_time();
             for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
             {
-                save_stats (server_ptr->fields[i].stats_data, &server_ptr->comm_data, server_ptr->fields[i].name);
+                save_stats(server_ptr->fields[i].stats_data, &server_ptr->comm_data, server_ptr->fields[i].name);
                 if (server_ptr->comm_data.rank == 0)
                 {
                     char dir[256];
@@ -380,7 +393,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
         if (items[0].revents & ZMQ_POLLIN)
         {
-            char text[256];
+            char text[MELISSA_MESSAGE_LEN];
 //            zmq_msg_init (&msg);
 //            zmq_msg_recv (&msg, server_ptr->text_puller, 0);
 //            melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", zmq_msg_data (&msg), server_ptr->comm_data.rank);
@@ -388,7 +401,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //            process_txt_message(zmq_msg_data (&msg), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
 //            server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
 //            zmq_msg_close (&msg);
-            zmq_recv (server_ptr->text_puller, text, 255, 0);
+            zmq_recv (server_ptr->text_puller, text, MELISSA_MESSAGE_LEN-1, 0);
             melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", text, server_ptr->comm_data.rank);
             server_ptr->last_msg_launcher = melissa_get_time();
             process_txt_message(text, server_ptr, server_ptr->melissa_options.nb_parameters);
@@ -485,6 +498,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
 
 //            memcpy(&time_step, buf_ptr, sizeof(int));
+//          TODO: why not using apacked stuct here??
             memcpy(&simu_data->time_stamp, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&simu_id, buf_ptr, sizeof(int));
@@ -626,6 +640,17 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
                                                server_ptr->melissa_options.nb_parameters,
                                                data_ptr[client_rank].vect_size);
+
+                    if (server_ptr->comm_data.rank == 0 &&
+                          simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps -1)
+                    {
+                        // REM: atm only showing for last timestep on 0 rank
+                        log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+                                               server_ptr->melissa_options.nb_parameters,
+                                               data_ptr[client_rank].vect_size);
+
+                    }
+
                     server_ptr->nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
                                                                                         0.01,
                                                                                         server_ptr->melissa_options.nb_time_steps,
@@ -646,7 +671,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //                    server_ptr->last_msg_launcher = melissa_get_time();
 //                    process_txt_message(zmq_msg_data (&msg2), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
 //                    zmq_msg_close (&msg2);                wait_launcher_msg = 0;
-                    zmq_recv (server_ptr->text_requester, txt_buffer, 255, 0);
+                    zmq_recv (server_ptr->text_requester, txt_buffer, MELISSA_MESSAGE_LEN-1, 0);
                     server_ptr->last_msg_launcher = melissa_get_time();
                     process_txt_message(txt_buffer, server_ptr, server_ptr->melissa_options.nb_parameters);
                 }
@@ -675,7 +700,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 }
             }
 
-            // === Send a message to the Python master in case of simulation status update === //
+            // === Send a message to the Python master in case of simulation status update === //  TODO: can't we put all this stuff into functions?  technical debt?
             if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0 && simu_ptr->status == 1)
             {
                 sprintf (txt_buffer, "group_state %d %d", simu_data->simu_id, simu_ptr->status);
@@ -917,6 +942,7 @@ int main (int argc, char **argv)
     {
         melissa_server_run (&melissa_server_ptr, &simu_data);
     }
+    melissa_print(VERBOSE_INFO, "Finalizing, writing results...\n");
     melissa_server_finalize (&melissa_server_ptr, &simu_data);
 #ifdef BUILD_WITH_MPI
     MPI_Finalize ();
