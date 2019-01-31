@@ -31,7 +31,7 @@ import signal
 import imp
 import getopt
 import numpy as np
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import ctypes
 from mpi4py import MPI
 
@@ -215,8 +215,8 @@ def main():
         file.write(content)
         file.close()
 
-        plt.plot(axis, accuracy)
-        plt.show()
+        #plt.plot(axis, accuracy)
+        #plt.show()
 
     melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))
