@@ -106,7 +106,7 @@ def main():
         val_array = np.frombuffer(buff_val, float)
         buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
         param_array = np.frombuffer(buff_param, float)
-        #param_array = np.append(param_array, getattr(data, 'time_stamp'))
+        param_array = np.append(param_array, getattr(data, 'time_stamp'))
 
 
     i = 0
@@ -133,7 +133,7 @@ def main():
             val_array = np.frombuffer(buff_val, float)
             buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
             param_array = np.frombuffer(buff_param, float)
-            #param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
+            param_array = np.append(param_array, float(getattr(data, 'time_stamp')))
 
             j += 1
             if j == 10:
