@@ -71,7 +71,7 @@ int getDim(int ncID, const char *name, size_t len, int *idp)
     if (res != NC_NOERR)
     {
         printf("Netcdf Error code: %d\n", res);
-        ERROR("Could not create dimenstion");
+        ERROR("Could not create dimension");
     }
     return res;
 }
