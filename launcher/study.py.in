@@ -75,10 +75,10 @@ class StateChecker(Thread):
                             s = copy.deepcopy(group.job_status)
                             group.check_job()
                             if s <= PENDING and group.job_status == RUNNING:
-                                logging.info('group ' + str(group.rank) + ' started')
+                                logging.info('group ' + str(group.rank) + ' job started')
                                 group.start_time = time.time()
                             elif s <= RUNNING and group.job_status == FINISHED:
-                                logging.info('end group ' + str(group.rank))
+                                logging.info('end job group ' + str(group.rank))
                                 group.finalize()
             logging.info('closing state checker process')
         except:
@@ -126,14 +126,17 @@ class Messenger(Thread):
                         if groups[group_id].job_type == 3:
                             if groups[group_id].status < 2:
                                 groups[group_id].status = int(message[2])
-                            print "group " +str(group_id)+ " simu "+str(simu_id)
+                            #print "group " +str(group_id)+ " simu "+str(simu_id)
                             groups[group_id].simu_status[simu_id] = int(message[2])
                             if all(simu_status == 2 for simu_status in groups[group_id].simu_status):
                                 groups[group_id].status = 2
-                                print 'Group ' + str(group_id) + ' status: ' + str(groups[group_id].status)
+                                #print 'Group ' + str(group_id) + ' status: ' + str(groups[group_id].status)
                         else:
                             groups[group_id].status = int(message[2])
-                    logging.info('Group ' + message[1] + ' status: ' + message[2])
+                    if message[2] == 2:
+                        logging.info('Group ' + message[1] + ' finished')
+                    if message[2] == 2:
+                        logging.info('Group ' + message[1] + ' connected to server')
                 elif message[0] == 'server':
                     with server.lock:
                         server.status = RUNNING

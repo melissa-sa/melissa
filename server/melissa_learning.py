@@ -45,7 +45,7 @@ import keras
 from mpi4py import MPI
 
 def rescale_params_fluid(param_set):
-    param_set[0] = (param_set[0]-200)/300
+    param_set[0] = param_set[0]/300
     param_set[-1] = param_set[-1]/75
     return param_set
 
@@ -54,11 +54,11 @@ def rescale_params_heat(param_set):
     return param_set
 
 def rescale_params(param_set):
-    return rescale_params_heat(param_set)
+    return param_set
 
 def rescale_data_fluid(data):
     for i in data:
-        i = (i-200)/300
+        i = i/500
     return data
 
 def rescale_data(data):
@@ -261,21 +261,21 @@ class DenseModel(tf.keras.Model):
 def InitModelSubashiny(nb_parameters, vect_size):
     model = tf.keras.models.Sequential()
 #    model.add(tf.keras.layers.BatchNormalization())
-#    model.add(tf.keras.layers.Dense(vect_size*2, input_dim=nb_parameters))
+    model.add(tf.keras.layers.Dense(vect_size*2, input_dim=nb_parameters))
 #    model.add(tf.keras.layers.BatchNormalization())
-#    model.add(tf.keras.layers.Activation('relu'))
-#    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Activation('relu'))
+    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
 #    model.add(tf.keras.layers.BatchNormalization())
-#    model.add(tf.keras.layers.Activation('relu'))
-#    model.add(tf.keras.layers.Dense(vect_size*4, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Activation('relu'))
+    model.add(tf.keras.layers.Dense(vect_size*4, kernel_initializer='normal'))
 #    model.add(tf.keras.layers.BatchNormalization())
-#    model.add(tf.keras.layers.Activation('relu'))
-#    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Activation('relu'))
+    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
 #    model.add(tf.keras.layers.BatchNormalization())
-#    model.add(tf.keras.layers.Activation('relu'))
-#    model.add(tf.keras.layers.Dense(vect_size*2, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Activation('relu'))
+    model.add(tf.keras.layers.Dense(vect_size*2, kernel_initializer='normal'))
 #    model.add(tf.keras.layers.BatchNormalization())
-#    model.add(tf.keras.layers.Activation('relu'))
+    model.add(tf.keras.layers.Activation('relu'))
     model.add(tf.keras.layers.Dense(vect_size, kernel_initializer='normal'))
     return model
 
