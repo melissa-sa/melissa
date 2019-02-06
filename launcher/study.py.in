@@ -501,8 +501,8 @@ class Study(object):
             logging.info('server start')
             server.write_node_name()
             # connect to server
-            logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
-            melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
+            #logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
+            #melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
 
             time.sleep(1)
             for group in groups:

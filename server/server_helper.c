@@ -201,14 +201,14 @@ void process_txt_message (char      msg[255],
         simu_ptr->job_status = 1;
         simu_ptr->status = 2;
 
-        if (server_ptr->comm_data.rank != 0)
+        if (server_ptr->comm_data.rank == 0)
         {
             simu_ptr->status = 3;
-            server_ptr->nb_finished_simulations += 1;
             melissa_print(VERBOSE_INFO, "Drop simulation %d\n", simu_id);
             melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", server_ptr->nb_finished_simulations, server_ptr->simulations.size);
-
         }
+        server_ptr->nb_finished_simulations += 1;
+
     }
 }
 
