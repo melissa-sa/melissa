@@ -127,15 +127,16 @@ typedef struct  {
 } CacheEntry;
 
 // I want to write CPP!!
-// Allows 512 different variables...
-static CacheEntry cache[512];
+// Allows 4096 different output files...
+#define FILE_CACHE_SIZE 4096
+static CacheEntry cache[FILE_CACHE_SIZE];
 static size_t last_entry = 0;
 
 // Returns NULL if not found.
 CacheEntry * findEntry(const char* file_name)
 {
     int i;
-    for (i = 0; i < 512; ++i)
+    for (i = 0; i < FILE_CACHE_SIZE; ++i)
     {
         if (strcmp(cache[i].file_name, file_name) == 0)
             return &cache[i];
@@ -278,7 +279,7 @@ void write_netcdf(const char   *statistics_name,
 
     int nc_status;
 
-    char file_name[256];
+    char file_name[MAX_FILE_NAME];
 
     sprintf(file_name, "%s_%s.nc", variable_name, statistics_name);
     if (t == 0)
