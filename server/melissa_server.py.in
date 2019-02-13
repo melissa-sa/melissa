@@ -31,7 +31,7 @@ import signal
 import imp
 import getopt
 import numpy as np
-#from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 import ctypes
 from mpi4py import MPI
 
@@ -61,6 +61,13 @@ class simulation_data(ctypes.Structure):
                 ("max_val_size", ctypes.c_int)]
 
 def main():
+
+
+    plot_iter = 0
+    plt.ion()
+    fig, ax = plt.subplots()
+    line1, = ax.plot(0, 1, 'b-')
+    ax.set_autoscaley_on(True)
 
     # handle to a simulation_data structure that will travel between the C calls
     simu_data_ptr = ctypes.POINTER(simulation_data)
@@ -144,6 +151,11 @@ def main():
                     # when the batch is ready, test on it
                     res = melissa_learning.test_batch(learning_handle)
                     accuracy.append(res[1])
+                    line1.set_xdata(np.append(line1.get_xdata(), line1.get_xdata()[-1]+1))
+                    line1.set_ydata(np.append(line1.get_ydata(), res[1]))
+                    ax.relim()
+                    ax.autoscale_view()
+                    fig.canvas.draw()
                     print "loss test = " + str(res)
                     k = 0
                 j = 0
@@ -159,6 +171,11 @@ def main():
                     # when the batch is ready, train on it
                     res = melissa_learning.train_batch(learning_handle)
                     accuracy.append(res[1])
+                    #line1.set_xdata(np.append(line1.get_xdata(), line1.get_xdata()[-1]+1))
+                    #line1.set_ydata(np.append(line1.get_ydata(), res[1]))
+                    #ax.relim()
+                    #ax.autoscale_view()
+                    #fig.canvas.draw()
                     #print "loss train = " + str(res)
                     i = 0
         elif server_status == 2:
@@ -215,8 +232,8 @@ def main():
         file.write(content)
         file.close()
 
-        #plt.plot(axis, accuracy)
-        #plt.show()
+        plt.plot(axis, accuracy)
+        plt.show()
 
     melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
                                            ctypes.byref(data))

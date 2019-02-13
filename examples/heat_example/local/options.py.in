@@ -55,7 +55,7 @@ def launch_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/melissa_server.py ' +
+                                      '/melissa_server ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
     #server.job_id = subprocess.Popen(('mpirun ' +
@@ -182,10 +182,14 @@ def check_job(job):
 def check_load():
     # We only run one group at a time
     #time.sleep(1)
+    time.sleep(1)
     try:
-        subprocess.check_output(["pidof",EXECUTABLE])
-        return False
+        out = str(subprocess.check_output(["pidof",EXECUTABLE])).split()
     except:
+        return True
+    if len(out) > 5:
+        return False
+    else:
         return True
 
 def kill_job(job):
@@ -202,12 +206,12 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 100               # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 50                # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['simulation_timeout'] = 100           # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 100          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
