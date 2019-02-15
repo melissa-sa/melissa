@@ -400,7 +400,7 @@ void melissa_get_options (int                 argc,
                                 { "tresholds",      required_argument, NULL, 'e' },
                                 { "fieldnames",     required_argument, NULL, 'f' },
                                 { "help",           no_argument,       NULL, 'h' },
-                                { "learning",       no_argument,       NULL, 'l' },
+                                { "learning",       required_argument, NULL, 'l' },
                                 { "more",           required_argument, NULL, 'm' },
                                 { "launchername",   required_argument, NULL, 'n' },
                                 { "operations",     required_argument, NULL, 'o' },
@@ -421,7 +421,7 @@ void melissa_get_options (int                 argc,
 
     do
     {
-        opt = getopt_long (argc, argv, "c:e:f:hlm:n:o:p:q:r:s:t:v:w:", longopts, NULL);
+        opt = getopt_long (argc, argv, "c:e:f:hl:m:n:o:p:q:r:s:t:v:w:", longopts, NULL);
 
         switch (opt) {
         case 'r':
@@ -463,6 +463,7 @@ void melissa_get_options (int                 argc,
             break;
         case 'l':
             options->learning = 1;
+            sprintf (options->nn_path, "%s", optarg);
             break;
         case 'n':
             sprintf (options->launcher_name, "%s", optarg);

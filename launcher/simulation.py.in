@@ -408,7 +408,7 @@ class Server(Job):
                                  '--data_port', str(Job.stdy_opt['data_port']),
                                  '-n', str(buff.value)))
         if Job.stdy_opt['learning']:
-            self.cmd_opt += " -l"
+            self.cmd_opt += " -l "+str(Job.stdy_opt['nn_path'])
 
     def launch(self):
         """

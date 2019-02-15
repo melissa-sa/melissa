@@ -37,9 +37,6 @@ from mpi4py import MPI
 
 melissa_server = np.ctypeslib.load_library('libmelissa_server4py','@CMAKE_INSTALL_PREFIX@/lib/libmelissa_server4py.so')
 
-imp.load_source("melissa_learning", "@CMAKE_INSTALL_PREFIX@/lib/melissa_learning.py")
-import melissa_learning
-
 c_char_ptr = ctypes.POINTER(ctypes.c_char)
 c_char_ptr_ptr = ctypes.POINTER(c_char_ptr)
 c_double_ptr = ctypes.POINTER(ctypes.c_double)
@@ -58,7 +55,8 @@ class simulation_data(ctypes.Structure):
                 ("status", ctypes.c_int),
                 ("val", c_double_ptr),
                 ("val_size", ctypes.c_int),
-                ("max_val_size", ctypes.c_int)]
+                ("max_val_size", ctypes.c_int),
+                ("nn_path", c_char_ptr)]
 
 def main():
 
@@ -91,17 +89,17 @@ def main():
         argv[i] = ctypes.create_string_buffer(enc_arg)
 
     #create a handle for the internal server structure (noc used in the Python side)
-    simu_handle = ctypes.c_void_p()
+    server_handle = ctypes.c_void_p()
 
     data = simulation_data()
 
     #init the server
     melissa_server.melissa_server_init(argc,
                                        argv,
-                                       ctypes.byref(simu_handle))
+                                       ctypes.byref(server_handle))
 
     #run the server, only the first iteration if learning enabled
-    melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+    melissa_server.melissa_server_run(ctypes.byref(server_handle),
                                       ctypes.byref(data))
 
     ctypes.pythonapi.PyBuffer_FromMemory.restype = ctypes.py_object
@@ -114,6 +112,11 @@ def main():
         buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
         param_array = np.frombuffer(buff_param, float)
         param_array = np.append(param_array, getattr(data, 'time_stamp'))
+        #nn_path = getattr(data, 'nn_path')
+        nn_path = "@CMAKE_INSTALL_PREFIX@/lib"
+        print str(nn_path)
+        imp.load_source("melissa_learning", str(nn_path)+"/melissa_learning.py")
+        import melissa_learning
 
 
     i = 0
@@ -131,7 +134,7 @@ def main():
                 model_is_init = True
                 melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
                 i += 1
-            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+            melissa_server.melissa_server_run(ctypes.byref(server_handle),
                                               ctypes.byref(data))
 
             #get the data from the C structure. For now, doesn't work for multiple fields
@@ -182,7 +185,7 @@ def main():
             print "save model"
             if model_is_init:
                 melissa_learning.save_model_parallel(learning_handle, '.', 'model_insitu.h5')
-                melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+                melissa_server.melissa_server_run(ctypes.byref(server_handle),
                                                   ctypes.byref(data))
 
             #get the data from the C structure. For now, doesn't work for multiple fields
@@ -194,7 +197,7 @@ def main():
             model_is_init = True
             melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
             i += 1
-            melissa_server.melissa_server_run(ctypes.byref(simu_handle),
+            melissa_server.melissa_server_run(ctypes.byref(server_handle),
                                               ctypes.byref(data))
 
             #get the data from the C structure. For now, doesn't work for multiple fields
@@ -235,7 +238,7 @@ def main():
         plt.plot(axis, accuracy)
         plt.show()
 
-    melissa_server.melissa_server_finalize(ctypes.byref(simu_handle),
+    melissa_server.melissa_server_finalize(ctypes.byref(server_handle),
                                            ctypes.byref(data))
 
 

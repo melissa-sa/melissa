@@ -347,6 +347,10 @@ class Study(object):
 
         if (not 'learning' in self.stdy_opt):
             self.stdy_opt['learning'] = False
+        else:
+            if (not 'nn_path' in self.stdy_opt):
+                self.stdy_opt['nn_path']="@CMAKE_INSTALL_PREFIX@/lib"
+
 
         if (self.ml_stats['sobol_indices']):
             self.stdy_opt['batch_size'] = 1
