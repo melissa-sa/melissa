@@ -1115,6 +1115,7 @@ void melissa_send (const char *field_name,
 
     if (global_data.learning == 1)
     {
+#ifdef BUILD_WITH_MPI
         MPI_Gatherv(send_vect,
                     local_vect_size,
                     MPI_DOUBLE,
@@ -1125,6 +1126,7 @@ void melissa_send (const char *field_name,
                     0,
                     global_data.comm);
         send_vect_ptr = global_data.buffer_data;
+#endif // BUILD_WITH_MPI
         if (global_data.rank == 0)
         {
             local_vect_size = field_data_ptr->global_vect_size;
