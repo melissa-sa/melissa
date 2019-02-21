@@ -29,8 +29,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <dlfcn.h>
+//#include <dlfcn.h>
 #include "melissa_fields.h"
 #include "melissa_data.h"
 #include "melissa_io.h"

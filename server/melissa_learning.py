@@ -1,5 +1,3 @@
-#!@PYTHON_EXECUTABLE@
-
 ###################################################################
 #                            Melissa                              #
 #-----------------------------------------------------------------#
@@ -252,8 +250,8 @@ class MySparseLayerSparseTensor(tf.keras.layers.Layer):
     def __init__(self, size, trainable=True):
         super(MySparseLayerSparseTensor, self).__init__()
         self.size = size
-#        self.indices = neighbors_square_sparse_tensor(size)
-        self.indices = neighbors_MED()
+        self.indices = neighbors_square_sparse_tensor(size)
+#        self.indices = neighbors_MED()
         #print "value shape: " + str(self.sparse_tensor.values.shape)
         #print "indices: " + str(self.sparse_tensor.indices)
 #        indice_size = self.values_ptr[-1]
@@ -489,6 +487,9 @@ def model_init_parallel(vect_size, nb_parameters):
 #    helper.model.summary()
     return helper
 
+def model_init(vect_size, nb_parameters):
+    return model_init_parallel(vect_size, nb_parameters):
+
 def add_to_training_set(x, y, handle):
     handle.train_y.append(rescale_data(y))
     handle.train_x.append(rescale_params(x))
@@ -516,15 +517,15 @@ def test_batch(handle):
     return res
 
 def save_model(handle, dirname, filename):
-    handle.model.save_weights(dirname+"/"+filename)
+    save_model_parallel(handle, dirname, filename)
 
 def read_model(handle, dirname, filename):
-    handle.model.build((1,handle.nb_parameters))
-    handle.model.load_weights(dirname+"/"+filename)
+    read_model_parallel(handle, dirname, filename):
 
 def read_model_minibatch(handle, dirname, filename):
     if hvd.rank() == 0:
-        read_model(dirname, filename)
+        handle.model.build((1,handle.nb_parameters))
+        handle.model.load_weights(dirname+"/"+filename)
     # Horovod: adjust learning rate based on number of GPUs.
     opt = keras.optimizers.Adam()
     # Horovod: add Horovod Distributed Optimizer.
@@ -533,11 +534,12 @@ def read_model_minibatch(handle, dirname, filename):
     hvd.broadcast_global_variables(0)
 
 def read_model_parallel(handle, dirname, filename):
-    read_model(handle, dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()),filename)
+    handle.model.build((1,handle.nb_parameters))
+    handle.model.load_weights(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank())+"/"+filename)
 
 def save_model_minibatch(handle, dirname, filename):
     if hvd.rank() == 0:
-        save_model(handle, dirname, filename)
+        handle.model.save_weights(dirname+"/"+filename)
     print "Horovod size: "+str(hvd.size())
     print "Horovod local rank: "+str(hvd.local_rank())
     print "Horovod rank: "+str(hvd.rank())
@@ -547,7 +549,7 @@ def save_model_parallel(handle, dirname, filename):
     keras.utils.plot_model(handle.model, to_file='model.png')
     if (not os.path.isdir(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()))):
         os.mkdir(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()))
-    save_model(handle, dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank()),filename)
+    handle.model.save_weights(dirname+"/rank"+str(MPI.COMM_WORLD.Get_rank())+"/"+filename)
 
 
 def test_model(handle):

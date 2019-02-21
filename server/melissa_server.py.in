@@ -113,10 +113,18 @@ def main():
         param_array = np.frombuffer(buff_param, float)
         param_array = np.append(param_array, getattr(data, 'time_stamp'))
         #nn_path = getattr(data, 'nn_path')
-        nn_path = "@CMAKE_INSTALL_PREFIX@/lib"
-        print str(nn_path)
-        imp.load_source("melissa_learning", str(nn_path)+"/melissa_learning.py")
-        import melissa_learning
+        #nn_path = "@CMAKE_INSTALL_PREFIX@/lib"
+        indice = 0
+        for i, s in enumerate(sys.argv):
+            if '-l' in s:
+                indice = i
+                break
+        if indice > 0:
+            print sys.argv[indice] + " " + sys.argv[indice+1]
+            nn_path = sys.argv[indice+1]
+            print str(nn_path)
+            imp.load_source("melissa_learning", str(nn_path)+"/melissa_learning.py")
+            import melissa_learning
 
 
     i = 0
@@ -130,7 +138,7 @@ def main():
             if not model_is_init:
                 accuracy = []
                 print "Vect Size :" + str(len(val_array))
-                learning_handle = melissa_learning.model_init_parallel(len(val_array), len(param_array))
+                learning_handle = melissa_learning.model_init(len(val_array), len(param_array))
                 model_is_init = True
                 melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
                 i += 1
@@ -184,7 +192,7 @@ def main():
         elif server_status == 2:
             print "save model"
             if model_is_init:
-                melissa_learning.save_model_parallel(learning_handle, '.', 'model_insitu.h5')
+                melissa_learning.save_model(learning_handle, '.', 'model_insitu.h5')
                 melissa_server.melissa_server_run(ctypes.byref(server_handle),
                                                   ctypes.byref(data))
 
@@ -192,8 +200,8 @@ def main():
             server_status = getattr(data, 'status')
         elif server_status == 3:
             accuracy = []
-            learning_handle = melissa_learning.model_init_parallel(len(val_array), len(param_array))
-            melissa_learning.read_model_parallel(learning_handle, '.', 'model_insitu.h5')
+            learning_handle = melissa_learning.model_init(len(val_array), len(param_array))
+            melissa_learning.read_model(learning_handle, '.', 'model_insitu.h5')
             model_is_init = True
             melissa_learning.add_to_training_set(param_array, val_array, learning_handle)
             i += 1
@@ -220,7 +228,7 @@ def main():
 
     # write the NN
     if model_is_init:
-        melissa_learning.save_model_parallel(learning_handle, '.', 'model_insitu.h5')
+        melissa_learning.save_model(learning_handle, '.', 'model_insitu.h5')
 
     if model_is_init:
         melissa_learning.test_model(learning_handle)
