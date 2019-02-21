@@ -488,7 +488,7 @@ def model_init_parallel(vect_size, nb_parameters):
     return helper
 
 def model_init(vect_size, nb_parameters):
-    return model_init_parallel(vect_size, nb_parameters):
+    return model_init_parallel(vect_size, nb_parameters)
 
 def add_to_training_set(x, y, handle):
     handle.train_y.append(rescale_data(y))
@@ -520,7 +520,7 @@ def save_model(handle, dirname, filename):
     save_model_parallel(handle, dirname, filename)
 
 def read_model(handle, dirname, filename):
-    read_model_parallel(handle, dirname, filename):
+    read_model_parallel(handle, dirname, filename)
 
 def read_model_minibatch(handle, dirname, filename):
     if hvd.rank() == 0:
