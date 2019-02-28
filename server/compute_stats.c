@@ -51,16 +51,12 @@
  * @param[in] **in_vect_tab
  * array of input vectors
  *
- * @param[in] group_id
- * ID of the simulation providing in_vect_tab
- *
  *******************************************************************************/
 
 void compute_stats (melissa_data_t  *data,
                     const int        time_step,
                     const int        nb_vect,
-                    double         **in_vect_tab,
-                    const int        group_id)
+                    double         **in_vect_tab)
 {
     int i;
 
@@ -139,7 +135,6 @@ void compute_stats (melissa_data_t  *data,
             }
         }
     }
-    set_bit(data->step_simu.items[group_id], time_step);
 }
 
 /**

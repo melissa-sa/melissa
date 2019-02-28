@@ -35,7 +35,7 @@ USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 EXECUTABLE='heatc'
-NODES_SERVER = 1
+NODES_SERVER = 2
 NODES_GROUP = 1
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
@@ -51,10 +51,10 @@ def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
-    print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
+    print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' -H localhost:2 -bind-to none -map-by slot ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
-                                      ' ' + server.path +
+                                      ' -H localhost:2 -bind-to none -map-by slot ' + server.path +
                                       '/melissa_server.py ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
@@ -187,9 +187,10 @@ def check_load():
         out = str(subprocess.check_output(["pidof",EXECUTABLE])).split()
     except:
         return True
-    if len(out) > 5:
+    if len(out) > 3:
         return False
     else:
+        time.sleep(2)
         return True
 
 def kill_job(job):
@@ -206,16 +207,16 @@ STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 50                # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 20                # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 100           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 100          # server checkpoints every 30 seconds
+STUDY_OPTIONS['simulation_timeout'] = 400           # simulations are restarted if no life sign for 400 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 300          # server checkpoints every 300 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 5
+STUDY_OPTIONS['batch_size'] = 2
 STUDY_OPTIONS['learning'] = False
 
 MELISSA_STATS = {}

@@ -44,6 +44,16 @@ static void melissa_alloc_data (melissa_data_t *data)
         exit (1);
     }
 
+    if (data->steps_init == 0)
+    {
+        alloc_vector (&data->step_simu, data->options->sampling_size);
+        for (i=0; i<data->options->sampling_size; i++)
+        {
+            vector_add (&data->step_simu, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
+        }
+        data->steps_init = 1;
+    }
+
     if (data->vect_size <= 0)
     {
         return;
@@ -135,11 +145,7 @@ static void melissa_alloc_data (melissa_data_t *data)
             data->init_sobol (&data->sobol_indices[i], data->options->nb_parameters, data->vect_size);
         }
     }
-    alloc_vector (&data->step_simu, data->options->sampling_size);
-    for (i=0; i<data->options->sampling_size; i++)
-    {
-        vector_add (&data->step_simu, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
-    }
+    data->stats_init = 1;
 }
 
 /**
@@ -168,9 +174,9 @@ void melissa_init_data (melissa_data_t    *data,
 {
     data->vect_size       = vect_size;
     data->options         = options;
-    data->is_valid        = 0;
 //    data->means           = NULL;
 //    data->variances       = NULL;
+    data->moments         = NULL;
     data->min_max         = NULL;
     data->thresholds      = NULL;
     data->quantiles       = NULL;
@@ -196,11 +202,14 @@ void melissa_init_data (melissa_data_t    *data,
 
 void melissa_check_data (melissa_data_t *data)
 {
-    // check options
-    melissa_check_options(data->options);
+    if (data->is_valid != 1)
+    {
+        // check options
+        melissa_check_options(data->options);
 
-    // every parameter is now validated
-    data->is_valid = 1;
+        // every parameter is now validated
+        data->is_valid = 1;
+    }
 }
 
 /**

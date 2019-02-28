@@ -28,6 +28,7 @@
 #include <string.h>
 #include <errno.h>
 #include <zmq.h>
+#include <assert.h>
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #include "melissa_api.h"
@@ -239,6 +240,29 @@ static void print_zmq_error(int ret)
     }
     exit(0);
 }
+
+static int randint(int n) {
+    if ((n - 1) == RAND_MAX) {
+      return rand();
+    } else {
+      // Supporting larger values for n would requires an even more
+      // elaborate implementation that combines multiple calls to rand()
+      assert (n <= RAND_MAX);
+
+      // Chop off all of the values that would cause skew...
+      int end = RAND_MAX / n; // truncate skew
+      assert (end > 0);
+      end *= n;
+
+      // ... and ignore results from rand() that fall above that limit.
+      // (Worst case the loop condition should succeed 50% of the time,
+      // so we can expect to bail out of this loop pretty quickly.)
+      int r;
+      while ((r = rand()) >= end);
+
+      return r % n;
+    }
+  }
 
 static inline void gatherv_init(field_data_t  *data_field,
                                 int           *vect_sizes,
@@ -1086,8 +1110,8 @@ void melissa_init_no_mpi (const char *field_name,
  *
  *******************************************************************************/
 
-void melissa_send (const char *field_name,
-                   const double     *send_vect)
+void melissa_send (const char   *field_name,
+                   const double *send_vect)
 {
     int     i=0, j=0, k, ret;
     int     buff_size;
@@ -1114,6 +1138,8 @@ void melissa_send (const char *field_name,
 
     if (global_data.learning == 1)
     {
+        melissa_send_horovod (field_name, send_vect);
+        return;
 #ifdef BUILD_WITH_MPI
         MPI_Gatherv(send_vect,
                     local_vect_size,
@@ -1241,6 +1267,188 @@ void melissa_send (const char *field_name,
  *
  * @ingroup melissa_api
  *
+ * This function sends data to Melissa Server
+ *
+ *******************************************************************************
+ *
+ * @param[in] *field_name
+ * name of the field to send to Melissa Server
+ *
+ * @param[in] *send_vect
+ * local data array to send to the statistic library
+ *
+ *******************************************************************************/
+
+void melissa_send_horovod (const char   *field_name,
+                           const double *send_vect)
+{
+    int     i=0, j=0, k, ret, zero = 0;
+    int     buff_size;
+    char   *buff_ptr;
+    int     local_vect_size = 0;
+    double *send_vect_ptr;
+    field_data_t  *field_data_ptr = NULL;
+//    MPI_Request *request;
+//    MPI_Status *status;
+
+#ifdef BUILD_WITH_PROBES
+    start_comm_time = melissa_get_time();
+#endif // BUILD_WITH_PROBES
+
+    field_data_ptr = get_field_data(field_data, field_name);
+    if (field_data_ptr == NULL)
+    {
+        fprintf (stdout, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
+        return;
+    }
+
+    local_vect_size = field_data_ptr->local_vect_sizes[global_data.rank];
+    send_vect_ptr = send_vect;
+
+    if (global_data.learning == 1)
+    {
+#ifdef BUILD_WITH_MPI
+        MPI_Gatherv(send_vect,
+                    local_vect_size,
+                    MPI_DOUBLE,
+                    global_data.buffer_data,
+                    field_data_ptr->gatherv_rcvcnt,
+                    field_data_ptr->gatherv_displs,
+                    MPI_DOUBLE,
+                    0,
+                    global_data.comm);
+        send_vect_ptr = global_data.buffer_data;
+#endif // BUILD_WITH_MPI
+        if (global_data.rank == 0)
+        {
+            local_vect_size = field_data_ptr->global_vect_size;
+        }
+        else
+        {
+            local_vect_size = 0;
+        }
+    }
+
+    if (global_data.sobol == 1)
+    {
+        melissa_print(VERBOSE_DEBUG, "Group %d gather data (rank %d)\n", global_data.sample_id, global_data.rank);
+        switch (global_data.coupling)
+        {
+#ifdef BUILD_WITH_FLOWVR
+        case MELISSA_COUPLING_FLOWVR:
+            // gather data from other ranks of the sobol group
+            if (global_data.sobol_rank == 0)
+            {
+                recv_from_group ((void*)&global_data.buffer_data[local_vect_size]);
+            }
+            else // *sobol_rank != 0
+            {
+                //send data to rank 0 of the sobol group
+                send_to_group (send_vect_ptr, local_vect_size * sizeof(double));
+            }
+            break;
+#endif // BUILD_WITH_FLOWVR
+
+        case MELISSA_COUPLING_ZMQ:
+            if (global_data.sobol_rank == 0)
+            {
+                for (i=0; i<global_data.nb_parameters + 1; i++)
+                {
+                    zmq_recv (global_data.sobol_requester[i], &global_data.buffer_data[(i+1)*local_vect_size], local_vect_size * sizeof(double), 0);
+                }
+            }
+            else // *sobol_rank != 0
+            {
+                //send data to rank 0 of the sobol group
+                zmq_send (global_data.sobol_requester[0], send_vect_ptr, local_vect_size * sizeof(double), 0);
+            }
+            break;
+
+#ifdef BUILD_WITH_MPI
+        case MELISSA_COUPLING_MPI:
+            MPI_Gather(send_vect_ptr, local_vect_size, MPI_DOUBLE, global_data.buffer_data, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
+            break;
+#endif // BUILD_WITH_MPI
+        }
+        total_bytes_sent += local_vect_size * sizeof(double);
+    }
+
+    if (global_data.sobol_rank == 0)
+    {
+        melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", global_data.sample_id, field_data_ptr->timestamp);
+//        j = randint(global_data.nb_proc_server);
+        j = (field_data_ptr->timestamp+1) % global_data.nb_proc_server;
+        for (i=0; i<global_data.nb_proc_server; i++)
+        {
+            zmq_msg_t msg;
+            if (i != j)
+            {
+                buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
+            }
+            else
+            {
+                buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + local_vect_size * sizeof(double);
+                if (global_data.sobol == 1)
+                {
+                    buff_size += local_vect_size * (global_data.nb_parameters + 1) * sizeof(double);
+                }
+            }
+            global_data.buffer = malloc (buff_size);
+            buff_ptr = global_data.buffer;
+            memcpy(buff_ptr, &field_data_ptr->timestamp, sizeof(int));
+            buff_ptr += sizeof(int);
+            memcpy(buff_ptr, &global_data.sobol_rank, sizeof(int));
+            buff_ptr += sizeof(int);
+            memcpy(buff_ptr, &global_data.sample_id, sizeof(int));
+            buff_ptr += sizeof(int);
+            memcpy(buff_ptr, &global_data.rank, sizeof(int));
+            buff_ptr += sizeof(int);
+            if (i != j)
+            {
+                memcpy(buff_ptr, &zero, sizeof(int));
+            }
+            else
+            {
+                memcpy(buff_ptr, &local_vect_size, sizeof(int));
+            }
+            buff_ptr += sizeof(int);
+            memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
+
+            if (i == j)
+            {
+                buff_ptr += MAX_FIELD_NAME * sizeof(char);
+                memcpy (buff_ptr, global_data.buffer_data, local_vect_size * sizeof(double));
+                if (global_data.sobol == 1)
+                {
+                    for (k=1; k<global_data.nb_parameters + 2; k++)
+                    {
+                        buff_ptr += local_vect_size * sizeof(double);
+                        memcpy (buff_ptr, &global_data.buffer_data[k*local_vect_size],
+                                buff_size);
+                    }
+                }
+            }
+            zmq_msg_init_data (&msg, global_data.buffer, buff_size, my_free, NULL);
+            ret = zmq_msg_send (&msg, field_data_ptr->data_pusher[i], 0);
+            melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent (proc %d)\n", buff_size, i);
+            if (ret == -1)
+            {
+                ret = errno;
+                print_zmq_error(ret);
+            }
+            total_bytes_sent += buff_size;
+        }
+    }
+    field_data_ptr->timestamp += 1;
+    end_comm_time = melissa_get_time();
+    total_comm_time += end_comm_time - start_comm_time;
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_api
+ *
  * This function sends data to the stats library
  *
  *******************************************************************************
@@ -1283,7 +1491,7 @@ void melissa_finalize (void)
 
     if (global_data.rank == 0 && global_data.sobol_rank == 0)
     {
-        sleep(2);
+//        sleep(2);
         i = 0;
         while (i<2)
         {

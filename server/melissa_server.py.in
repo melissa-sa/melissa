@@ -43,7 +43,7 @@ c_double_ptr = ctypes.POINTER(ctypes.c_double)
 c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # size of the training and testing batches
-BATCH_SIZE = 50
+BATCH_SIZE = 10
 
 # Class to transfer data between Python and C
 class simulation_data(ctypes.Structure):
@@ -104,6 +104,16 @@ def main():
 
     ctypes.pythonapi.PyBuffer_FromMemory.restype = ctypes.py_object
 
+    # get the neural network path
+    indice = 0
+    for i, s in enumerate(sys.argv):
+        if '-l' in s:
+            indice = i
+            break
+    if indice > 0:
+        nn_path = sys.argv[indice+1]
+        imp.load_source("melissa_learning", str(nn_path)+"/melissa_learning.py")
+        import melissa_learning
     #get the data from the C structure
     server_status = getattr(data, 'status')
     if server_status == 0:
@@ -114,17 +124,6 @@ def main():
         param_array = np.append(param_array, getattr(data, 'time_stamp'))
         #nn_path = getattr(data, 'nn_path')
         #nn_path = "@CMAKE_INSTALL_PREFIX@/lib"
-        indice = 0
-        for i, s in enumerate(sys.argv):
-            if '-l' in s:
-                indice = i
-                break
-        if indice > 0:
-            print sys.argv[indice] + " " + sys.argv[indice+1]
-            nn_path = sys.argv[indice+1]
-            print str(nn_path)
-            imp.load_source("melissa_learning", str(nn_path)+"/melissa_learning.py")
-            import melissa_learning
 
 
     i = 0
@@ -179,6 +178,9 @@ def main():
                     #val_size = getattr(data, 'val_size')
                 i += 1
                 if i == BATCH_SIZE:
+                    #print "rank "+str(MPI.COMM_WORLD.Get_rank())+" entering barrier"
+                    #MPI.COMM_WORLD.Barrier()
+                    #print "rank "+str(MPI.COMM_WORLD.Get_rank())+" leaving barrier"
                     # when the batch is ready, train on it
                     res = melissa_learning.train_batch(learning_handle)
                     accuracy.append(res[1])
@@ -187,7 +189,7 @@ def main():
                     #ax.relim()
                     #ax.autoscale_view()
                     #fig.canvas.draw()
-                    #print "loss train = " + str(res)
+                    print "loss train = " + str(res)
                     i = 0
         elif server_status == 2:
             print "save model"
@@ -199,6 +201,11 @@ def main():
             #get the data from the C structure. For now, doesn't work for multiple fields
             server_status = getattr(data, 'status')
         elif server_status == 3:
+            buff_val = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'val'), 8*getattr(data, 'val_size'))
+            val_array = np.frombuffer(buff_val, float)
+            buff_param = ctypes.pythonapi.PyBuffer_FromMemory(getattr(data, 'parameters'), 8*getattr(data, 'nb_param'))
+            param_array = np.frombuffer(buff_param, float)
+            param_array = np.append(param_array, getattr(data, 'time_stamp'))
             accuracy = []
             learning_handle = melissa_learning.model_init(len(val_array), len(param_array))
             melissa_learning.read_model(learning_handle, '.', 'model_insitu.h5')
@@ -213,27 +220,27 @@ def main():
 
     print "end server"
 
-    #clear the remaining train and test samples
-    if i != 0:
-        res = melissa_learning.train_batch(learning_handle)
-        accuracy.append(res[1])
-        print "loss train = " + str(res)
-        i = 0
+    ##clear the remaining train and test samples
+    #if i != 0:
+        #res = melissa_learning.train_batch(learning_handle)
+        #accuracy.append(res[1])
+        #print "loss train = " + str(res)
+        #i = 0
 
-    if k == BATCH_SIZE:
-        res = melissa_learning.test_batch(learning_handle)
-        accuracy.append(res[1])
-        print "loss test = " + str(res)
-        k = 0
+    #if k != 0:
+        #res = melissa_learning.test_batch(learning_handle)
+        #accuracy.append(res[1])
+        #print "loss test = " + str(res)
+        #k = 0
 
     # write the NN
     if model_is_init:
         melissa_learning.save_model(learning_handle, '.', 'model_insitu.h5')
 
     if model_is_init:
-        melissa_learning.test_model(learning_handle)
+        #melissa_learning.test_model(learning_handle)
 
-        file = open("accuracy.txt", "w")
+        file = open("accuracy"+MPI.COMM_WORLD.Get_rank()+".txt", "w")
         content = ""
         axis = []
         for i, acc in enumerate(accuracy):

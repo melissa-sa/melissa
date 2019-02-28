@@ -160,6 +160,8 @@ void add_fields (melissa_field_t *fields,
         for (i=0; i<data_size; i++)
         {
             fields[j].stats_data[i].is_valid = 0;
+            fields[j].stats_data[i].stats_init = 0;
+            fields[j].stats_data[i].steps_init = 0;
             fields[j].stats_data[i].vect_size = 0;
         }
     }

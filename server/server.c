@@ -508,7 +508,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             memcpy(&client_rank, buf_ptr, sizeof(int));
             buf_ptr += sizeof(int);
             memcpy(&recv_vect_size, buf_ptr, sizeof(int));
-            if (recv_vect_size > simu_data->max_val_size)
+            if (recv_vect_size > simu_data->max_val_size && recv_vect_size > 0)
             {
                 melissa_print (VERBOSE_DEBUG, "realloc, new size: %d\n", recv_vect_size);
                 simu_data->val = melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
@@ -519,7 +519,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             field_name_ptr = buf_ptr;
             new_data = 1;
 
-            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d\n", server_ptr->comm_data.rank, simu_data->time_stamp, client_rank, simu_data->simu_id);
+            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d (vect_size: %d)\n", server_ptr->comm_data.rank, simu_data->time_stamp, client_rank, simu_data->simu_id, recv_vect_size);
 
             if (simu_data->time_stamp >= server_ptr->melissa_options.nb_time_steps || simu_data->time_stamp < 0)
             {
@@ -554,7 +554,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
 
             data_ptr = server_ptr->fields[field_id].stats_data;
-            if (data_ptr[client_rank].is_valid != 1)
+            if (data_ptr[client_rank].stats_init != 1 && recv_vect_size > 0)
             {
                 melissa_init_data (&data_ptr[client_rank], &server_ptr->melissa_options, recv_vect_size);
                 server_ptr->last_checkpoint_time = melissa_get_time();
@@ -576,9 +576,14 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     simu_data->status = 3;
                 }
             }
+            else if (data_ptr[client_rank].steps_init != 1)
+            {
+                melissa_init_data (&data_ptr[client_rank], &server_ptr->melissa_options, recv_vect_size);
+                server_ptr->last_checkpoint_time = melissa_get_time();
+            }
             simu_ptr = server_ptr->simulations.items[simu_data->simu_id];
 
-            if (simu_ptr->parameters == NULL && server_ptr->melissa_options.learning == 1)
+            if (simu_ptr->parameters == NULL && server_ptr->melissa_options.learning == 1 && recv_vect_size > 0)
             {
                 // ask launcher for the simulation informations
                 sprintf (txt_buffer, "simu_info %d", simu_data->simu_id);
@@ -588,8 +593,11 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
 
             simu_ptr->last_message = melissa_get_time();
-            buf_ptr += MAX_FIELD_NAME * sizeof(char);
-            memcpy(simu_data->val, buf_ptr, recv_vect_size*sizeof(double));
+            if (recv_vect_size > 0)
+            {
+                buf_ptr += MAX_FIELD_NAME * sizeof(char);
+                memcpy(simu_data->val, buf_ptr, recv_vect_size*sizeof(double));
+            }
             server_ptr->total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
             server_ptr->start_computation_time = melissa_get_time();
 
@@ -613,48 +621,50 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
             if (new_data == 1)
             {
-                if (server_ptr->melissa_options.sobol_op != 1)
+                if (recv_vect_size > 0)
                 {
-                    server_ptr->buff_tab_ptr[0] = (double*)buf_ptr;
-                    // === Compute classical statistics === //
-                    compute_stats (&data_ptr[client_rank],
-                                   simu_data->time_stamp,
-                                   1,
-                                   server_ptr->buff_tab_ptr,
-                                   simu_data->simu_id);
-                }
-                else
-                {
-                    for (i=0; i<server_ptr->melissa_options.nb_parameters+2; i++)
+                    if (server_ptr->melissa_options.sobol_op != 1)
                     {
-                        server_ptr->buff_tab_ptr[i] = (double*)buf_ptr;
-                        buf_ptr += recv_vect_size * sizeof(double);
+                        server_ptr->buff_tab_ptr[0] = (double*)buf_ptr;
+                        // === Compute classical statistics === //
+                        compute_stats (&data_ptr[client_rank],
+                                       simu_data->time_stamp,
+                                       1,
+                                       server_ptr->buff_tab_ptr);
                     }
-                    // === Compute classical statistics + Sobol indices === //
-                    compute_stats (&data_ptr[client_rank],
-                                   simu_data->time_stamp,
-                                   server_ptr->melissa_options.nb_parameters+2,
-                                   server_ptr->buff_tab_ptr,
-                                   simu_data->simu_id);
-                    confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
-                                               server_ptr->melissa_options.nb_parameters,
-                                               data_ptr[client_rank].vect_size);
-
-                    if (server_ptr->comm_data.rank == 0 &&
-                          simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps -1)
+                    else
                     {
-                        // REM: atm only showing for last timestep on 0 rank
-                        log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
-                                               server_ptr->melissa_options.nb_parameters,
-                                               data_ptr[client_rank].vect_size);
+                        for (i=0; i<server_ptr->melissa_options.nb_parameters+2; i++)
+                        {
+                            server_ptr->buff_tab_ptr[i] = (double*)buf_ptr;
+                            buf_ptr += recv_vect_size * sizeof(double);
+                        }
+                        // === Compute classical statistics + Sobol indices === //
+                        compute_stats (&data_ptr[client_rank],
+                                       simu_data->time_stamp,
+                                       server_ptr->melissa_options.nb_parameters+2,
+                                       server_ptr->buff_tab_ptr);
+                        confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+                                server_ptr->melissa_options.nb_parameters,
+                                data_ptr[client_rank].vect_size);
 
+                        if (server_ptr->comm_data.rank == 0 &&
+                                simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps -1)
+                        {
+                            // REM: atm only showing for last timestep on 0 rank
+                            log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+                                    server_ptr->melissa_options.nb_parameters,
+                                    data_ptr[client_rank].vect_size);
+
+                        }
+
+                        server_ptr->nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
+                                                                                            0.01,
+                                                                                            server_ptr->melissa_options.nb_time_steps,
+                                                                                            server_ptr->melissa_options.nb_parameters);
                     }
-
-                    server_ptr->nb_converged_fields += check_convergence_sobol_martinez(&(data_ptr[client_rank].sobol_indices),
-                                                                                        0.01,
-                                                                                        server_ptr->melissa_options.nb_time_steps,
-                                                                                        server_ptr->melissa_options.nb_parameters);
                 }
+                set_bit(data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp);
             }
             server_ptr->end_computation_time = melissa_get_time();
             server_ptr->total_computation_time += server_ptr->end_computation_time - server_ptr->start_computation_time;
@@ -808,7 +818,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             break;
         }
 
-        if (new_data == 1 && server_ptr->melissa_options.learning == 1)
+        if (new_data == 1 && server_ptr->melissa_options.learning == 1 && simu_data->val_size > 0)
         {
             break;
         }

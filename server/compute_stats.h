@@ -29,8 +29,7 @@
 void compute_stats (melissa_data_t *data,
                     const int       time_step,
                     const int       nb_vect,
-                    double        **in_vect_tab,
-                    const int       group_id);
+                    double        **in_vect_tab);
 
 void finalize_stats (melissa_data_t *data);
 

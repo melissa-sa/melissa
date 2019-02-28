@@ -40,8 +40,8 @@ import MEDCoupling as mc
 import matplotlib.pyplot as plt
 #from keras.models import Sequential
 #from keras.layers import Dense, Activation
-#from keras import backend as K
-#import horovod.tensorflow as hvd
+#from tensorflow.keras import backend as K
+import horovod.tensorflow as hvd
 from mpi4py import MPI
 
 def rescale_params_fluid(param_set):
@@ -429,22 +429,17 @@ class DenseModel(tf.keras.Model):
 def InitModelSubashiny(nb_parameters, vect_size):
     model = tf.keras.models.Sequential()
 #    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.Dense(vect_size*2, input_dim=nb_parameters))
+    model.add(tf.keras.layers.Dense(vect_size*2, input_dim=nb_parameters, activation='relu'))
 #    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.Activation('relu'))
-    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
 #    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.Activation('relu'))
-    model.add(tf.keras.layers.Dense(vect_size*4, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Dense(vect_size*4, kernel_initializer='normal', activation='relu'))
 #    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.Activation('relu'))
-    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Dense(vect_size*3, kernel_initializer='normal', activation='relu'))
 #    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.Activation('relu'))
-    model.add(tf.keras.layers.Dense(vect_size*2, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Dense(vect_size*2, kernel_initializer='normal', activation='relu'))
 #    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.Activation('relu'))
-    model.add(tf.keras.layers.Dense(vect_size, kernel_initializer='normal'))
+    model.add(tf.keras.layers.Dense(vect_size, kernel_initializer='normal', activation='relu'))
     return model
 
 
@@ -455,9 +450,9 @@ class melissa_helper:
         self.test_x = []
         self.test_y = []
         self.nb_parameters = nb_parameters
-        self.model = MyModel(nb_parameters, vect_size)
+#        self.model = MyModel(nb_parameters, vect_size)
 #        self.model = DenseModel(nb_parameters, vect_size, nb_layers = 5)
-#        self.model = InitModelSubashiny(nb_parameters, vect_size)
+        self.model = InitModelSubashiny(nb_parameters, vect_size)
 
 def model_init_minibatch(vect_size, nb_parameters):
     hvd.init()
@@ -465,16 +460,15 @@ def model_init_minibatch(vect_size, nb_parameters):
     config = tf.ConfigProto()
 #    config.gpu_options.allow_growth = True
 #    config.gpu_options.visible_device_list = str(hvd.local_rank())
-    tf.set_session(tf.Session(config=config))
+#    tf.set_session(tf.Session(config=config))
     print "vect_size = "+str(vect_size)
     print "nb_parameters = "+str(nb_parameters)
     helper = melissa_helper(nb_parameters, vect_size)
     # Horovod: adjust learning rate based on number of GPUs.
-    opt = tf.keras.optimizers.Adam()
+    opt = tf.train.AdamOptimizer()
     # Horovod: add Horovod Distributed Optimizer.
     optimizer = hvd.DistributedOptimizer(opt)
     helper.model.compile(optimizer=optimizer, loss='mse', metrics=['mse'])
-    helper.model.summary()
     hvd.broadcast_global_variables(0)
     return helper
 
@@ -488,7 +482,7 @@ def model_init_parallel(vect_size, nb_parameters):
     return helper
 
 def model_init(vect_size, nb_parameters):
-    return model_init_parallel(vect_size, nb_parameters)
+    return model_init_minibatch(vect_size, nb_parameters)
 
 def add_to_training_set(x, y, handle):
     handle.train_y.append(rescale_data(y))
@@ -503,6 +497,7 @@ def train_batch(handle):
     Y_train=np.array(handle.train_y)
 #    print "train" + str(X_train)
     res = handle.model.train_on_batch(X_train, Y_train)
+    print " rank " + str(hvd.rank()) + " local rank " + str(hvd.local_rank())
     handle.train_x = []
     handle.train_y = []
     return res
@@ -517,10 +512,10 @@ def test_batch(handle):
     return res
 
 def save_model(handle, dirname, filename):
-    save_model_parallel(handle, dirname, filename)
+    save_model_minibatch(handle, dirname, filename)
 
 def read_model(handle, dirname, filename):
-    read_model_parallel(handle, dirname, filename)
+    read_model_minibatch(handle, dirname, filename)
 
 def read_model_minibatch(handle, dirname, filename):
     if hvd.rank() == 0:

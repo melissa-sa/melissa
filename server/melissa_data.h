@@ -75,6 +75,8 @@ struct melissa_data_s
     int                  vect_size;                              /**< local size of input vectors                                     */
     melissa_options_t   *options;                                /**< pointer to an option structure                                  */
     int                  is_valid;                               /**< 1 if the structure has been checked                             */
+    int                  stats_init;                             /**< 1 if the stats has been allocated                               */
+    int                  steps_init;                             /**< 1 if the simu steps vector has been allocated                   */
 //    mean_t              *means;                                  /**< array of mean structures, size nb_time_steps                    */
 //    variance_t          *variances;                              /**< array of variance structures, size nb_time_steps                */
     min_max_t           *min_max;                                /**< array of min and max structures, size nb_time_steps             */
