@@ -41,35 +41,3 @@ else (BUILD_WITH_MPI)
     target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${ZEROMQ_LIBRARIES} melissa_stats_no_mpi melissa_output dl)
 endif (BUILD_WITH_MPI)
 INSTALL(TARGETS melissa_server4py DESTINATION lib)
-
-configure_file(melissa_server.py.in melissa_server.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/server/melissa_server.py
-        DESTINATION bin
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE)
-
-configure_file(melissa_server_tf.py.in melissa_server_tf.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/server/melissa_server_tf.py
-        DESTINATION bin
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE)
-
-install(FILES melissa_learning.py
-        DESTINATION lib
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE)
