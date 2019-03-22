@@ -76,7 +76,7 @@ def launch_server(server):
     if len(out.split()) > 0:
         server.job_id = out.split()[-1]
     else:
-        print err
+        print(err)
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
@@ -101,7 +101,7 @@ def launch_simu(simulation):
                              '@CMAKE_INSTALL_PREFIX@/share/examples/heat_example/solver/install/bin/'+EXECUTABLE,
                              str(simulation.simu_id), str(simulation.coupling),
                              ' '.join(str(i) for i in simulation.param_set)))
-    print command
+    print(command)
 
     content = ""
     file=open("@EXAMPLES_DIR@/heat_example/Slurm/scripts/run_simu.sh", "r")
@@ -128,7 +128,7 @@ def launch_simu(simulation):
     if len(out.split()) > 0:
         simulation.job_id = out.split()[-1]
     else:
-        print err
+        print(err)
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
@@ -162,7 +162,7 @@ def check_load():
     return running_jobs < 250
 
 def kill_job(job):
-    print 'killing job ...'
+    print('killing job ...')
     os.system("scancel "+str(job.job_id))
 
 STUDY_OPTIONS = {}

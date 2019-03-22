@@ -27,7 +27,7 @@ import imp
 import numpy as np
 import logging
 import traceback
-from ctypes import cdll, create_string_buffer
+from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p
 imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
 from simulation import Server
 from simulation import SingleSimuGroup
@@ -37,6 +37,10 @@ from simulation import SobolGroup
 from simulation import Job
 
 melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
+melissa_message.bind_message_rcv.argtypes = [c_char_p]
+melissa_message.bind_message_resp.argtypes = [c_char_p]
+melissa_message.bind_message_snd.argtypes = [c_char_p]
+melissa_message.send_resp_message.argtypes = [c_char_p]
 
 # Jobs and executions status
 from simulation import NOT_SUBMITTED
@@ -82,7 +86,7 @@ class StateChecker(Thread):
                                 group.finalize()
             logging.info('closing state checker process')
         except:
-            print '=== State checker thread crashed ==='
+            print('=== State checker thread crashed ===')
             traceback.print_exc()
             return
 
@@ -100,37 +104,37 @@ class Messenger(Thread):
             last_server = 0
             last_msg_to_server = 0
             while self.running_study:
-#                if np.random.rand() < 0.2: print 'r' + 1
-                buff = create_string_buffer('\000' * melissa_message.melissa_get_message_len())
+#                if np.random.rand() < 0.2: print('r' + 1)
+                buff = create_string_buffer(melissa_message.melissa_get_message_len())
                 melissa_message.wait_message(buff)
-                if buff.value != 'nothing':
-                    logging.debug('message: '+buff.value)
+                if buff.value.decode() != 'nothing':
+                    logging.debug('message: '+buff.value.decode())
                 last_server = time.time()
-                message = buff.value.split()
+                message = buff.value.decode().split()
                 if message[0] == 'stop':
                     with server.lock:
                         server.status = FINISHED # finished
                         logging.info('end study')
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
-                        group_id = int(message[1])/self.batch_size
+                        group_id = int(message[1])//self.batch_size
                         logging.info('restarting group ' + str(group_id)
                                      + ' (timeout detected by server)')
                         with groups[group_id].lock:
                             groups[group_id].restart()
                             groups[group_id].job_status = PENDING
                 elif message[0] == 'group_state':
-                    group_id = int(message[1])/self.batch_size
+                    group_id = int(message[1])//self.batch_size
                     simu_id = int(message[1])%self.batch_size
                     with groups[group_id].lock:
                         if groups[group_id].job_type == 3:
                             if groups[group_id].status < 2:
                                 groups[group_id].status = int(message[2])
-                            #print "group " +str(group_id)+ " simu "+str(simu_id)
+                            #print("group " +str(group_id)+ " simu "+str(simu_id))
                             groups[group_id].simu_status[simu_id] = int(message[2])
                             if all(simu_status == 2 for simu_status in groups[group_id].simu_status):
                                 groups[group_id].status = 2
-                                #print 'Group ' + str(group_id) + ' status: ' + str(groups[group_id].status)
+                                #print('Group ' + str(group_id) + ' status: ' + str(groups[group_id].status))
                         else:
                             groups[group_id].status = int(message[2])
                     if message[2] == 2:
@@ -153,12 +157,12 @@ class Messenger(Thread):
                         with server.lock:
                             server.status = TIMEOUT
                 if (time.time() - last_msg_to_server) > 10:
-                    buff.value = 'hello server '+str(time.time())+'\000'
+                    buff.value = str('hello server '+str(time.time())).encode()
                     melissa_message.send_message(buff)
                     last_msg_to_server = time.time()
             logging.info('closing messenger thread')
         except:
-            print '=== Messenger thread crashed ==='
+            print('=== Messenger thread crashed ===')
             traceback.print_exc()
             return
 
@@ -174,14 +178,14 @@ class Responder(Thread):
     def run(self):
         try:
             while self.running_study:
-                buff = create_string_buffer('\000' * melissa_message.melissa_get_message_len())
+                buff = create_string_buffer(melissa_message.melissa_get_message_len())
                 melissa_message.get_resp_message(buff)
-                if buff.value != 'nothing':
-                    logging.debug('message: '+buff.value)
-                    print 'message: '+buff.value
-                message = buff.value.split()
+                if buff.value.decode != 'nothing':
+                    logging.debug('message: '+buff.value.decode())
+                    print('message: '+buff.value.decode())
+                message = buff.value.decode().split()
                 if message[0] == 'simu_info':
-                    group = int(message[1])/self.batch_size
+                    group = int(message[1])//self.batch_size
                     simu = int(message[1])%self.batch_size
                     with groups[group].lock:
                         if groups[group].job_type == 4:
@@ -190,13 +194,13 @@ class Responder(Thread):
                             message = "job "+str(groups[group].simu_id[simu])+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
                         elif groups[group].job_type == 2:
                             message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set) + "\000"
-                    melissa_message.send_resp_message(message)
+                    melissa_message.send_resp_message(message.encode())
                 if message[0] == 'test_timeout':
-                    melissa_message.send_resp_message("alive")
+                    melissa_message.send_resp_message("alive".encode())
 
             logging.info('closing responder thread')
         except:
-            print '=== Responder thread crashed ==='
+            print('=== Responder thread crashed ===')
             traceback.print_exc()
             return
 
@@ -237,9 +241,9 @@ class Study(object):
         # init zmq context
         melissa_message.init_context()
         logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
-        print 'bind to recv port '+str(self.stdy_opt['recv_port'])
-        melissa_message.bind_message_rcv(str(self.stdy_opt['recv_port']))
-        melissa_message.bind_message_resp(str(self.stdy_opt['resp_port']))
+        print('bind to recv port '+str(self.stdy_opt['recv_port']))
+        melissa_message.bind_message_rcv(str(self.stdy_opt['recv_port']).encode())
+        melissa_message.bind_message_resp(str(self.stdy_opt['resp_port']).encode())
         logging.info('submit server')
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
@@ -247,7 +251,7 @@ class Study(object):
             server.launch()
         except:
             logging.error('Error while launching server')
-            print '=== Error while launching server ==='
+            print('=== Error while launching server ===')
             traceback.print_exc()
             self.stop()
         logging.debug('start messenger thread')
@@ -257,14 +261,14 @@ class Study(object):
             server.wait_start()
         except:
             logging.error('Error while waiting server')
-            print '=== Error while waiting server ==='
+            print('=== Error while waiting server ===')
             traceback.print_exc()
             self.stop()
         server.write_node_name()
         # connect to server
         logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
         #melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
-        melissa_message.bind_message_snd(str(self.stdy_opt['send_port']))
+        melissa_message.bind_message_snd(str(self.stdy_opt['send_port']).encode())
         logging.debug('start status checker thread')
         self.state_checker.start()
         if self.stdy_opt['learning']:
@@ -280,7 +284,7 @@ class Study(object):
                 group.launch()
             except:
                 logging.error('Error while launching group')
-                print '=== Error while launching group ==='
+                print('=== Error while launching group ===')
                 traceback.print_exc()
                 self.stop()
         time.sleep(1)
@@ -343,7 +347,7 @@ class Study(object):
             self.stdy_opt['resp_port'] = 5554
 
         if (not 'data_port' in self.stdy_opt):
-            self.stdy_opt['data_port'] = 2004
+            self.stdy_opt['data_port'] = 2006
 
         if (not 'learning' in self.stdy_opt):
             self.stdy_opt['learning'] = False
@@ -433,7 +437,7 @@ class Study(object):
                     draw_parameter_set(self.usr_func, self.stdy_opt)))
         elif "batch_size" in self.stdy_opt.keys() \
         and self.stdy_opt['batch_size'] > 1:
-            while len(self.groups) < self.stdy_opt['sampling_size']/self.stdy_opt['batch_size']:
+            while len(self.groups) < self.stdy_opt['sampling_size']//self.stdy_opt['batch_size']:
                 param_sets = list()
                 for i in range(self.stdy_opt['batch_size']):
                     param_sets.append(draw_parameter_set(self.usr_func, self.stdy_opt))
@@ -479,7 +483,7 @@ class Study(object):
 
         if (((server.status != RUNNING or server.job_status != RUNNING) and server.status != FINISHED)
                 and not all([i.status == FINISHED for i in groups])):
-            print 'server status: '+str(server.status)+' job_status: '+str(server.job_status)
+            print('server status: '+str(server.status)+' job_status: '+str(server.job_status))
             for group in groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
@@ -490,7 +494,7 @@ class Study(object):
                 server.restart()
             except:
                 logging.error('Error while restarting server')
-                print '=== Error while restarting server ==='
+                print('=== Error while restarting server ===')
                 traceback.print_exc()
                 self.stop()
             logging.debug('wait server restart')
@@ -498,7 +502,7 @@ class Study(object):
                 server.wait_start()
             except:
                 logging.error('Error while waiting server')
-                print '=== Error while waiting server ==='
+                print('=== Error while waiting server ===')
                 traceback.print_exc()
                 self.stop()
 
@@ -519,7 +523,7 @@ class Study(object):
                             group.restart()
                         except:
                             logging.error('Error while restarting group '+group.rank)
-                            print '=== Error while restarting group '+group.rank+' ==='
+                            print('=== Error while restarting group '+group.rank+' ===')
                             traceback.print_exc()
                             self.stop()
             time.sleep(2)
@@ -540,7 +544,7 @@ class Study(object):
                             group.restart()
                         except:
                             logging.error('Error while restarting group '+str(group.rank))
-                            print '=== Error while restarting group '+str(group.rank)+' ==='
+                            print('=== Error while restarting group '+str(group.rank)+' ===')
                             traceback.print_exc()
                             self.stop()
             with group.lock:
@@ -553,7 +557,7 @@ class Study(object):
                                 group.restart()
                             except:
                                 logging.error('Error while restarting group '+group.rank)
-                                print '=== Error while restarting group '+group.rank+' ==='
+                                print('=== Error while restarting group '+group.rank+' ===')
                                 traceback.print_exc()
                                 self.stop()
 #    time.sleep(1)

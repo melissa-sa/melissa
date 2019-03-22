@@ -33,11 +33,11 @@ import getopt
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 def usage():
-    print "Usage:"
-    print "  melissa_launcher [option [argument]]"
-    print "  option:  long option:  argument:               description:"
-    print "  -o       --options     <path/to/options/file>  Path to user defined option file"
-    print "  -h       --help        NONE                    Print this help"
+    print("Usage:")
+    print("  melissa_launcher [option [argument]]")
+    print("  option:  long option:  argument:               description:")
+    print("  -o       --options     <path/to/options/file>  Path to user defined option file")
+    print("  -h       --help        NONE                    Print this help")
 
 def main():
     """
@@ -73,7 +73,7 @@ def main():
 
     if not os.path.isfile(options_path):
         if not os.path.isfile(options_path+"/options.py"):
-            print "ERROR no Melissa Launcher options file given"
+            print("ERROR no Melissa Launcher options file given")
             usage()
             sys.exit(2)
         else:

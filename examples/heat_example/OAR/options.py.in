@@ -71,7 +71,7 @@ def launch_server(server):
     if len(out.split()) > 0:
         server.job_id = out.split("OAR_JOB_ID=")[1]
     else:
-        print err
+        print(err)
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
@@ -98,7 +98,7 @@ def launch_simu(simulation):
                                  str(simulation.simu_id[i]),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
-        print command[:-2]
+        print(command[:-2])
     else:
         command = ' '.join(('mpirun',
                              '-n',
@@ -106,7 +106,7 @@ def launch_simu(simulation):
                              '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                              str(simulation.simu_id), str(simulation.coupling),
                              ' '.join(str(i) for i in simulation.param_set)))
-        print command
+        print(command)
 
     content = ""
     file=open("@EXAMPLES_DIR@/heat_example/study_OAR/scripts/run_simu.sh", "r")
@@ -133,7 +133,7 @@ def launch_simu(simulation):
     if len(out.split()) > 0:
         simulation.job_id = out.split("OAR_JOB_ID=")[1]
     else:
-        print err
+        print(err)
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
@@ -158,7 +158,7 @@ def check_load():
     return True
 
 def kill_job(job):
-    print 'killing job ...'
+    print('killing job ...')
     os.system("oardel "+str(job.job_id))
 
 

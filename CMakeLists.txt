@@ -77,12 +77,12 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 #find_package(PkgConfig REQUIRED)
 
 #find_package(PythonLibs)
-find_package(PythonInterp 2 REQUIRED)
+find_package(PythonInterp 3 REQUIRED)
 
 message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} found")
-if(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "2")
-    message(ERROR "Melissa needs Python 2")
-endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "2")
+#if(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
+#    message(ERROR "Melissa needs Python 3")
+#endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
 find_python_module(numpy REQUIRED)
 
 # BLAS #

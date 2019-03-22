@@ -51,7 +51,7 @@ def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
-    print 'mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &'
+    print('mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &')
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       '  ' + server.path +
@@ -110,7 +110,7 @@ def launch_group(group):
                                      str(group.simu_id[i]), str(group.coupling),
                                      ' '.join(str(j) for j in group.param_set[i]),
                                      ': '))
-            print command[:-2]
+            print(command[:-2])
             group.job_id = subprocess.Popen(command[:-2].split()).pid
 
     elif STUDY_OPTIONS['batch_size'] > 1:
@@ -129,7 +129,7 @@ def launch_group(group):
                                  str(group.coupling),
                                  ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
-        print command[:-2]
+        print(command[:-2])
         os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
         group.job_id = subprocess.Popen(command[:-2].split()).pid
 
@@ -152,7 +152,7 @@ def launch_group(group):
                                 str(group.simu_id),
                                 str(group.coupling),
                                 ' '.join(str(i) for i in group.param_set)))
-        print command
+        print(command)
 
         # We set the job_id attribute of the Group object.
 
