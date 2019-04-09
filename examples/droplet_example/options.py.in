@@ -1,4 +1,4 @@
- 
+
 ###################################################################
 #                            Melissa                              #
 #-----------------------------------------------------------------#
@@ -116,8 +116,8 @@ def launch_server(server):
                                       server.cmd_opt +
                                       ' &').split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
-    
-    
+
+
 def create_simu(group):
     workdir = STUDY_OPTIONS['working_directory']
     os.chdir(workdir)
@@ -131,13 +131,13 @@ def create_simu(group):
         else:
             contenu += line
     fichier.close()
-            
+
     if (not os.path.isdir(workdir+"/group" + str(group.rank))):
         shutil.copytree("./user_fortran", "group"+str(group.rank) + "/rank0/user_fortran")
         fichier = open("group"+str(group.rank) + "/rank0/t2d_gouttedo.cas", 'w')
         fichier.write(contenu)
         fichier.close()
-        
+
         if MELISSA_STATS['sobol_indices']:
             for j in range(STUDY_OPTIONS['nb_parameters'] + 1):
                 shutil.copytree("./user_fortran", "group"+str(group.rank) + "/rank" + str(j+1) + "/user_fortran")
@@ -241,7 +241,7 @@ def launch_simu_slurm(simulation):
         contenu += "#SBATCH -e telemac.%j.err\n"
         contenu += "#SBATCH --job-name=test_Telemac\n"
         contenu += "source ~/.bashrc\n"
-        contenu += "source /scratch/cnt0027/ima0366/tterraz/telemac/barracuda/configs/pysource.sh\n"
+        contenu += "source $TELEMAC_PATH/configs/pysource.sh\n"
         contenu += "export MELISSA_SERVER_NODE_NAME=\""+ simulation.server_node_name +"\"\n"
         contenu += "export MELISSA_MASTER_NODE_NAME=$(hostname)\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
@@ -272,7 +272,7 @@ def launch_simu_slurm(simulation):
         contenu += "#SBATCH -e telemac.%j.err\n"
         contenu += "#SBATCH --job-name=test_Telemac\n"
         contenu += "source ~/.bashrc\n"
-        contenu += "source /scratch/cnt0027/ima0366/tterraz/telemac/barracuda/configs/pysource.sh\n"
+        contenu += "source $TELEMAC_PATH/configs/pysource.sh\n"
         contenu += "export MELISSA_SERVER_NODE_NAME=\""+ simulation.server_node_name +"\"\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
         contenu += "telemac2d.py --mpi t2d_gouttedo.cas\n"
@@ -349,15 +349,15 @@ def kill_job_slurm(job):
 
 def convert_to_serafin():
     os.system('./melissa_to_serafin')
-    
+
 def postrocessing():
     os.chdir(STUDY_OPTIONS['working_directory'])
     os.system('flowvr-kill')
     os.system('killall flowvrd')
     os.system('./melissa_to_serafin')
     shutil.rmtree('./group*')
-    
-        
+
+
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = getpass.getuser()
 STUDY_OPTIONS['working_directory'] = '@CMAKE_INSTALL_PREFIX@/share/examples/droplet_example'
