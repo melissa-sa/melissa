@@ -31,7 +31,7 @@ file(GLOB
      )
 
 add_library(melissa_message SHARED melissa_message.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(melissa_message PUBLIC ${EXTRA_LIBS} ${ZEROMQ_LIBRARIES})
+target_link_libraries(melissa_message PUBLIC ${EXTRA_LIBS} ${ZeroMQ_LIBRARY})
 target_compile_options(melissa_message BEFORE PUBLIC -fPIC -Wall)
 install(TARGETS melissa_message LIBRARY DESTINATION lib)
 
