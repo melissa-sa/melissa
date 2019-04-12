@@ -60,7 +60,7 @@ function(find_python_module module)
 endfunction(find_python_module)
 
 # The project version number.
-SET(PROJECT_VERSION “${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}”)
+SET(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 option(INSTALL_ZMQ OFF)
 
