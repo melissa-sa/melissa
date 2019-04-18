@@ -5,18 +5,18 @@ stages:
 build_local:
   type: build
   tags:
-    - melissa
+    - linux
   script:
     - "mkdir build && cd build && cmake -DINSTALL_ZMQ=ON ../ && make install && source ../install/bin/melissa_set_env.sh"
   artifacts:
     paths:
       - build/
-      - ../install/
+      - install/
 
 test_local:
   type: test
   tags:
-    - melissa
+    - linux
   script:
     - "cd build && source ../install/bin/melissa_set_env.sh && ctest"
   dependencies:
