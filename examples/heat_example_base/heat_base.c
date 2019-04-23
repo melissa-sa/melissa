@@ -179,7 +179,7 @@ int main( int argc, char **argv )
     // conjugated gradient to solve Au = F.
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon, &i1, &in, &np, &me, &next, &previous, &fcomm);
     // The result is u
-    fprintf(stdout, "Time step: %g (%d)\n", t, n);
+    fprintf(stdout, "Time step: %g\n", t);
   }
   
   n = 0;

@@ -99,7 +99,7 @@ program heat
     ! conjugated gradient to solve Au = F.
     call conjgrad(A, F, U, nx, ny, epsilon, i1, in, np, me, next, previous, comm)
     ! The result is u
-    print*, 'Time step:', t, '(', n, ')'
+    print*, 'Time step:', t
   end do
 
   ! write results on disk
