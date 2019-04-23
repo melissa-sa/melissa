@@ -11,7 +11,7 @@ build_local:
   artifacts:
     paths:
       - build/
-      - ../install/
+      - install/
 
 test_local:
   type: test

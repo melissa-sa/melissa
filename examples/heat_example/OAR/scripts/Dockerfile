@@ -19,9 +19,8 @@ RUN apt-get update
 RUN apt-get install -y pkg-config
 RUN apt-get install -y gfortran libopenmpi-dev openmpi-bin
 RUN apt-get install -y cmake cmake-curses-gui
-RUN apt-get install -y python2.7
-RUN apt-get install -y python-pip
-RUN python2.7 -m pip install numpy
+RUN apt-get install -y python3
+RUN python3 -m pip install numpy
 
 ## rsyslog sender
 COPY config/rsyslog.conf /etc/rsyslog.conf
