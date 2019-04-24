@@ -54,7 +54,7 @@ def launch_server(server):
     server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
 
     content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/Slurm/scripts/run_server.sh", "r")
+    file=open("@EXAMPLES_DIR@/heat_example/study_Slurm/scripts/run_server.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
                                                NODES_SERVER=str(NODES_SERVER),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
