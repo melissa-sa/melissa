@@ -104,7 +104,7 @@ def launch_simu(simulation):
     print(command)
 
     content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/Slurm/scripts/run_simu.sh", "r")
+    file=open("@EXAMPLES_DIR@/heat_example/study_Slurm/scripts/run_simu.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
                                                NODES_SIMU=str(NODES_SIMU),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
