@@ -64,9 +64,10 @@ if(BUILD_WITH_MPI)
   endif(MPI_C_FOUND AND MPI_Fortran_FOUND)
 endif(BUILD_WITH_MPI)
 
+find_package(PythonInterp REQUIRED)
 
 if(BUILD_WITH_MPI)
-    add_library(heat_utils src/heat_utils.f90)
+    add_library(heat_utils STATIC src/heat_utils.f90)
     target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
     target_link_libraries(heat_utils ${MPI_LIBS})
     install(TARGETS heat_utils ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
@@ -78,6 +79,17 @@ if(BUILD_WITH_MPI)
     add_executable(heatc src/heat.c)
     target_link_libraries(heatc ${Melissa_LIBRARY} ${MPI_LIBS} heat_utils)
     install(TARGETS heatc RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+    configure_file(src/heat.py src/heat.py @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/heat.py
+            DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+            PERMISSIONS OWNER_WRITE
+                        OWNER_READ
+                        OWNER_EXECUTE
+                        GROUP_READ
+                        GROUP_EXECUTE
+                        WORLD_READ
+                        WORLD_EXECUTE)
 endif(BUILD_WITH_MPI)
 
 add_library(heat_utils_no_mpi src/heat_utils_no_mpi.f90)

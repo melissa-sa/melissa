@@ -70,6 +70,7 @@ program heat
 
   ! The new MPI communicator is build by splitting MPI_COMM_WORLD by simulation inside the group.
   ! In the case of a single simulation group, this is equivalent to MPI_Comm_dup.
+  call mpi_comm_rank(MPI_COMM_WORLD, me, statinfo)
   call MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, appnum, statinfo);
   call MPI_Comm_split(MPI_COMM_WORLD, appnum, me, comm, statinfo);
   call mpi_comm_rank(comm, me, statinfo)

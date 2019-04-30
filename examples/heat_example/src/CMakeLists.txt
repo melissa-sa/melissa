@@ -14,6 +14,8 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+configure_file(heat.py heat.py @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/heat.py DESTINATION ${EXAMPLES_DIR}/heat_example/solver/src)
 install(FILES heat.c DESTINATION ${EXAMPLES_DIR}/heat_example/solver/src)
 install(FILES heat.f90 DESTINATION ${EXAMPLES_DIR}/heat_example/solver/src)
 install(FILES heat_no_mpi.c DESTINATION ${EXAMPLES_DIR}/heat_example/solver/src)

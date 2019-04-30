@@ -144,6 +144,7 @@ int main( int argc, char **argv )
 
   // The new MPI communicator is build by splitting MPI_COMM_WORLD by simulations inside the group.
   // In the case of a single simulation group, this is equivalent to MPI_Comm_dup.
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &appnum, &statinfo);
   MPI_Comm_split(MPI_COMM_WORLD, *appnum, me, &comm);
   MPI_Comm_rank(comm, &me);
@@ -161,8 +162,8 @@ int main( int argc, char **argv )
   if(next == np)     next=MPI_PROC_NULL;
   if(previous == -1) previous=MPI_PROC_NULL;
 
-  nx        = 10; // x axis grid subdivisions
-  ny        = 10; // y axis grid subdivisions
+  nx        = 100; // x axis grid subdivisions
+  ny        = 100; // y axis grid subdivisions
   lx        = 10.0; // x length
   ly        = 10.0; // y length
   d         = 1.0; // diffusion coefficient

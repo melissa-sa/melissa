@@ -213,15 +213,15 @@ STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 
 STUDY_OPTIONS['batch_size'] = 2
 
 MELISSA_STATS = {}
-MELISSA_STATS['mean'] = False
+MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = False
 MELISSA_STATS['skewness'] = False
 MELISSA_STATS['kurtosis'] = False
 MELISSA_STATS['min'] = False
 MELISSA_STATS['max'] = False
 MELISSA_STATS['threshold_exceedance'] = True
-MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = True
+MELISSA_STATS['quantiles'] = True
+MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
