@@ -28,5 +28,5 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt.in DESTINATION ${EXAMPL
 if (BUILD_WITH_MPI)
     add_test(NAME ConfigureHeatc COMMAND cmake ${EXAMPLES_DIR}/heat_example/solver WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example/solver)
     add_test(NAME CompileHeatc COMMAND make install WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example/solver)
-    add_test(NAME TestHeatc COMMAND melissa_launcher ${EXAMPLES_DIR}/heat_example/study_local WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example)
+    add_test(NAME TestHeatc COMMAND python ${EXAMPLES_DIR}/heat_example/study_local/options.py WORKING_DIRECTORY ${EXAMPLES_DIR}/heat_example)
 endif (BUILD_WITH_MPI)

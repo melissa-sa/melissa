@@ -31,7 +31,7 @@ import openturns as ot
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p
 imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
 from simulation import Server
-from simulation import SingleSimuGroup
+#from simulation import SingleSimuGroup
 from simulation import MultiSimuGroup
 from simulation import Group
 from simulation import SobolGroup
@@ -205,30 +205,62 @@ class Responder(Thread):
             logging.error(traceback.print_exc())
             return
 
-
 class Study(object):
     """
         Study class, containing instances of the threads
     """
-    def __init__(self, stdy_opt, ml_stats, usr_func):
+    def __init__(self, stdy_opt = {}, ml_stats = {}, usr_func = {}):
         self.groups = list()
-        if ml_stats['sobol_indices']:
-            self.sobol = True
-        else:
-            self.sobol = False
+        self.sobol = False
         self.stdy_opt = stdy_opt
         self.ml_stats = ml_stats
         self.usr_func = usr_func
-        nb_errors = self.check_options()
-        if nb_errors > 0:
-            logging.error(str(nb_errors) + ' errors in options.py.')
-            exit()
-        Job.set_usr_func(self.usr_func)
-        Job.set_stdy_opt(self.stdy_opt)
-        Job.set_ml_stats(self.ml_stats)
-        self.messenger = Messenger(self.stdy_opt['batch_size'])
-        self.state_checker = StateChecker()
-        self.responder = Responder(self.stdy_opt['batch_size'])
+        self.threads = {}
+
+    def set_option(self, option_key, option_value):
+        self.stdy_opt[option_key] = option_value
+
+    def compute_stat(self, stat_key):
+        self.ml_stats[stat_key] = True
+
+    def param_distribution(self, func_ptr):
+        self.usr_func['param_distribution'] = func_ptr
+
+    def draw_parameter_set(self, func_ptr):
+        self.usr_func['draw_parameter_set'] = func_ptr
+
+    def create_group(self, func_ptr):
+        self.usr_func['create_group'] = func_ptr
+
+    def launch_group(self, func_ptr):
+        self.usr_func['launch_group'] = func_ptr
+
+    def launch_server(self, func_ptr):
+        self.usr_func['launch_server'] = func_ptr
+
+    def check_server_job(self, func_ptr):
+        self.usr_func['check_server_job'] = func_ptr
+
+    def check_group_job(self, func_ptr):
+        self.usr_func['check_group_job'] = func_ptr
+
+    def restart_server(self, func_ptr):
+        self.usr_func['restart_server'] = func_ptr
+
+    def restart_group(self, func_ptr):
+        self.usr_func['restart_group'] = func_ptr
+
+    def check_scheduler_load(self, func_ptr):
+        self.usr_func['check_scheduler_load'] = func_ptr
+
+    def cancel_job(self, func_ptr):
+        self.usr_func['cancel_job'] = func_ptr
+
+    def postprocessing(self, func_ptr):
+        self.usr_func['postprocessing'] = func_ptr
+
+    def finalize(self, func_ptr):
+        self.usr_func['finalize'] = func_ptr
 
     def run(self):
         """
@@ -237,6 +269,21 @@ class Study(object):
         if not os.path.isdir(self.stdy_opt['working_directory']):
             os.mkdir(self.stdy_opt['working_directory'])
         os.chdir(self.stdy_opt['working_directory'])
+
+        nb_errors = self.check_options()
+        if nb_errors > 0:
+            logging.error(str(nb_errors) + ' errors in options')
+            exit()
+
+        Job.set_usr_func(self.usr_func)
+        Job.set_stdy_opt(self.stdy_opt)
+        Job.set_ml_stats(self.ml_stats)
+
+        logging.debug('create threads dict')
+        self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
+        self.threads['state_checker'] = StateChecker()
+        self.threads['responder'] = Responder(self.stdy_opt['batch_size'])
+
         create_study(self.usr_func)
         self.create_group_list_test_ot()
         # init zmq context
@@ -256,7 +303,7 @@ class Study(object):
             logging.error(traceback.print_exc())
             self.stop()
         logging.debug('start messenger thread')
-        self.messenger.start()
+        self.threads['messenger'].start()
         logging.debug('wait server start')
         try:
             server.wait_start()
@@ -271,9 +318,9 @@ class Study(object):
         #melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
         melissa_message.bind_message_snd(str(self.stdy_opt['send_port']).encode())
         logging.debug('start status checker thread')
-        self.state_checker.start()
+        self.threads['state_checker'].start()
         if self.stdy_opt['learning']:
-            self.responder.start()
+            self.threads['responder'].start()
         for group in groups:
             self.fault_tolerance()
             while check_scheduler_load(self.usr_func) == False:
@@ -303,14 +350,14 @@ class Study(object):
                     group.cancel()
         if server.job_status < FINISHED:
             server.cancel()
-        self.messenger.running_study = False
+        self.threads['messenger'].running_study = False
         if self.stdy_opt['learning']:
-            self.responder.running_study = False
-        self.state_checker.running_study = False
-        self.messenger.join()
+            self.threads['responder'].running_study = False
+        self.threads['state_checker'].running_study = False
+        self.threads['messenger'].join()
         if self.stdy_opt['learning']:
-            self.responder.join()
-        self.state_checker.join()
+            self.threads['responder'].join()
+        self.threads['state_checker'].join()
         postprocessing(self.usr_func)
         finalize(self.usr_func)
         # finalize zmq context
@@ -322,6 +369,9 @@ class Study(object):
             Validates user provided options
         """
         errors = 0
+        if (not 'sobol_indices' in self.ml_stats.keys()):
+            self.ml_stats['sobol_indices'] = False
+
         nb_parameters = self.stdy_opt['nb_parameters']
         if not self.ml_stats['sobol_indices'] and nb_parameters < 1:
             logging.error('Error bad option: nb_parameters too small')
@@ -360,6 +410,7 @@ class Study(object):
 
         if (self.ml_stats['sobol_indices']):
             self.stdy_opt['batch_size'] = 1
+            self.sobol = True
 
         if self.stdy_opt['send_port'] == self.stdy_opt['recv_port']:
             logging.error('Error: send_port and recv_port can not have the same value')
@@ -466,17 +517,13 @@ class Study(object):
                 self.groups.append(SobolGroup(
                     input_parameters[i],
                     input_parameters2[i]))
-        elif "batch_size" in self.stdy_opt.keys() \
-        and self.stdy_opt['batch_size'] > 1:
+        else:
             for i in range(self.stdy_opt['sampling_size']//self.stdy_opt['batch_size']):
                 param_sets = list()
                 for j in range(self.stdy_opt['batch_size']):
                     param_sets.append(input_parameters[i*self.stdy_opt['batch_size']+j])
                 self.groups.append(MultiSimuGroup(param_sets))
 
-        else:
-            for i in range(self.stdy_opt['sampling_size']):
-                self.groups.append(SingleSimuGroup(input_parameters[i]))
         for group in self.groups:
             group.create()
         groups = self.groups
@@ -487,22 +534,22 @@ class Study(object):
         """
 
         # check if threads are still alive
-        if not self.messenger.isAlive():
+        if not self.threads['messenger'].isAlive():
             logging.error('Messenger thread crashed')
-            self.messenger.join()
-            self.messenger = Messenger(self.stdy_opt['batch_size'])
-            self.messenger.start()
-        if not self.state_checker.isAlive():
+            self.threads['messenger'].join()
+            self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
+            self.threads['messenger'].start()
+        if not self.threads['state_checker'].isAlive():
             logging.error('State checker thread crashed')
-            self.state_checker.join()
-            self.state_checker = StateChecker()
-            self.state_checker.start()
+            self.threads['state_checker'].join()
+            self.threads['state_checker'] = StateChecker()
+            self.threads['state_checker'].start()
         if self.stdy_opt['learning']:
-            if not self.responder.isAlive():
+            if not self.threads['responder'].isAlive():
                 logging.error('Responder thread crashed')
-                self.responder.join()
-                self.responder = Responder()
-                self.responder.start()
+                self.threads['responder'].join()
+                self.threads['responder'] = Responder()
+                self.threads['responder'].start()
 
         sleep = False
         with server.lock:
@@ -598,7 +645,7 @@ def create_study(usr_func):
     """
         Creates study environment
     """
-    if "create_study" in Job.usr_func.keys() \
+    if "create_study" in usr_func.keys() \
     and usr_func['create_study']:
         try:
             usr_func['create_study']()
@@ -629,7 +676,7 @@ def check_scheduler_load(usr_func):
     """
         Return False if the load is full
     """
-    if "check_scheduler_load" in Job.usr_func.keys() \
+    if "check_scheduler_load" in usr_func.keys() \
     and usr_func['check_scheduler_load']:
         try:
             return usr_func['check_scheduler_load']()
@@ -646,7 +693,7 @@ def postprocessing(usr_func):
     """
         User defined postprocessing
     """
-    if "postprocessing" in Job.usr_func.keys() \
+    if "postprocessing" in usr_func.keys() \
     and usr_func['postprocessing']:
         try:
             usr_func['postprocessing']()
@@ -660,7 +707,7 @@ def finalize(usr_func):
     """
         User defined final step
     """
-    if "finalize" in Job.usr_func.keys() \
+    if "finalize" in usr_func.keys() \
     and usr_func['finalize']:
         try:
             usr_func['finalize']()

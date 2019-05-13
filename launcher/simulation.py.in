@@ -249,7 +249,7 @@ class MultiSimuGroup(Group):
         """
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
+        if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.rank) +
                             #'crashed 5 times, drawing new parameter sets')
             #for i in range(self.size):
@@ -324,7 +324,7 @@ class SobolGroup(Group):
         """
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
+        if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Group ' +
                             #str(self.rank) +
                             #'crashed 5 times, drawing new parameter sets')

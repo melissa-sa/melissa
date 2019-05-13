@@ -30,6 +30,8 @@ import openturns as ot
 #from matplotlib import cm
 from string import Template
 from shutil import copyfile
+imp.load_source("study", "@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/study.py")
+from study import Study
 
 # These variables are only used in this file.
 USERNAME = getpass.getuser()
@@ -40,6 +42,8 @@ NODES_SERVER = 2
 NODES_GROUP = 1
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
+WORKDIR = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
+NB_PARAM = 5
 
 # The launch_server function to put in USER_FUNCTIONS['launch_server'].
 # It takes a Server object as argument, and must set its job_id attribute.
@@ -49,9 +53,9 @@ WALLTIME_SIMU = 300
 #   cmd_opt: the options set by the launcher to pass to the server.
 
 def launch_server(server):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
-        os.mkdir(STUDY_OPTIONS['working_directory'])
-    os.chdir(STUDY_OPTIONS['working_directory'])
+    if (not os.path.isdir(WORKDIR)):
+        os.mkdir(WORKDIR)
+    os.chdir(WORKDIR)
     print('mpirun ' + ' -n '+str(NODES_SERVER) + ' ' + server.path + '/melissa_server ' + server.cmd_opt + ' &')
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
@@ -59,7 +63,7 @@ def launch_server(server):
                                       '/melissa_server ' +
                                       server.cmd_opt +
                                       ' &').split()).pid
-    os.chdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(WORKDIR)
 
 # The launch_group function to put in USER_FUNCTIONS['launch_group'].
 # It is used to launch batches of simulations (or groups of simulation the case of Sobol' indices computation).
@@ -73,27 +77,27 @@ def launch_server(server):
 # Once we have set the job IDs of our jobs, we can use it to define the fault tolerance functions. In our case, we will use the same function for the server and the simulations. It takes a `Job` object as argument, and sets its `status` attribute to 0 if it is waiting to be scheduled, 1 if it is currently running, or 2 if it is not running anymore. In your local machine, a job will never be have a 0 status, because it is launched immediately when `USER_FUNCTIONS['launch_group']` is called.
 
 def launch_group(group):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))):
-        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
-    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(group.rank))
+    if (not os.path.isdir(WORKDIR+"/group"+str(group.rank))):
+        os.mkdir(WORKDIR+"/group"+str(group.rank))
+    os.chdir(WORKDIR+"/group"+str(group.rank))
     os.environ['MELISSA_SERVER_NODE_NAME'] = group.server_node_name
 
-    if MELISSA_STATS['sobol_indices']:
+    if group.ml_stats['sobol_indices']:
 
         # Sobol group: In the case of Sobol' indices computation, all the simulations of a Sobol' group must be in the same job.
         # In that case, simu_id is a list of the simulation IDs inside the Sobol' group (the ones you will pass to melissa_init), and rank is the ID of the group.
-        # param_set is a list of size STUDY_OPTIONS['nb_parameters'] + 2 of numpy arrays of size STUDY_OPTIONS['nb_parameters'], corresponding to the sets of n parameters of the n+2 simulations in the Sobol' group.
+        # param_set is a list of size NB_PARAM + 2 of numpy arrays of size NB_PARAM, corresponding to the sets of n parameters of the n+2 simulations in the Sobol' group.
 
         if BUILD_WITH_FLOWVR == 'ON' and STUDY_OPTIONS['coupling'] == 'MELISSA_COUPLING_FLOWVR':
             args = []
-            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+            for i in range(NB_PARAM + 2):
                 args.append(str(group.simu_id[i])+" "+ str(group.coupling)+" "+' '.join(str(j) for j in group.param_set[i]))
             content = ""
             file=open("@EXAMPLES_DIR@/heat_example/study_local/scripts/flowvr_group.py", "r")
             content = Template(file.read()).substitute(args=str(args),
                                group_id=str(group.rank),
                                np_simu=str(int(NODES_GROUP)),
-                               nb_param=str(STUDY_OPTIONS['nb_parameters']),
+                               nb_param=str(NB_PARAM),
                                executable='@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE)
             file.close()
             file=open("create_group"+str(group.rank)+".py", "w")
@@ -104,7 +108,7 @@ def launch_group(group):
         else:
             os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
             command = 'mpirun '
-            for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
+            for i in range(NB_PARAM + 2):
                 command += ' '.join(('-n',
                                      str(NODES_GROUP),
                                      '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
@@ -114,11 +118,11 @@ def launch_group(group):
             print(command[:-2])
             group.job_id = subprocess.Popen(command[:-2].split()).pid
 
-    elif STUDY_OPTIONS['batch_size'] > 1:
+    else:
 
         # Batch of simulations: Multiple simulations are launched in the same job.
         # In that case, simu_id is a list of the simulation IDs of size STUDY_OPTIONS['batch_size'] (the ones you will pass to melissa_init in your solver), and rank is the ID of the group.
-        # param_set is a list of size STUDY_OPTIONS['batch_size'] of numpy arrays of size STUDY_OPTIONS['nb_parameters'].
+        # param_set is a list of size STUDY_OPTIONS['batch_size'] of numpy arrays of size NB_PARAM.
         # The parameter STUDY_OPTIONS['sampling_size'] must be a multiple of STUDY_OPTIONS['batch_size'].
 
         command = 'mpirun '
@@ -134,31 +138,7 @@ def launch_group(group):
         os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
         group.job_id = subprocess.Popen(command[:-2].split()).pid
 
-    else:
-
-        # Single simulation (general case): Every simulation has its own job.
-        # In this case, simu_id and rank are equivalents, and param_set is a numpy array of size STUDY_OPTIONS['nb_parameters'].
-
-        if BUILD_WITH_MPI == 'ON':
-            command = ' '.join(('mpirun',
-                                 '-n',
-                                 str(NODES_GROUP),
-                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(group.simu_id),
-                                 str(group.coupling),
-                                 ' '.join(str(i) for i in group.param_set)))
-        else:
-            command = ' '.join(('@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                str(0),
-                                str(group.simu_id),
-                                str(group.coupling),
-                                ' '.join(str(i) for i in group.param_set)))
-        print(command)
-
-        # We set the job_id attribute of the Group object.
-
-        group.job_id = subprocess.Popen(command.split()).pid
-    os.chdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(WORKDIR)
 
 def check_job(job):
     # Check the job state:
@@ -192,9 +172,9 @@ def kill_job(job):
     os.system('kill '+str(job.job_id))
 
 def draw_param_set():
-    # draw a numpy array of size STUDY_OPTIONS['nb_parameters']
-    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
-    for i in range(STUDY_OPTIONS['nb_parameters']):
+    # draw a numpy array of size NB_PARAM
+    param_set = np.zeros(NB_PARAM)
+    for i in range(NB_PARAM):
         param_set[i] = np.random.uniform(0, 1)
     return param_set
 
@@ -206,47 +186,33 @@ def param_distribution():
     param4 = ot.Uniform(0.0, 1.0)
     return ot.ComposedDistribution([param0, param1, param2, param3, param4])
 
-STUDY_OPTIONS = {}
-STUDY_OPTIONS['user_name'] = USERNAME
-STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
-STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 20                # initial number of parameter sets
-STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
-STUDY_OPTIONS['threshold_values'] = 0.7
-STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
-STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 400           # simulations are restarted if no life sign for 400 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 300          # server checkpoints every 300 seconds
-STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
-STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 2
+melissa_study = Study()
+melissa_study.set_option('user_name', USERNAME)
+melissa_study.set_option('working_directory', WORKDIR)
+melissa_study.set_option('nb_parameters', NB_PARAM) # number of varying parameters of the study
+melissa_study.set_option('sampling_size', 20) # initial number of parameter sets
+melissa_study.set_option('nb_time_steps', 100) # number of timesteps, from Melissa point of view
+melissa_study.set_option('threshold_values', 0.7)
+melissa_study.set_option('quantile_values', [0.05,0.25,0.5,0.75,0.95])
+melissa_study.set_option('field_names', ["heat1"]) # list of field names
+melissa_study.set_option('simulation_timeout', 400) # simulations are restarted if no life sign for 400 seconds
+melissa_study.set_option('checkpoint_interval', 300) # server checkpoints every 300 seconds
+melissa_study.set_option('coupling', "MELISSA_COUPLING_MPI") # option for Sobol' simulation groups coupling
+melissa_study.set_option('verbosity', 2) # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug info
+melissa_study.set_option('simulation_timeout', 400)
 
-MELISSA_STATS = {}
-MELISSA_STATS['mean'] = True
-MELISSA_STATS['variance'] = False
-MELISSA_STATS['skewness'] = False
-MELISSA_STATS['kurtosis'] = False
-MELISSA_STATS['min'] = False
-MELISSA_STATS['max'] = False
-MELISSA_STATS['threshold_exceedance'] = True
-MELISSA_STATS['quantiles'] = True
-MELISSA_STATS['sobol_indices'] = False
+melissa_study.compute_stat('mean')
+melissa_study.compute_stat('threshold_exceedance')
+melissa_study.compute_stat('quantiles')
 
-USER_FUNCTIONS = {}
-USER_FUNCTIONS['create_study'] = None
-USER_FUNCTIONS['param_distribution'] = param_distribution
-USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
-USER_FUNCTIONS['create_group'] = None
-#if MELISSA_STATS['sobol_indices']:
-#    USER_FUNCTIONS['launch_group'] = launch_group
-#else:
-USER_FUNCTIONS['launch_group'] = launch_group
-USER_FUNCTIONS['launch_server'] = launch_server
-USER_FUNCTIONS['check_server_job'] = check_job
-USER_FUNCTIONS['check_group_job'] = check_job
-USER_FUNCTIONS['restart_server'] = launch_server
-USER_FUNCTIONS['restart_group'] = None
-USER_FUNCTIONS['check_scheduler_load'] = check_load
-USER_FUNCTIONS['cancel_job'] = kill_job
-USER_FUNCTIONS['postprocessing'] = None
-USER_FUNCTIONS['finalize'] = None
+melissa_study.param_distribution(param_distribution)
+melissa_study.launch_group(launch_group)
+melissa_study.launch_server(launch_server)
+melissa_study.check_server_job(check_job)
+melissa_study.check_group_job(check_job)
+melissa_study.restart_server(launch_server)
+melissa_study.check_scheduler_load(check_load)
+melissa_study.cancel_job(kill_job)
+
+melissa_study.run()
+
