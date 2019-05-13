@@ -24,6 +24,7 @@ import os
 import time
 import subprocess
 import logging
+import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p
 melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
@@ -162,7 +163,12 @@ class SingleSimuGroup(Group):
         """
         Group.__init__(self)
         self.simu_id = self.rank
-        self.param_set = numpy.copy(param_set)
+        if isinstance(param_set, ot.Point):
+            self.param_set = numpy.zeros(Job.stdy_opt['nb_parameters'])
+            for i in range(Job.stdy_opt['nb_parameters']):
+                self.param_set[i] = float(param_set[i])
+        else:
+            self.param_set = numpy.copy(param_set)
         self.coupling = 0
         self.job_type = 2
 
@@ -220,7 +226,12 @@ class MultiSimuGroup(Group):
         self.coupling = 0
         self.job_type = 3
         for i in range(self.size):
-            self.param_set.append(numpy.copy(param_sets[i]))
+            if isinstance(param_sets[i], ot.Point):
+                self.param_set.append(numpy.zeros(Job.stdy_opt['nb_parameters']))
+                for j in range(Job.stdy_opt['nb_parameters']):
+                    self.param_set[i][j] = float(param_sets[i][j])
+            else:
+                self.param_set.append(numpy.copy(param_sets[i]))
             self.simu_id.append(MultiSimuGroup.nb_simu)
             self.simu_status.append(0)
             MultiSimuGroup.nb_simu += 1
@@ -281,9 +292,19 @@ class SobolGroup(Group):
         self.param_set = list()
         self.simu_id = list()
         self.job_type = 4
-        self.param_set.append(numpy.copy(param_set_a))
+        if isinstance(param_set_a, ot.Point):
+            self.param_set.append(numpy.zeros(Job.stdy_opt['nb_parameters']))
+            for j in range(Job.stdy_opt['nb_parameters']):
+                self.param_set[0][j] = float(param_set_a[j])
+        else:
+            self.param_set.append(numpy.copy(param_set_a))
         self.simu_id.append(self.rank*(len(param_set_a)+2))
-        self.param_set.append(numpy.copy(param_set_b))
+        if isinstance(param_set_b, ot.Point):
+            self.param_set.append(numpy.zeros(Job.stdy_opt['nb_parameters']))
+            for j in range(Job.stdy_opt['nb_parameters']):
+                self.param_set[1][j] = float(param_set_b[j])
+        else:
+            self.param_set.append(numpy.copy(param_set_b))
         self.simu_id.append(self.rank*(len(param_set_a)+2)+1)
         for i in range(len(param_set_a)):
             self.param_set.append(numpy.copy(self.param_set[0]))

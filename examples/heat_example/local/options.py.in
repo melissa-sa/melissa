@@ -25,6 +25,7 @@ import subprocess
 import getpass
 import imp
 import socket
+import openturns as ot
 #from matplotlib import pyplot as plt
 #from matplotlib import cm
 from string import Template
@@ -197,6 +198,14 @@ def draw_param_set():
         param_set[i] = np.random.uniform(0, 1)
     return param_set
 
+def param_distribution():
+    param0 = ot.Uniform(0.0, 1.0)
+    param1 = ot.Uniform(0.0, 1.0)
+    param2 = ot.Uniform(0.0, 1.0)
+    param3 = ot.Uniform(0.0, 1.0)
+    param4 = ot.Uniform(0.0, 1.0)
+    return ot.ComposedDistribution([param0, param1, param2, param3, param4])
+
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
@@ -225,6 +234,7 @@ MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
+USER_FUNCTIONS['param_distribution'] = param_distribution
 USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
 USER_FUNCTIONS['create_group'] = None
 #if MELISSA_STATS['sobol_indices']:

@@ -27,6 +27,7 @@ import imp
 import numpy as np
 import logging
 import traceback
+import openturns as ot
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p
 imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
 from simulation import Server
@@ -237,7 +238,7 @@ class Study(object):
             os.mkdir(self.stdy_opt['working_directory'])
         os.chdir(self.stdy_opt['working_directory'])
         create_study(self.usr_func)
-        self.create_group_list()
+        self.create_group_list_test_ot()
         # init zmq context
         melissa_message.init_context()
         logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
@@ -447,6 +448,35 @@ class Study(object):
         else:
             while len(self.groups) < self.stdy_opt['sampling_size']:
                 self.groups.append(SingleSimuGroup(draw_parameter_set(self.usr_func, self.stdy_opt)))
+        for group in self.groups:
+            group.create()
+        groups = self.groups
+
+    def create_group_list_test_ot(self):
+        """
+            Job list creation
+        """
+        global groups
+        Group.reset()
+
+        input_parameters = self.usr_func['param_distribution']().getSample(self.stdy_opt['sampling_size'])
+        if self.sobol:
+            input_parameters2 = inputRV.getSample(self.stdy_opt['sampling_size'])
+            for i in range(self.stdy_opt['sampling_size']):
+                self.groups.append(SobolGroup(
+                    input_parameters[i],
+                    input_parameters2[i]))
+        elif "batch_size" in self.stdy_opt.keys() \
+        and self.stdy_opt['batch_size'] > 1:
+            for i in range(self.stdy_opt['sampling_size']//self.stdy_opt['batch_size']):
+                param_sets = list()
+                for j in range(self.stdy_opt['batch_size']):
+                    param_sets.append(input_parameters[i*self.stdy_opt['batch_size']+j])
+                self.groups.append(MultiSimuGroup(param_sets))
+
+        else:
+            for i in range(self.stdy_opt['sampling_size']):
+                self.groups.append(SingleSimuGroup(input_parameters[i]))
         for group in self.groups:
             group.create()
         groups = self.groups
