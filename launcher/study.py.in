@@ -210,6 +210,7 @@ class Study(object):
         Study class, containing instances of the threads
     """
     def __init__(self, stdy_opt = {}, ml_stats = {}, usr_func = {}):
+        self.nb_param = 0
         self.groups = list()
         self.sobol = False
         self.stdy_opt = stdy_opt
@@ -217,11 +218,50 @@ class Study(object):
         self.usr_func = usr_func
         self.threads = {}
 
+    # options
     def set_option(self, option_key, option_value):
         self.stdy_opt[option_key] = option_value
 
+    def threshold_values(self, threshold_values):
+        self.stdy_opt['threshold_values'] = threshold_values
+
+    def quantile_values(self, quantile_values):
+        self.stdy_opt['quantile_values'] = quantile_values
+
+    # stats
     def compute_stat(self, stat_key):
         self.ml_stats[stat_key] = True
+
+    def compute_mean(self):
+        self.ml_stats['mean'] = True
+
+    def compute_variance(self):
+        self.ml_stats['variance'] = True
+
+    def compute_skewness(self):
+        self.ml_stats['skewness'] = True
+
+    def compute_kurtosis(self):
+        self.ml_stats['kurtosis'] = True
+
+    def compute_min(self):
+        self.ml_stats['min'] = True
+
+    def compute_max(self):
+        self.ml_stats['max'] = True
+
+    def compute_threshold_exceedance(self):
+        self.ml_stats['threshold_exceedance'] = True
+
+    def compute_quantile(self):
+        self.ml_stats['quantile'] = True
+
+    def compute_sobol_indices(self):
+        self.ml_stats['sobol_indices'] = True
+
+    # functions
+    def set_function(self, func_key, func_ptr):
+        self.usr_func[func_key] = func_ptr
 
     def param_distribution(self, func_ptr):
         self.usr_func['param_distribution'] = func_ptr
@@ -278,14 +318,16 @@ class Study(object):
         Job.set_usr_func(self.usr_func)
         Job.set_stdy_opt(self.stdy_opt)
         Job.set_ml_stats(self.ml_stats)
+        Job.set_nb_param(self.nb_param)
 
+        print ("nb_param : "+str(Job.nb_param))
         logging.debug('create threads dict')
         self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
         self.threads['state_checker'] = StateChecker()
         self.threads['responder'] = Responder(self.stdy_opt['batch_size'])
 
         create_study(self.usr_func)
-        self.create_group_list_test_ot()
+        self.create_group_list()
         # init zmq context
         melissa_message.init_context()
         logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
@@ -293,6 +335,8 @@ class Study(object):
         melissa_message.bind_message_rcv(str(self.stdy_opt['recv_port']).encode())
         melissa_message.bind_message_resp(str(self.stdy_opt['resp_port']).encode())
         logging.info('submit server')
+
+        server.set_nb_param(self.nb_param)
         server.set_path(self.stdy_opt['working_directory'])
         server.create_options()
         try:
@@ -372,12 +416,15 @@ class Study(object):
         if (not 'sobol_indices' in self.ml_stats.keys()):
             self.ml_stats['sobol_indices'] = False
 
-        nb_parameters = self.stdy_opt['nb_parameters']
-        if not self.ml_stats['sobol_indices'] and nb_parameters < 1:
-            logging.error('Error bad option: nb_parameters too small')
+        test_parameters = self.usr_func['param_distribution']().getSample(1)
+        print ("get dim = "+str(test_parameters.getDimension()))
+        self.nb_param = test_parameters.getDimension()
+
+        if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
+            logging.error('Error bad option: not enough parameters')
             errors += 1
-        if self.ml_stats['sobol_indices'] and nb_parameters < 2:
-            logging.error('Error bad option: nb_parameters too small')
+        if self.ml_stats['sobol_indices'] and self.nb_param < 2:
+            logging.error('Error bad option: not enough parameters')
             errors += 1
         if self.stdy_opt['sampling_size'] < 2:
             logging.error('Error bad option: sample_size not big enough')
@@ -478,32 +525,6 @@ class Study(object):
         return errors
 
     def create_group_list(self):
-        """
-            Job list creation
-        """
-        global groups
-        Group.reset()
-        if self.sobol:
-            while len(self.groups) < self.stdy_opt['sampling_size']:
-                self.groups.append(SobolGroup(
-                    draw_parameter_set(self.usr_func, self.stdy_opt),
-                    draw_parameter_set(self.usr_func, self.stdy_opt)))
-        elif "batch_size" in self.stdy_opt.keys() \
-        and self.stdy_opt['batch_size'] > 1:
-            while len(self.groups) < self.stdy_opt['sampling_size']//self.stdy_opt['batch_size']:
-                param_sets = list()
-                for i in range(self.stdy_opt['batch_size']):
-                    param_sets.append(draw_parameter_set(self.usr_func, self.stdy_opt))
-                self.groups.append(MultiSimuGroup(param_sets))
-
-        else:
-            while len(self.groups) < self.stdy_opt['sampling_size']:
-                self.groups.append(SingleSimuGroup(draw_parameter_set(self.usr_func, self.stdy_opt)))
-        for group in self.groups:
-            group.create()
-        groups = self.groups
-
-    def create_group_list_test_ot(self):
         """
             Job list creation
         """
@@ -654,23 +675,6 @@ def create_study(usr_func):
             traceback.print_exc()
     else:
         pass
-
-def draw_parameter_set(usr_func, stdy_opt):
-    """
-        Draws a set of parameters using user defined function
-    """
-    if usr_func['draw_parameter_set']:
-        try:
-            param_set = usr_func['draw_parameter_set']()
-        except:
-            logging.error("Draw parameter set failed")
-            logging.error(traceback.print_exc())
-            exit()
-    else:
-        param_set = np.zeros(stdy_opt['nb_parameters'])
-        for i in range(stdy_opt['nb_parameters']):
-            param_set[i] = np.random.uniform(0, 1)
-    return param_set
 
 def check_scheduler_load(usr_func):
     """

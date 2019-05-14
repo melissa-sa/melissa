@@ -51,6 +51,7 @@ class Job(object):
     usr_func = {}
     stdy_opt = {}
     ml_stats = {}
+    nb_param = 0
     def __init__(self):
         """
             Job constructor
@@ -70,9 +71,13 @@ class Job(object):
     def set_ml_stats(ml_stats):
         Job.ml_stats = ml_stats
 
+    def set_nb_param(nb_param):
+        Job.nb_param = nb_param
+
     set_usr_func = staticmethod(set_usr_func)
     set_stdy_opt = staticmethod(set_stdy_opt)
     set_ml_stats = staticmethod(set_ml_stats)
+    set_nb_param = staticmethod(set_nb_param)
 
     def cancel(self):
         """
@@ -95,6 +100,8 @@ class Group(Job):
             Group constructor
         """
         Job.__init__(self)
+        self.nb_param = Job.nb_param
+        self.size = 0
         self.node_name = ''
         self.server_node_name = ''
         self.nb_restarts = 0
@@ -162,10 +169,11 @@ class SingleSimuGroup(Group):
             SingleSimuGroup constructor
         """
         Group.__init__(self)
+        self.size = 1
         self.simu_id = self.rank
         if isinstance(param_set, ot.Point):
-            self.param_set = numpy.zeros(Job.stdy_opt['nb_parameters'])
-            for i in range(Job.stdy_opt['nb_parameters']):
+            self.param_set = numpy.zeros(self.nb_param)
+            for i in range(self.nb_param):
                 self.param_set[i] = float(param_set[i])
         else:
             self.param_set = numpy.copy(param_set)
@@ -227,8 +235,8 @@ class MultiSimuGroup(Group):
         self.job_type = 3
         for i in range(self.size):
             if isinstance(param_sets[i], ot.Point):
-                self.param_set.append(numpy.zeros(Job.stdy_opt['nb_parameters']))
-                for j in range(Job.stdy_opt['nb_parameters']):
+                self.param_set.append(numpy.zeros(self.nb_param))
+                for j in range(self.nb_param):
                     self.param_set[i][j] = float(param_sets[i][j])
             else:
                 self.param_set.append(numpy.copy(param_sets[i]))
@@ -293,15 +301,15 @@ class SobolGroup(Group):
         self.simu_id = list()
         self.job_type = 4
         if isinstance(param_set_a, ot.Point):
-            self.param_set.append(numpy.zeros(Job.stdy_opt['nb_parameters']))
-            for j in range(Job.stdy_opt['nb_parameters']):
+            self.param_set.append(numpy.zeros(self.nb_param))
+            for j in range(self.nb_param):
                 self.param_set[0][j] = float(param_set_a[j])
         else:
             self.param_set.append(numpy.copy(param_set_a))
         self.simu_id.append(self.rank*(len(param_set_a)+2))
         if isinstance(param_set_b, ot.Point):
-            self.param_set.append(numpy.zeros(Job.stdy_opt['nb_parameters']))
-            for j in range(Job.stdy_opt['nb_parameters']):
+            self.param_set.append(numpy.zeros(self.nb_param))
+            for j in range(self.nb_param):
                 self.param_set[1][j] = float(param_set_b[j])
         else:
             self.param_set.append(numpy.copy(param_set_b))
@@ -372,8 +380,10 @@ class Server(Job):
             Server constructor
         """
         Job.__init__(self)
+        self.nb_param = 0
         self.status = WAITING
         self.first_job_id = ''
+        self.directory = "./"
 #        self.create_options()
         self.lock = RLock()
         self.path = '@CMAKE_INSTALL_PREFIX@/bin'
@@ -381,6 +391,9 @@ class Server(Job):
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir
+
+    def set_nb_param(self, nb_param):
+        self.nb_param = nb_param
 
     def write_node_name(self):
         os.chdir(self.directory)
@@ -416,7 +429,7 @@ class Server(Job):
         buff = create_string_buffer(256)
         melissa_message.get_node_name(buff)
         self.cmd_opt = ' '.join(('-o', op_str,
-                                 '-p', str(Job.stdy_opt['nb_parameters']),
+                                 '-p', str(self.nb_param),
                                  '-s', str(Job.stdy_opt['sampling_size']),
                                  '-t', str(Job.stdy_opt['nb_time_steps']),
                                  '-q', quantile_str,

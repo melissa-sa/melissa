@@ -28,6 +28,9 @@ install(FILES ${CMAKE_BINARY_DIR}/launcher/simulation.py
 configure_file(study.py.in study.py @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
         DESTINATION share/melissa/launcher)
+install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
+        DESTINATION share/melissa/launcher
+        RENAME melissa.py)
 
 install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
         DESTINATION bin
