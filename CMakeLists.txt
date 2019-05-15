@@ -84,6 +84,8 @@ message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} f
 #    message(ERROR "Melissa needs Python 3")
 #endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
 find_python_module(numpy REQUIRED)
+find_python_module(openturns REQUIRED)
+
 
 # BLAS #
 

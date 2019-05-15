@@ -159,64 +159,6 @@ class Group(Job):
             if Job.usr_func['finalize_group']:
                 Job.usr_func['finalize_group'](self)
 
-
-class SingleSimuGroup(Group):
-    """
-    Single simulation group class
-    """
-    def __init__(self, param_set):
-        """
-            SingleSimuGroup constructor
-        """
-        Group.__init__(self)
-        self.size = 1
-        self.simu_id = self.rank
-        if isinstance(param_set, ot.Point):
-            self.param_set = numpy.zeros(self.nb_param)
-            for i in range(self.nb_param):
-                self.param_set[i] = float(param_set[i])
-        else:
-            self.param_set = numpy.copy(param_set)
-        self.coupling = 0
-        self.job_type = 2
-
-    def launch(self):
-        Group.launch(self)
-        message_str = "job "+str(self.rank)+" " +str(self.job_id)
-        param_str = " ".join(str(i) for i in self.param_set)
-        melissa_message.send_message((message_str+" " +param_str).encode())
-
-    def restart(self):
-        """
-            Ends and restarts the simulation (mandatory)
-        """
-        self.cancel()
-        self.nb_restarts += 1
-        crashs_before_redraw = 5
-        crashs_before_redraw = 1
-        if self.nb_restarts >= crashs_before_redraw:
-            logging.warning('Simulation ' + str(self.rank) +
-                                        'crashed %d times, drawing new parameter set' % crashs_before_redraw)
-
-            logging.warning('Bad parameter set: ' + str(self.param_set))
-            melissa_message.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
-            self.job_status = FINISHED
-            self.status = FINISHED
-            return
-
-        if "restart_group" in Job.usr_func.keys() \
-        and Job.usr_func['restart_group']:
-            Job.usr_func['restart_group'](self)
-        else:
-            logging.warning('warning: no \'restart_group\''
-                            +' function provided,'
-                            +' using \'launch_group\' instead')
-            self.launch()
-        self.job_status = PENDING
-        self.status = WAITING
-        melissa_message.send_message(("job "+str(self.rank)+" " +str(self.job_id)).encode())
-
-
 class MultiSimuGroup(Group):
     """
     Multiple simulation group class (without Sobol' indices)
@@ -431,7 +373,7 @@ class Server(Job):
         self.cmd_opt = ' '.join(('-o', op_str,
                                  '-p', str(self.nb_param),
                                  '-s', str(Job.stdy_opt['sampling_size']),
-                                 '-t', str(Job.stdy_opt['nb_time_steps']),
+                                 '-t', str(Job.stdy_opt['nb_timesteps']),
                                  '-q', quantile_str,
                                  '-e', threshold_str,
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),

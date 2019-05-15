@@ -222,11 +222,74 @@ class Study(object):
     def set_option(self, option_key, option_value):
         self.stdy_opt[option_key] = option_value
 
-    def threshold_values(self, threshold_values):
+    def get_option(self, option_key):
+        return self.stdy_opt[option_key]
+
+    def set_threshold_values(self, threshold_values):
         self.stdy_opt['threshold_values'] = threshold_values
 
-    def quantile_values(self, quantile_values):
+    def get_threshold_values(self):
+        return self.stdy_opt['threshold_values']
+
+    def set_quantile_values(self, quantile_values):
         self.stdy_opt['quantile_values'] = quantile_values
+
+    def get_quantile_values(self):
+        return self.stdy_opt['quantile_values']
+
+    def set_working_directory(self, working_directory):
+        self.stdy_opt['working_directory'] = working_directory
+
+    def get_working_directory(self):
+        return self.stdy_opt['working_directory']
+
+    def set_sampling_size(self, sampling_size):
+        self.stdy_opt['sampling_size'] = sampling_size
+
+    def get_sampling_size(self):
+        return self.stdy_opt['sampling_size']
+
+    def set_nb_timesteps(self, nb_timesteps):
+        self.stdy_opt['nb_time_steps'] = nb_timesteps
+
+    def get_nb_timesteps(self):
+        return self.stdy_opt['nb_timesteps']
+
+    def set_field_names(self, field_names):
+        self.stdy_opt['field_names'] = field_names
+
+    def get_field_names(self):
+        return self.stdy_opt['field_names']
+
+    def set_simulation_timeout(self, simulation_timeout):
+        self.stdy_opt['simulation_timeout'] = simulation_timeout
+
+    def get_simulation_timeout(self):
+        return self.stdy_opt['simulation_timeout']
+
+    def set_checkpoint_interval(self, checkpoint_interval):
+        self.stdy_opt['checkpoint_interval'] = checkpoint_interval
+
+    def get_checkpoint_interval(self):
+        return self.stdy_opt['checkpoint_interval']
+
+    def set_coupling(self, coupling):
+        self.stdy_opt['coupling'] = coupling
+
+    def get_coupling(self):
+        return self.stdy_opt['coupling']
+
+    def set_verbosity(self, verbosity):
+        self.stdy_opt['verbosity'] = verbosity
+
+    def get_verbosity(self):
+        return self.stdy_opt['verbosity']
+
+    def set_batch_size(self, batch_size):
+        self.stdy_opt['batch_size'] = batch_size
+
+    def get_batch_size(self):
+        return self.stdy_opt['batch_size']
 
     # stats
     def compute_stat(self, stat_key):
@@ -250,13 +313,16 @@ class Study(object):
     def compute_max(self):
         self.ml_stats['max'] = True
 
-    def compute_threshold_exceedance(self):
+    def compute_threshold_exceedances(self, threshold_values):
+        self.stdy_opt['threshold_values'] = threshold_values
         self.ml_stats['threshold_exceedance'] = True
 
-    def compute_quantile(self):
+    def compute_quantiles(self, quantile_values):
+        self.stdy_opt['quantile_values'] = quantile_values
         self.ml_stats['quantile'] = True
 
-    def compute_sobol_indices(self):
+    def compute_sobol_indices(self, coupling = "MELISSA_COUPLING_DEFAULT"):
+        self.stdy_opt['coupling'] = coupling
         self.ml_stats['sobol_indices'] = True
 
     # functions
@@ -320,7 +386,6 @@ class Study(object):
         Job.set_ml_stats(self.ml_stats)
         Job.set_nb_param(self.nb_param)
 
-        print ("nb_param : "+str(Job.nb_param))
         logging.debug('create threads dict')
         self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
         self.threads['state_checker'] = StateChecker()
@@ -417,7 +482,6 @@ class Study(object):
             self.ml_stats['sobol_indices'] = False
 
         test_parameters = self.usr_func['param_distribution']().getSample(1)
-        print ("get dim = "+str(test_parameters.getDimension()))
         self.nb_param = test_parameters.getDimension()
 
         if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
@@ -533,7 +597,7 @@ class Study(object):
 
         input_parameters = self.usr_func['param_distribution']().getSample(self.stdy_opt['sampling_size'])
         if self.sobol:
-            input_parameters2 = inputRV.getSample(self.stdy_opt['sampling_size'])
+            input_parameters2 = self.usr_func['param_distribution']().getSample(self.stdy_opt['sampling_size'])
             for i in range(self.stdy_opt['sampling_size']):
                 self.groups.append(SobolGroup(
                     input_parameters[i],

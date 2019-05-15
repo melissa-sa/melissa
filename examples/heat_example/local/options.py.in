@@ -171,13 +171,6 @@ def check_load():
 def kill_job(job):
     os.system('kill '+str(job.job_id))
 
-def draw_param_set():
-    # draw a numpy array of size NB_PARAM
-    param_set = np.zeros(NB_PARAM)
-    for i in range(NB_PARAM):
-        param_set[i] = np.random.uniform(0, 1)
-    return param_set
-
 def param_distribution():
     param0 = ot.Uniform(0.0, 1.0)
     param1 = ot.Uniform(0.0, 1.0)
@@ -187,22 +180,30 @@ def param_distribution():
     return ot.ComposedDistribution([param0, param1, param2, param3, param4])
 
 melissa_study = melissa.Study()
-melissa_study.set_option('user_name', USERNAME)
+melissa_study.set_option('username', USERNAME)
 melissa_study.set_option('working_directory', WORKDIR)
 melissa_study.set_option('sampling_size', 20) # initial number of parameter sets
-melissa_study.set_option('nb_time_steps', 100) # number of timesteps, from Melissa point of view
+melissa_study.set_option('nb_timesteps', 100) # number of timesteps, from Melissa point of view
 melissa_study.set_option('field_names', ["heat1"]) # list of field names
 melissa_study.set_option('simulation_timeout', 400) # simulations are restarted if no life sign for 400 seconds
 melissa_study.set_option('checkpoint_interval', 300) # server checkpoints every 300 seconds
-melissa_study.set_option('coupling', "MELISSA_COUPLING_MPI") # option for Sobol' simulation groups coupling
 melissa_study.set_option('verbosity', 2) # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug info
-melissa_study.set_option('simulation_timeout', 400)
 
-melissa_study.compute_stat('mean')
-melissa_study.compute_stat('threshold_exceedance')
-melissa_study.threshold_values(0.7)
-melissa_study.compute_stat('quantiles')
-melissa_study.quantile_values([0.05,0.25,0.5,0.75,0.95])
+print ('username:            ' + str(melissa_study.get_option('username')))
+print ('working_directory:   ' + str(melissa_study.get_working_directory()))
+print ('sampling_size:       ' + str(melissa_study.get_sampling_size()))
+print ('nb_time_steps:       ' + str(melissa_study.get_nb_timesteps()))
+print ('field_names:         ' + str(melissa_study.get_field_names()))
+print ('simulation_timeout:  ' + str(melissa_study.get_simulation_timeout()))
+print ('checkpoint_interval: ' + str(melissa_study.get_checkpoint_interval()))
+print ('verbosity:           ' + str(melissa_study.get_verbosity()))
+
+melissa_study.compute_mean()
+melissa_study.compute_threshold_exceedances(0.7)
+print ('threshold values:    ' +str(melissa_study.get_threshold_values()))
+melissa_study.compute_quantiles([0.05,0.25,0.5,0.75,0.95])
+print ('quantile values:     ' +str(melissa_study.get_quantile_values()))
+melissa_study.compute_sobol_indices("MELISSA_COUPLING_MPI") # option for Sobol' simulation groups coupling
 
 melissa_study.param_distribution(param_distribution)
 melissa_study.launch_group(launch_group)
