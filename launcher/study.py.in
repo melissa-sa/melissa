@@ -138,9 +138,11 @@ class Messenger(Thread):
                                 #print('Group ' + str(group_id) + ' status: ' + str(groups[group_id].status))
                         else:
                             groups[group_id].status = int(message[2])
+                        if groups[group_id].status == 2:
+                            groups[group_id].finalize()
                     if message[2] == 2:
                         logging.info('Group ' + message[1] + ' finished')
-                    if message[2] == 2:
+                    if message[2] == 1:
                         logging.info('Group ' + message[1] + ' connected to server')
                 elif message[0] == 'server':
                     with server.lock:
@@ -205,6 +207,56 @@ class Responder(Thread):
             logging.error(traceback.print_exc())
             return
 
+class Server_user_functions(object):
+    """
+        Options for the simulations
+    """
+    def __init__(self, parent):
+        self.parent = parent
+
+    def create(self, func_ptr):
+        self.parent.usr_func['create_server'] = func_ptr
+
+    def launch(self, func_ptr):
+        self.parent.usr_func['launch_server'] = func_ptr
+
+    def check_job(self, func_ptr):
+        self.parent.usr_func['check_server_job'] = func_ptr
+
+    def restart(self, func_ptr):
+        self.parent.usr_func['restart_server'] = func_ptr
+
+    def cancel_job(self, func_ptr):
+        self.parent.usr_func['cancel_server_job'] = func_ptr
+
+    def finalize(self, func_ptr):
+        self.parent.usr_func['finalize_server'] = func_ptr
+
+class Simulation_user_functions(object):
+    """
+        Options for the simulations
+    """
+    def __init__(self, parent):
+        self.parent = parent
+
+    def create(self, func_ptr):
+        self.parent.usr_func['create_group'] = func_ptr
+
+    def launch(self, func_ptr):
+        self.parent.usr_func['launch_group'] = func_ptr
+
+    def check_job(self, func_ptr):
+        self.parent.usr_func['check_group_job'] = func_ptr
+
+    def restart(self, func_ptr):
+        self.parent.usr_func['restart_group'] = func_ptr
+
+    def cancel_job(self, func_ptr):
+        self.parent.usr_func['cancel_group_job'] = func_ptr
+
+    def finalize(self, func_ptr):
+        self.parent.usr_func['finalize_group'] = func_ptr
+
 class Study(object):
     """
         Study class, containing instances of the threads
@@ -217,6 +269,8 @@ class Study(object):
         self.ml_stats = ml_stats
         self.usr_func = usr_func
         self.threads = {}
+        self.server = Server_user_functions(self)
+        self.simulation = Simulation_user_functions(self)
 
     # options
     def set_option(self, option_key, option_value):
@@ -250,7 +304,7 @@ class Study(object):
         return self.stdy_opt['sampling_size']
 
     def set_nb_timesteps(self, nb_timesteps):
-        self.stdy_opt['nb_time_steps'] = nb_timesteps
+        self.stdy_opt['nb_timesteps'] = nb_timesteps
 
     def get_nb_timesteps(self):
         return self.stdy_opt['nb_timesteps']
@@ -291,6 +345,12 @@ class Study(object):
     def get_batch_size(self):
         return self.stdy_opt['batch_size']
 
+    def set_param_distribution(self, param_distribution):
+        self.stdy_opt['param_distribution'] = param_distribution
+
+    def get_param_distribution(self):
+        return self.stdy_opt['param_distribution']
+
     # stats
     def compute_stat(self, stat_key):
         self.ml_stats[stat_key] = True
@@ -329,32 +389,8 @@ class Study(object):
     def set_function(self, func_key, func_ptr):
         self.usr_func[func_key] = func_ptr
 
-    def param_distribution(self, func_ptr):
-        self.usr_func['param_distribution'] = func_ptr
-
-    def draw_parameter_set(self, func_ptr):
-        self.usr_func['draw_parameter_set'] = func_ptr
-
-    def create_group(self, func_ptr):
-        self.usr_func['create_group'] = func_ptr
-
-    def launch_group(self, func_ptr):
-        self.usr_func['launch_group'] = func_ptr
-
-    def launch_server(self, func_ptr):
-        self.usr_func['launch_server'] = func_ptr
-
-    def check_server_job(self, func_ptr):
-        self.usr_func['check_server_job'] = func_ptr
-
-    def check_group_job(self, func_ptr):
-        self.usr_func['check_group_job'] = func_ptr
-
-    def restart_server(self, func_ptr):
-        self.usr_func['restart_server'] = func_ptr
-
-    def restart_group(self, func_ptr):
-        self.usr_func['restart_group'] = func_ptr
+    def check_job(self, func_ptr):
+        self.usr_func['check_job'] = func_ptr
 
     def check_scheduler_load(self, func_ptr):
         self.usr_func['check_scheduler_load'] = func_ptr
@@ -450,6 +486,7 @@ class Study(object):
             self.fault_tolerance()
             time.sleep(1)
         time.sleep(1)
+        server.finalize()
         self.stop()
 
     def stop(self):
@@ -481,7 +518,11 @@ class Study(object):
         if (not 'sobol_indices' in self.ml_stats.keys()):
             self.ml_stats['sobol_indices'] = False
 
-        test_parameters = self.usr_func['param_distribution']().getSample(1)
+        if not 'param_distribution' in self.stdy_opt.keys():
+            logging.error('Error bad option: no parameter distribution provided')
+            errors += 1
+
+        test_parameters = self.stdy_opt['param_distribution'].getSample(1)
         self.nb_param = test_parameters.getDimension()
 
         if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
@@ -559,9 +600,24 @@ class Study(object):
         if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
             self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
 
+        if not 'check_server_job' in self.usr_func.keys():
+            if 'check_job' in self.usr_func.keys():
+                self.usr_func['check_server_job'] = self.usr_func['check_job']
+
+        if not 'check_group_job' in self.usr_func.keys():
+            if 'check_job' in self.usr_func.keys():
+                self.usr_func['check_group_job'] = self.usr_func['check_job']
+
+        if not 'cancel_server_job' in self.usr_func.keys():
+            if 'cancel_job' in self.usr_func.keys():
+                self.usr_func['cancel_server_job'] = self.usr_func['cancel_job']
+
+        if not 'cancel_group_job' in self.usr_func.keys():
+            if 'cancel_job' in self.usr_func.keys():
+                self.usr_func['cancel_group_job'] = self.usr_func['cancel_job']
+
 
         optional_func = ['create_study',
-                         'draw_parameter_set',
                          'create_group',
                          'restart_server',
                          'restart_group',
@@ -572,7 +628,8 @@ class Study(object):
                           'launch_group',
                           'check_server_job',
                           'check_group_job',
-                          'cancel_job']
+                          'cancel_server_job',
+                          'cancel_group_job']
 
         for func_name in optional_func:
             if not func_name in self.usr_func.keys():
@@ -595,9 +652,9 @@ class Study(object):
         global groups
         Group.reset()
 
-        input_parameters = self.usr_func['param_distribution']().getSample(self.stdy_opt['sampling_size'])
+        input_parameters = self.stdy_opt['param_distribution'].getSample(self.stdy_opt['sampling_size'])
         if self.sobol:
-            input_parameters2 = self.usr_func['param_distribution']().getSample(self.stdy_opt['sampling_size'])
+            input_parameters2 = self.stdy_opt['param_distribution'].getSample(self.stdy_opt['sampling_size'])
             for i in range(self.stdy_opt['sampling_size']):
                 self.groups.append(SobolGroup(
                     input_parameters[i],

@@ -17,5 +17,9 @@
 add_subdirectory(scripts)
 
 configure_file(options.py.in options.py @ONLY)
+configure_file(script.py.in script.py @ONLY)
+configure_file(functions.py.in functions.py @ONLY)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/options.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_local)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/script.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_local)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/functions.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_local)

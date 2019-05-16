@@ -90,6 +90,12 @@ class Job(object):
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
 
+    def finalize(self):
+        """
+            Finalize a job (optional)
+        """
+        pass
+
 class Group(Job):
     """
         Group class
@@ -107,7 +113,7 @@ class Group(Job):
         self.nb_restarts = 0
         self.status = NOT_SUBMITTED
         self.lock = RLock()
-        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
+        self.coupling = 0
         self.rank = Group.nb_groups
         Group.nb_groups += 1
 
@@ -144,17 +150,33 @@ class Group(Job):
         """
         if "check_group_job" in Job.usr_func.keys() \
         and Job.usr_func['check_group_job']:
-            Job.usr_func['check_group_job'](self)
+            return Job.usr_func['check_group_job'](self)
+        elif "check_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_job']:
+            return Job.usr_func['check_job'](self)
         else:
             logging.error('Error: no \'check_group_job\''
                           +' function provided')
+            exit()
+
+    def cancel(self):
+        """
+            Cancels a simulation job (mandatory)
+        """
+        if "cancel_group_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_group_job']:
+            return Job.usr_func['cancel_group_job'](self)
+        elif "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
+           return Job.usr_func['cancel_job'](self)
+        else:
+            logging.error('Error: no \'cancel_job\' function provided')
             exit()
 
     def finalize(self):
         """
             Finalize the group (optional)
         """
-
         if "finalize_group" in Job.usr_func.keys():
             if Job.usr_func['finalize_group']:
                 Job.usr_func['finalize_group'](self)
@@ -242,6 +264,7 @@ class SobolGroup(Group):
         self.param_set = list()
         self.simu_id = list()
         self.job_type = 4
+        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
         if isinstance(param_set_a, ot.Point):
             self.param_set.append(numpy.zeros(self.nb_param))
             for j in range(self.nb_param):
@@ -445,6 +468,31 @@ class Server(Job):
         if "check_server_job" in Job.usr_func.keys() \
          and Job.usr_func['check_server_job']:
             Job.usr_func['check_server_job'](self)
+        elif "check_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_job']:
+            Job.usr_func['check_job'](self)
         else:
             logging.error('Error: no \'check_server_job\' function provided')
             exit()
+
+    def cancel(self):
+        """
+            Cancels a simulation job (mandatory)
+        """
+        if "cancel_server_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_server_job']:
+            return Job.usr_func['cancel_server_job'](self)
+        elif "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
+           return Job.usr_func['cancel_job'](self)
+        else:
+            logging.error('Error: no \'cancel_job\' function provided')
+            exit()
+
+    def finalize(self):
+        """
+            Finalize the group (optional)
+        """
+        if "finalize_server" in Job.usr_func.keys():
+            if Job.usr_func['finalize_server']:
+                Job.usr_func['finalize_server'](self)
