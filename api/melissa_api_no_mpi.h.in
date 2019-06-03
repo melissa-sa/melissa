@@ -25,7 +25,7 @@
 #ifndef MELISSA_API_NO_MPI_H
 #define MELISSA_API_NO_MPI_H
 
-#include "@ZEROMQ_INCLUDE_DIR@/zmq.h"
+#include "zmq.h"
 
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
 #define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */

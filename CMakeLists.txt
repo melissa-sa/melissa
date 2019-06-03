@@ -60,7 +60,7 @@ function(find_python_module module)
 endfunction(find_python_module)
 
 # The project version number.
-SET(PROJECT_VERSION “${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}”)
+SET(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 option(INSTALL_ZMQ OFF)
 
@@ -105,8 +105,8 @@ find_python_module(numpy REQUIRED)
 
 # ZeroMQ #
 
-find_package(ZeroMQ)
-include_directories(${ZEROMQ_INCLUDE_DIR})
+find_package(ZeroMQ NO_MODULE)
+include_directories(${ZeroMQ_INCLUDE_DIR})
 
 # MPI #
 

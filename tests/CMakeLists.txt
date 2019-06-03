@@ -16,7 +16,7 @@
 
 
 set(TESTS_LIBS ${EXTRA_LIBS}
-               ${ZEROMQ_LIBRARIES}
+               ${ZeroMQ_LIBRARY}
                   m )
 
 #foreach(lang C CXX Fortran)
