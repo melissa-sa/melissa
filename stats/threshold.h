@@ -25,6 +25,10 @@
 #ifndef THRESHOLD_H
 #define THRESHOLD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *******************************************************************************
  *
@@ -65,5 +69,9 @@ void read_threshold(threshold_t **threshold,
                     FILE*         f);
 
 void free_threshold(threshold_t *threshold);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // THRESHOLD_H

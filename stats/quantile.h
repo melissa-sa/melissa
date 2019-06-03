@@ -24,6 +24,11 @@
 
 #ifndef QUANTILE_H
 #define QUANTILE_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 
 /**
@@ -70,5 +75,9 @@ void read_quantile(quantile_t **quantile,
                    FILE*        f);
 
 void free_quantile(quantile_t *quantile);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // QUANTILE_H

@@ -25,6 +25,10 @@
 #ifndef MELISSA_VECTOR_H
 #define MELISSA_VECTOR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct vector_s {
     void **items;
     int capacity;
@@ -55,6 +59,10 @@ void vector_delete(vector_t *v,
                    int index);
 
 void free_vector(vector_t *v);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MELISSA_VECTOR_H
 

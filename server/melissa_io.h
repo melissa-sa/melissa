@@ -24,6 +24,11 @@
 
 #ifndef MELISSA_IO_H
 #define MELISSA_IO_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "melissa_data.h"
 #include "melissa_options.h"
 
@@ -70,5 +75,9 @@ void read_simu_states (vector_t          *simu_states,
 //                   double           *in_vect,
 //                   int              *local_vect_sizes,
 //                   char             *file_name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MELISSA_IO_H

@@ -105,7 +105,22 @@ find_python_module(numpy REQUIRED)
 
 # ZeroMQ #
 
-find_package(ZeroMQ NO_MODULE)
+if(INSTALL_ZMQ)
+  include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+  ExternalProject_Add(ZeroMQ
+#    URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
+  URL https://github.com/zeromq/libzmq/archive/v4.2.2.tar.gz
+  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
+             -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_PREFIX}/lib)
+  set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include")
+  set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}" )
+#  include_directories(${ZeroMQ_INCLUDE_DIR})
+  MESSAGE(STATUS "ZeroMQ will be installed")
+else(INSTALL_ZMQ)
+  find_package(ZeroMQ NO_MODULE REQUIRED)
+endif(INSTALL_ZMQ)
+
 include_directories(${ZeroMQ_INCLUDE_DIR})
 
 # MPI #

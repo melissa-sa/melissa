@@ -28,6 +28,11 @@
 
 #ifndef MEAN_H
 #define MEAN_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
@@ -83,5 +88,9 @@ void read_mean(mean_t *means,
                FILE*   f);
 
 void free_mean(mean_t *mean);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MEAN_H

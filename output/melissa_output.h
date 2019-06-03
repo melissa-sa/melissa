@@ -25,13 +25,18 @@
  *
  **/
 
+#ifndef SERVER_OUTPUT_H
+#define SERVER_OUTPUT_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
-#ifndef SERVER_OUTPUT_H
-#define SERVER_OUTPUT_H
 
 //#include "hdf5.h"
 #include "melissa_data.h"
@@ -72,4 +77,9 @@ void write_output_i(const char   *file_name,
                         const int     t,
                         const size_t  vec_size,
                         const int     vec[]);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif // SERVER_OUTPUT_H

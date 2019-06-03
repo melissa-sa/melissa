@@ -25,6 +25,10 @@
 #ifndef MELISSA_FIELDS_H
 #define MELISSA_FIELDS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "melissa_data.h"
 
 /**
@@ -75,5 +79,9 @@ void finalize_field_data (melissa_field_t   *fields,
 //#if MELISSA4PY != 1
 //void melissa_close_output_lib();
 //#endif // MELISSA4PY
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MELISSA_FIELDS_H

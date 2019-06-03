@@ -26,6 +26,10 @@
 #define COVARIANCE_H
 #include "mean.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *******************************************************************************
  *
@@ -71,5 +75,9 @@ void read_covariance(covariance_t *covars,
                      FILE*         f);
 
 void free_covariance (covariance_t *covariance);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // COVARIANCE_H

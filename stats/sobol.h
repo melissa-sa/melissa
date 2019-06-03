@@ -25,6 +25,10 @@
 #ifndef SOBOL_H
 #define SOBOL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *******************************************************************************
  *
@@ -147,5 +151,9 @@ void free_sobol_jansen (sobol_array_t *sobol_array,
 
 void free_sobol_martinez (sobol_array_t *sobol_array,
                           int            nb_parameters);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SOBOL_H

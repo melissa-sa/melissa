@@ -26,6 +26,10 @@
 #ifndef MOMENTS_H
 #define MOMENTS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *******************************************************************************
  *
@@ -87,5 +91,9 @@ void compute_kurtosis (moments_t *moments,
                        const int  vect_size);
 
 void free_moments (moments_t *moments);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MOMENTS_H

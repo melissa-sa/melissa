@@ -24,6 +24,11 @@
 
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <zmq.h>
 #include "melissa_fields.h"
 #include "melissa_data.h"
@@ -142,5 +147,9 @@ void global_confidence_sobol_martinez(melissa_field_t *field,
                                       comm_data_t     *comm_data,
                                       double          *interval1,
                                       double          *interval_tot);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SERVER_HELPER_H

@@ -25,6 +25,10 @@
 #ifndef FAULT_TOLERANCE_H
 #define FAULT_TOLERANCE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <melissa_utils.h>
@@ -66,5 +70,9 @@ void send_timeouts (int       detected_timeouts,
 
 int count_job_status(vector_t *simulations,
                       int       job_status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // FAULT_TOLERANCE_H
