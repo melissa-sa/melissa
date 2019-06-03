@@ -86,6 +86,13 @@ message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} f
 find_python_module(numpy REQUIRED)
 find_python_module(openturns REQUIRED)
 
+# OpenTURNS #
+
+find_package(OpenTURNS REQUIRED)
+message(STATUS "OpenTURNS includes: " ${OPENTURNS_INCLUDE_DIR})
+include_directories(${OPENTURNS_INCLUDE_DIR} ${OPENTURNS_INCLUDE_DIRS})
+add_definitions(${OPENTURNS_DEFINITIONS})
+link_directories(${OPENTURNS_LIBRARY})
 
 # BLAS #
 
@@ -116,7 +123,7 @@ option(BUILD_WITH_MPI "Build with MPI" ON)
 
 if(BUILD_WITH_MPI)
   find_package(MPI QUIET)
-  if(MPI_C_FOUND AND MPI_Fortran_FOUND)
+  if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
       set(EXTRA_LIBS ${EXTRA_LIBS}
                      ${MPI_C_LIBRARIES})
       add_definitions( -DBUILD_WITH_MPI )
@@ -127,7 +134,7 @@ if(BUILD_WITH_MPI)
       set(EXTRA_LIBS ${EXTRA_LIBS}
                      ${MPI_Fortran_LIBRARIES} )
       message(STATUS "MPI Found")
-  else(MPI_C_FOUND AND MPI_Fortran_FOUND)
+  else(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
       # Disable  Option if missing dependencies
       set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
       if(NOT MPI_Fortran_FOUND)
@@ -138,7 +145,11 @@ if(BUILD_WITH_MPI)
           set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
           message(STATUS "MPI C missing. BUILD_WITH_MPI option turned OFF")
       endif(NOT MPI_C_FOUND)
-  endif(MPI_C_FOUND AND MPI_Fortran_FOUND)
+      if(NOT MPI_CXX_FOUND)
+          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
+          message(STATUS "MPI C++ missing. BUILD_WITH_MPI option turned OFF")
+      endif(NOT MPI_CXX_FOUND)
+  endif(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
 endif(BUILD_WITH_MPI)
 
 # OpenMP #
