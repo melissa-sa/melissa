@@ -25,6 +25,10 @@
 #ifndef MIN_MAX_H
 #define MIN_MAX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *******************************************************************************
  *
@@ -63,5 +67,9 @@ void read_min_max(min_max_t *minmax,
                   FILE*      f);
 
 void free_min_max (min_max_t *min_max);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MIN_MAX_H

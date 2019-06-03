@@ -28,6 +28,11 @@
 
 #ifndef LEARNING_H
 #define LEARNING_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
@@ -50,5 +55,9 @@ struct learning_s
 };
 
 typedef struct learning_s learning_t; /**< type corresponding to learning_s */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LEARNING_H

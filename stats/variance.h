@@ -25,6 +25,9 @@
 #ifndef VARIANCE_H
 #define VARIANCE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef BUILD_WITH_MPI
 #include <mpi.h>
@@ -92,5 +95,9 @@ void read_variance(variance_t *vars,
                    FILE*       f);
 
 void free_variance (variance_t *variance);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // VARIANCE_H

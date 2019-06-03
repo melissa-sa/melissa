@@ -25,6 +25,10 @@
 #ifndef MELISSA_OPTIONS_H
 #define MELISSA_OPTIONS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  *******************************************************************************
  *
@@ -83,5 +87,9 @@ void melissa_print_options (melissa_options_t *options);
 void melissa_write_options (melissa_options_t *options);
 
 int melissa_read_options(melissa_options_t  *options);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MELISSA_OPTIONS_H

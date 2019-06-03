@@ -25,6 +25,10 @@
 #ifndef MELISSA_DATA_H
 #define MELISSA_DATA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include "melissa_utils.h"
 #include "melissa_options.h"
@@ -104,5 +108,9 @@ void melissa_check_data (melissa_data_t *data);
 void melissa_free_data (melissa_data_t *data);
 
 //long int mem_conso (melissa_options_t *options);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MELISSA_DATA_H

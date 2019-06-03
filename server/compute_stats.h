@@ -24,6 +24,11 @@
 
 #ifndef COMPUTE_STATS_H
 #define COMPUTE_STATS_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "melissa_data.h"
 
 void compute_stats (melissa_data_t *data,
@@ -32,5 +37,9 @@ void compute_stats (melissa_data_t *data,
                     double        **in_vect_tab);
 
 void finalize_stats (melissa_data_t *data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // COMPUTE_STATS_H

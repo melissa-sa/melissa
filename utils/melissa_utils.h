@@ -25,6 +25,10 @@
 #ifndef MELISSA_UTILS_H
 #define MELISSA_UTILS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if BUILD_WITH_MPI == 0
 #undef BUILD_WITH_MPI
 #endif // BUILD_WITH_MPI
@@ -88,5 +92,9 @@ void set_bit (int32_t *vect, int pos);
 void clear_bit (int32_t *vect, int pos);
 
 int test_bit (int32_t *vect, int pos);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MELISSA_UTILS_H
