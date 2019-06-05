@@ -71,8 +71,8 @@ void* melissa_realloc (void   *ptr,
 
 void melissa_free (void *ptr);
 
-void melissa_bind (void *socket,
-                   char *port_name);
+void melissa_bind (void       *socket,
+                   const char *port_name);
 
 void melissa_connect (void *socket,
                    char *port_name);

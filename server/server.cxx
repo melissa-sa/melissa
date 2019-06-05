@@ -71,7 +71,8 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 //#endif // MELISSA4PY
     int                   i;
     melissa_simulation_t *simu_ptr;
-    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME];
+    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50];
+//    OT::Study             OTStudy;
 
     *server_handle = melissa_malloc (sizeof(melissa_server_t));
 
@@ -115,6 +116,8 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     server_ptr->text_puller = zmq_socket (server_ptr->context, ZMQ_SUB);
     server_ptr->text_pusher = zmq_socket (server_ptr->context, ZMQ_PUSH);
     server_ptr->text_requester = zmq_socket (server_ptr->context, ZMQ_REQ);
+
+//    OTStudy.hasObject("toto");
 
 #ifdef BUILD_WITH_MPI
 
@@ -731,9 +734,16 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 
-            for (i=0; i<sizeof(server_ptr->buff_tab_ptr)/sizeof(double*); i++)
+            if (server_ptr->melissa_options.sobol_op != 1)
             {
-                server_ptr->buff_tab_ptr[i] = NULL;
+                server_ptr->buff_tab_ptr[0] = NULL;
+            }
+            else
+            {
+                for (i=0; i<server_ptr->melissa_options.nb_parameters+2; i++)
+                {
+                    server_ptr->buff_tab_ptr[i] = NULL;
+                }
             }
             buf_ptr = NULL;
             zmq_msg_close (&msg);
