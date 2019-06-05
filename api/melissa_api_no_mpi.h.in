@@ -34,9 +34,9 @@
 #define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
 
 void melissa_init_no_mpi(const char *field_name,
-                         const int  *vect_size,
-                         const int  *simu_id,
-                         const int  *coupling);
+                         const int  vect_size,
+                         const int  simu_id,
+                         const int  coupling);
 
 void melissa_send_no_mpi(const char *field_name,
                          double     *send_vect);

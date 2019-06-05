@@ -140,7 +140,7 @@ int main( int argc, char **argv )
 
   // melissa_init_no_mpi is the first Melissa function to call, and it is called only once.
   // It mainly contacts the server.
-  melissa_init_no_mpi(field_name, &vect_size, &simu_id, &coupling);
+  melissa_init_no_mpi(field_name, vect_size, simu_id, coupling);
 
   // main loop:
   for(n=1;n<=nmax;n++)
