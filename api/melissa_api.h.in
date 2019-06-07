@@ -27,10 +27,6 @@
 #ifndef MELISSA_API_H
 #define MELISSA_API_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "zmq.h"
 #include <mpi.h>
 
@@ -39,6 +35,10 @@ extern "C" {
 #define MELISSA_COUPLING_ZMQ 0     /**< ZeroMQ coupling */
 #define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
 #define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void melissa_init(const char *field_name,
                   const int  local_vect_size,
