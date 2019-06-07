@@ -33,14 +33,22 @@
 #define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
 #define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void melissa_init_no_mpi(const char *field_name,
                          const int  vect_size,
                          const int  simu_id,
                          const int  coupling);
 
 void melissa_send_no_mpi(const char *field_name,
-                         double     *send_vect);
+                         const double *send_vect);
 
 void melissa_finalize(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MELISSA_API_NO_MPI_H

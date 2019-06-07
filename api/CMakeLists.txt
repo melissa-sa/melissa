@@ -32,6 +32,7 @@ if(BUILD_WITH_MPI)
     configure_file(melissa_api.py.in ${CMAKE_CURRENT_BINARY_DIR}/melissa_api.py @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/api/melissa_api.py DESTINATION lib)
 endif(BUILD_WITH_MPI)
+install(FILES melissa_api_no_mpi.py DESTINATION lib)
 configure_file(melissa_api_no_mpi.h.in ${CMAKE_CURRENT_BINARY_DIR}/melissa_api_no_mpi.h @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/api/melissa_api_no_mpi.h DESTINATION include)
 
