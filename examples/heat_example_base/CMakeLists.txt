@@ -49,15 +49,15 @@ if(BUILD_WITH_MPI)
     install(TARGETS heat_utils_static ARCHIVE DESTINATION ${EXAMPLES_DIR}/heat_example_base/lib)
 
     add_executable(heatf_base heat_base.f90)
-    target_link_libraries(heatf_base ${EXAMPLES_LIBS} heat_utils)
+    target_link_libraries(heatf_base ${EXAMPLES_LIBS} heat_utils_static)
     install(TARGETS heatf_base RUNTIME DESTINATION ${EXAMPLES_DIR}/heat_example_base/bin)
 
     add_executable(heatc_base heat_base.c)
-    target_link_libraries(heatc_base ${EXAMPLES_LIBS} heat_utils)
+    target_link_libraries(heatc_base ${EXAMPLES_LIBS} heat_utils_static)
     install(TARGETS heatc_base RUNTIME DESTINATION ${EXAMPLES_DIR}/heat_example_base/bin)
 endif(BUILD_WITH_MPI)
 
-add_library(heat_utils_no_mpi SHARED heat_utils_no_mpi.f90)
+add_library(heat_utils_no_mpi STATIC heat_utils_no_mpi.f90)
 target_compile_options(heat_utils_no_mpi BEFORE PUBLIC -fPIC)
 target_link_libraries(heat_utils_no_mpi ${EXAMPLES_LIBS})
 install(TARGETS heat_utils_no_mpi DESTINATION ${EXAMPLES_DIR}/heat_example_base/lib)
