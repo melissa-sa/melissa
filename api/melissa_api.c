@@ -481,7 +481,8 @@ void melissa_init (const char *field_name,
         global_data.sobol_requester = NULL;
         global_data.comm_size = comm_size;
 #ifdef BUILD_WITH_MPI
-        MPI_Comm_dup(comm, &global_data.comm);
+        if(comm)//comm may be null in case of a call of melissa_init_no_mpi with a libmelissa_api.so compiled with MPI support with a non MPI client. This if is here to avoid a useless MPI call outside MPI context.
+          MPI_Comm_dup(comm, &global_data.comm);
 #else // BUILD_WITH_MPI
         global_data.comm = comm;
 #endif // BUILD_WITH_MPI
@@ -1255,7 +1256,7 @@ void melissa_send (const char   *field_name,
  *******************************************************************************/
 
 void melissa_send_no_mpi (const char *field_name,
-                          double     *send_vect)
+                          const double *send_vect)
 {
     melissa_send (field_name,
                   send_vect);
