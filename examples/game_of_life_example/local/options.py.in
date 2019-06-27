@@ -1,0 +1,148 @@
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+
+"""
+    User defined options module
+"""
+import os
+import time
+import numpy as np
+import subprocess
+import getpass
+import imp
+import logging
+from string import Template
+from shutil import copyfile
+
+
+USERNAME = getpass.getuser()
+BUILD_WITH_MPI = 'ON'.upper()
+EXECUTABLE='game'
+NODES_SERVER = 1
+NODES_GROUP = 2
+NODES_SIMU = NODES_GROUP
+
+NUMBER_OF_ROWS = 20
+NUMBER_OF_COLUMNS = 20
+
+
+def draw_param_set():
+    """
+    Game of Life isn't a standard binary to be run with melissa.
+    It randomize the starting board internaly and only arguments that it takes are:
+    ! [simulationID] [numberOfRows] [numberOfColumns] [numberOfTimesteps]
+    Simulation ID is given and rows, columns and timesteps have to be the same in every simulation.
+    Because of this, you cannot randomize the parameters and Game of Life isn't typical problem to be run with melissa.
+    """
+    return [NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, STUDY_OPTIONS['nb_time_steps']]
+
+def launch_server(server):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+    command = ' '.join('mpirun',
+                        '-n',
+                        str(NODES_SERVER),
+                        server.path+"/melissa_server",
+                        server.cmd_opt,
+                        '&')
+
+    server.job_id = subprocess.Popen(command.split()).pid
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+def launch_simu(simulation):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    
+    command = ' '.join(('mpirun',
+                            '-n',
+                            str(NODES_GROUP),
+                            '@EXAMPLES_DIR@/game_of_life_example/'+EXECUTABLE,
+                            str(simulation.simu_id),
+                            ' '.join(str(i) for i in simulation.param_set)))
+
+    simulation.job_id = subprocess.Popen(command.split()).pid
+
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+def check_job(job):
+    state = 0
+    try:
+        subprocess.check_output(["ps",str(job.job_id)])
+        state = 1
+    except:
+        state = 2
+    job.job_status = state
+
+def check_load():
+    time.sleep(1)
+    try:
+        out = str(subprocess.check_output(["pidof",EXECUTABLE])).split()
+    except:
+        return True
+    if len(out) > 3:
+        return False
+    else:
+        time.sleep(2)
+        return True
+
+def kill_job(job):
+    os.system('kill '+str(job.job_id))
+
+STUDY_OPTIONS = {}
+STUDY_OPTIONS['user_name'] = USERNAME
+STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/game_of_life_example/results'
+STUDY_OPTIONS['nb_parameters'] = 5                  # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 20                 # initial number of parameter sets
+STUDY_OPTIONS['nb_time_steps'] = 20                 # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['threshold_values'] = 0.7
+STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
+STUDY_OPTIONS['field_names'] = ["GOL"]              # list of field names
+STUDY_OPTIONS['simulation_timeout'] = 40            # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 10           # server checkpoints every 30 seconds
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_ZMQ"  # option for Sobol' simulation groups coupling
+
+MELISSA_STATS = {}
+MELISSA_STATS['mean'] = True
+MELISSA_STATS['variance'] = True
+MELISSA_STATS['skewness'] = False
+MELISSA_STATS['kurtosis'] = False
+MELISSA_STATS['min'] = False
+MELISSA_STATS['max'] = False
+MELISSA_STATS['threshold_exceedance'] = False
+MELISSA_STATS['quantiles'] = False
+MELISSA_STATS['sobol_indices'] = False
+
+USER_FUNCTIONS = {}
+USER_FUNCTIONS['create_study'] = None
+USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
+USER_FUNCTIONS['create_group'] = None
+#if MELISSA_STATS['sobol_indices']:
+#    USER_FUNCTIONS['launch_group'] = launch_group
+#else:
+USER_FUNCTIONS['launch_group'] = launch_simu
+USER_FUNCTIONS['launch_server'] = launch_server
+USER_FUNCTIONS['check_server_job'] = check_job
+USER_FUNCTIONS['check_group_job'] = check_job
+USER_FUNCTIONS['restart_server'] = launch_server
+USER_FUNCTIONS['restart_group'] = None
+USER_FUNCTIONS['check_scheduler_load'] = check_load
+USER_FUNCTIONS['cancel_job'] = kill_job
+USER_FUNCTIONS['postprocessing'] = None
+USER_FUNCTIONS['finalize'] = None
