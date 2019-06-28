@@ -135,8 +135,6 @@ static field_data_t *field_data;
 static char *port_names;
 
 static double total_comm_time;
-static double start_comm_time;
-static double end_comm_time;
 static long int total_bytes_sent;
 
 static field_data_t* get_field_data(field_data_t *data,
@@ -1101,6 +1099,8 @@ void melissa_send (const char   *field_name,
 //    MPI_Status *status;
 
 #ifdef BUILD_WITH_PROBES
+    double start_comm_time;
+    double end_comm_time;
     start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
@@ -1234,8 +1234,11 @@ void melissa_send (const char   *field_name,
         }
     }
     field_data_ptr->timestamp += 1;
+
+#if BUILD_WITH_PROBES
     end_comm_time = melissa_get_time();
     total_comm_time += end_comm_time - start_comm_time;
+#endif
 }
 
 /**
@@ -1353,6 +1356,8 @@ void melissa_finalize (void)
         free(global_data.buffer_data);
     }
 
+#ifdef BUILD_WITH_PROBES
     melissa_print(VERBOSE_INFO, " --- Simulation comm time: %g s\n",total_comm_time);
+#endif
     melissa_print(VERBOSE_INFO, " --- Bytes sent: %ld bytes\n",total_bytes_sent);
 }
