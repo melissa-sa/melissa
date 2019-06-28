@@ -1286,6 +1286,14 @@ void melissa_finalize (void)
     }
 #endif // BUILD_WITH_MPI
 
+    for (field_data_t* field_data_ptr = field_data; field_data_ptr != NULL; field_data_ptr = field_data_ptr->next) {
+        // Check that we got at least one timestamp per initialized field.
+        assert(field_data_ptr->timestamp > 0);
+
+        // Check that we called melissa_send for the same amount for every field
+        assert(field_data_ptr->timestamp == field_data->timestamp);
+    }
+
     if (global_data.rank == 0 && global_data.sobol_rank == 0)
     {
 //        sleep(2);
