@@ -40,6 +40,11 @@
 extern "C" {
 #endif
 
+void melissa_init_mpi (const char *field_name,
+                       const int  vect_size,
+                       MPI_Comm comm,
+                       const int  coupling);
+
 void melissa_init(const char *field_name,
                   const int  local_vect_size,
                   const int  comm_size,
