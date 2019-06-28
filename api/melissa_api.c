@@ -426,10 +426,10 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
  * name of the field to initialize
  *
  * @param[in] local_vect_size
- * sise of the local data vector to send to the library
+ * size of the local data vector to send to the library
  *
  * @param[in] comm_size
- * sise of the MPI communicator comm
+ * size of the MPI communicator comm
  *
  * @param[in] rank
  * MPI rank
@@ -986,10 +986,10 @@ void melissa_init (const char *field_name,
  * name of the field to initialize
  *
  * @param[in] *local_vect_size
- * sise of the local data vector to send to the library
+ * size of the local data vector to send to the library
  *
  * @param[in] *comm_size
- * sise of the MPI communicator comm
+ * size of the MPI communicator comm
  *
  * @param[in] *rank
  * MPI rank
@@ -1037,7 +1037,7 @@ void melissa_init_f (const char *field_name,
  * name of the field to initialize
  *
  * @param[in] *vect_size
- * sise of the data vector to send to the library
+ * size of the data vector to send to the library
  *
  * @param[in] *simu_id
  * ID of the calling simulation
@@ -1067,6 +1067,66 @@ void melissa_init_no_mpi (const char *field_name,
                   simu_id,
                   comm,
                   coupling);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_api
+ *
+ * This function initializes the connection with the Melissa Server for mpi
+ * simulations. It gives an easier interface than calling melissa_init directly
+ * and thus should be used instead if possible.
+ *
+ *******************************************************************************
+ *
+ * @param[in] *field_name
+ * name of the field to initialize
+ *
+ * @param[in] *vect_size
+ * size of the data vector to send to the library
+ *
+ * @param[in] comm
+ * MPI communicator. Each rank in it must call melissa_init_mpi. Later each rank must
+ * send its part of every field to melissa.
+ *
+ * @param[in] *coupling
+ * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
+ *
+ *******************************************************************************/
+
+void melissa_init_mpi (const char *field_name,
+                       const int  vect_size,
+                       MPI_Comm comm,
+                       const int  coupling)
+{
+#ifdef BUILD_WITH_MPI
+    int rank;
+    int comm_size;
+    int simu_id;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &comm_size);
+
+    char* simu_id_a = getenv("MELISSA_SIMU_ID");
+    if (simu_id_a == 0)
+    {
+        printf("Specify the MELISSA_SIMU_ID environment variable as an int in your launch_group command in options.py! (e.g. cmd = 'mpirun -x MELISSA_SIMU_ID=%%d' %% group.simu_id ");
+        exit(1);
+    }
+    simu_id = atoi(simu_id_a);
+
+
+    melissa_init (field_name,
+                  vect_size,
+                  comm_size,
+                  rank,
+                  simu_id,
+                  comm,
+                  coupling);
+#else
+    printf("melissa_init_mpi was called but melissa was compiled without MPI!");
+    exit(1);
+#endif
 }
 
 /**
