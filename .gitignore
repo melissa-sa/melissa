@@ -4,3 +4,4 @@ code_saturn_trunk/.git/*
 *.user
 *.[oa]
 build*/
+__pycache__/
