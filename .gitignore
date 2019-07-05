@@ -5,3 +5,4 @@ code_saturn_trunk/.git/*
 *.[oa]
 build*/
 __pycache__/
+.ipynb_checkpoints/
