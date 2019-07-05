@@ -14,12 +14,10 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+set (SCHED_VERSIONS "local" "Slurm")
 
-set(EXAMPLES_LIBS ${EXTRA_LIBS}
-                  m)
+foreach(sched_version ${SCHED_VERSIONS})
+    add_subdirectory(${sched_version})
+endforeach(sched_version in ${SCHED_VERSIONS})
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat_example)
-add_subdirectory(droplet_example)
-add_subdirectory(fluid_example)
-add_subdirectory(game_of_life_example)
+add_subdirectory(src)

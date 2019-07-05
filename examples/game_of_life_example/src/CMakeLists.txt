@@ -14,12 +14,14 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+install(FILES main.cpp DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver/src)
+install(FILES include/lifeUtils.hpp DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver/src/include)
+configure_file(CMakeLists.txt.in CMakeLists.txt.in @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt.in DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver RENAME CMakeLists.txt)
 
-set(EXAMPLES_LIBS ${EXTRA_LIBS}
-                  m)
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat_example)
-add_subdirectory(droplet_example)
-add_subdirectory(fluid_example)
-add_subdirectory(game_of_life_example)
+if (BUILD_WITH_MPI)
+    add_test(NAME ConfigureGameOfLife COMMAND cmake ${EXAMPLES_DIR}/game_of_life_example/solver WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example/solver)
+    add_test(NAME CompileGameOfLife COMMAND make install WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example/solver)
+    add_test(NAME TestGameOfLife COMMAND melissa_launcher ${EXAMPLES_DIR}/game_of_life_example/study_local WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example)
+endif (BUILD_WITH_MPI)

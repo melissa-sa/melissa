@@ -14,12 +14,6 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+configure_file(options.py.in options.py @ONLY)
 
-set(EXAMPLES_LIBS ${EXTRA_LIBS}
-                  m)
-
-add_subdirectory(heat_example_base)
-add_subdirectory(heat_example)
-add_subdirectory(droplet_example)
-add_subdirectory(fluid_example)
-add_subdirectory(game_of_life_example)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/options.py DESTINATION ${EXAMPLES_DIR}/game_of_life_example/study_local)
