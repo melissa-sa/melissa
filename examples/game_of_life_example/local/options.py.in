@@ -31,7 +31,7 @@ from shutil import copyfile
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = 'ON'.upper()
-EXECUTABLE='game'
+EXECUTABLE='GameOfLife'
 NODES_SERVER = 1
 NODES_GROUP = 2
 NODES_SIMU = NODES_GROUP
@@ -55,12 +55,12 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
 
-    command = ' '.join('mpirun',
+    command = ' '.join(('mpirun',
                         '-n',
                         str(NODES_SERVER),
                         server.path+"/melissa_server",
                         server.cmd_opt,
-                        '&')
+                        '&'))
 
     server.job_id = subprocess.Popen(command.split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
@@ -69,11 +69,11 @@ def launch_simu(simulation):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
         os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
     os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    
+
     command = ' '.join(('mpirun',
                             '-n',
                             str(NODES_GROUP),
-                            '@EXAMPLES_DIR@/game_of_life_example/'+EXECUTABLE,
+                            '@EXAMPLES_DIR@/game_of_life_example/solver/'+EXECUTABLE,
                             str(simulation.simu_id),
                             ' '.join(str(i) for i in simulation.param_set)))
 
