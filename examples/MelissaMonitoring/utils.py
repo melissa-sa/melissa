@@ -1,9 +1,24 @@
 import threading
 from collections import Counter
+import os, sys
+
+from IPython import display
 
 from launcher.study import Study
 
-class MelissaMonitoring(object):
+class HiddenPrints:
+    """Context manager used to suppress prints.
+    Used to reduce visual bloat in Jupyter Notebook.
+    """
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        
+class MelissaMonitoring:
 
     def __init__(self, study_options, melissa_stats, user_functions):
         self.study = Study(study_options, melissa_stats, user_functions)
@@ -52,5 +67,10 @@ class MelissaMonitoring(object):
         sizes = [x/sumOfJobs*100 for x in jobStatusData.values()]
         labels = [x for x in jobStatusData.keys()]
         ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+
+    def cleanUp(self):
+        self.thread.join()
+        display.clear_output(wait=True)
+
 
     
