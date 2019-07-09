@@ -988,6 +988,42 @@ void melissa_init (const char *field_name,
  * @param[in] *local_vect_size
  * size of the local data vector to send to the library
  *
+ * @param[in] *comm_fortran
+ * Fortran MPI communicator
+ *
+ * @param[in] *coupling
+ * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
+ *
+ *******************************************************************************/
+
+void melissa_init_mpi_f (const char *field_name,
+                     int        *local_vect_size,
+                     MPI_Fint   *comm_fortran,
+                     int        *coupling)
+{
+#ifdef BUILD_WITH_MPI
+    MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
+#else // BUILD_WITH_MPI
+    int comm = *comm_fortran;
+#endif // BUILD_WITH_MPI
+    melissa_init_mpi(field_name, *local_vect_size, comm, *coupling);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_api
+ *
+ * Fortran wrapper for melissa_init (convert MPI communicator)
+ *
+ *******************************************************************************
+ *
+ * @param[in] *field_name
+ * name of the field to initialize
+ *
+ * @param[in] *local_vect_size
+ * size of the local data vector to send to the library
+ *
  * @param[in] *comm_size
  * size of the MPI communicator comm
  *
