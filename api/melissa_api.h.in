@@ -53,6 +53,11 @@ void melissa_init(const char *field_name,
                   MPI_Comm   comm,
                   const int  coupling);
 
+void melissa_init_mpi_f(const char *field_name,
+                    int        *local_vect_size,
+                    MPI_Fint   *comm_fortran,
+                    int        *coupling);
+
 void melissa_init_f(const char *field_name,
                     int        *local_vect_size,
                     int        *comm_size,
