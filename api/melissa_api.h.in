@@ -27,7 +27,6 @@
 #ifndef MELISSA_API_H
 #define MELISSA_API_H
 
-#include "zmq.h"
 #include <mpi.h>
 
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
@@ -36,7 +35,7 @@
 #define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
 #define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
 
-#ifdef __cplusplus
+#if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -71,7 +70,7 @@ void melissa_send(const char   *field_name,
 
 void melissa_finalize(void);
 
-#ifdef __cplusplus
+#if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
 
