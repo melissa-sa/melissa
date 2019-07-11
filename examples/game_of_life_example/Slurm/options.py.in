@@ -29,7 +29,7 @@ from string import Template
 from shutil import copyfile
 
 imp.load_source('BaseOptions','@EXAMPLES_DIR@/game_of_life_example/BaseOptions.py')
-import BaseOptions
+import examples.game_of_life_example.BaseOptions as BaseOptions
 
 # Standard options
 USERNAME = BaseOptions.USERNAME

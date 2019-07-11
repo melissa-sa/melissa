@@ -14,6 +14,10 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+configure_file(BaseOptions.py.in BaseOptions.py @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BaseOptions.py DESTINATION ${EXAMPLES_DIR}/game_of_life_example)
+
 set (SCHED_VERSIONS "local" "Slurm")
 
 foreach(sched_version ${SCHED_VERSIONS})
