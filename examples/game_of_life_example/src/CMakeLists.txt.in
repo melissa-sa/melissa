@@ -1,0 +1,55 @@
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+if (POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif (POLICY CMP0048)
+
+project (GameOfLife LANGUAGES CXX)
+
+cmake_minimum_required(VERSION 3.2.2)
+
+include(CTest)
+
+set(Melissa_DIR @CMAKE_INSTALL_PREFIX@/share/cmake/Melissa)
+find_package(ZeroMQ NO_MODULE REQUIRED)
+find_package(Melissa CONFIG REQUIRED)
+include_directories( ${ZeroMQ_INCLUDE_DIR} )
+include_directories( ${Melissa_INCLUDE_DIR} )
+message(STATUS "include ${Melissa_INCLUDE_DIR}")
+message(STATUS "libraries ${Melissa_LIBRARY}")
+
+include_directories(@ZeroMQ_INCLUDE_DIR@)
+include_directories(src/include)
+
+set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix." FORCE)
+
+find_package(MPI REQUIRED)
+set(MPI_LIBS ${MPI_LIBS}
+  ${MPI_LIBRARIES})
+add_definitions( -DBUILD_WITH_MPI )
+include_directories( ${MPI_INCLUDE_PATH} )
+set(MPI_LIBS ${MPI_LIBS})
+message(STATUS "MPI Found")
+
+# TODO: not needed?:
+#find_package(PythonInterp REQUIRED)
+
+add_executable(GameOfLife src/main.cpp)
+target_link_libraries(GameOfLife ${Melissa_LIBRARY} ${MPI_LIBS})
+install(TARGETS GameOfLife RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+add_test(TestGameOfLife melissa_launcher ${CMAKE_SOURCE_DIR}/../study_local)

@@ -1,0 +1,43 @@
+import getpass
+
+USERNAME = getpass.getuser()
+BUILD_WITH_MPI = 'ON'.upper()
+EXECUTABLE='GameOfLife'
+
+# !! THESE CONSTANTS WILL BE OVERWRITTEN !!
+# It has to be that way because we export "draw_param" function which rely on these constants
+NUMBER_OF_ROWS = None
+NUMBER_OF_COLUMNS = None
+
+STUDY_OPTIONS = {}
+STUDY_OPTIONS['user_name'] = USERNAME
+STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/game_of_life_example/results'
+STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 20                 # initial number of parameter sets
+STUDY_OPTIONS['threshold_values'] = 0.7
+STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
+STUDY_OPTIONS['field_names'] = ["GOL"]           # list of field names
+STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_ZMQ" # option for Sobol' simulation groups coupling
+
+MELISSA_STATS = {}
+MELISSA_STATS['mean'] = True
+MELISSA_STATS['variance'] = True
+MELISSA_STATS['skewness'] = False
+MELISSA_STATS['kurtosis'] = False
+MELISSA_STATS['min'] = False
+MELISSA_STATS['max'] = False
+MELISSA_STATS['threshold_exceedance'] = False
+MELISSA_STATS['quantiles'] = False
+MELISSA_STATS['sobol_indices'] = False
+
+def draw_param_set():
+    """
+    Game of Life isn't a standard binary to be run with melissa.
+    It randomize the starting board internaly and only arguments that it takes are:
+    ! [simulationID] [numberOfRows] [numberOfColumns] [numberOfTimesteps]
+    Simulation ID is given and rows, columns and timesteps have to be the same in every simulation.
+    Because of this, you cannot randomize the parameters and Game of Life isn't typical problem to be run with melissa.
+    """
+    return [NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, STUDY_OPTIONS['nb_time_steps']]

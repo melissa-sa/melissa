@@ -62,7 +62,7 @@ void get_node_name (char *node_name)
     getifaddrs (&ifap);
     for (ifa = ifap; ifa; ifa = ifa->ifa_next)
     {
-        if (ifa->ifa_addr->sa_family==AF_INET)
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET)
         {
             sa = (struct sockaddr_in *) ifa->ifa_addr;
             addr = inet_ntoa(sa->sin_addr);

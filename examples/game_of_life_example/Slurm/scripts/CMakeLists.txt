@@ -14,12 +14,21 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-
-set(EXAMPLES_LIBS ${EXTRA_LIBS}
-                  m)
-
-add_subdirectory(heat_example_base)
-add_subdirectory(heat_example)
-add_subdirectory(droplet_example)
-add_subdirectory(fluid_example)
-add_subdirectory(game_of_life_example)
+install(FILES run_server.sh
+    DESTINATION ${EXAMPLES_DIR}/game_of_life_example/study_Slurm/scripts
+    PERMISSIONS OWNER_WRITE
+                OWNER_READ
+                OWNER_EXECUTE
+                GROUP_READ
+                GROUP_EXECUTE
+                WORLD_READ
+                WORLD_EXECUTE)
+install(FILES run_simu.sh
+    DESTINATION ${EXAMPLES_DIR}/game_of_life_example/study_Slurm/scripts
+    PERMISSIONS OWNER_WRITE
+                OWNER_READ
+                OWNER_EXECUTE
+                GROUP_READ
+                GROUP_EXECUTE
+                WORLD_READ
+                WORLD_EXECUTE)

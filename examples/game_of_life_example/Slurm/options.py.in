@@ -1,0 +1,178 @@
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+
+"""
+    User defined options module
+"""
+import os
+import time
+import numpy as np
+import subprocess
+import getpass
+import imp
+import logging
+from string import Template
+from shutil import copyfile
+
+imp.load_source('BaseOptions','@EXAMPLES_DIR@/game_of_life_example/BaseOptions.py')
+import examples.game_of_life_example.BaseOptions as BaseOptions
+
+# Standard options
+USERNAME = BaseOptions.USERNAME
+BUILD_WITH_MPI = BaseOptions.BUILD_WITH_MPI
+EXECUTABLE= BaseOptions.EXECUTABLE
+NODES_SERVER = 2
+NODES_GROUP = 10
+WALLTIME_SERVER = "00:10:00"
+WALLTIME_SIMU = "0:05:00"
+NODES_SIMU = NODES_GROUP
+PROC_PER_NODE = 1
+BaseOptions.NUMBER_OF_ROWS = 100
+BaseOptions.NUMBER_OF_COLUMNS = 100
+
+# Study options
+STUDY_OPTIONS = BaseOptions.STUDY_OPTIONS
+STUDY_OPTIONS['nb_time_steps'] = 100
+
+# Melissa options
+MELISSA_STATS = BaseOptions.MELISSA_STATS
+
+
+def launch_server(server):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+    server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
+
+    content = ""
+    file=open("@EXAMPLES_DIR@/game_of_life_example/scripts/run_server.sh", "r")
+    content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
+                                               NODES_SERVER=str(NODES_SERVER),
+                                               PROC_PER_NODE=str(PROC_PER_NODE),
+                                               SERVER_CMD=str(server_cmd),
+                                               SLURM_JOB_ID="${SLURM_JOB_ID}")
+    file.close()
+    file=open("run_server.sh", "w")
+    file.write(content)
+    file.close()
+    os.system("chmod 744 run_server.sh")
+
+    proc = subprocess.Popen('sbatch "./run_server.sh"',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+    # get the job ID
+    (out, err) = proc.communicate()
+    if len(out.split()) > 0:
+        server.job_id = out.split()[-1]
+    else:
+        print(err)
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+def launch_simu(simulation):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+
+    command = ' '.join(('mpirun',
+                            '-n',
+                            str(NODES_GROUP),
+                            '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/game_of_life_example/'+EXECUTABLE,
+                            str(simulation.simu_id),
+                            ' '.join(str(i) for i in simulation.param_set)))
+
+
+    content = ""
+    file=open("@EXAMPLES_DIR@/examples/game_of_life_example/scripts/run_simu.sh", "r")
+    content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
+                                               NODES_SIMU=str(NODES_SIMU),
+                                               PROC_PER_NODE=str(PROC_PER_NODE),
+                                               SIMU_ID=str(simulation.rank),
+                                               SIMU_CMD=str(command),
+                                               SERVER_NODE_NAME=simulation.server_node_name,
+                                               HOSTNAME=str("$(hostname)"))
+    file.close()
+    file=open("run_simu.sh", "w")
+    file.write(content)
+    file.close()
+    os.system("chmod 744 run_simu.sh")
+
+    proc = subprocess.Popen('sbatch '+STUDY_OPTIONS['working_directory']+'/simu'+str(simulation.rank)+'/run_simu.sh',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+    # get the job ID
+    (out, err) = proc.communicate()
+    if len(out.split()) > 0:
+        simulation.job_id = out.split()[-1]
+    else:
+        print(err)
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+def check_job(job):
+    state = 0
+    proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    if (not "PENDING" in out):
+        state = 1
+        proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        (out, err) = proc.communicate()
+        if (not "RUNNING" in out):
+            state = 2
+    job.job_status = state
+
+def check_load():
+    proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            shell=True,
+                            universal_newlines=True)
+    (out, err) = proc.communicate()
+    running_jobs = int(out)
+    return running_jobs < 5
+
+def kill_job(job):
+    print('killing job ...')
+    os.system("scancel "+str(job.job_id))
+
+
+USER_FUNCTIONS = {}
+USER_FUNCTIONS['create_study'] = None
+USER_FUNCTIONS['draw_parameter_set'] = BaseOptions.draw_param_set
+USER_FUNCTIONS['create_group'] = None
+USER_FUNCTIONS['launch_group'] = launch_simu
+USER_FUNCTIONS['launch_server'] = launch_server
+USER_FUNCTIONS['check_server_job'] = check_job
+USER_FUNCTIONS['check_group_job'] = check_job
+USER_FUNCTIONS['restart_server'] = launch_server
+USER_FUNCTIONS['restart_group'] = None
+USER_FUNCTIONS['check_scheduler_load'] = check_load
+USER_FUNCTIONS['cancel_job'] = kill_job
+USER_FUNCTIONS['postprocessing'] = None
+USER_FUNCTIONS['finalize'] = None
