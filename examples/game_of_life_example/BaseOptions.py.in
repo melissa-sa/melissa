@@ -40,4 +40,4 @@ def draw_param_set():
     Simulation ID is given and rows, columns and timesteps have to be the same in every simulation.
     Because of this, you cannot randomize the parameters and Game of Life isn't typical problem to be run with melissa.
     """
-    return [NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, STUDY_OPTIONS['nb_time_steps']]
+    return [NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, STUDY_OPTIONS['nb_timesteps']]

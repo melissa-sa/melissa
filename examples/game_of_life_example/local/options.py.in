@@ -28,7 +28,7 @@ import logging
 from string import Template
 from shutil import copyfile
 
-imp.load_source('BaseOptions','@EXAMPLES_DIR@/game_of_life_example/BaseOptions.py')
+#imp.load_source('BaseOptions','@EXAMPLES_DIR@/game_of_life_example/BaseOptions.py')
 import examples.game_of_life_example.BaseOptions as BaseOptions
 
 # Standard options
@@ -43,7 +43,7 @@ BaseOptions.NUMBER_OF_COLUMNS = 20
 
 # Study options
 STUDY_OPTIONS = BaseOptions.STUDY_OPTIONS
-STUDY_OPTIONS['nb_time_steps'] = 20
+STUDY_OPTIONS['nb_timesteps'] = 20
 
 #Melissa options
 MELISSA_STATS = BaseOptions.MELISSA_STATS
@@ -69,14 +69,16 @@ def launch_simu(simulation):
         os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
     os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
 
-    command = ' '.join(('mpirun',
-                            '-n',
-                            str(NODES_GROUP),
-                            '@EXAMPLES_DIR@/game_of_life_example/solver/'+EXECUTABLE,
-                            str(simulation.simu_id),
-                            ' '.join(str(i) for i in simulation.param_set)))
+    command = 'mpirun '
+    for i, simu_id in enumerate(simulation.simu_id):
+        command += ' '.join(('-n',
+                             str(NODES_GROUP),
+                             '@EXAMPLES_DIR@/game_of_life_example/solver/'+EXECUTABLE,
+                             str(simu_id),
+                            ' '.join(str(j) for j in simulation.param_set[i]),
+                            ': '))
 
-    simulation.job_id = subprocess.Popen(command.split()).pid
+    simulation.job_id = subprocess.Popen(command[:-2].split()).pid
 
     os.chdir(STUDY_OPTIONS['working_directory'])
 

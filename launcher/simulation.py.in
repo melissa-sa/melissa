@@ -24,7 +24,7 @@ import os
 import time
 import subprocess
 import logging
-import openturns as ot
+#import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p
 melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
@@ -219,6 +219,7 @@ class MultiSimuGroup(Group):
         """
             Ends and restarts the simulations (mandatory)
         """
+        crashs_before_redraw = 3
         self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
@@ -230,7 +231,7 @@ class MultiSimuGroup(Group):
                 #logging.info('new parameter set: ' + str(self.param_set[i]))
             #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.rank) +
-                            'crashed 5 times, remove simulation')
+                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             for i in range(self.size):
                 logging.warning('Bad parameter set '+str(i)+': ' + str(self.param_set[i]))
                 melissa_message.send_message(("drop "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
@@ -295,6 +296,7 @@ class SobolGroup(Group):
         """
             Ends and restarts the Sobol group (mandatory)
         """
+        crashs_before_redraw = 3
         self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
@@ -312,7 +314,7 @@ class SobolGroup(Group):
                 #self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.rank) +
-                            'crashed 5 times, remove simulation')
+                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             logging.warning('Bad parameter set A: ' + str(self.param_set[0]))
             logging.warning('Bad parameter set B: ' + str(self.param_set[1]))
             melissa_message.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
