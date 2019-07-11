@@ -6,3 +6,4 @@ code_saturn_trunk/.git/*
 build*/
 __pycache__/
 .ipynb_checkpoints/
+*.log
