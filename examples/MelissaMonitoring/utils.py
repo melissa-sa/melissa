@@ -42,7 +42,7 @@ class MelissaMonitoring:
             Bool -- Is study still running?
         """
 
-        return self.study.state_checker.running_study
+        return self.study.threads['state_checker'].running_study
 
     def getJobStatusData(self):
         """Get dictionary with current number of jobs with particular job status
