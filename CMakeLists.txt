@@ -84,15 +84,15 @@ message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} f
 #    message(ERROR "Melissa needs Python 3")
 #endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
 find_python_module(numpy REQUIRED)
-find_python_module(openturns REQUIRED)
+#find_python_module(openturns REQUIRED)
 
 # OpenTURNS #
 
-find_package(OpenTURNS REQUIRED)
-message(STATUS "OpenTURNS includes: " ${OPENTURNS_INCLUDE_DIR})
-include_directories(${OPENTURNS_INCLUDE_DIR} ${OPENTURNS_INCLUDE_DIRS})
-add_definitions(${OPENTURNS_DEFINITIONS})
-link_directories(${OPENTURNS_LIBRARY})
+#find_package(OpenTURNS REQUIRED)
+#message(STATUS "OpenTURNS includes: " ${OPENTURNS_INCLUDE_DIR})
+#include_directories(${OPENTURNS_INCLUDE_DIR} ${OPENTURNS_INCLUDE_DIRS})
+#add_definitions(${OPENTURNS_DEFINITIONS})
+#link_directories(${OPENTURNS_LIBRARY})
 
 # BLAS #
 

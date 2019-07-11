@@ -28,13 +28,13 @@ from functions import *
 melissa_study = melissa.Study()
 melissa_study.set_option('username', getpass.getuser())
 melissa_study.set_working_directory(WORKDIR)
-melissa_study.set_param_distribution(distribution)
 melissa_study.set_sampling_size(20)            # initial number of parameter sets
 melissa_study.set_nb_timesteps(100)            # number of timesteps, from Melissa point of view
 melissa_study.set_field_names(["heat1"])       # list of field names
 melissa_study.set_simulation_timeout(400)      # simulations are restarted if no life sign for 400 seconds
 melissa_study.set_checkpoint_interval(300)     # server checkpoints every 300 seconds
 melissa_study.set_verbosity(2)                 # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug info
+melissa_study.set_batch_size(2)
 
 melissa_study.compute_mean()
 melissa_study.compute_threshold_exceedances(0.7)
@@ -48,11 +48,12 @@ melissa_study.simulation.check_job(check_job)
 melissa_study.server.restart(launch_server)
 melissa_study.check_scheduler_load(check_load)
 melissa_study.cancel_job(kill_job)
+melissa_study.set_function("draw_parameter_set", draw_param_set)
 
 print ('username:            ' + str(melissa_study.get_option('username')))
 print ('working_directory:   ' + str(melissa_study.get_working_directory()))
 print ('sampling_size:       ' + str(melissa_study.get_sampling_size()))
-print ('nb_time_steps:       ' + str(melissa_study.get_nb_timesteps()))
+print ('nb_timesteps:        ' + str(melissa_study.get_nb_timesteps()))
 print ('field_names:         ' + str(melissa_study.get_field_names()))
 print ('simulation_timeout:  ' + str(melissa_study.get_simulation_timeout()))
 print ('checkpoint_interval: ' + str(melissa_study.get_checkpoint_interval()))

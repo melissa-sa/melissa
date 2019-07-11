@@ -22,6 +22,7 @@
  *
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +31,7 @@
 #include <math.h>
 #include <zmq.h>
 #include <mpi.h>
-#include <openturns/Study.hxx>
+//#include <openturns/Study.hxx>
 
 extern "C" {
 #include "server.h"

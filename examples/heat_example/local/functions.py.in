@@ -14,7 +14,6 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-import openturns as ot
 import os
 import socket
 import time
@@ -159,9 +158,8 @@ def check_load():
 def kill_job(job):
     os.system('kill '+str(job.job_id))
 
-param0 = ot.Uniform(0.0, 1.0)
-param1 = ot.Uniform(0.0, 1.0)
-param2 = ot.Uniform(0.0, 1.0)
-param3 = ot.Uniform(0.0, 1.0)
-param4 = ot.Uniform(0.0, 1.0)
-distribution = ot.RandomVector(ot.ComposedDistribution([param0, param1, param2, param3, param4]))
+def draw_param_set():
+    param_set = np.zeros(5)
+    for i in range(5):
+        param_set[i] = np.random.uniform(0, 1)
+    return param_set
