@@ -286,8 +286,8 @@ void melissa_free (void *ptr)
  *
  *******************************************************************************/
 
-void melissa_bind (void *socket,
-                   char *port_name)
+void melissa_bind (void       *socket,
+                   const char *port_name)
 {
     int ret;
     ret = zmq_bind (socket, port_name);

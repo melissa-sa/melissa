@@ -22,6 +22,7 @@
  *
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +30,10 @@
 #include <errno.h>
 #include <math.h>
 #include <zmq.h>
+#include <mpi.h>
+//#include <openturns/Study.hxx>
+
+extern "C" {
 #include "server.h"
 #include "melissa_io.h"
 #include "compute_stats.h"
@@ -36,6 +41,7 @@
 #include "melissa_data.h"
 #include "melissa_utils.h"
 #include "fault_tolerance.h"
+}
 
 static volatile int end_signal = 0;
 
@@ -66,11 +72,12 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 //#endif // MELISSA4PY
     int                   i;
     melissa_simulation_t *simu_ptr;
-    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME];
+    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50];
+//    OT::Study             OTStudy;
 
-   *server_handle = melissa_malloc (sizeof(melissa_server_t));
+    *server_handle = melissa_malloc (sizeof(melissa_server_t));
 
-    server_ptr = *server_handle;
+    server_ptr = (melissa_server_t*)*server_handle;
 
     // === init variables === //
 
@@ -110,6 +117,8 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     server_ptr->text_puller = zmq_socket (server_ptr->context, ZMQ_SUB);
     server_ptr->text_pusher = zmq_socket (server_ptr->context, ZMQ_PUSH);
     server_ptr->text_requester = zmq_socket (server_ptr->context, ZMQ_REQ);
+
+//    OTStudy.hasObject("toto");
 
 #ifdef BUILD_WITH_MPI
 
@@ -153,7 +162,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         melissa_print_options (&server_ptr->melissa_options);
 //        melissa_write_options (&melissa_options);
 
-        server_ptr->port_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * server_ptr->comm_data.comm_size);
+        server_ptr->port_names = (char*)melissa_malloc (MPI_MAX_PROCESSOR_NAME * server_ptr->comm_data.comm_size);
     }
 
     // === load the output library === //
@@ -162,7 +171,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 //    melissa_get_output_lib (melissa_output_lib, melissa_output_func);
 //#endif // MELISSA4PY
 
-    server_ptr->fields = melissa_malloc (server_ptr->melissa_options.nb_fields * sizeof(melissa_field_t));
+    server_ptr->fields = (melissa_field_t*)melissa_malloc (server_ptr->melissa_options.nb_fields * sizeof(melissa_field_t));
     melissa_get_fields (argc, argv, server_ptr->fields, server_ptr->melissa_options.nb_fields);
 
     // === Open data puller port === //
@@ -253,7 +262,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         read_simu_states(&server_ptr->simulations, &server_ptr->melissa_options, &server_ptr->comm_data);
         for (i=0; i<server_ptr->simulations.size; i++)
         {
-            simu_ptr = server_ptr->simulations.items[i];
+            simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[i];
             if (simu_ptr->status == 2)
             {
                 server_ptr->nb_finished_simulations += 1;
@@ -261,7 +270,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         }
         for (i=0; i<server_ptr->simulations.size; i++)
         {
-            simu_ptr = server_ptr->simulations.items[i];
+            simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[i];
             if (simu_ptr->status == 1)
             {
                 simu_ptr->status = 0;
@@ -271,7 +280,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         {
             for (i=0; i<server_ptr->simulations.size; i++)
             {
-                simu_ptr = server_ptr->simulations.items[i];
+                simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[i];
                 melissa_print (VERBOSE_DEBUG, "Simu_state %d %d\n", i, simu_ptr->status);
                 sprintf (txt_buffer, "simu_state %d %d", i, simu_ptr->status);
                 zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
@@ -303,7 +312,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
     char                 *field_name_ptr = NULL;
     melissa_data_t       *data_ptr = NULL;
 
-    server_ptr = *server_handle;
+    server_ptr = (melissa_server_t*)*server_handle;
 
     simu_data->first_init = 0;
     simu_data->status = 0;
@@ -423,7 +432,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 memcpy(server_ptr->rinit_tab, zmq_msg_data (&msg), 2 * sizeof(int));
                 zmq_msg_close (&msg);
                 zmq_msg_init_size (&msg, 5 * sizeof(int) + server_ptr->comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char));
-                buf_ptr = zmq_msg_data (&msg);
+                buf_ptr = (char*)zmq_msg_data (&msg);
                 memcpy (buf_ptr, &server_ptr->comm_data.comm_size, sizeof(int));
                 buf_ptr += sizeof(int);
                 memcpy (buf_ptr, &server_ptr->melissa_options.sobol_op, sizeof(int));
@@ -457,18 +466,18 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             {
                 server_ptr->comm_data.client_comm_size = 1;
             }
-            server_ptr->first_send = melissa_calloc(server_ptr->melissa_options.nb_fields*server_ptr->comm_data.client_comm_size, sizeof(int));
+            server_ptr->first_send = (int*)melissa_calloc(server_ptr->melissa_options.nb_fields*server_ptr->comm_data.client_comm_size, sizeof(int));
             for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
             {
-                server_ptr->fields[i].client_vect_sizes = melissa_calloc (server_ptr->comm_data.client_comm_size, sizeof(int));
+                server_ptr->fields[i].client_vect_sizes = (int*)melissa_calloc (server_ptr->comm_data.client_comm_size, sizeof(int));
             }
             if (server_ptr->melissa_options.sobol_op == 1)
             {
-                server_ptr->buff_tab_ptr = melissa_malloc ((server_ptr->melissa_options.nb_parameters + 2) * sizeof(double*));
+                server_ptr->buff_tab_ptr = (double**)melissa_malloc ((server_ptr->melissa_options.nb_parameters + 2) * sizeof(double*));
             }
             else
             {
-                server_ptr->buff_tab_ptr = melissa_malloc (sizeof(double*));
+                server_ptr->buff_tab_ptr = (double**)melissa_malloc (sizeof(double*));
             }
             server_ptr->local_nb_messages = 0;
             add_fields(server_ptr->fields,
@@ -481,7 +490,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             simu_data->val_size = 0;
             simu_data->max_val_size = 0;
             simu_data->nb_param = server_ptr->melissa_options.nb_parameters;
-            simu_data->parameters = melissa_malloc(server_ptr->melissa_options.nb_parameters * sizeof(double));
+            simu_data->parameters = (double*)melissa_malloc(server_ptr->melissa_options.nb_parameters * sizeof(double));
 //            return;
         }
 
@@ -492,7 +501,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             server_ptr->start_comm_time = melissa_get_time();
             zmq_msg_init (&msg);
             zmq_msg_recv (&msg, server_ptr->data_puller, 0);
-            buf_ptr = zmq_msg_data (&msg);
+            buf_ptr = (char*)zmq_msg_data (&msg);
             server_ptr->end_comm_time = melissa_get_time();
             server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
 
@@ -511,7 +520,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             if (recv_vect_size > simu_data->max_val_size && recv_vect_size > 0)
             {
                 melissa_print (VERBOSE_DEBUG, "realloc, new size: %d\n", recv_vect_size);
-                simu_data->val = melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
+                simu_data->val = (double*)melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
                 simu_data->max_val_size = recv_vect_size;
             }
             simu_data->val_size = recv_vect_size;
@@ -581,7 +590,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 melissa_init_data (&data_ptr[client_rank], &server_ptr->melissa_options, recv_vect_size);
                 server_ptr->last_checkpoint_time = melissa_get_time();
             }
-            simu_ptr = server_ptr->simulations.items[simu_data->simu_id];
+            simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[simu_data->simu_id];
 
             if (simu_ptr->parameters == NULL && server_ptr->melissa_options.learning == 1 && recv_vect_size > 0)
             {
@@ -606,13 +615,13 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 int32_t *item;
                 for (i=data_ptr[client_rank].step_simu.size; i<simu_data->simu_id; i++)
                 {
-                    item = melissa_calloc((data_ptr[client_rank].options->nb_time_steps+31)/32, sizeof(int32_t));
+                    item = (int32_t*)melissa_calloc((data_ptr[client_rank].options->nb_time_steps+31)/32, sizeof(int32_t));
                     vector_add(&data_ptr[client_rank].step_simu, (void*)item);
 
                 }
             }
 
-            if (test_bit (data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp) != 0)
+            if (test_bit ((int32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp) != 0)
             {
                 // Time step already computed, message ignored.
                 melissa_print (VERBOSE_WARNING,  "Allready computed time step (simulation %d, time step %d)\n", simu_data->simu_id, simu_data->time_stamp);
@@ -664,7 +673,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                                                                                             server_ptr->melissa_options.nb_parameters);
                     }
                 }
-                set_bit(data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp);
+                set_bit((int32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp);
             }
             server_ptr->end_computation_time = melissa_get_time();
             server_ptr->total_computation_time += server_ptr->end_computation_time - server_ptr->start_computation_time;
@@ -726,9 +735,16 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
 
-            for (i=0; i<sizeof(server_ptr->buff_tab_ptr)/sizeof(double*); i++)
+            if (server_ptr->melissa_options.sobol_op != 1)
             {
-                server_ptr->buff_tab_ptr[i] = NULL;
+                server_ptr->buff_tab_ptr[0] = NULL;
+            }
+            else
+            {
+                for (i=0; i<server_ptr->melissa_options.nb_parameters+2; i++)
+                {
+                    server_ptr->buff_tab_ptr[i] = NULL;
+                }
             }
             buf_ptr = NULL;
             zmq_msg_close (&msg);
@@ -745,7 +761,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 zmq_msg_close (&msg);
                 melissa_print (VERBOSE_DEBUG, "Group %d ask to disconnect \n", simu_data->simu_id);
                 // simulation wants to disconnect
-                simu_ptr = server_ptr->simulations.items[simu_data->simu_id];
+                simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[simu_data->simu_id];
                 zmq_msg_init_size (&msg, sizeof(int));
                 memcpy (zmq_msg_data (&msg), &simu_ptr->last_time_step, sizeof(int));
                 zmq_msg_send (&msg, server_ptr->deconnexion_responder, 0);
@@ -789,7 +805,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 #ifdef BUILD_WITH_MPI
                 MPI_Finalize ();
 #endif // BUILD_WITH_MPI
-                return 0;
+                return;
             }
             server_ptr->end_save_time = melissa_get_time();
             melissa_print(VERBOSE_DEBUG, "Chekpoint time: %g (proc %d)\n", server_ptr->end_save_time - server_ptr->start_save_time, server_ptr->comm_data.rank);
@@ -833,7 +849,7 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     int               i;
     char              txt_buffer[MPI_MAX_PROCESSOR_NAME];
 
-    server_ptr = *server_handle;
+    server_ptr = (melissa_server_t*)*server_handle;
 
     melissa_free (simu_data->val);
 
@@ -942,7 +958,7 @@ int main (int argc, char **argv)
     simu_data.status = 0;
     simu_data.val_size = 0;
     simu_data.max_val_size = 0;
-    simu_data.val = melissa_malloc(0);
+    simu_data.val = (double*)melissa_malloc(0);
 #ifdef BUILD_WITH_MPI
     int i;
     MPI_Init_thread (&argc, &argv, MPI_THREAD_FUNNELED , &i);

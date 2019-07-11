@@ -23,21 +23,27 @@ file(GLOB
      RELATIVE
      ${CMAKE_CURRENT_SOURCE_DIR}
      *.c
+     *.cxx
      )
 
 add_executable(melissa_server ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
 if (BUILD_WITH_MPI)
-    target_link_libraries(melissa_server ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} melissa_stats melissa_output dl)
+    target_link_libraries(melissa_server ${EXTRA_LIBS}
+                                         ${ZeroMQ_LIBRARY}
+                                         ${OPENTURNS_LIBRARIES}
+                                         melissa_stats
+                                         melissa_output
+                                         dl)
 else (BUILD_WITH_MPI)
-    target_link_libraries(melissa_server ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} melissa_stats_no_mpi melissa_output dl)
+    target_link_libraries(melissa_server ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} ${OPENTURNS_LIBRARIES} melissa_stats_no_mpi melissa_output dl)
 endif (BUILD_WITH_MPI)
 INSTALL(TARGETS melissa_server RUNTIME DESTINATION bin RENAME melissa_server)
 
 add_library(melissa_server4py SHARED ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
 set_target_properties(melissa_server4py PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} VERSION ${PROJECT_VERSION})
 if (BUILD_WITH_MPI)
-    target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} melissa_stats melissa_output dl)
+    target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} ${OPENTURNS_LIBRARIES} melissa_stats melissa_output dl)
 else (BUILD_WITH_MPI)
-    target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} melissa_stats_no_mpi melissa_output dl)
+    target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} ${OPENTURNS_LIBRARIES} melissa_stats_no_mpi melissa_output dl)
 endif (BUILD_WITH_MPI)
 INSTALL(TARGETS melissa_server4py DESTINATION lib)
