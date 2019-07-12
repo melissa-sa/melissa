@@ -51,7 +51,7 @@
      & VECT_SIZE,
      & SIMU_ID,
      & COUPLING)
-     & BIND(C, NAME = 'melissa_init_no_mpi')
+     & BIND(C, NAME = 'melissa_init_no_mpi_f')
           USE ISO_C_BINDING, ONLY: C_INT, C_CHAR
           CHARACTER(KIND=C_CHAR),DIMENSION(*) :: FIELD_NAME
           INTEGER(KIND=C_INT) :: VECT_SIZE
