@@ -48,7 +48,7 @@ end subroutine melissa_init
 subroutine melissa_init_no_mpi(field_name,&
                                vect_size,&
                                simu_id,&
-                               coupling) bind(c, name = 'melissa_init_no_mpi')
+                               coupling) bind(c, name = 'melissa_init_no_mpi_f')
     use ISO_C_BINDING, only: C_INT, C_CHAR
     character(kind=C_CHAR),dimension(*) :: field_name
     integer(kind=C_INT) :: vect_size
