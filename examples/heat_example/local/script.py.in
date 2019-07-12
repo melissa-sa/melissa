@@ -23,6 +23,7 @@ import getpass
 import imp
 imp.load_source("melissa", "@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/melissa.py")
 import melissa
+imp.load_source("functions", "@EXAMPLES_DIR@/heat_example/study_local/functions.py")
 from functions import *
 
 melissa_study = melissa.Study()
