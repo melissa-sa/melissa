@@ -128,8 +128,7 @@ int check_simu_state(melissa_field_t *field,
 
 
 void process_txt_message (char              msg[255],
-                          melissa_server_t *server_ptr,
-                          int               nb_param);
+                          melissa_server_t *server_ptr);
 
 int check_last_timestep(melissa_field_t *fields,
                         int              nb_fields,
