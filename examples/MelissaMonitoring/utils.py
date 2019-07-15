@@ -43,6 +43,9 @@ class MelissaMonitoring:
             Bool -- Is study still running?
         """
 
+        while self.study.threads.get('state_checker', None) is None:
+            pass
+        
         return self.study.threads['state_checker'].running_study
 
     def getJobStatusData(self):
