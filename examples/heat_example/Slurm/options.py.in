@@ -118,7 +118,7 @@ def launch_simu(simulation):
     file.close()
     os.system("chmod 744 run_simu.sh")
 
-    proc = subprocess.Popen('ccc_msub -r Simu'+str(simulation.rank)+' "./run_group.sh"',
+    proc = subprocess.Popen('sbatch -J Simu'+str(simulation.rank)+' "./run_simu.sh"',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
