@@ -151,8 +151,7 @@ int check_simu_state(melissa_field_t *fields,
  *******************************************************************************/
 
 void process_txt_message (char      msg[255],
-                          melissa_server_t *server_ptr,
-                          int       nb_param)
+                          melissa_server_t *server_ptr)
 {
     vector_t *simulations;
 
@@ -180,7 +179,7 @@ void process_txt_message (char      msg[255],
         simu_ptr->job_status = 0;
         if (simu_ptr->parameters == NULL)
         {
-            simu_ptr->parameters = melissa_malloc (nb_param * sizeof(double));
+            simu_ptr->parameters = melissa_malloc (server_ptr->melissa_options.nb_parameters * sizeof(double));
         }
         temp_char = strtok (NULL, s);
         i = 0;

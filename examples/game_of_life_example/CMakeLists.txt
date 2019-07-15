@@ -14,31 +14,14 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-configure_file(melissa_launcher.py.in melissa_launcher.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-        DESTINATION share/melissa/launcher)
+configure_file(BaseOptions.py.in BaseOptions.py @ONLY)
 
-install(FILES options.py
-        DESTINATION share/melissa/launcher)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/BaseOptions.py DESTINATION ${EXAMPLES_DIR}/game_of_life_example)
 
-configure_file(simulation.py.in simulation.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/simulation.py
-        DESTINATION share/melissa/launcher)
+set (SCHED_VERSIONS "local" "Slurm")
 
-configure_file(study.py.in study.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
-        DESTINATION share/melissa/launcher)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
-        DESTINATION share/melissa/launcher
-        RENAME melissa.py)
+foreach(sched_version ${SCHED_VERSIONS})
+    add_subdirectory(${sched_version})
+endforeach(sched_version in ${SCHED_VERSIONS})
 
-install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-        DESTINATION bin
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE
-        RENAME melissa_launcher)
+add_subdirectory(src)

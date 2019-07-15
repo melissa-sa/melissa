@@ -14,31 +14,14 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-configure_file(melissa_launcher.py.in melissa_launcher.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-        DESTINATION share/melissa/launcher)
+install(FILES main.cpp DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver/src)
+install(FILES include/lifeUtils.hpp DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver/src/include)
+configure_file(CMakeLists.txt.in CMakeLists.txt.in @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt.in DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver RENAME CMakeLists.txt)
 
-install(FILES options.py
-        DESTINATION share/melissa/launcher)
 
-configure_file(simulation.py.in simulation.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/simulation.py
-        DESTINATION share/melissa/launcher)
-
-configure_file(study.py.in study.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
-        DESTINATION share/melissa/launcher)
-install(FILES ${CMAKE_BINARY_DIR}/launcher/study.py
-        DESTINATION share/melissa/launcher
-        RENAME melissa.py)
-
-install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
-        DESTINATION bin
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE
-        RENAME melissa_launcher)
+if (BUILD_WITH_MPI)
+    add_test(NAME ConfigureGameOfLife COMMAND cmake ${EXAMPLES_DIR}/game_of_life_example/solver WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example/solver)
+    add_test(NAME CompileGameOfLife COMMAND make install WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example/solver)
+    add_test(NAME TestGameOfLife COMMAND melissa_launcher ${EXAMPLES_DIR}/game_of_life_example/study_local WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example)
+endif (BUILD_WITH_MPI)

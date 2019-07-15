@@ -24,6 +24,7 @@ import os
 import time
 import subprocess
 import logging
+#import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p
 melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
@@ -50,6 +51,7 @@ class Job(object):
     usr_func = {}
     stdy_opt = {}
     ml_stats = {}
+    nb_param = 0
     def __init__(self):
         """
             Job constructor
@@ -69,9 +71,13 @@ class Job(object):
     def set_ml_stats(ml_stats):
         Job.ml_stats = ml_stats
 
+    def set_nb_param(nb_param):
+        Job.nb_param = nb_param
+
     set_usr_func = staticmethod(set_usr_func)
     set_stdy_opt = staticmethod(set_stdy_opt)
     set_ml_stats = staticmethod(set_ml_stats)
+    set_nb_param = staticmethod(set_nb_param)
 
     def cancel(self):
         """
@@ -84,6 +90,12 @@ class Job(object):
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
 
+    def finalize(self):
+        """
+            Finalize a job (optional)
+        """
+        pass
+
 class Group(Job):
     """
         Group class
@@ -94,12 +106,14 @@ class Group(Job):
             Group constructor
         """
         Job.__init__(self)
+        self.nb_param = Job.nb_param
+        self.size = 0
         self.node_name = ''
         self.server_node_name = ''
         self.nb_restarts = 0
         self.status = NOT_SUBMITTED
         self.lock = RLock()
-        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
+        self.coupling = 0
         self.rank = Group.nb_groups
         Group.nb_groups += 1
 
@@ -136,72 +150,36 @@ class Group(Job):
         """
         if "check_group_job" in Job.usr_func.keys() \
         and Job.usr_func['check_group_job']:
-            Job.usr_func['check_group_job'](self)
+            return Job.usr_func['check_group_job'](self)
+        elif "check_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_job']:
+            return Job.usr_func['check_job'](self)
         else:
             logging.error('Error: no \'check_group_job\''
                           +' function provided')
+            exit()
+
+    def cancel(self):
+        """
+            Cancels a simulation job (mandatory)
+        """
+        if "cancel_group_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_group_job']:
+            return Job.usr_func['cancel_group_job'](self)
+        elif "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
+           return Job.usr_func['cancel_job'](self)
+        else:
+            logging.error('Error: no \'cancel_job\' function provided')
             exit()
 
     def finalize(self):
         """
             Finalize the group (optional)
         """
-
         if "finalize_group" in Job.usr_func.keys():
             if Job.usr_func['finalize_group']:
                 Job.usr_func['finalize_group'](self)
-
-
-class SingleSimuGroup(Group):
-    """
-    Single simulation group class
-    """
-    def __init__(self, param_set):
-        """
-            SingleSimuGroup constructor
-        """
-        Group.__init__(self)
-        self.simu_id = self.rank
-        self.param_set = numpy.copy(param_set)
-        self.coupling = 0
-        self.job_type = 2
-
-    def launch(self):
-        Group.launch(self)
-        message_str = "job "+str(self.rank)+" " +str(self.job_id)
-        param_str = " ".join(str(i) for i in self.param_set)
-        melissa_message.send_message((message_str+" " +param_str).encode())
-
-    def restart(self):
-        """
-            Ends and restarts the simulation (mandatory)
-        """
-        self.cancel()
-        self.nb_restarts += 1
-        crashs_before_redraw = 5
-        crashs_before_redraw = 1
-        if self.nb_restarts >= crashs_before_redraw:
-            logging.warning('Simulation ' + str(self.rank) +
-                                        'crashed %d times, drawing new parameter set' % crashs_before_redraw)
-
-            logging.warning('Bad parameter set: ' + str(self.param_set))
-            melissa_message.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
-            self.job_status = FINISHED
-            self.status = FINISHED
-            return
-
-        if "restart_group" in Job.usr_func.keys() \
-        and Job.usr_func['restart_group']:
-            Job.usr_func['restart_group'](self)
-        else:
-            logging.warning('warning: no \'restart_group\''
-                            +' function provided,'
-                            +' using \'launch_group\' instead')
-            self.launch()
-        self.job_status = PENDING
-        self.status = WAITING
-        melissa_message.send_message(("job "+str(self.rank)+" " +str(self.job_id)).encode())
-
 
 class MultiSimuGroup(Group):
     """
@@ -220,6 +198,11 @@ class MultiSimuGroup(Group):
         self.coupling = 0
         self.job_type = 3
         for i in range(self.size):
+            #if isinstance(param_sets[i], ot.Point):
+                #self.param_set.append(numpy.zeros(self.nb_param))
+                #for j in range(self.nb_param):
+                    #self.param_set[i][j] = float(param_sets[i][j])
+            #else:
             self.param_set.append(numpy.copy(param_sets[i]))
             self.simu_id.append(MultiSimuGroup.nb_simu)
             self.simu_status.append(0)
@@ -236,9 +219,10 @@ class MultiSimuGroup(Group):
         """
             Ends and restarts the simulations (mandatory)
         """
+        crashs_before_redraw = 3
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
+        if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.rank) +
                             #'crashed 5 times, drawing new parameter sets')
             #for i in range(self.size):
@@ -247,7 +231,7 @@ class MultiSimuGroup(Group):
                 #logging.info('new parameter set: ' + str(self.param_set[i]))
             #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.rank) +
-                            'crashed 5 times, remove simulation')
+                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             for i in range(self.size):
                 logging.warning('Bad parameter set '+str(i)+': ' + str(self.param_set[i]))
                 melissa_message.send_message(("drop "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
@@ -281,8 +265,19 @@ class SobolGroup(Group):
         self.param_set = list()
         self.simu_id = list()
         self.job_type = 4
+        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
+        #if isinstance(param_set_a, ot.Point):
+            #self.param_set.append(numpy.zeros(self.nb_param))
+            #for j in range(self.nb_param):
+                #self.param_set[0][j] = float(param_set_a[j])
+        #else:
         self.param_set.append(numpy.copy(param_set_a))
         self.simu_id.append(self.rank*(len(param_set_a)+2))
+        #if isinstance(param_set_b, ot.Point):
+            #self.param_set.append(numpy.zeros(self.nb_param))
+            #for j in range(self.nb_param):
+                #self.param_set[1][j] = float(param_set_b[j])
+        #else:
         self.param_set.append(numpy.copy(param_set_b))
         self.simu_id.append(self.rank*(len(param_set_a)+2)+1)
         for i in range(len(param_set_a)):
@@ -301,9 +296,10 @@ class SobolGroup(Group):
         """
             Ends and restarts the Sobol group (mandatory)
         """
+        crashs_before_redraw = 3
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
+        if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Group ' +
                             #str(self.rank) +
                             #'crashed 5 times, drawing new parameter sets')
@@ -318,7 +314,7 @@ class SobolGroup(Group):
                 #self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.rank) +
-                            'crashed 5 times, remove simulation')
+                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             logging.warning('Bad parameter set A: ' + str(self.param_set[0]))
             logging.warning('Bad parameter set B: ' + str(self.param_set[1]))
             melissa_message.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
@@ -351,8 +347,10 @@ class Server(Job):
             Server constructor
         """
         Job.__init__(self)
+        self.nb_param = 0
         self.status = WAITING
         self.first_job_id = ''
+        self.directory = "./"
 #        self.create_options()
         self.lock = RLock()
         self.path = '@CMAKE_INSTALL_PREFIX@/bin'
@@ -360,6 +358,9 @@ class Server(Job):
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir
+
+    def set_nb_param(self, nb_param):
+        self.nb_param = nb_param
 
     def write_node_name(self):
         os.chdir(self.directory)
@@ -395,9 +396,9 @@ class Server(Job):
         buff = create_string_buffer(256)
         melissa_message.get_node_name(buff)
         self.cmd_opt = ' '.join(('-o', op_str,
-                                 '-p', str(Job.stdy_opt['nb_parameters']),
+                                 '-p', str(self.nb_param),
                                  '-s', str(Job.stdy_opt['sampling_size']),
-                                 '-t', str(Job.stdy_opt['nb_time_steps']),
+                                 '-t', str(Job.stdy_opt['nb_timesteps']),
                                  '-q', quantile_str,
                                  '-e', threshold_str,
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),
@@ -469,6 +470,31 @@ class Server(Job):
         if "check_server_job" in Job.usr_func.keys() \
          and Job.usr_func['check_server_job']:
             Job.usr_func['check_server_job'](self)
+        elif "check_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_job']:
+            Job.usr_func['check_job'](self)
         else:
             logging.error('Error: no \'check_server_job\' function provided')
             exit()
+
+    def cancel(self):
+        """
+            Cancels a simulation job (mandatory)
+        """
+        if "cancel_server_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_server_job']:
+            return Job.usr_func['cancel_server_job'](self)
+        elif "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
+           return Job.usr_func['cancel_job'](self)
+        else:
+            logging.error('Error: no \'cancel_job\' function provided')
+            exit()
+
+    def finalize(self):
+        """
+            Finalize the group (optional)
+        """
+        if "finalize_server" in Job.usr_func.keys():
+            if Job.usr_func['finalize_server']:
+                Job.usr_func['finalize_server'](self)

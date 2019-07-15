@@ -24,37 +24,43 @@ import numpy as np
 import subprocess
 import getpass
 import imp
-#from matplotlib import pyplot as plt
-#from matplotlib import cm
+import logging
 from string import Template
 from shutil import copyfile
 
+imp.load_source('BaseOptions','@EXAMPLES_DIR@/game_of_life_example/BaseOptions.py')
+import examples.game_of_life_example.BaseOptions as BaseOptions
 
-USERNAME = getpass.getuser()
-BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
-EXECUTABLE='heatc'
-NODES_SERVER = 1
-NODES_GROUP = 2
-WALLTIME_SERVER = "0:10:00"
+# Standard options
+USERNAME = BaseOptions.USERNAME
+BUILD_WITH_MPI = BaseOptions.BUILD_WITH_MPI
+EXECUTABLE= BaseOptions.EXECUTABLE
+NODES_SERVER = 2
+NODES_GROUP = 10
+WALLTIME_SERVER = "00:10:00"
 WALLTIME_SIMU = "0:05:00"
 NODES_SIMU = NODES_GROUP
-PROC_PER_NODE = 16
+PROC_PER_NODE = 1
+BaseOptions.NUMBER_OF_ROWS = 100
+BaseOptions.NUMBER_OF_COLUMNS = 100
 
-def draw_param_set():
-    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
-    for i in range(STUDY_OPTIONS['nb_parameters']):
-        param_set[i] = np.random.uniform(0, 1)
-    return param_set
+# Study options
+STUDY_OPTIONS = BaseOptions.STUDY_OPTIONS
+STUDY_OPTIONS['nb_time_steps'] = 100
+
+# Melissa options
+MELISSA_STATS = BaseOptions.MELISSA_STATS
+
 
 def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
-    #create_run_server(server)
+
     server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
 
     content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/study_Slurm/scripts/run_server.sh", "r")
+    file=open("@EXAMPLES_DIR@/game_of_life_example/scripts/run_server.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
                                                NODES_SERVER=str(NODES_SERVER),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
@@ -84,27 +90,17 @@ def launch_simu(simulation):
         os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
     os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
     copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
-    if MELISSA_STATS['sobol_indices']:
-        command = 'mpirun '
-        for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-            command += ' '.join(('-n',
-                                 str(NODES_GROUP),
-                                 '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]), str(simulation.coupling),
-                                 ' '.join(str(j) for j in simulation.param_set[i]),
-                                 ': '))
-        command = command[:-2]
-    else:
-        command = ' '.join(('mpirun',
-                             '-n',
-                             str(NODES_GROUP),
-                             '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/solver/install/bin/'+EXECUTABLE,
-                             str(simulation.simu_id), str(simulation.coupling),
-                             ' '.join(str(i) for i in simulation.param_set)))
-    print(command)
+
+    command = ' '.join(('mpirun',
+                            '-n',
+                            str(NODES_GROUP),
+                            '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/game_of_life_example/'+EXECUTABLE,
+                            str(simulation.simu_id),
+                            ' '.join(str(i) for i in simulation.param_set)))
+
 
     content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/study_Slurm/scripts/run_simu.sh", "r")
+    file=open("@EXAMPLES_DIR@/examples/game_of_life_example/scripts/run_simu.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
                                                NODES_SIMU=str(NODES_SIMU),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
@@ -118,7 +114,7 @@ def launch_simu(simulation):
     file.close()
     os.system("chmod 744 run_simu.sh")
 
-    proc = subprocess.Popen('sbatch -J Simu'+str(simulation.rank)+' "./run_simu.sh"',
+    proc = subprocess.Popen('sbatch '+STUDY_OPTIONS['working_directory']+'/simu'+str(simulation.rank)+'/run_simu.sh',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
@@ -159,43 +155,17 @@ def check_load():
                             universal_newlines=True)
     (out, err) = proc.communicate()
     running_jobs = int(out)
-    return running_jobs < 250
+    return running_jobs < 5
 
 def kill_job(job):
     print('killing job ...')
     os.system("scancel "+str(job.job_id))
 
-STUDY_OPTIONS = {}
-STUDY_OPTIONS['user_name'] = USERNAME
-STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_Slurm/STATS'
-STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
-STUDY_OPTIONS['nb_timesteps'] = 100               # number of timesteps, from Melissa point of view
-STUDY_OPTIONS['threshold_values'] = 0.7
-STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
-STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
-STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
-
-MELISSA_STATS = {}
-MELISSA_STATS['mean'] = True
-MELISSA_STATS['variance'] = True
-MELISSA_STATS['skewness'] = True
-MELISSA_STATS['kurtosis'] = True
-MELISSA_STATS['min'] = True
-MELISSA_STATS['max'] = True
-MELISSA_STATS['threshold_exceedance'] = False
-MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
-USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
+USER_FUNCTIONS['draw_parameter_set'] = BaseOptions.draw_param_set
 USER_FUNCTIONS['create_group'] = None
-#if MELISSA_STATS['sobol_indices']:
-#    USER_FUNCTIONS['launch_group'] = launch_group
-#else:
 USER_FUNCTIONS['launch_group'] = launch_simu
 USER_FUNCTIONS['launch_server'] = launch_server
 USER_FUNCTIONS['check_server_job'] = check_job
