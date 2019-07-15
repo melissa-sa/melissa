@@ -1,6 +1,7 @@
 import threading
 from collections import Counter
 import os, sys
+import subprocess
 
 from IPython import display
 
@@ -42,7 +43,7 @@ class MelissaMonitoring:
             Bool -- Is study still running?
         """
 
-        return self.study.state_checker.running_study
+        return self.study.threads['state_checker'].running_study
 
     def getJobStatusData(self):
         """Get dictionary with current number of jobs with particular job status
@@ -53,6 +54,20 @@ class MelissaMonitoring:
 
         data = dict(Counter(map(lambda x: x.job_status, self.study.groups)))
         return {self.jobStates[statusCode]: value for statusCode, value in data.items()}
+
+    def getCPUCount(self):
+        proc = subprocess.Popen('squeue -o "%i %C %L" -u pogodzinski',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
+
+    def getRemainingWalltime(self):
+        proc = subprocess.Popen('squeue -o "%i %C %L" -u pogodzinski',
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  shell=True,
+                                  universal_newlines=True)
 
     def plotJobStatus(self, ax):
         """Automaticly plot job statuses as pie chart
@@ -69,8 +84,9 @@ class MelissaMonitoring:
         ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
 
     def cleanUp(self):
+        """Clean up after study
+        """
+
         self.thread.join()
         display.clear_output(wait=True)
-
-
     
