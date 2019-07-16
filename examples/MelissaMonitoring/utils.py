@@ -2,6 +2,7 @@ import threading
 from collections import Counter
 import os, sys
 import subprocess
+import time
 
 from IPython import display
 
@@ -24,6 +25,8 @@ class MelissaMonitoring:
     def __init__(self, study_options, melissa_stats, user_functions):
         self.study = Study(study_options, melissa_stats, user_functions)
         self.jobStates = {-1:'Not submitted', 0:'Waiting', 1:'Running', 2:'Finished', 4:'Timeout'}
+        self.thread = None
+        self.state_checker = None
 
     def startStudyInThread(self):
         """Starts study with options from the constructor
@@ -34,6 +37,12 @@ class MelissaMonitoring:
 
         self.thread = threading.Thread(target=self.study.run)
         self.thread.start()
+        # wait for the state checker thread to initialize
+        while self.study.threads.get('state_checker', None) is None:
+            time.sleep(0.001)
+        else:
+            self.state_checker = self.study.threads['state_checker']
+        
         return self.thread
 
     def isStudyRunning(self):
@@ -43,10 +52,7 @@ class MelissaMonitoring:
             Bool -- Is study still running?
         """
 
-        while self.study.threads.get('state_checker', None) is None:
-            pass
-        
-        return self.study.threads['state_checker'].running_study
+        return self.state_checker.running_study
 
     def getJobStatusData(self):
         """Get dictionary with current number of jobs with particular job status
@@ -91,5 +97,7 @@ class MelissaMonitoring:
         """
 
         self.thread.join()
+        self.thread = None
+        self.state_checker = None
         display.clear_output(wait=True)
     
