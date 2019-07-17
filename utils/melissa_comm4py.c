@@ -43,13 +43,23 @@ void init_context();
 void bind_message_rcv(char* port_number);
 void bind_message_resp(char* port_number);
 void bind_message_snd(char* port_number);
-void connect_message_rcv(char* node_name, char* port_number);
-void connect_message_snd(char* node_name, char* port_number);
+void connect_message_rcv(char* node_name,
+                         char* port_number);
+void connect_message_snd(char* node_name,
+                         char* port_number);
 void wait_message(char* msg);
 void get_resp_message(char* msg);
 void send_message(char* msg);
 void send_resp_message(char* msg);
 void send_hello();
+void send_alive();
+void send_job(int     simu_id,
+              char*   job_id,
+              int     nb_param,
+              double *param_set);
+
+void send_drop (int   simu_id,
+                char* job_id);
 void close_message();
 cmessage_t message;
 
@@ -186,6 +196,33 @@ void send_message(char* msg)
 void send_hello()
 {
     send_message_hello(message.message_puller, 0);
+}
+
+void send_alive()
+{
+    send_message_alive(message.message_resp, 0);
+}
+
+void send_job(int     simu_id,
+              char*   job_id,
+              int     nb_param,
+              double* param_set)
+{
+    send_message_job(simu_id,
+                     job_id,
+                     nb_param,
+                     param_set,
+                     message.message_puller,
+                     0);
+}
+
+void send_drop(int   simu_id,
+               char* job_id)
+{
+    send_message_drop(simu_id,
+                     job_id,
+                     message.message_puller,
+                     0);
 }
 
 void send_resp_message(char* msg)

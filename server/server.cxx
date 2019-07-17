@@ -30,7 +30,9 @@
 #include <errno.h>
 #include <math.h>
 #include <zmq.h>
+#ifdef BUILD_WITH_MPI
 #include <mpi.h>
+#endif // BUILD_WITH_MPI
 //#include <openturns/Study.hxx>
 
 extern "C" {

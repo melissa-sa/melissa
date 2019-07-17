@@ -38,6 +38,7 @@ install(FILES ${UTILS_H} DESTINATION include)
 add_library(melissa_messages SHARED melissa_messages.c melissa_messages.h melissa_utils.h $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(melissa_messages PUBLIC ${EXTRA_LIBS} ${ZeroMQ_LIBRARY})
 target_compile_options(melissa_messages BEFORE PUBLIC -fPIC)
+install(TARGETS melissa_messages LIBRARY DESTINATION lib)
 install(FILES melissa_messages.h DESTINATION include)
 
 add_library(melissa_comm4py SHARED melissa_comm4py.c $<TARGET_OBJECTS:melissa_utils> melissa_messages.c melissa_messages.h )

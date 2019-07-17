@@ -26,6 +26,7 @@
 #include "melissa_options.h"
 #include "melissa_data.h"
 #include "melissa_io.h"
+#include "melissa_messages.h"
 #include "server.h"
 
 int create_port_number (comm_data_t *comm_data,
@@ -150,22 +151,22 @@ int check_simu_state(melissa_field_t *fields,
  *
  *******************************************************************************/
 
-void process_launcher_message (char      msg[255],
+void process_launcher_message (char*             msg,
                                melissa_server_t *server_ptr)
 {
-    vector_t *simulations;
-
+    vector_t             *simulations = &server_ptr->simulations;
     melissa_simulation_t *simu_ptr;
-    int                   simu_id, i;
-    const char            s[2] = " ";
-    char                 *temp_char;
+    int                   simu_id, i, id_len;
+    char*                 buff_ptr = msg;
 
-    simulations = &server_ptr->simulations;
-    temp_char = strtok (msg, s);
-    if (0 == strcmp(temp_char, "job"))
+    int message_type = get_message_type(msg);
+    buff_ptr += sizeof(int);
+
+    switch (message_type)
     {
-        temp_char = strtok (NULL, s);
-        simu_id = atoi(temp_char);
+    case JOB:
+        memcpy (&simu_id, buff_ptr, sizeof(int));
+        buff_ptr += sizeof(int);
         if (simu_id > simulations->size)
         {
             for (i=simulations->size; i<simu_id; i++)
@@ -174,29 +175,28 @@ void process_launcher_message (char      msg[255],
             }
         }
         simu_ptr = vector_get (simulations, simu_id);
-        temp_char = strtok (NULL, s);
-        strcpy(simu_ptr->job_id, temp_char);
+        memcpy (&id_len, buff_ptr, sizeof(int));
+        buff_ptr += sizeof(int);
+        strncpy (simu_ptr->job_id, buff_ptr, id_len);
+        buff_ptr += id_len;
         simu_ptr->job_status = 0;
         if (simu_ptr->parameters == NULL)
         {
             simu_ptr->parameters = melissa_malloc (server_ptr->melissa_options.nb_parameters * sizeof(double));
         }
-        temp_char = strtok (NULL, s);
-        i = 0;
-        while( temp_char != NULL )
+        for (i=0; i<server_ptr->melissa_options.nb_parameters; i++)
         {
-            simu_ptr->parameters[i] = atof(temp_char);
-            i++;
-            temp_char = strtok (NULL, s);
+            memcpy (&simu_ptr->parameters[i], buff_ptr, sizeof(double));
+            buff_ptr += sizeof(double);
         }
-    }
-    else if (0 == strcmp(temp_char, "drop"))
-    {
-        temp_char = strtok (NULL, s);
-        simu_id = atoi(temp_char);
+        break;
+    case DROP:
+        memcpy (&simu_id, buff_ptr, sizeof(int));
+        buff_ptr += sizeof(int);
         simu_ptr = vector_get (simulations, simu_id);
-        temp_char = strtok (NULL, s);
-        strcpy(simu_ptr->job_id, temp_char);
+        memcpy (&id_len, buff_ptr, sizeof(int));
+        buff_ptr += sizeof(int);
+        strncpy (simu_ptr->job_id, buff_ptr, id_len);
         simu_ptr->job_status = 1;
         simu_ptr->status = 2;
 
@@ -207,7 +207,13 @@ void process_launcher_message (char      msg[255],
             melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", server_ptr->nb_finished_simulations, server_ptr->simulations.size);
         }
         server_ptr->nb_finished_simulations += 1;
-
+        break;
+    case HELLO:
+        break;
+    case ALIVE:
+        break;
+    default:
+        melissa_print(VERBOSE_WARNING, "Unknown message type: %d\n", message_type);
     }
 }
 

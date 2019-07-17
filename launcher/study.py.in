@@ -28,7 +28,9 @@ import imp
 import numpy as np
 import logging
 import traceback
-from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p
+from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
+c_int_p = POINTER(c_int)
+c_double_p = POINTER(c_double)
 imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
 from simulation import Server
 #from simulation import SingleSimuGroup
@@ -42,6 +44,7 @@ melissa_comm4py.bind_message_rcv.argtypes = [c_char_p]
 melissa_comm4py.bind_message_resp.argtypes = [c_char_p]
 melissa_comm4py.bind_message_snd.argtypes = [c_char_p]
 melissa_comm4py.send_resp_message.argtypes = [c_char_p]
+melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
 
 # Jobs and executions status
 from simulation import NOT_SUBMITTED
@@ -192,14 +195,22 @@ class Responder(Thread):
                     simu = int(message[1])%self.batch_size
                     with groups[group].lock:
                         if groups[group].job_type == 4:
-                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
+                            send_job(groups[group].rank,
+                                     str(groups[group].job_id).encode(),
+                                     len(groups[group].param_set[0]),
+                                     groups[group].param_set[0].ctypes.data_as(POINTER(c_double)))
                         elif groups[group].job_type == 3:
-                            message = "job "+str(groups[group].simu_id[simu])+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
+                            send_job(groups[group].simu_id[simu],
+                                     str(groups[group].job_id).encode(),
+                                     len(groups[group].param_set[0]),
+                                     groups[group].param_set[simu].ctypes.data_as(POINTER(c_double)))
                         elif groups[group].job_type == 2:
-                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set) + "\000"
-                    melissa_comm4py.send_resp_message(message.encode())
+                            send_job(groups[group].rank,
+                                     str(groups[group].job_id).encode(),
+                                     len(groups[group].param_set[0]),
+                                     groups[group].param_set.ctypes.data_as(POINTER(c_double)))
                 if message[0] == 'test_timeout':
-                    melissa_comm4py.send_resp_message("alive".encode())
+                    melissa_comm4py.send_alive()
 
             logging.info('closing responder thread')
         except:
