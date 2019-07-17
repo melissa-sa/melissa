@@ -24,6 +24,7 @@
 #include <ifaddrs.h>
 #include <zmq.h>
 #include "melissa_utils.h"
+#include "melissa_messages.h"
 
 #define PORT_NUMBER 5555
 
@@ -48,6 +49,7 @@ void wait_message(char* msg);
 void get_resp_message(char* msg);
 void send_message(char* msg);
 void send_resp_message(char* msg);
+void send_hello();
 void close_message();
 cmessage_t message;
 
@@ -179,6 +181,11 @@ void send_message(char* msg)
     char text[MELISSA_MESSAGE_LEN];
     sprintf (text, "%s", msg);
     zmq_send (message.message_pusher, text, MELISSA_MESSAGE_LEN-1, 0);
+}
+
+void send_hello()
+{
+    send_message_hello(message.message_puller, 0);
 }
 
 void send_resp_message(char* msg)

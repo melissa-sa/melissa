@@ -406,13 +406,13 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //            zmq_msg_recv (&msg, server_ptr->text_puller, 0);
 //            melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", zmq_msg_data (&msg), server_ptr->comm_data.rank);
 //            server_ptr->last_msg_launcher = melissa_get_time();
-//            process_txt_message(zmq_msg_data (&msg), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
+//            process_launcher_message(zmq_msg_data (&msg), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
 //            server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
 //            zmq_msg_close (&msg);
             zmq_recv (server_ptr->text_puller, text, melissa_get_message_len()-1, 0);
             melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", text, server_ptr->comm_data.rank);
             server_ptr->last_msg_launcher = melissa_get_time();
-            process_txt_message(text, server_ptr);
+            process_launcher_message(text, server_ptr);
             if (server_ptr->melissa_options.sampling_size < server_ptr->simulations.size)
             {
                 server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
@@ -612,16 +612,16 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
             if (simu_data->simu_id >= data_ptr[client_rank].step_simu.size)
             {
-                int32_t *item;
+                uint32_t *item;
                 for (i=data_ptr[client_rank].step_simu.size; i<simu_data->simu_id; i++)
                 {
-                    item = (int32_t*)melissa_calloc((data_ptr[client_rank].options->nb_time_steps+31)/32, sizeof(int32_t));
+                    item = (uint32_t*)melissa_calloc((data_ptr[client_rank].options->nb_time_steps+31)/32, sizeof(uint32_t));
                     vector_add(&data_ptr[client_rank].step_simu, (void*)item);
 
                 }
             }
 
-            if (test_bit ((int32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp) != 0)
+            if (test_bit ((uint32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp) != 0)
             {
                 // Time step already computed, message ignored.
                 melissa_print (VERBOSE_WARNING,  "Allready computed time step (simulation %d, time step %d)\n", simu_data->simu_id, simu_data->time_stamp);
@@ -673,7 +673,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                                                                                             server_ptr->melissa_options.nb_parameters);
                     }
                 }
-                set_bit((int32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp);
+                set_bit((uint32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp);
             }
             server_ptr->end_computation_time = melissa_get_time();
             server_ptr->total_computation_time += server_ptr->end_computation_time - server_ptr->start_computation_time;
@@ -688,11 +688,11 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //                    zmq_msg_recv (server_ptr->text_requester, &msg2, 0);
 //                    printf (" -- > message: %s\n", zmq_msg_data (&msg2));
 //                    server_ptr->last_msg_launcher = melissa_get_time();
-//                    process_txt_message(zmq_msg_data (&msg2), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
+//                    process_launcher_message(zmq_msg_data (&msg2), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
 //                    zmq_msg_close (&msg2);                wait_launcher_msg = 0;
                     zmq_recv (server_ptr->text_requester, text, melissa_get_message_len()-1, 0);
                     server_ptr->last_msg_launcher = melissa_get_time();
-                    process_txt_message(text, server_ptr);
+                    process_launcher_message(text, server_ptr);
                 }
                 memcpy(simu_data->parameters, simu_ptr->parameters, sizeof(double)*server_ptr->melissa_options.nb_parameters);
             }

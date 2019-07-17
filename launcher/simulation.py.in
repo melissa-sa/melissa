@@ -27,8 +27,8 @@ import logging
 #import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p
-melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
-melissa_message.send_message.argtypes = [c_char_p]
+melissa_comm4py = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_comm4py.so')
+melissa_comm4py.send_message.argtypes = [c_char_p]
 
 # Jobs and executions status
 
@@ -213,7 +213,7 @@ class MultiSimuGroup(Group):
         for i in range(self.size):
             message_str = "job "+str(self.simu_id[i])+" " +str(self.job_id)
             param_str = " ".join(str(j) for j in self.param_set[i])
-            melissa_message.send_message((message_str+" " +param_str).encode())
+            melissa_comm4py.send_message((message_str+" " +param_str).encode())
 
     def restart(self):
         """
@@ -234,7 +234,7 @@ class MultiSimuGroup(Group):
                             'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             for i in range(self.size):
                 logging.warning('Bad parameter set '+str(i)+': ' + str(self.param_set[i]))
-                melissa_message.send_message(("drop "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
+                melissa_comm4py.send_message(("drop "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
             self.job_status = FINISHED
             self.status = FINISHED
             return
@@ -250,7 +250,7 @@ class MultiSimuGroup(Group):
         self.job_status = PENDING
         self.status = WAITING
         for i in range(self.size):
-            melissa_message.send_message(("job "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
+            melissa_comm4py.send_message(("job "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
 
 
 class SobolGroup(Group):
@@ -290,7 +290,7 @@ class SobolGroup(Group):
         Group.launch(self)
         message_str = "job "+str(self.rank)+" " +str(self.job_id)
         param_str = " ".join(str(j) for j in self.param_set[0])
-        melissa_message.send_message((message_str+" " +param_str).encode())
+        melissa_comm4py.send_message((message_str+" " +param_str).encode())
 
     def restart(self):
         """
@@ -317,7 +317,7 @@ class SobolGroup(Group):
                             'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             logging.warning('Bad parameter set A: ' + str(self.param_set[0]))
             logging.warning('Bad parameter set B: ' + str(self.param_set[1]))
-            melissa_message.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
+            melissa_comm4py.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
             self.job_status = FINISHED
             self.status = FINISHED
             return
@@ -336,7 +336,7 @@ class SobolGroup(Group):
         self.job_status = PENDING
         self.status = WAITING
         message_str = "job "+str(self.rank)+" " +str(self.job_id)
-        melissa_message.send_message((message_str+" " +param_str).encode())
+        melissa_comm4py.send_message((message_str+" " +param_str).encode())
 
 class Server(Job):
     """
@@ -394,7 +394,7 @@ class Server(Job):
                 logging.error('error bad option: no threshold value given')
                 return
         buff = create_string_buffer(256)
-        melissa_message.get_node_name(buff)
+        melissa_comm4py.get_node_name(buff)
         self.cmd_opt = ' '.join(('-o', op_str,
                                  '-p', str(self.nb_param),
                                  '-s', str(Job.stdy_opt['sampling_size']),

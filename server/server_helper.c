@@ -150,8 +150,8 @@ int check_simu_state(melissa_field_t *fields,
  *
  *******************************************************************************/
 
-void process_txt_message (char      msg[255],
-                          melissa_server_t *server_ptr)
+void process_launcher_message (char      msg[255],
+                               melissa_server_t *server_ptr)
 {
     vector_t *simulations;
 
