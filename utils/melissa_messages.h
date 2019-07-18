@@ -49,18 +49,22 @@ void send_message_job (int     simu_id,
 
 void send_message_drop (int   simu_id,
                         char* job_id,
-                        void *socket,
+                        void* socket,
+                        int   flags);
+
+void send_message_stop (void* socket,
                         int flags);
 
-void send_message_stop (char* buff);
-
-void send_message_timeout (char* buff,
-                           int   simu_id);
+void send_message_timeout (int   simu_id,
+                           void* socket,
+                           int   flags);
 
 void send_message_simu_status (int   simu_id,
                                int   status,
                                void* socket,
                                int   flags);
 
-void send_message_server (char* buff,
-                          char* node_name);
+void send_message_server_name (char* node_name,
+                               int   rank,
+                               void* socket,
+                               int   flags);

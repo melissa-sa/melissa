@@ -65,6 +65,7 @@ class Job(object):
         self.cmd_opt = ''
         self.start_time = 0.0
         self.job_type = 0
+        self.node_name = ['']
 
     def set_usr_func(usr_func):
         Job.usr_func = usr_func
@@ -112,7 +113,6 @@ class Group(Job):
         Job.__init__(self)
         self.nb_param = Job.nb_param
         self.size = 0
-        self.node_name = ''
         self.server_node_name = ''
         self.nb_restarts = 0
         self.status = NOT_SUBMITTED
@@ -377,7 +377,7 @@ class Server(Job):
     def write_node_name(self):
         os.chdir(self.directory)
         fichier=open("server_name.txt", "w")
-        fichier.write(self.node_name)
+        fichier.write(self.node_name[0])
         fichier.close()
         os.system("chmod 744 server_name.txt")
 

@@ -43,6 +43,7 @@ extern "C" {
 #include "melissa_data.h"
 #include "melissa_utils.h"
 #include "fault_tolerance.h"
+#include "melissa_messages.h"
 }
 
 static volatile int end_signal = 0;
@@ -239,10 +240,9 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     // === send node 0 name to launcher === //
 
+    send_message_server_name(server_ptr->node_name, server_ptr->comm_data.rank, server_ptr->text_pusher, 0);
     if (server_ptr->comm_data.rank == 0)
     {
-        sprintf (txt_buffer, "server %s", server_ptr->node_name);
-        zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
         melissa_print (VERBOSE_INFO, "Server node name sent to launcher\n");
     }
 
@@ -284,8 +284,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
             {
                 simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[i];
                 melissa_print (VERBOSE_DEBUG, "Simu_state %d %d\n", i, simu_ptr->status);
-                sprintf (txt_buffer, "simu_state %d %d", i, simu_ptr->status);
-                zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
+                send_message_simu_status(i, simu_ptr->status, server_ptr->text_pusher, 0);
             }
         }
         server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
@@ -724,9 +723,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             // === Send a message to the Python master in case of simulation status update === //  TODO: can't we put all this stuff into functions?  technical debt?
             if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0 && simu_ptr->status == 1)
             {
-                sprintf (txt_buffer, "group_state %d %d", simu_data->simu_id, simu_ptr->status);
-                melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
-                zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
+                send_message_simu_status(simu_data->simu_id, simu_ptr->status, server_ptr->text_pusher, 0);
             }
 
             // === Send a message to the Python master in case of last timestep status update === //
@@ -771,9 +768,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
                 if (simu_ptr->status == 2)
                 {
-                    sprintf (txt_buffer, "group_state %d %d", simu_data->simu_id, simu_ptr->status);
-                    melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
-                    zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
+                    send_message_simu_status(simu_data->simu_id, simu_ptr->status, server_ptr->text_pusher, 0);
                     simu_ptr->status = 3;
                     server_ptr->nb_finished_simulations += 1;
                     melissa_print(VERBOSE_INFO, "Simulation %d finished\n", simu_data->simu_id);
@@ -849,7 +844,6 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     melissa_server_t *server_ptr;
     double            interval1, interval_tot;
     int               i;
-    char              txt_buffer[MPI_MAX_PROCESSOR_NAME];
 
     server_ptr = (melissa_server_t*)*server_handle;
 
@@ -940,8 +934,7 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
 
     if (server_ptr->comm_data.rank == 0 && end_signal == 0)
     {
-        sprintf (txt_buffer, "stop");
-        zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
+        send_message_stop (server_ptr->text_pusher, 0);
     }
     zmq_close (server_ptr->text_pusher);
     zmq_close (server_ptr->text_puller);

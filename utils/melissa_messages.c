@@ -34,13 +34,11 @@ int get_message_type(char* buff)
     return *buff_ptr;
 }
 
-void send_message_hello (void *socket,
+void send_message_hello (void* socket,
                          int   flags)
 {
     zmq_msg_t       msg;
     int* buff_ptr = NULL;
-
-    fprintf(stdout, "send message with tag %d\n", HELLO);
 
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
@@ -69,23 +67,19 @@ void send_message_job (int    simu_id,
 {
     zmq_msg_t        msg;
     char* buff_ptr = NULL;
-    int   temp = JOB;
 
     zmq_msg_init_size (&msg, 3 * sizeof(int) + nb_param * sizeof(double) + strlen(job_id));
     buff_ptr = (char*)zmq_msg_data (&msg);
-    memcpy (buff_ptr, &temp, sizeof(int));
+    *((int*)buff_ptr) = JOB;
     buff_ptr += sizeof(int);
-    memcpy (buff_ptr, &simu_id, sizeof(int));
+    *((int*)buff_ptr) = simu_id;
     buff_ptr += sizeof(int);
-    temp = strlen(job_id);
-    memcpy (buff_ptr, &temp, sizeof(int));
+    *((int*)buff_ptr) = strlen(job_id);
     buff_ptr += sizeof(int);
     memcpy (buff_ptr, job_id, strlen(job_id));
     buff_ptr += strlen(job_id);
     memcpy (buff_ptr, param_set, nb_param * sizeof(double));
-
     zmq_msg_send (&msg, socket, flags);
-
 }
 
 void send_message_drop (int   simu_id,
@@ -107,20 +101,32 @@ void send_message_drop (int   simu_id,
     *((int*)buff_ptr) = strlen(job_id);
     buff_ptr += sizeof(int);
     memcpy (buff_ptr, job_id, strlen(job_id));
-
     zmq_msg_send (&msg, socket, flags);
-
 }
 
-void send_message_stop (char* buff)
+void send_message_stop (void* socket,
+                        int   flags)
 {
-
+    zmq_msg_t msg;
+    int*      buff_ptr = NULL;
+    zmq_msg_init_size (&msg, sizeof(int));
+    buff_ptr = (int*)zmq_msg_data (&msg);
+    *buff_ptr = STOP;
+    zmq_msg_send (&msg, socket, flags);
 }
 
-void send_message_timeout (char* buff,
-                           int   simu_id)
+void send_message_timeout (int   simu_id,
+                           void* socket,
+                           int   flags)
 {
-
+    zmq_msg_t msg;
+    int*      buff_ptr = NULL;
+    zmq_msg_init_size (&msg, sizeof(int));
+    buff_ptr = (int*)zmq_msg_data (&msg);
+    *buff_ptr = TIMEOUT;
+    buff_ptr += sizeof(int);
+    *buff_ptr = simu_id;
+    zmq_msg_send (&msg, socket, flags);
 }
 
 void send_message_simu_status (int   simu_id,
@@ -128,10 +134,10 @@ void send_message_simu_status (int   simu_id,
                                void* socket,
                                int   flags)
 {
-    zmq_msg_t             msg;
-    int* buff_ptr = NULL;
+    zmq_msg_t msg;
+    int*      buff_ptr = NULL;
 
-    zmq_msg_init_size (&msg, 3*sizeof(int));
+    zmq_msg_init_size (&msg, 3 * sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
     *buff_ptr = SIMU_STATUS;
     buff_ptr ++;
@@ -141,9 +147,21 @@ void send_message_simu_status (int   simu_id,
     zmq_msg_send (&msg, socket, flags);
 }
 
-void send_message_server (char* buff,
-                          char* node_name)
+void send_message_server_name (char* node_name,
+                               int   rank,
+                               void* socket,
+                               int   flags)
 {
+    zmq_msg_t msg;
+    char*     buff_ptr = NULL;
 
+    zmq_msg_init_size (&msg, 2 * sizeof(int) + strlen(node_name));
+    buff_ptr = zmq_msg_data (&msg);
+    *((int*)buff_ptr) = SERVER;
+    buff_ptr += sizeof(int);
+    *((int*)buff_ptr) = rank;
+    buff_ptr += sizeof(int);
+    memcpy (buff_ptr, node_name, strlen(node_name));
+    zmq_msg_send (&msg, socket, flags);
 }
 
