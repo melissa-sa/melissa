@@ -43,6 +43,10 @@ class MelissaMonitoring:
         else:
             self.state_checker = self.study.threads['state_checker']
         
+        while not self.state_checker.is_alive():
+            time.sleep(0.001)
+
+
         return self.thread
 
     def isStudyRunning(self):
@@ -52,7 +56,7 @@ class MelissaMonitoring:
             Bool -- Is study still running?
         """
 
-        return self.state_checker.running_study
+        return self.state_checker.running_study if self.state_checker.is_alive() else False
 
     def getJobStatusData(self):
         """Get dictionary with current number of jobs with particular job status
@@ -65,18 +69,34 @@ class MelissaMonitoring:
         return {self.jobStates[statusCode]: value for statusCode, value in data.items()}
 
     def getCPUCount(self):
-        proc = subprocess.Popen('squeue -o "%i %C %L" -u pogodzinski',
+        """Get the number of user's total CPU usage. Slurm specific
+        
+        Returns:
+            int -- number of CPU's in usage
+        """
+        process = subprocess.Popen('squeue -h -o "%C" -u ${USER}',
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+
+        out, _ = process.communicate()
+        return sum([int(x) for x in list(out.splitlines())])
+
+    def getRemainingWalltime(self):
+        """Get the remaining walltime of your jobs. Slurm specific
+        
+        Returns:
+            Dictionary -- Mapped as name_of_the_job -> remaining_walltime
+        """
+        process = subprocess.Popen('squeue -h -o "%j %L" -u ${USER}',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
                                   universal_newlines=True)
 
-    def getRemainingWalltime(self):
-        proc = subprocess.Popen('squeue -o "%i %C %L" -u pogodzinski',
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  shell=True,
-                                  universal_newlines=True)
+        out, _ = process.communicate()
+        return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
     def plotJobStatus(self, ax):
         """Automaticly plot job statuses as pie chart
@@ -100,4 +120,3 @@ class MelissaMonitoring:
         self.thread = None
         self.state_checker = None
         display.clear_output(wait=True)
-    
