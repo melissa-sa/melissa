@@ -1,8 +1,8 @@
 import threading
-from collections import Counter
-import os, sys
-import subprocess
-import time
+from collections import Counter, OrderedDict
+import os, sys, subprocess
+import time, datetime
+import statistics
 
 from IPython import display
 
@@ -25,8 +25,11 @@ class MelissaMonitoring:
     def __init__(self, study_options, melissa_stats, user_functions):
         self.study = Study(study_options, melissa_stats, user_functions)
         self.jobStates = {-1:'Not submitted', 0:'Waiting', 1:'Running', 2:'Finished', 4:'Timeout'}
+        self.timeStart = None
+        self.timeStop = None
         self.thread = None
         self.state_checker = None
+        self.__coreUsageData = None
 
     def startStudyInThread(self):
         """Starts study with options from the constructor
@@ -35,8 +38,10 @@ class MelissaMonitoring:
             Thread -- Thread object used to control the study
         """
 
+        self.__coreUsageData = OrderedDict()
         self.thread = threading.Thread(target=self.study.run)
         self.thread.start()
+
         # wait for the state checker thread to initialize
         while self.study.threads.get('state_checker', None) is None:
             time.sleep(0.001)
@@ -46,6 +51,7 @@ class MelissaMonitoring:
         while not self.state_checker.is_alive():
             time.sleep(0.001)
 
+        self.timeStart = datetime.datetime.now()
 
         return self.thread
 
@@ -69,7 +75,7 @@ class MelissaMonitoring:
         return {self.jobStates[statusCode]: value for statusCode, value in data.items()}
 
     def getCPUCount(self):
-        """Get the number of user's total CPU usage. Slurm specific
+        """Get the number of user's current total CPU usage. Slurm specific
         
         Returns:
             int -- number of CPU's in usage
@@ -84,7 +90,7 @@ class MelissaMonitoring:
         return sum([int(x) for x in list(out.splitlines())])
 
     def getRemainingWalltime(self):
-        """Get the remaining walltime of your jobs. Slurm specific
+        """Get the current remaining walltime of your jobs. Slurm specific
         
         Returns:
             Dictionary -- Mapped as name_of_the_job -> remaining_walltime
@@ -98,8 +104,19 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
+    def plotCoresUsage(self, ax):
+        """Automatically plot cores usage as time series
+        
+        Arguments:
+            ax {matplotlib.axes} -- Axes object that should be plotted
+        """
+
+        ax.clear()
+        self.__coreUsageData[datetime.datetime.now() - self.timeStart] = self.getCPUCount()
+        ax.plot(list(map(lambda x: str(x), self.__coreUsageData.keys())), list(self.__coreUsageData.values()))
+
     def plotJobStatus(self, ax):
-        """Automaticly plot job statuses as pie chart
+        """Automatically plot job statuses as pie chart
         
         Arguments:
             ax {matplotlib.axes} -- Axes object that should be plotted
@@ -117,6 +134,23 @@ class MelissaMonitoring:
         """
 
         self.thread.join()
+        self.timeStop = datetime.datetime.now()
         self.thread = None
         self.state_checker = None
         display.clear_output(wait=True)
+
+    def getStudyInfo(self):
+        """Get info about performed study such as time and cores used
+        
+        Returns:
+            str -- info about study 
+        """
+
+        info = f"""
+        Study started: {self.timeStart}
+        Study ended: {self.timeStop}
+        Elapsed time: {self.timeStop - self.timeStart}
+        Max cores used: {max(list(self.__coreUsageData.values()))}
+        Avg cores used: {statistics.mean(list(self.__coreUsageData.values()))}
+        """
+        return info
