@@ -74,6 +74,15 @@ class MelissaMonitoring:
         data = dict(Counter(map(lambda x: x.job_status, self.study.groups)))
         return {self.jobStates[statusCode]: value for statusCode, value in data.items()}
 
+    def getServerStatusData(self):
+        """Get server job status
+
+        Returns:
+            Server job status
+        """
+
+        return self.jobStates[statusCode]: self.study.server.job_status
+
     def getCPUCount(self):
         """Get the number of user's current total CPU usage. Slurm specific
         
