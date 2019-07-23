@@ -62,8 +62,6 @@ logging.basicConfig(format='%(asctime)s %(message)s',
                     filename='melissa_launcher.log',
                     filemode='w',
                     level=logging.DEBUG)
-groups = list()
-server = Server()
 
 class StateChecker(Thread):
     """
@@ -432,6 +430,11 @@ class Study(object):
         if nb_errors > 0:
             logging.error(str(nb_errors) + ' errors in options')
             exit()
+
+        global groups
+        groups = list()
+        global server
+        server = Server()
 
         Job.set_usr_func(self.usr_func)
         Job.set_stdy_opt(self.stdy_opt)
