@@ -24,6 +24,7 @@
 #include <ifaddrs.h>
 #include <zmq.h>
 #include "melissa_utils.h"
+#include "melissa_messages.h"
 
 #define PORT_NUMBER 5555
 
@@ -42,12 +43,23 @@ void init_context();
 void bind_message_rcv(char* port_number);
 void bind_message_resp(char* port_number);
 void bind_message_snd(char* port_number);
-void connect_message_rcv(char* node_name, char* port_number);
-void connect_message_snd(char* node_name, char* port_number);
-void wait_message(char* msg);
+void connect_message_rcv(char* node_name,
+                         char* port_number);
+void connect_message_snd(char* node_name,
+                         char* port_number);
+void wait_message(char* buff);
 void get_resp_message(char* msg);
 void send_message(char* msg);
 void send_resp_message(char* msg);
+void send_hello();
+void send_alive();
+void send_job(int     simu_id,
+              char*   job_id,
+              int     nb_param,
+              double *param_set);
+
+void send_drop (int   simu_id,
+                char* job_id);
 void close_message();
 cmessage_t message;
 
@@ -144,18 +156,59 @@ void bind_message_resp(char* port_number)
     melissa_bind (message.message_resp, name);
 }
 
-void wait_message(char* msg)
+//void wait_message(char* buff)
+//{
+//    zmq_msg_t msg;
+//    fprintf(stdout, "wait message\n");
+//    int size = zmq_msg_recv (&msg, message.message_puller, 0);
+//    if (get_message_type(zmq_msg_get_data(&msg)) == STOP)
+//    {
+//        sprintf (buff, "stop");
+//    }
+//    else
+//    {
+//        memcpy (buff, zmq_msg_get_data(&msg), size);
+//    }
+//}
+
+void wait_message(char* buff)
 {
-    char text[MELISSA_MESSAGE_LEN];
-    int size = zmq_recv (message.message_puller, text, MELISSA_MESSAGE_LEN-1, 0);
+//    char text[MELISSA_MESSAGE_LEN];
+    char* buff_ptr = NULL;
+    zmq_msg_t msg;
+    zmq_msg_init (&msg);
+    int size = zmq_msg_recv (&msg, message.message_puller, 0);
     if (size < 1)
     {
-        sprintf (msg, "%s", "nothing");
+        sprintf (buff, "%s ", "nothing");
     }
     else
     {
-        text[size] = 0;
-        sprintf (msg, "%s", text);
+        buff_ptr = zmq_msg_data(&msg);
+        switch (get_message_type(buff_ptr))
+        {
+        case STOP:
+            sprintf (buff, "%s ", "stop");
+            break;
+
+        case SIMU_STATUS:
+            sprintf (buff, "%s %d %d", "group_state", *((int*)buff_ptr + 1), *((int*)buff_ptr + 2));
+            break;
+
+        case SERVER:
+            sprintf (buff, "%s %d %s", "server", *((int*)buff_ptr + 1), buff_ptr + 2 * sizeof(int));
+            break;
+
+        case TIMEOUT:
+            sprintf (buff, "%s %d", "timeout", *((int*)buff_ptr + 1));
+            break;
+
+        default:
+            buff_ptr[size] = 0;
+            printf ("message : %s\n", buff_ptr);
+            sprintf (buff, "%s", buff_ptr);
+            break;
+        }
     }
 }
 
@@ -179,6 +232,38 @@ void send_message(char* msg)
     char text[MELISSA_MESSAGE_LEN];
     sprintf (text, "%s", msg);
     zmq_send (message.message_pusher, text, MELISSA_MESSAGE_LEN-1, 0);
+}
+
+void send_hello()
+{
+    send_message_hello(message.message_puller, 0);
+}
+
+void send_alive()
+{
+    send_message_alive(message.message_resp, 0);
+}
+
+void send_job(int     simu_id,
+              char*   job_id,
+              int     nb_param,
+              double* param_set)
+{
+    send_message_job(simu_id,
+                     job_id,
+                     nb_param,
+                     param_set,
+                     message.message_puller,
+                     0);
+}
+
+void send_drop(int   simu_id,
+               char* job_id)
+{
+    send_message_drop(simu_id,
+                     job_id,
+                     message.message_puller,
+                     0);
 }
 
 void send_resp_message(char* msg)

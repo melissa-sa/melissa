@@ -28,7 +28,9 @@ import imp
 import numpy as np
 import logging
 import traceback
-from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p
+from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
+c_int_p = POINTER(c_int)
+c_double_p = POINTER(c_double)
 imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
 from simulation import Server
 #from simulation import SingleSimuGroup
@@ -37,11 +39,15 @@ from simulation import Group
 from simulation import SobolGroup
 from simulation import Job
 
-melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
-melissa_message.bind_message_rcv.argtypes = [c_char_p]
-melissa_message.bind_message_resp.argtypes = [c_char_p]
-melissa_message.bind_message_snd.argtypes = [c_char_p]
-melissa_message.send_resp_message.argtypes = [c_char_p]
+melissa_comm4py = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_comm4py.so')
+melissa_comm4py.bind_message_rcv.argtypes = [c_char_p]
+melissa_comm4py.bind_message_resp.argtypes = [c_char_p]
+melissa_comm4py.bind_message_snd.argtypes = [c_char_p]
+melissa_comm4py.send_resp_message.argtypes = [c_char_p]
+#melissa_comm4py.wait_message.argtypes = [c_char_p]
+melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
+STOP = 3
+
 
 # Jobs and executions status
 from simulation import NOT_SUBMITTED
@@ -104,10 +110,10 @@ class Messenger(Thread):
         try:
             last_server = 0
             last_msg_to_server = 0
+            buff = create_string_buffer(melissa_comm4py.melissa_get_message_len())
             while self.running_study:
 #                if np.random.rand() < 0.2: print('r' + 1)
-                buff = create_string_buffer(melissa_message.melissa_get_message_len())
-                melissa_message.wait_message(buff)
+                melissa_comm4py.wait_message(buff)
                 if buff.value.decode() != 'nothing':
                     logging.debug('message: '+buff.value.decode())
                 last_server = time.time()
@@ -131,7 +137,7 @@ class Messenger(Thread):
                         if groups[group_id].job_type == 3:
                             if groups[group_id].status < 2:
                                 groups[group_id].status = int(message[2])
-                            #print("group " +str(group_id)+ " simu "+str(simu_id))
+                            print("group " +str(group_id)+ " simu "+str(simu_id))
                             groups[group_id].simu_status[simu_id] = int(message[2])
                             if all(simu_status == 2 for simu_status in groups[group_id].simu_status):
                                 groups[group_id].status = 2
@@ -148,9 +154,12 @@ class Messenger(Thread):
                     with server.lock:
                         server.status = RUNNING
                         server.job_status = RUNNING
-                        server.node_name = message[1]
-                        logging.info('Melissa Server node name: ' +
-                                     str(server.node_name) + '; '+
+                        rank = int(message[1])
+                        while (len(server.node_name) <= rank):
+                            server.node_name.append([''])
+                        server.node_name[rank] = message[2]
+                        logging.info('Melissa Server node '+str(rank)+' name: ' +
+                                     str(server.node_name[rank]) + '; '+
                                      'Melissa Server job id: ' +
                                      str(server.job_id))
 
@@ -160,8 +169,7 @@ class Messenger(Thread):
                         with server.lock:
                             server.status = TIMEOUT
                 if (time.time() - last_msg_to_server) > 10:
-                    buff.value = str('hello server '+str(time.time())).encode()
-                    melissa_message.send_message(buff)
+                    melissa_comm4py.send_hello()
                     last_msg_to_server = time.time()
             logging.info('closing messenger thread')
         except:
@@ -181,8 +189,8 @@ class Responder(Thread):
     def run(self):
         try:
             while self.running_study:
-                buff = create_string_buffer(melissa_message.melissa_get_message_len())
-                melissa_message.get_resp_message(buff)
+                buff = create_string_buffer(melissa_comm4py.melissa_get_message_len())
+                melissa_comm4py.get_resp_message(buff)
                 if buff.value.decode != 'nothing':
                     logging.debug('message: '+buff.value.decode())
                     print('message: '+buff.value.decode())
@@ -192,14 +200,22 @@ class Responder(Thread):
                     simu = int(message[1])%self.batch_size
                     with groups[group].lock:
                         if groups[group].job_type == 4:
-                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set[0]) + "\000"
+                            send_job(groups[group].rank,
+                                     str(groups[group].job_id).encode(),
+                                     len(groups[group].param_set[0]),
+                                     groups[group].param_set[0].ctypes.data_as(POINTER(c_double)))
                         elif groups[group].job_type == 3:
-                            message = "job "+str(groups[group].simu_id[simu])+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set[simu]) + "\000"
+                            send_job(groups[group].simu_id[simu],
+                                     str(groups[group].job_id).encode(),
+                                     len(groups[group].param_set[0]),
+                                     groups[group].param_set[simu].ctypes.data_as(POINTER(c_double)))
                         elif groups[group].job_type == 2:
-                            message = "job "+str(groups[group].rank)+" " +str(groups[group].job_id) + " " + " ".join(str(j) for j in groups[group].param_set) + "\000"
-                    melissa_message.send_resp_message(message.encode())
+                            send_job(groups[group].rank,
+                                     str(groups[group].job_id).encode(),
+                                     len(groups[group].param_set[0]),
+                                     groups[group].param_set.ctypes.data_as(POINTER(c_double)))
                 if message[0] == 'test_timeout':
-                    melissa_message.send_resp_message("alive".encode())
+                    melissa_comm4py.send_alive()
 
             logging.info('closing responder thread')
         except:
@@ -430,11 +446,11 @@ class Study(object):
         create_study(self.usr_func)
         self.create_group_list()
         # init zmq context
-        melissa_message.init_context()
+        melissa_comm4py.init_context()
         logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
         print('bind to recv port '+str(self.stdy_opt['recv_port']))
-        melissa_message.bind_message_rcv(str(self.stdy_opt['recv_port']).encode())
-        melissa_message.bind_message_resp(str(self.stdy_opt['resp_port']).encode())
+        melissa_comm4py.bind_message_rcv(str(self.stdy_opt['recv_port']).encode())
+        melissa_comm4py.bind_message_resp(str(self.stdy_opt['resp_port']).encode())
         logging.info('submit server')
 
         server.set_nb_param(self.nb_param)
@@ -460,8 +476,8 @@ class Study(object):
         server.write_node_name()
         # connect to server
         logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
-        #melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
-        melissa_message.bind_message_snd(str(self.stdy_opt['send_port']).encode())
+        #melissa_comm4py.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
+        melissa_comm4py.bind_message_snd(str(self.stdy_opt['send_port']).encode())
         logging.debug('start status checker thread')
         self.threads['state_checker'].start()
         if self.stdy_opt['learning']:
@@ -473,7 +489,7 @@ class Study(object):
                 self.fault_tolerance()
             logging.info('submit group '+str(group.rank))
             try:
-                group.server_node_name = str(server.node_name)
+                group.server_node_name = str(server.node_name[0])
                 group.launch()
             except:
                 logging.error('Error while launching group')
@@ -507,7 +523,7 @@ class Study(object):
         postprocessing(self.usr_func)
         finalize(self.usr_func)
         # finalize zmq context
-        melissa_message.close_message()
+        melissa_comm4py.close_message()
         exit()
 
     def check_options(self):
@@ -726,7 +742,7 @@ class Study(object):
             server.write_node_name()
             # connect to server
             #logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
-            #melissa_message.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
+            #melissa_comm4py.connect_message_snd(str(server.node_name[0]), str(self.stdy_opt['send_port']))
 
             time.sleep(1)
             for group in groups:
@@ -735,7 +751,7 @@ class Study(object):
                         logging.info('resubmit group ' + str(group.rank)
                                      + ' (server crash)')
                         try:
-                            group.server_node_name = str(server.node_name)
+                            group.server_node_name = str(server.node_name[0])
                             group.restart()
                         except:
                             logging.error('Error while restarting group '+group.rank)
