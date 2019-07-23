@@ -75,7 +75,9 @@ struct global_data_s
 {
     void    *context;               /**< ZeroMQ context                            */
     void    *connexion_requester;   /**< connexion ZeroMQ port                     */
+#ifdef CHECK_SIMU_DECONNECTION
     void    *deconnexion_requester; /**< connexion ZeroMQ port                     */
+#endif // CHECK_SIMU_DECONNECTION
     void   **sobol_requester;       /**< data ZeroMQ Sobol port                    */
     int      rinit_tab[5];          /**< array used to receive data                */
     int      sobol;                 /**< 1 if sobol computation, 0 otherwhise      */
@@ -475,7 +477,9 @@ void melissa_init (const char *field_name,
         global_data.buff_size = 0;
         global_data.context = zmq_ctx_new ();
         global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
+#ifdef CHECK_SIMU_DECONNECTION
         global_data.deconnexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
+#endif // CHECK_SIMU_DECONNECTION
         global_data.sobol_requester = NULL;
         global_data.comm_size = comm_size;
 #ifdef BUILD_WITH_MPI
@@ -528,8 +532,10 @@ void melissa_init (const char *field_name,
         memcpy (buf_ptr, &simu_id, sizeof(int));
         sprintf (port_name, "tcp://%s:2003", server_node_name);
         melissa_connect (global_data.connexion_requester, port_name);
+#ifdef CHECK_SIMU_DECONNECTION
         sprintf (port_name, "tcp://%s:2002", server_node_name);
         melissa_connect (global_data.deconnexion_requester, port_name);
+#endif // CHECK_SIMU_DECONNECTION
         ret = zmq_msg_send (&msg, global_data.connexion_requester, 0);
         if (ret == -1)
         {
@@ -1337,7 +1343,6 @@ void melissa_send_no_mpi (const char *field_name,
 void melissa_finalize (void)
 {
     int        i, temp, ret;
-    zmq_msg_t  msg;
 
 #ifdef BUILD_WITH_MPI
     if (global_data.comm_size > 1)
@@ -1355,9 +1360,10 @@ void melissa_finalize (void)
         assert(field_data_ptr->timestamp == field_data->timestamp);
     }
     
-
+#ifdef CHECK_SIMU_DECONNECTION
     if (global_data.rank == 0 && global_data.sobol_rank == 0)
     {
+        zmq_msg_t  msg;
 //        sleep(2);
         i = 0;
         while (i<2)
@@ -1390,6 +1396,8 @@ void melissa_finalize (void)
         }
     }
     zmq_close (global_data.deconnexion_requester);
+#endif // CHECK_SIMU_DECONNECTION
+
 #ifdef BUILD_WITH_MPI
     if (global_data.comm_size > 1)
     {

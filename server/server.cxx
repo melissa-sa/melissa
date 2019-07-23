@@ -115,7 +115,9 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     server_ptr->context = zmq_ctx_new ();
     server_ptr->connexion_responder = zmq_socket (server_ptr->context, ZMQ_REP);
+#ifdef CHECK_SIMU_DECONNECTION
     server_ptr->deconnexion_responder = zmq_socket (server_ptr->context, ZMQ_REP);
+#endif // CHECK_SIMU_DECONNECTION
     server_ptr->data_puller = zmq_socket (server_ptr->context, ZMQ_PULL);
     server_ptr->text_puller = zmq_socket (server_ptr->context, ZMQ_SUB);
     server_ptr->text_pusher = zmq_socket (server_ptr->context, ZMQ_PUSH);
@@ -228,7 +230,9 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 //        melissa_bind (server_ptr->text_puller, txt_buffer);
 
         melissa_print (VERBOSE_INFO, "Server connected to launcher\n");
+#ifdef CHECK_SIMU_DECONNECTION
         melissa_bind (server_ptr->deconnexion_responder, "tcp://*:2002");
+#endif // CHECK_SIMU_DECONNECTION
         melissa_bind (server_ptr->connexion_responder, "tcp://*:2003");
         server_ptr->first_init = 2;
     }
@@ -301,7 +305,9 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
     int                   simu_id, i;
     int                   field_id;
     int                   old_simu_state;
+#ifdef CHECK_SIMU_DECONNECTION
     int                   old_last_time_step_state;
+#endif // CHECK_SIMU_DECONNECTION
     int                   recv_vect_size = 0;
     int                   client_rank;
     int                   new_data = 0;
@@ -391,8 +397,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
         zmq_pollitem_t items [] = {
             { server_ptr->text_puller, 0, ZMQ_POLLIN, 0 },
             { server_ptr->connexion_responder, 0, ZMQ_POLLIN, 0 },
-            { server_ptr->data_puller, 0, ZMQ_POLLIN, 0 },
-            { server_ptr->deconnexion_responder, 0, ZMQ_POLLIN, 0 }
+            { server_ptr->data_puller, 0, ZMQ_POLLIN, 0 }
+#ifdef CHECK_SIMU_DECONNECTION
+            ,{ server_ptr->deconnexion_responder, 0, ZMQ_POLLIN, 0 }
+#endif // CHECK_SIMU_DECONNECTION
         };
         zmq_poll (items, 4, 100);
         server_ptr->end_wait_time = melissa_get_time();
@@ -704,6 +712,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             simu_ptr->job_status = 1;
             melissa_print(VERBOSE_DEBUG, "Group %d, rank %d, status %d\n", simu_data->simu_id, server_ptr->comm_data.rank, simu_ptr->status);
 
+#ifdef CHECK_SIMU_DECONNECTION
             // check if we recieved all the last timestep messages //
             if (simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps-1)
             {
@@ -711,21 +720,36 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 simu_ptr->last_time_step = check_last_timestep(server_ptr->fields, server_ptr->melissa_options.nb_fields, simu_data->simu_id, server_ptr->melissa_options.nb_time_steps, &server_ptr->comm_data);
                 melissa_print(VERBOSE_DEBUG, "Group %d, rank %d, last timestep status: %d\n", simu_data->simu_id, server_ptr->comm_data.rank, simu_ptr->status);
             }
+#endif // CHECK_SIMU_DECONNECTION
 
             if (simu_ptr->status == 2)
             {
+#ifdef CHECK_SIMU_DECONNECTION
                 if (server_ptr->comm_data.rank != 0)
                 {
                     server_ptr->nb_finished_simulations += 1;
                 }
+#else // CHECK_SIMU_DECONNECTION
+                server_ptr->nb_finished_simulations += 1;
+#endif // CHECK_SIMU_DECONNECTION
             }
 
             // === Send a message to the Python master in case of simulation status update === //  TODO: can't we put all this stuff into functions?  technical debt?
+#ifdef CHECK_SIMU_DECONNECTION
             if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0 && simu_ptr->status == 1)
+#else // CHECK_SIMU_DECONNECTION
+            if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0)
+#endif // CHECK_SIMU_DECONNECTION
             {
                 send_message_simu_status(simu_data->simu_id, simu_ptr->status, server_ptr->text_pusher, 0);
+                if (simu_ptr->status == 2)
+                {
+                    melissa_print(VERBOSE_INFO, "Simulation %d finished\n", simu_data->simu_id);
+                    melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", server_ptr->nb_finished_simulations, server_ptr->simulations.size);
+                }
             }
 
+#ifdef CHECK_SIMU_DECONNECTION
             // === Send a message to the Python master in case of last timestep status update === //
             if (old_last_time_step_state != simu_ptr->last_time_step && server_ptr->comm_data.rank == 0 && simu_ptr->last_time_step == 1)
             {
@@ -733,6 +757,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
                 zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
+#endif // CHECK_SIMU_DECONNECTION
 
             if (server_ptr->melissa_options.sobol_op != 1)
             {
@@ -749,6 +774,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             zmq_msg_close (&msg);
         }
 
+#ifdef CHECK_SIMU_DECONNECTION
         if (items[3].revents & ZMQ_POLLIN)
         {
             if (server_ptr->comm_data.rank == 0)
@@ -776,6 +802,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 }
             }
         }
+#endif // CHECK_SIMU_DECONNECTION
 
         // === Signal handling === //
 
@@ -929,7 +956,9 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     // === Sockets deconnexion === //
 
     zmq_close (server_ptr->connexion_responder);
+#ifdef CHECK_SIMU_DECONNECTION
     zmq_close (server_ptr->deconnexion_responder);
+#endif // CHECK_SIMU_DECONNECTION
     zmq_close (server_ptr->data_puller);
 
     if (server_ptr->comm_data.rank == 0 && end_signal == 0)
