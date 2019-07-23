@@ -212,6 +212,11 @@ class MultiSimuGroup(Group):
             self.simu_status.append(0)
             MultiSimuGroup.nb_simu += 1
 
+    def reset():
+        MultiSimuGroup.nb_simu = 0
+
+    reset = staticmethod(reset)
+
     def launch(self):
         Group.launch(self)
         for i in range(self.size):
