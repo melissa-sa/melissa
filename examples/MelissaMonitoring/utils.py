@@ -81,7 +81,7 @@ class MelissaMonitoring:
             Server job status
         """
 
-        return self.jobStates[statusCode]: self.study.server_obj[0].job_status
+        return self.jobStates[self.study.server_obj[0].job_status]
 
     def getCPUCount(self):
         """Get the number of user's current total CPU usage. Slurm specific
