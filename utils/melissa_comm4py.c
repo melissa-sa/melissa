@@ -185,6 +185,7 @@ void wait_message(char* buff)
     else
     {
         buff_ptr = zmq_msg_data(&msg);
+        buff_ptr[size] = 0;
         switch (get_message_type(buff_ptr))
         {
         case STOP:
@@ -204,7 +205,6 @@ void wait_message(char* buff)
             break;
 
         default:
-            buff_ptr[size] = 0;
             printf ("message : %s\n", buff_ptr);
             sprintf (buff, "%s", buff_ptr);
             break;

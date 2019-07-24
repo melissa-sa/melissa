@@ -92,7 +92,7 @@ void send_message_drop (int   simu_id,
 
     fprintf(stdout, "send message with tag %d\n", DROP);
 
-    zmq_msg_init_size (&msg, 3 * sizeof(int) + strlen(job_id));
+    zmq_msg_init_size (&msg, 3 * sizeof(int) + strlen(job_id) +1);
     buff_ptr = (char*)zmq_msg_data (&msg);
     *((int*)buff_ptr) = DROP;
     buff_ptr += sizeof(int);
@@ -100,7 +100,7 @@ void send_message_drop (int   simu_id,
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = strlen(job_id);
     buff_ptr += sizeof(int);
-    memcpy (buff_ptr, job_id, strlen(job_id));
+    memcpy (buff_ptr, job_id, strlen(job_id)+1);
     zmq_msg_send (&msg, socket, flags);
 }
 
@@ -155,13 +155,13 @@ void send_message_server_name (char* node_name,
     zmq_msg_t msg;
     char*     buff_ptr = NULL;
 
-    zmq_msg_init_size (&msg, 2 * sizeof(int) + strlen(node_name));
+    zmq_msg_init_size (&msg, 2 * sizeof(int) + strlen(node_name) +1);
     buff_ptr = zmq_msg_data (&msg);
     *((int*)buff_ptr) = SERVER;
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = rank;
     buff_ptr += sizeof(int);
-    memcpy (buff_ptr, node_name, strlen(node_name));
+    memcpy (buff_ptr, node_name, strlen(node_name) +1);
     zmq_msg_send (&msg, socket, flags);
 }
 
