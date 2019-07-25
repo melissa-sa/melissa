@@ -29,7 +29,8 @@ enum message_type {HELLO = 0,
                    TIMEOUT = 4,
                    SIMU_STATUS = 5,
                    SERVER = 6,
-                   ALIVE = 7
+                   ALIVE = 7,
+                   CONFIDENCE_INTERVAL = 8
                   };
 
 int get_message_type(char* buff);
@@ -68,3 +69,9 @@ void send_message_server_name (char* node_name,
                                int   rank,
                                void* socket,
                                int   flags);
+
+void send_message_confidence_interval (char*  stat_name,
+                                       char*  field_name,
+                                       double value,
+                                       void*  socket,
+                                       int    flags);

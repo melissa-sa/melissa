@@ -204,8 +204,15 @@ void wait_message(char* buff)
             sprintf (buff, "%s %d", "timeout", *((int*)buff_ptr + 1));
             break;
 
+        case CONFIDENCE_INTERVAL:
+            sprintf (buff, "%s %s %s %g", "interval"
+                     , buff_ptr + sizeof(int)
+                     , buff_ptr + sizeof(int) + strlen(buff_ptr + sizeof(int)) +1
+                     , *(double*)&buff_ptr[size - sizeof(double)]);
+            break;
+
         default:
-            printf ("message : %s\n", buff_ptr);
+            printf ("message : %s\n", buff);
             sprintf (buff, "%s", buff_ptr);
             break;
         }

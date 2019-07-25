@@ -68,16 +68,14 @@ void send_message_job (int    simu_id,
     zmq_msg_t        msg;
     char* buff_ptr = NULL;
 
-    zmq_msg_init_size (&msg, 3 * sizeof(int) + nb_param * sizeof(double) + strlen(job_id));
+    zmq_msg_init_size (&msg, 2 * sizeof(int) + nb_param * sizeof(double) + strlen(job_id)+1);
     buff_ptr = (char*)zmq_msg_data (&msg);
     *((int*)buff_ptr) = JOB;
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = simu_id;
     buff_ptr += sizeof(int);
-    *((int*)buff_ptr) = strlen(job_id);
-    buff_ptr += sizeof(int);
-    memcpy (buff_ptr, job_id, strlen(job_id));
-    buff_ptr += strlen(job_id);
+    strcpy (buff_ptr, job_id);
+    buff_ptr += strlen(job_id) +1;
     memcpy (buff_ptr, param_set, nb_param * sizeof(double));
     zmq_msg_send (&msg, socket, flags);
 }
@@ -92,15 +90,13 @@ void send_message_drop (int   simu_id,
 
     fprintf(stdout, "send message with tag %d\n", DROP);
 
-    zmq_msg_init_size (&msg, 3 * sizeof(int) + strlen(job_id) +1);
+    zmq_msg_init_size (&msg, 2 * sizeof(int) + strlen(job_id) +1);
     buff_ptr = (char*)zmq_msg_data (&msg);
     *((int*)buff_ptr) = DROP;
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = simu_id;
     buff_ptr += sizeof(int);
-    *((int*)buff_ptr) = strlen(job_id);
-    buff_ptr += sizeof(int);
-    memcpy (buff_ptr, job_id, strlen(job_id)+1);
+    strcpy (buff_ptr, job_id);
     zmq_msg_send (&msg, socket, flags);
 }
 
@@ -161,7 +157,28 @@ void send_message_server_name (char* node_name,
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = rank;
     buff_ptr += sizeof(int);
-    memcpy (buff_ptr, node_name, strlen(node_name) +1);
+    strcpy (buff_ptr, node_name);
+    zmq_msg_send (&msg, socket, flags);
+}
+
+void send_message_confidence_interval (char*  stat_name,
+                                       char*  field_name,
+                                       double value,
+                                       void*  socket,
+                                       int    flags)
+{
+    zmq_msg_t msg;
+    char*     buff_ptr = NULL;
+
+    zmq_msg_init_size (&msg, sizeof(int) + sizeof(double) + strlen(stat_name) + strlen(field_name) +2);
+    buff_ptr = zmq_msg_data (&msg);
+    *((int*)buff_ptr) = CONFIDENCE_INTERVAL;
+    buff_ptr += sizeof(int);
+    strcpy (buff_ptr, stat_name);
+    buff_ptr += strlen(stat_name) +1;
+    strcpy (buff_ptr, field_name);
+    buff_ptr += strlen(field_name) +1;
+    *((double*)buff_ptr) = value;
     zmq_msg_send (&msg, socket, flags);
 }
 

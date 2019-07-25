@@ -106,6 +106,7 @@ class Messenger(Thread):
         self.batch_size = batch_size
         self.server = server
         self.groups = groups
+        self.confidence_interval = dict()
 
     def run(self):
         try:
@@ -115,8 +116,6 @@ class Messenger(Thread):
             while self.running_study:
 #                if np.random.rand() < 0.2: print('r' + 1)
                 melissa_comm4py.wait_message(buff)
-                if buff.value.decode() != 'nothing':
-                    logging.debug('message: '+buff.value.decode())
                 last_server = time.time()
                 message = buff.value.decode().split()
                 if message[0] == 'stop':
@@ -163,6 +162,9 @@ class Messenger(Thread):
                                      str(self.server[0].node_name[rank]) + '; '+
                                      'Melissa Server job id: ' +
                                      str(self.server[0].job_id))
+                elif message[0] == 'interval':
+                    self.confidence_interval[message[1]] = float(message[3])
+                    logging.info(message[1] + ' confidence interval: ' + message[3])
 
                 if last_server > 0:
                     if (time.time() - last_server) > 100:
@@ -695,13 +697,13 @@ class Study(object):
         Group.reset()
         MultiSimuGroup.reset()
 
-        input_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
         if self.sobol:
-            input_parameters2 = draw_parameter_set(self.usr_func, self.stdy_opt)
             for i in range(self.stdy_opt['sampling_size']):
+                input_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
+                input_parameters2 = draw_parameter_set(self.usr_func, self.stdy_opt)
                 self.groups.append(SobolGroup(
-                    input_parameters[i],
-                    input_parameters2[i]))
+                    input_parameters,
+                    input_parameters2))
         else:
             for i in range(self.stdy_opt['sampling_size']//self.stdy_opt['batch_size']):
                 param_sets = list()

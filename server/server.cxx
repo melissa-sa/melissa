@@ -662,17 +662,23 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                                        simu_data->time_stamp,
                                        server_ptr->melissa_options.nb_parameters+2,
                                        server_ptr->buff_tab_ptr);
-                        confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
-                                server_ptr->melissa_options.nb_parameters,
-                                data_ptr[client_rank].vect_size);
+//                        confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+//                                server_ptr->melissa_options.nb_parameters,
+//                                data_ptr[client_rank].vect_size);
 
                         if (server_ptr->comm_data.rank == 0 &&
                                 simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps -1)
                         {
                             // REM: atm only showing for last timestep on 0 rank
-                            log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
-                                    server_ptr->melissa_options.nb_parameters,
-                                    data_ptr[client_rank].vect_size);
+//                            log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+//                                    server_ptr->melissa_options.nb_parameters,
+//                                    data_ptr[client_rank].vect_size);
+
+                            send_message_confidence_interval("Sobol",
+                                                             field_name_ptr,
+                                                             simplified_confidence_sobol_martinez (data_ptr[client_rank].sobol_indices[simu_data->time_stamp].iteration),
+                                                             server_ptr->text_pusher,
+                                                             0);
 
                         }
 
@@ -897,11 +903,13 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     interval_tot = 0;
     if (server_ptr->melissa_options.sobol_op == 1)
     {
-        global_confidence_sobol_martinez (server_ptr->fields,
-                                          server_ptr->melissa_options.nb_fields,
-                                          &server_ptr->comm_data,
-                                          &interval1,
-                                          &interval_tot);
+//        global_confidence_sobol_martinez (server_ptr->fields,
+//                                          server_ptr->melissa_options.nb_fields,
+//                                          &server_ptr->comm_data,
+//                                          &interval1,
+//                                          &interval_tot);
+        interval1 = simplified_confidence_sobol_martinez (server_ptr->nb_finished_simulations);
+        interval1;
     }
 
     if (end_signal == 0)
@@ -943,8 +951,9 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
         melissa_print (VERBOSE_INFO, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&server_ptr->melissa_options));
         if (server_ptr->melissa_options.sobol_op == 1)
         {
-            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
-            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
+            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g \n", interval1);
+//            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
+//            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
         }
 //        melissa_print (VERBOSE_INFO, " \n");
     }

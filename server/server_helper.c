@@ -175,10 +175,8 @@ void process_launcher_message (char*             msg,
             }
         }
         simu_ptr = vector_get (simulations, simu_id);
-        memcpy (&id_len, buff_ptr, sizeof(int));
-        buff_ptr += sizeof(int);
-        strncpy (simu_ptr->job_id, buff_ptr, id_len);
-        buff_ptr += id_len;
+        strcpy (simu_ptr->job_id, buff_ptr);
+        buff_ptr += strlen(buff_ptr)+1;
         simu_ptr->job_status = 0;
         if (simu_ptr->parameters == NULL)
         {
@@ -194,9 +192,7 @@ void process_launcher_message (char*             msg,
         memcpy (&simu_id, buff_ptr, sizeof(int));
         buff_ptr += sizeof(int);
         simu_ptr = vector_get (simulations, simu_id);
-        memcpy (&id_len, buff_ptr, sizeof(int));
-        buff_ptr += sizeof(int);
-        strncpy (simu_ptr->job_id, buff_ptr, id_len);
+        strcpy (simu_ptr->job_id, buff_ptr);
         simu_ptr->job_status = 1;
         simu_ptr->status = 2;
 
