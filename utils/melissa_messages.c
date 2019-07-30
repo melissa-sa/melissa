@@ -182,3 +182,19 @@ void send_message_confidence_interval (char*  stat_name,
     zmq_msg_send (&msg, socket, flags);
 }
 
+void send_message_options (char   buff[],
+                           size_t buff_size,
+                           void*  socket,
+                           int    flags)
+{
+    zmq_msg_t msg;
+    char*      buff_ptr = NULL;
+
+    zmq_msg_init_size (&msg, buff_size + sizeof(int));
+    buff_ptr = zmq_msg_data(&msg);
+    *((int*)buff_ptr) = OPTIONS;
+    buff_ptr += sizeof(int);
+    memcpy (buff_ptr, buff, buff_size);
+    zmq_msg_send (&msg, socket, flags);
+}
+

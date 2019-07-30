@@ -152,8 +152,6 @@ class Messenger(Thread):
                         logging.info('Group ' + message[1] + ' connected to server')
                 elif message[0] == 'server':
                     with self.server[0].lock:
-                        self.server[0].status = RUNNING
-                        self.server[0].job_status = RUNNING
                         rank = int(message[1])
                         while (len(self.server[0].node_name) <= rank):
                             self.server[0].node_name.append([''])
@@ -162,6 +160,8 @@ class Messenger(Thread):
                                      str(self.server[0].node_name[rank]) + '; '+
                                      'Melissa Server job id: ' +
                                      str(self.server[0].job_id))
+                        self.server[0].status = RUNNING
+                        self.server[0].job_status = RUNNING
                 elif message[0] == 'interval':
                     self.confidence_interval[message[1]] = float(message[3])
                     logging.info(message[1] + ' confidence interval: ' + message[3])
@@ -171,7 +171,7 @@ class Messenger(Thread):
                         logging.info('server timeout\n')
                         with self.server[0].lock:
                             self.server[0].status = TIMEOUT
-                if (time.time() - last_msg_to_server) > 10:
+                if (time.time() - last_msg_to_server) > 10 and self.server[0].status == RUNNING:
                     melissa_comm4py.send_hello()
                     last_msg_to_server = time.time()
             logging.info('closing messenger thread')
@@ -184,10 +184,11 @@ class Responder(Thread):
     """
         Thread in charge of responding to server requests
     """
-    def __init__(self, batch_size = 1, groups = []):
+    def __init__(self, batch_size = 1, server = [], groups = []):
         Thread.__init__(self)
         self.running_study = True
         self.batch_size = batch_size
+        self.server = server
         self.groups = groups
 
     def run(self):
@@ -197,7 +198,7 @@ class Responder(Thread):
                 melissa_comm4py.get_resp_message(buff)
                 if buff.value.decode != 'nothing':
                     logging.debug('message: '+buff.value.decode())
-                    print('message: '+buff.value.decode())
+                    #print('message: '+buff.value.decode())
                 message = buff.value.decode().split()
                 if message[0] == 'simu_info':
                     group = int(message[1])//self.batch_size
@@ -220,6 +221,9 @@ class Responder(Thread):
                                      self.groups[group].param_set.ctypes.data_as(POINTER(c_double)))
                 if message[0] == 'test_timeout':
                     melissa_comm4py.send_alive()
+                if message[0] == 'options':
+                    melissa_comm4py.send_options(self.server[0].options.encode())
+
 
             logging.info('closing responder thread')
         except:
@@ -313,7 +317,7 @@ class Study(object):
                 logging.error(traceback.print_exc())
                 return 1
 
-        self.threads = {}
+        self.threads = dict()
         self.server = Server_user_functions(self)
         self.simulation = Simulation_user_functions(self)
 
@@ -470,8 +474,7 @@ class Study(object):
         logging.debug('create threads dict')
         self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'], self.server_obj, self.groups)
         self.threads['state_checker'] = StateChecker(self.server_obj, self.groups)
-        if self.stdy_opt['learning']:
-            self.threads['responder'] = Responder(self.stdy_opt['batch_size'], self.groups)
+        self.threads['responder'] = Responder(self.stdy_opt['batch_size'], self.server_obj, self.groups)
 
         create_study(self.usr_func)
         self.create_group_list()
@@ -512,8 +515,7 @@ class Study(object):
         melissa_comm4py.bind_message_snd(str(self.stdy_opt['send_port']).encode())
         logging.debug('start status checker thread')
         self.threads['state_checker'].start()
-        if self.stdy_opt['learning']:
-            self.threads['responder'].start()
+        self.threads['responder'].start()
         for group in self.groups:
             if self.fault_tolerance() != 0: return
             while check_scheduler_load(self.usr_func) == False:
@@ -547,12 +549,10 @@ class Study(object):
         if self.server_obj[0].job_status < FINISHED:
             self.server_obj[0].cancel()
         self.threads['messenger'].running_study = False
-        if self.stdy_opt['learning']:
-            self.threads['responder'].running_study = False
+        self.threads['responder'].running_study = False
         self.threads['state_checker'].running_study = False
         self.threads['messenger'].join()
-        if self.stdy_opt['learning']:
-            self.threads['responder'].join()
+        self.threads['responder'].join()
         self.threads['state_checker'].join()
         postprocessing(self.usr_func)
         finalize(self.usr_func)
@@ -731,12 +731,11 @@ class Study(object):
             self.threads['state_checker'].join()
             self.threads['state_checker'] = StateChecker()
             self.threads['state_checker'].start()
-        if self.stdy_opt['learning']:
-            if not self.threads['responder'].isAlive():
-                logging.error('Responder thread crashed')
-                self.threads['responder'].join()
-                self.threads['responder'] = Responder()
-                self.threads['responder'].start()
+        if not self.threads['responder'].isAlive():
+            logging.error('Responder thread crashed')
+            self.threads['responder'].join()
+            self.threads['responder'] = Responder()
+            self.threads['responder'].start()
 
         sleep = False
         with self.server_obj[0].lock:

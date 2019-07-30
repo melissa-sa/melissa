@@ -151,20 +151,21 @@ int check_simu_state(melissa_field_t *fields,
  *
  *******************************************************************************/
 
-void process_launcher_message (char*             msg,
+void process_launcher_message (void*             msg_data,
                                melissa_server_t *server_ptr)
 {
-    vector_t             *simulations = &server_ptr->simulations;
+    vector_t             *simulations;// = &server_ptr->simulations;
     melissa_simulation_t *simu_ptr;
-    int                   simu_id, i, id_len;
-    char*                 buff_ptr = msg;
+    int                   simu_id, i;
+    char*                 buff_ptr = (char*)msg_data;
 
-    int message_type = get_message_type(msg);
+    int message_type = get_message_type(buff_ptr);
     buff_ptr += sizeof(int);
 
     switch (message_type)
     {
     case JOB:
+        simulations = &server_ptr->simulations;
         memcpy (&simu_id, buff_ptr, sizeof(int));
         buff_ptr += sizeof(int);
         if (simu_id > simulations->size)
@@ -189,6 +190,7 @@ void process_launcher_message (char*             msg,
         }
         break;
     case DROP:
+        simulations = &server_ptr->simulations;
         memcpy (&simu_id, buff_ptr, sizeof(int));
         buff_ptr += sizeof(int);
         simu_ptr = vector_get (simulations, simu_id);
@@ -207,6 +209,9 @@ void process_launcher_message (char*             msg,
     case HELLO:
         break;
     case ALIVE:
+        break;
+    case OPTIONS:
+        melissa_print(VERBOSE_INFO, " === Options (not implemented yet) ===\n");
         break;
     default:
         melissa_print(VERBOSE_WARNING, "Unknown message type: %d\n", message_type);

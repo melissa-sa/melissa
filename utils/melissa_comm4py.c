@@ -60,6 +60,7 @@ void send_job(int     simu_id,
 
 void send_drop (int   simu_id,
                 char* job_id);
+void send_options (char* options);
 void close_message();
 cmessage_t message;
 
@@ -243,7 +244,7 @@ void send_message(char* msg)
 
 void send_hello()
 {
-    send_message_hello(message.message_puller, 0);
+    send_message_hello(message.message_pusher, 0);
 }
 
 void send_alive()
@@ -260,7 +261,7 @@ void send_job(int     simu_id,
                      job_id,
                      nb_param,
                      param_set,
-                     message.message_puller,
+                     message.message_resp,
                      0);
 }
 
@@ -269,8 +270,17 @@ void send_drop(int   simu_id,
 {
     send_message_drop(simu_id,
                      job_id,
-                     message.message_puller,
+                     message.message_pusher,
                      0);
+}
+
+void send_options(char* options)
+{
+    size_t options_len = strlen(options) + 1;
+    send_message_options(options,
+                         options_len,
+                         message.message_resp,
+                         0);
 }
 
 void send_resp_message(char* msg)
