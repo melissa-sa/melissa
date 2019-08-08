@@ -146,7 +146,6 @@ class MelissaMonitoring:
         self.timeStop = datetime.datetime.now()
         self.thread = None
         self.state_checker = None
-        display.clear_output(wait=True)
 
     def getStudyInfo(self):
         """Get info about performed study such as time and cores used
