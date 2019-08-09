@@ -153,7 +153,7 @@ class MelissaMonitoring:
         if self.__timeWidget is None:
             style = {'description_width': 'initial'}
             self.__timeWidget = widgets.HTML(value="",
-                                            description='Remaining Walltime: ',
+                                            description='Remaining Job Time: ',
                                             style=style,
                                             )
             display(self.__timeWidget)
