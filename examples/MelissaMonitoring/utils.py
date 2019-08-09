@@ -8,7 +8,7 @@ from IPython.display import display
 import ipywidgets as widgets
 
 from launcher.study import Study
-from launcher.study import server
+from launcher.study import server as MelissaServer
 
 class HiddenPrints:
     """Context manager used to suppress prints.
@@ -86,7 +86,7 @@ class MelissaMonitoring:
             string -- Server job status
         """
 
-        return self.jobStates[server.status]
+        return self.jobStates[MelissaServer.status]
 
     def getCPUCount(self):
         """Get the number of user's current total CPU usage. Slurm specific
@@ -117,6 +117,16 @@ class MelissaMonitoring:
 
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
+
+    def getFailedParametersList(self):
+        """Get list of failed parameters in the study
+        
+        Returns:
+            list -- nested list of failed parameters
+        """
+
+        data = list(filter(lambda x: x.nb_restarts > 3 ,self.study.groups))
+        return list(map(lambda x: x.param_set, data))
 
     def plotCoresUsage(self, ax):
         """Automatically plot cores usage as time series
@@ -186,10 +196,12 @@ class MelissaMonitoring:
         self.timeStop = datetime.datetime.now()
         self.thread = None
         self.state_checker = None
-        self.__timeWidget.close()
-        self.__timeWidget = None
-        self.__serverStatusWidget.close()
-        self.__serverStatusWidget = None
+        if self.__timeWidget is not None:
+            self.__timeWidget.close() 
+            self.__timeWidget = None
+        if self.__serverStatusWidget is not None:
+            self.__serverStatusWidget.close()
+            self.__serverStatusWidget = None
 
     def getStudyInfo(self):
         """Get info about performed study such as time and cores used
@@ -206,3 +218,5 @@ class MelissaMonitoring:
         Avg cores used: {statistics.mean(list(self.__coreUsageData.values()))}
         """
         return info
+
+    
