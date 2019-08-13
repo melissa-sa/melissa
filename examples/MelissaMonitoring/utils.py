@@ -4,9 +4,11 @@ import os, sys, subprocess
 import time, datetime
 import statistics
 
-from IPython import display
+from IPython.display import display
+import ipywidgets as widgets
 
 from launcher.study import Study
+from launcher.study import server as MelissaServer
 
 class HiddenPrints:
     """Context manager used to suppress prints.
@@ -29,7 +31,12 @@ class MelissaMonitoring:
         self.timeStop = None
         self.thread = None
         self.state_checker = None
+        self.jobRestartThreshold = 3
+
         self.__coreUsageData = None
+        self.__timeWidget = None
+        self.__serverStatusWidget = None
+        self.__failedParametersWidget = None
 
     def startStudyInThread(self):
         """Starts study with options from the constructor
@@ -78,10 +85,10 @@ class MelissaMonitoring:
         """Get server job status
 
         Returns:
-            Server job status
+            string -- Server job status
         """
 
-        return self.jobStates[self.study.server_obj[0].job_status]
+        return self.jobStates[MelissaServer.status]
 
     def getCPUCount(self):
         """Get the number of user's current total CPU usage. Slurm specific
@@ -89,7 +96,7 @@ class MelissaMonitoring:
         Returns:
             int -- number of CPU's in usage
         """
-        process = subprocess.Popen('squeue -h -o "%C" -u ${USER}',
+        process = subprocess.Popen('squeue -h -o "%C" -u ${USER} -t RUNNING',
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 shell=True,
@@ -98,11 +105,11 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return sum([int(x) for x in list(out.splitlines())])
 
-    def getRemainingWalltime(self):
-        """Get the current remaining walltime of your jobs. Slurm specific
+    def getRemainingJobsTime(self):
+        """Get the current remaining time of your jobs. Slurm specific
         
         Returns:
-            Dictionary -- Mapped as name_of_the_job -> remaining_walltime
+            Dictionary -- Mapped as name_of_the_job -> remaining_time
         """
         process = subprocess.Popen('squeue -h -o "%j %L" -u ${USER}',
                                   stdout=subprocess.PIPE,
@@ -112,6 +119,16 @@ class MelissaMonitoring:
 
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
+
+    def getFailedParametersList(self):
+        """Get list of failed parameters in the study
+        
+        Returns:
+            list -- nested list of failed parameters
+        """
+
+        data = filter(lambda x: x.nb_restarts > self.jobRestartThreshold ,self.study.groups)
+        return list(map(lambda x: x.param_set, data))
 
     def plotCoresUsage(self, ax):
         """Automatically plot cores usage as time series
@@ -123,6 +140,8 @@ class MelissaMonitoring:
         ax.clear()
         self.__coreUsageData[datetime.datetime.now() - self.timeStart] = self.getCPUCount()
         ax.plot(list(map(lambda x: str(x), self.__coreUsageData.keys())), list(self.__coreUsageData.values()))
+        ax.set_title('Cores usage vs time')
+        ax.get_figure().autofmt_xdate()
 
     def plotJobStatus(self, ax):
         """Automatically plot job statuses as pie chart
@@ -137,6 +156,53 @@ class MelissaMonitoring:
         sizes = [x/sumOfJobs*100 for x in jobStatusData.values()]
         labels = [x for x in jobStatusData.keys()]
         ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+        ax.set_title('Job statuses')
+
+    def showRemainingJobsTime(self):
+        """Show remaining time of your jobs on cluster 
+        """
+
+        if self.__timeWidget is None:
+            style = {'description_width': 'initial'}
+            self.__timeWidget = widgets.HTML(value="",
+                                            description='Remaining Job Time: ',
+                                            style=style,
+                                            )
+            display(self.__timeWidget)
+
+        data = self.getRemainingJobsTime()
+        data = [f'{k} - {v}' for k,v in data.items()]
+        value = '<br/>'.join(data)
+        self.__timeWidget.value = value
+
+    def showServerStatus(self):
+        """Show the status of the Melissa server
+        """
+
+        if self.__serverStatusWidget is None:
+            style = {'description_width': 'initial'}
+            self.__serverStatusWidget = widgets.HTML(value="",
+                                            description='Server status: ',
+                                            style=style,
+                                            )
+            display(self.__serverStatusWidget)
+
+
+        self.__serverStatusWidget.value = self.getServerStatusData()
+
+    def showFailedParameters(self):
+
+        if self.__failedParametersWidget is None:
+            style = {'description_width': 'initial'}
+            self.__failedParametersWidget = widgets.HTML(value="",
+                                            description='Failed Parameters: ',
+                                            style=style,
+                                            )
+            display(self.__failedParametersWidget)
+
+        data = self.getFailedParametersList()
+        value = '<br/>'.join(map(lambda x: str(x), data))
+        self.__failedParametersWidget.value = value
 
     def cleanUp(self):
         """Clean up after study
@@ -146,7 +212,15 @@ class MelissaMonitoring:
         self.timeStop = datetime.datetime.now()
         self.thread = None
         self.state_checker = None
-        display.clear_output(wait=True)
+        if self.__timeWidget is not None:
+            self.__timeWidget.close() 
+            self.__timeWidget = None
+        if self.__serverStatusWidget is not None:
+            self.__serverStatusWidget.close()
+            self.__serverStatusWidget = None
+        if self.__failedParametersWidget is not None:
+            self.__failedParametersWidget.close()
+            self.__failedParametersWidget = None
 
     def getStudyInfo(self):
         """Get info about performed study such as time and cores used
@@ -163,3 +237,5 @@ class MelissaMonitoring:
         Avg cores used: {statistics.mean(list(self.__coreUsageData.values()))}
         """
         return info
+
+    
