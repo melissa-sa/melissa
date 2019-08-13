@@ -31,10 +31,12 @@ class MelissaMonitoring:
         self.timeStop = None
         self.thread = None
         self.state_checker = None
+        self.jobRestartThreshold = 3
 
         self.__coreUsageData = None
         self.__timeWidget = None
         self.__serverStatusWidget = None
+        self.__failedParametersWidget = None
 
     def startStudyInThread(self):
         """Starts study with options from the constructor
@@ -125,7 +127,7 @@ class MelissaMonitoring:
             list -- nested list of failed parameters
         """
 
-        data = list(filter(lambda x: x.nb_restarts > 3 ,self.study.groups))
+        data = filter(lambda x: x.nb_restarts > self.jobRestartThreshold ,self.study.groups)
         return list(map(lambda x: x.param_set, data))
 
     def plotCoresUsage(self, ax):
@@ -188,6 +190,20 @@ class MelissaMonitoring:
 
         self.__serverStatusWidget.value = self.getServerStatusData()
 
+    def showFailedParameters(self):
+
+        if self.__failedParametersWidget is None:
+            style = {'description_width': 'initial'}
+            self.__failedParametersWidget = widgets.HTML(value="",
+                                            description='Failed Parameters: ',
+                                            style=style,
+                                            )
+            display(self.__failedParametersWidget)
+
+        data = self.getFailedParametersList()
+        value = '<br/>'.join(map(lambda x: str(x), data))
+        self.__failedParametersWidget.value = value
+
     def cleanUp(self):
         """Clean up after study
         """
@@ -202,6 +218,9 @@ class MelissaMonitoring:
         if self.__serverStatusWidget is not None:
             self.__serverStatusWidget.close()
             self.__serverStatusWidget = None
+        if self.__failedParametersWidget is not None:
+            self.__failedParametersWidget.close()
+            self.__failedParametersWidget = None
 
     def getStudyInfo(self):
         """Get info about performed study such as time and cores used
