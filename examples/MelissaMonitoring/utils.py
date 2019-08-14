@@ -1,11 +1,13 @@
-import threading
+from threading import Thread
 from collections import Counter, OrderedDict
+from typing import Dict, List
 import os, sys, subprocess
 import time, datetime
 import statistics
 
 from IPython.display import display
 import ipywidgets as widgets
+import matplotlib
 
 from launcher.study import Study
 from launcher.study import server as MelissaServer
@@ -38,7 +40,7 @@ class MelissaMonitoring:
         self.__serverStatusWidget = None
         self.__failedParametersWidget = None
 
-    def startStudyInThread(self):
+    def startStudyInThread(self) -> Thread:
         """Starts study with options from the constructor
         
         Returns:
@@ -46,7 +48,7 @@ class MelissaMonitoring:
         """
 
         self.__coreUsageData = OrderedDict()
-        self.thread = threading.Thread(target=self.study.run)
+        self.thread = Thread(target=self.study.run)
         self.thread.start()
 
         # wait for the state checker thread to initialize
@@ -62,7 +64,7 @@ class MelissaMonitoring:
 
         return self.thread
 
-    def isStudyRunning(self):
+    def isStudyRunning(self) -> bool:
         """Checks if study is still running
         
         Returns:
@@ -71,7 +73,7 @@ class MelissaMonitoring:
 
         return self.state_checker.running_study if self.state_checker.is_alive() else False
 
-    def getJobStatusData(self):
+    def getJobStatusData(self) -> Dict[str, int]:
         """Get dictionary with current number of jobs with particular job status
         
         Returns:
@@ -81,7 +83,7 @@ class MelissaMonitoring:
         data = dict(Counter(map(lambda x: x.job_status, self.study.groups)))
         return {self.jobStates[statusCode]: value for statusCode, value in data.items()}
 
-    def getServerStatusData(self):
+    def getServerStatusData(self) -> str:
         """Get server job status
 
         Returns:
@@ -90,7 +92,7 @@ class MelissaMonitoring:
 
         return self.jobStates[MelissaServer.status]
 
-    def getCPUCount(self):
+    def getCPUCount(self) -> int:
         """Get the number of user's current total CPU usage. Slurm specific
         
         Returns:
@@ -105,7 +107,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return sum([int(x) for x in list(out.splitlines())])
 
-    def getRemainingJobsTime(self):
+    def getRemainingJobsTime(self) -> Dict[str, str]:
         """Get the current remaining time of your jobs. Slurm specific
         
         Returns:
@@ -120,7 +122,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
-    def getFailedParametersList(self):
+    def getFailedParametersList(self) -> List:
         """Get list of failed parameters in the study
         
         Returns:
@@ -130,7 +132,7 @@ class MelissaMonitoring:
         data = filter(lambda x: x.nb_restarts > self.jobRestartThreshold ,self.study.groups)
         return list(map(lambda x: x.param_set, data))
 
-    def plotCoresUsage(self, ax):
+    def plotCoresUsage(self, ax: matplotlib.axes) -> None:
         """Automatically plot cores usage as time series
         
         Arguments:
@@ -143,13 +145,13 @@ class MelissaMonitoring:
         ax.set_title('Cores usage vs time')
         ax.get_figure().autofmt_xdate()
 
-    def plotJobStatus(self, ax):
+    def plotJobStatus(self, ax: matplotlib.axes) -> None:
         """Automatically plot job statuses as pie chart
         
         Arguments:
             ax {matplotlib.axes} -- Axes object that should be plotted
         """
-        
+
         jobStatusData = self.getJobStatusData()
         ax.clear()
         sumOfJobs = sum(jobStatusData.values())
@@ -158,7 +160,7 @@ class MelissaMonitoring:
         ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
         ax.set_title('Job statuses')
 
-    def showRemainingJobsTime(self):
+    def showRemainingJobsTime(self) -> None:
         """Show remaining time of your jobs on cluster 
         """
 
@@ -175,7 +177,7 @@ class MelissaMonitoring:
         value = '<br/>'.join(data)
         self.__timeWidget.value = value
 
-    def showServerStatus(self):
+    def showServerStatus(self) -> None:
         """Show the status of the Melissa server
         """
 
@@ -190,7 +192,7 @@ class MelissaMonitoring:
 
         self.__serverStatusWidget.value = self.getServerStatusData()
 
-    def showFailedParameters(self):
+    def showFailedParameters(self) -> None:
 
         if self.__failedParametersWidget is None:
             style = {'description_width': 'initial'}
@@ -204,7 +206,7 @@ class MelissaMonitoring:
         value = '<br/>'.join(map(lambda x: str(x), data))
         self.__failedParametersWidget.value = value
 
-    def cleanUp(self):
+    def cleanUp(self) -> None:
         """Clean up after study
         """
 
@@ -222,7 +224,7 @@ class MelissaMonitoring:
             self.__failedParametersWidget.close()
             self.__failedParametersWidget = None
 
-    def getStudyInfo(self):
+    def getStudyInfo(self) -> str:
         """Get info about performed study such as time and cores used
         
         Returns:
