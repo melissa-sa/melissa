@@ -9,18 +9,20 @@ class DashPlot(ABC):
     def __init__(self):
         super().__init__()
         self.widget = widgets.Output()
-        self.figure = plt.figure()
-        self.ax = self.figure.axes[0]
+        self.figure = None
+        self.ax = None
         self.plotFunction = None
         self.name = None
+        self.__initFigure()
     
+    def __initFigure(self):
+        with self.widget:
+            self.figure, self.ax = plt.subplots(1,1)
+
     def plot(self):
         with self.widget:
             self.plotFunction(self.ax)
-            self.draw()
-
-    def draw(self):
-        self.figure.canvas.draw()
+            self.figure.canvas.draw()            
         
 
 class JobStatusesDashPlot(DashPlot):

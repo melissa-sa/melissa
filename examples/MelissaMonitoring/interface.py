@@ -5,6 +5,7 @@ from IPython.display import display
 
 from .main import MelissaMonitoring
 from .internal.plots import CoreUsageDashPlot, JobStatusesDashPlot
+from .utils import HiddenPrints
 
 
 class MelissaDash:
@@ -37,10 +38,17 @@ class MelissaDash:
                                     right_sidebar=None,
                                     footer=None)
 
-    def start(self, refreshRate: float):
+    def __displayApp(self):
         display(self.app)
-        self.monitoring.startStudyInThread()
-        while self.monitoring.isStudyRunning():
-            for plot in self.__tabbedPlots:
-                plot.plot()
-            sleep(refreshRate)
+        for plot in self.__tabbedPlots:
+            with plot.widget:
+                display(plot.figure)
+
+    def start(self, refreshRate:float = 1):
+        with HiddenPrints():
+            self.__displayApp()
+            self.monitoring.startStudyInThread()
+            while self.monitoring.isStudyRunning():
+                for plot in self.__tabbedPlots:
+                    plot.plot()
+                sleep(refreshRate)
