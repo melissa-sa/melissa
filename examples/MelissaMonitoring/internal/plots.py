@@ -14,7 +14,6 @@ class DashPlot(ABC):
         self.plotFunction = None
         self.name = None
     
-    @abstractmethod
     def plot(self):
         with self.widget:
             self.plotFunction(self.ax)
