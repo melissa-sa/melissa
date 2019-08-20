@@ -160,9 +160,9 @@ class MelissaMonitoring:
             List[str] -- List of jobs ids'
         """
 
-        data = list(map(lambda x: x.job_id, self.study.groups))
+        data = list(map(lambda x: str(x.job_id), self.study.groups))
         if include_server:
-            data.append(MelissaServer.job_id)
+            data.append(str(MelissaServer.job_id))
         return data
 
     def getServerID(self) -> str:

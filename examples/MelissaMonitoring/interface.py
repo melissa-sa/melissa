@@ -13,11 +13,13 @@ class MelissaDash:
     def __init__(self, study_options, melissa_stats, user_functions):
         self.monitoring = MelissaMonitoring(study_options, melissa_stats, user_functions)
         self.__tabbedPlots = [CoreUsageDashPlot(self.monitoring), JobStatusesDashPlot(self.monitoring)]
-        self.__tabs = None
+        self.__tabsPlot = None
+        self.__menu = None
         self.app = None
         self.__initTabs()
+        self.__initMenu()
         self.__initApp()
-        
+
     def __initTabs(self):
         tabNames = [x.name for x in self.__tabbedPlots]
         children = [x.widget for x in self.__tabbedPlots]
@@ -26,15 +28,24 @@ class MelissaDash:
         for index, title in enumerate(tabNames):
             tab.set_title(index,title)
 
-        self.__tabs = tab
+        self.__tabsPlot = tab
+
+    def __initMenu(self):
+        self.__menu = widgets.ToggleButtons(
+            options=['Plots', 'Failed parameters', 'Study information'],
+            value = 'Plots',
+            description='',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        )
 
     def __initApp(self):
         header = widgets.HTML("<h1>Melissa Dashboard</h1><hr/>", layout=widgets.Layout(height='auto'))
         header.style.text_align='center'
 
         self.app = widgets.AppLayout(header=header,
-                                    left_sidebar=None,
-                                    center=self.__tabs,
+                                    left_sidebar=self.__menu,
+                                    center=self.__tabsPlot,
                                     right_sidebar=None,
                                     footer=None)
 
