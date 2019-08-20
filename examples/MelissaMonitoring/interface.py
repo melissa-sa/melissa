@@ -29,7 +29,7 @@ class MelissaDash:
         self.__tabs = tab
 
     def __initApp(self):
-        header = widgets.HTML("<h1>Melissa Dashboard</h1>", layout=widgets.Layout(height='auto'))
+        header = widgets.HTML("<h1>Melissa Dashboard</h1><hr/>", layout=widgets.Layout(height='auto'))
         header.style.text_align='center'
 
         self.app = widgets.AppLayout(header=header,

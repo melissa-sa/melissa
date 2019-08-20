@@ -83,11 +83,13 @@ class MelissaMonitoring:
 
     def getCPUCount(self) -> int:
         """Get the number of user's current total CPU usage. Slurm specific
-        
+
         Returns:
             int -- number of CPU's in usage
         """
-        process = subprocess.Popen('squeue -h -o "%C" -u ${USER} -t RUNNING',
+
+        ids = self.getJobsIDs()
+        process = subprocess.Popen(f'squeue -h -o "%C" -j {",".join(ids)} -t RUNNING',
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 shell=True,
@@ -96,13 +98,50 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return sum([int(x) for x in list(out.splitlines())])
 
+    def getJobCPUCount(self, ID:str) -> str:
+        """Get CPU usage of particular job. Slurm specific
+
+        Arguments:
+            ID {str} -- id of the job
+
+        Returns:
+            str -- CPU usage of the job
+        """
+
+        process = subprocess.Popen(f'squeue -h -o "%C" -j {ID} -t RUNNING',
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+        out, _ = process.communicate()
+        return str(out).strip()
+
+    def getJobsCPUCount(self) -> Dict[str,str]:
+        """Get the current CPU usage of your jobs. Slurm specific
+
+        Returns:
+            Dict[str,str] -- Mapped as name_of_the_job -> CPU_usage
+        """
+
+        ids = self.getJobsIDs()
+        process = subprocess.Popen(f'squeue -h -o "%j %C" -j {",".join(ids)} -t RUNNING',
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                shell=True,
+                                universal_newlines=True)
+
+        out, _ = process.communicate()
+        return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
+
     def getRemainingJobsTime(self) -> Dict[str, str]:
         """Get the current remaining time of your jobs. Slurm specific
         
         Returns:
-            Dictionary -- Mapped as name_of_the_job -> remaining_time
+            Dict[str,str] -- Mapped as name_of_the_job -> remaining_time
         """
-        process = subprocess.Popen('squeue -h -o "%j %L" -u ${USER}',
+
+        ids = self.getJobsIDs()
+        process = subprocess.Popen(f'squeue -h -o "%j %L" -j {",".join(ids)} -t RUNNING',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
@@ -110,6 +149,30 @@ class MelissaMonitoring:
 
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
+
+    def getJobsIDs(self, include_server:bool = True) -> List[str]:
+        """Get the list of jobs ids'
+
+        Keyword Arguments:
+            include_server {bool} -- Include server ID in the list (default: {True})
+
+        Returns:
+            List[str] -- List of jobs ids'
+        """
+
+        data = list(map(lambda x: x.job_id, self.study.groups))
+        if include_server:
+            data.append(MelissaServer.job_id)
+        return data
+
+    def getServerID(self) -> str:
+        """Get server ID
+
+        Returns:
+            str -- server ID
+        """
+
+        return MelissaServer.job_id
 
     def getFailedParametersList(self) -> List:
         """Get list of failed parameters in the study
