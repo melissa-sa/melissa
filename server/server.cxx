@@ -253,8 +253,12 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     zmq_msg_init_size (&msg, strlen("options") + 1);
     sprintf((char*)zmq_msg_data (&msg), "options");
     zmq_msg_send (&msg, server_ptr->text_requester, 0);
+    int size = 0;
     zmq_msg_init(&msg);
-    int size = zmq_msg_recv (&msg, server_ptr->text_requester, 0);
+    while (size < 1)
+    {
+        size = zmq_msg_recv (&msg, server_ptr->text_requester, 0);
+    }
     server_ptr->last_msg_launcher = melissa_get_time();
     process_launcher_message (zmq_msg_data (&msg), server_ptr);
     zmq_msg_close (&msg);
@@ -411,7 +415,11 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             ,{ server_ptr->deconnexion_responder, 0, ZMQ_POLLIN, 0 }
 #endif // CHECK_SIMU_DECONNECTION
         };
+#ifdef CHECK_SIMU_DECONNECTION
         zmq_poll (items, 4, 100);
+#else // CHECK_SIMU_DECONNECTION
+        zmq_poll (items, 3, 100);
+#endif // CHECK_SIMU_DECONNECTION
         server_ptr->end_wait_time = melissa_get_time();
         server_ptr->total_wait_time += server_ptr->end_wait_time - server_ptr->start_wait_time;
 
