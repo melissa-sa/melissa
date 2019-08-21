@@ -41,6 +41,21 @@ To stop the custer
 oardocker stop 
 ```
 
+To stop the virtual machines:
+```bash
+docker stop $(docker ps -a -q)
+```
+To delete the images
+
+```bash
+ docker rm $(docker ps -a -q)
+ docker rmi $(docker images -q)
+```
+
+To copy a file to a virtualmachine (use `docker ps` to retreive the vm name):
+```bash
+ docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
+``` 
 
 ## Installing Melissa
 
