@@ -15,7 +15,7 @@
 ###################################################################
 
 # Just copy content
-set(files README.md
+set(clusterfiles README.md
           oardocker.sh
           slurm.conf
 	  Dockerfile.base
@@ -23,7 +23,7 @@ set(files README.md
 	  Dockerfile.node
 	  )
 	
-install(files  DESTINATION ${EXAMPLES_DIR}/virtual_cluster)
+install(FILES ${clusterfiles}  DESTINATION ${EXAMPLES_DIR}/virtual_cluster)
 
 
 
