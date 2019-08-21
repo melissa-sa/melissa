@@ -1,0 +1,3 @@
+# Start slurmd  at boot
+RUN echo "Enable Slurmd service"
+RUN systemctl enable slurmd

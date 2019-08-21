@@ -1,0 +1,3 @@
+# Start slurmclt at boot
+RUN echo "Enable Slurmctld service"
+RUN systemctl enable slurmctld

@@ -14,13 +14,17 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+# Just copy content
+set(files README.md
+          oardocker.sh
+          slurm.conf
+	  Dockerfile.base
+	  Dockerfile.server
+	  Dockerfile.node
+	  )
+	
+install(files  DESTINATION ${EXAMPLES_DIR}/virtual_cluster)
 
-set(EXAMPLES_LIBS ${EXTRA_LIBS}
-                  m)
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat_example)
-add_subdirectory(droplet_example)
-add_subdirectory(fluid_example)
-add_subdirectory(game_of_life_example)
-add_subdirectory(virtual_cluster)
+
+
