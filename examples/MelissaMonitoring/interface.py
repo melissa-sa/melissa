@@ -51,8 +51,9 @@ class MelissaDash:
             button_style='',
         )
         menu.observe(self.__changeView, 'value')
+        #TODO: Add sever status widget (_serverStatusWidget is None)
         serverStatus = self.monitoring._serverStatusWidget
-        self.__menu = widgets.VBox([menu, serverStatus])
+        self.__menu = widgets.VBox([menu])
 
     def __changeView(self, change):
         pass

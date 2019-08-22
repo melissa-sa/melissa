@@ -10,7 +10,6 @@ import ipywidgets as widgets
 import matplotlib
 
 from launcher.study import Study
-from launcher.study import server as MelissaServer
 
         
 class MelissaMonitoring:
@@ -79,7 +78,7 @@ class MelissaMonitoring:
             string -- Server job status
         """
 
-        return self.jobStates[MelissaServer.status]
+        return self.jobStates[self.study.server_obj[0].status]
 
     def getCPUCount(self) -> int:
         """Get the number of user's current total CPU usage. Slurm specific
@@ -162,7 +161,7 @@ class MelissaMonitoring:
 
         data = list(map(lambda x: str(x.job_id), self.study.groups))
         if include_server:
-            data.append(str(MelissaServer.job_id))
+            data.append(str(self.study.server_obj[0].job_id))
         return data
 
     def getServerID(self) -> str:
@@ -172,7 +171,7 @@ class MelissaMonitoring:
             str -- server ID
         """
 
-        return str(MelissaServer.job_id)
+        return str(self.study.server_obj[0].job_id)
 
     def getFailedParametersList(self) -> List:
         """Get list of failed parameters in the study
@@ -222,7 +221,7 @@ class MelissaMonitoring:
                                             description='Remaining Job Time: ',
                                             style=style,
                                             )
-            display(self.__timeWidget)
+            display(self._timeWidget)
 
         data = self.getRemainingJobsTime()
         data = [f'{k} - {v}' for k,v in data.items()]
