@@ -1,16 +1,16 @@
-# Virtual culster 
+# Virtual Cluster 
 
 ## Table of contents
-* [Introduction] (#intro)
+* [Introduction](#intro)
 * [Docker Installation](#docker)
-* [Virtual Cluster Installation] (#cluster)
-* [Installing Melissa] (#melissa)
-* [Running the Heat Example  with OAR] (#heatoar)
-* [Running the Heat Example  with Slurm] (#heatslurm)
+* [Virtual Cluster Installation](#cluster)
+* [Installing Melissa](#melissa)
+* [Running the Heat Example  with OAR](#heatoar)
+* [Running the Heat Example  with Slurm](#heatslurm)
 
 
 
-## Introduction < a name="intro"></a>
+## Introduction <a name="intro"></a>
 We show here how to setup a virtual cluster on your local machine, and how to run
 the Melissa heat example. The  virtual cluster enables you to run various nodes, through Docker containers,
 managed by the [OAR batch scheduler](http://oar.imag.fr)  on  your local machine.
