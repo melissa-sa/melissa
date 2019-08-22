@@ -241,7 +241,7 @@ static inline void get_operations (char              *name,
         exit (1);
     }
 
-    /* juste to be sure */
+    /* just to be sure */
     options->mean_op         = 0;
     options->variance_op     = 0;
     options->skewness_op     = 0;

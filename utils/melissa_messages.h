@@ -30,7 +30,8 @@ enum message_type {HELLO = 0,
                    SIMU_STATUS = 5,
                    SERVER = 6,
                    ALIVE = 7,
-                   CONFIDENCE_INTERVAL = 8
+                   CONFIDENCE_INTERVAL = 8,
+                   OPTIONS = 9
                   };
 
 int get_message_type(char* buff);
@@ -75,3 +76,8 @@ void send_message_confidence_interval (char*  stat_name,
                                        double value,
                                        void*  socket,
                                        int    flags);
+
+void send_message_options (char   buff[],
+                           size_t buff_size,
+                           void*  socket,
+                           int    flags);
