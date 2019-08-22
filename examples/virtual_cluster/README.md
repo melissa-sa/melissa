@@ -1,14 +1,55 @@
-#Virtual culster 
+# Virtual culster 
 
-This directory contains the necessary files and scripts to install and run a virtual cluster
-based on the oardocker work from https://oar.imag.fr/wiki:oar-docker
+## Table of contents
+* [Introduction] (#intro)
+* [Docker Installation](#docker)
+* [Virtual Cluster Installation] (#cluster)
+* [Installing Melissa] (#melissa)
+* [Running the Heat Example  with OAR] (#heatoar)
+* [Running the Heat Example  with Slurm] (#heatslurm)
 
-Modifications made include:
+
+
+## Introduction < a name="intro"></a>
+We show here how to setup a virtual cluster on your local machine, and how to run
+the Melissa heat example. The  virtual cluster enables you to run various nodes, through Docker containers,
+managed by the [OAR batch scheduler](http://oar.imag.fr)  on  your local machine.
+
+This is a very handy intermediate step to validate your developments without having the burden to
+confront directly with the supercomputer environment.
+
+
+This directory contains the necessary files and scripts to install and run a virtual cluster with 2 batch schedulers: OAR and Slurm.
+
+We modified the original [OAR-docker](https://oar.imag.fr/wiki:oar-docker) to:
+
 * installing melissa dependencies
 * installing and enabling slurm
 
 
-## Virtual cluster install and setup
+
+
+## Docker Installation <a name="docker"></a>
+
+```bash
+sudo apt-get install docker.io
+```
+
+Add your user to the docker group:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+logout/login for  the changes to be activated.
+
+To check the groups your user id is associated to:
+
+```bash
+id
+```
+
+## Virtual Cluster Installation <a name="cluster"></a>
 
 For installing the virtual cluster rely on the script
 
@@ -52,12 +93,12 @@ To delete the images
  docker rmi $(docker images -q)
 ```
 
-To copy a file to a virtualmachine (use `docker ps` to retreive the vm name):
+To copy a file to a virtual machine (use `docker ps` to retreive the vm name):
 ```bash
  docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
 ``` 
 
-## Installing Melissa
+## Installing Melissa <a name="melissa"></a>
 
 Start a virtual cluster. You can share the Melissa directory with the host machine to avoid having to download and install melissa everytime you start the cluster:
 
@@ -112,7 +153,7 @@ cd ..
 
 
 
-## Running the Heat Example  with OAR
+## Running the Heat Example  with OAR <a name="heatoar"></a>
 
 Go to the installed heat example directory in the OAR specific directory:
 
@@ -150,7 +191,7 @@ http://localhost:40080/drawgantt-svg/
 ```
 
 
-## Running the Heat Example  with SLURM
+## Running the Heat Example  with SLURM <a name="heatslurm"></a>
 
 Go to the installed heat example directory in the SLURM specific directory:
 

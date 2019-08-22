@@ -19,13 +19,16 @@ oardocker init -e stretch
 #cp Dockerfile .oardocker/images/base/Dockerfile
 #cat Dockerfile.base >> .oardocker/images/base/Dockerfile
 #sed '/ADD . \/tmp/  r custom.base' < .oardocker/images/base/custom_setup.sh > .oardocker/images/base/custom_setup.sh
-#cat custom.base >>  .oardocker/images/base/custom_setup.sh
+cp custom_setup.base.sh  .oardocker/images/base/custom_setup.sh
+cp custom_setup.node.sh  .oardocker/images/node/custom_setup.sh
+cp custom_setup.server.sh  .oardocker/images/server/custom_setup.sh
 #cat custom.node >> .oardocker/images/node/custom_setup.sh
 #cat custom.server >> .oardocker/images/server/custom_setup.sh
-cat Dockerfile.base >>  .oardocker/images/base/Dockerfile
-cat Dockerfile.node >> .oardocker/images/node/Dockerfile
-cat Dockerfile.server >> .oardocker/images/server/Dockerfile
+#cat Dockerfile.base >>  .oardocker/images/base/Dockerfile
+#cat Dockerfile.node >> .oardocker/images/node/Dockerfile
+#cat Dockerfile.server >> .oardocker/images/server/Dockerfile
 # copy the slurm config file
+#cp slurm.conf .oardocker/images/base/config/slurm.conf
 cp slurm.conf .oardocker/images/base/config/slurm.conf
 # build the images. must be done each time Dockerfile is modified
 oardocker build
