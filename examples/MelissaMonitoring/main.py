@@ -25,9 +25,9 @@ class MelissaMonitoring:
         self.jobRestartThreshold = 3
 
         self.__coreUsageData = None
-        self.__timeWidget = None
-        self.__serverStatusWidget = None
-        self.__failedParametersWidget = None
+        self._timeWidget = None
+        self._serverStatusWidget = None
+        self._failedParametersWidget = None
 
     def startStudyInThread(self) -> Thread:
         """Starts study with options from the constructor
@@ -172,7 +172,7 @@ class MelissaMonitoring:
             str -- server ID
         """
 
-        return MelissaServer.job_id
+        return str(MelissaServer.job_id)
 
     def getFailedParametersList(self) -> List:
         """Get list of failed parameters in the study
@@ -216,9 +216,9 @@ class MelissaMonitoring:
         """Show remaining time of your jobs on cluster 
         """
 
-        if self.__timeWidget is None:
+        if self._timeWidget is None:
             style = {'description_width': 'initial'}
-            self.__timeWidget = widgets.HTML(value="",
+            self._timeWidget = widgets.HTML(value="",
                                             description='Remaining Job Time: ',
                                             style=style,
                                             )
@@ -227,36 +227,36 @@ class MelissaMonitoring:
         data = self.getRemainingJobsTime()
         data = [f'{k} - {v}' for k,v in data.items()]
         value = '<br/>'.join(data)
-        self.__timeWidget.value = value
+        self._timeWidget.value = value
 
     def showServerStatus(self) -> None:
         """Show the status of the Melissa server
         """
 
-        if self.__serverStatusWidget is None:
+        if self._serverStatusWidget is None:
             style = {'description_width': 'initial'}
-            self.__serverStatusWidget = widgets.HTML(value="",
+            self._serverStatusWidget = widgets.HTML(value="",
                                             description='Server status: ',
                                             style=style,
                                             )
-            display(self.__serverStatusWidget)
+            display(self._serverStatusWidget)
 
 
-        self.__serverStatusWidget.value = self.getServerStatusData()
+        self._serverStatusWidget.value = self.getServerStatusData()
 
     def showFailedParameters(self) -> None:
 
-        if self.__failedParametersWidget is None:
+        if self._failedParametersWidget is None:
             style = {'description_width': 'initial'}
-            self.__failedParametersWidget = widgets.HTML(value="",
+            self._failedParametersWidget = widgets.HTML(value="",
                                             description='Failed Parameters: ',
                                             style=style,
                                             )
-            display(self.__failedParametersWidget)
+            display(self._failedParametersWidget)
 
         data = self.getFailedParametersList()
         value = '<br/>'.join(map(lambda x: str(x), data))
-        self.__failedParametersWidget.value = value
+        self._failedParametersWidget.value = value
 
     def cleanUp(self) -> None:
         """Clean up after study
@@ -266,15 +266,15 @@ class MelissaMonitoring:
         self.timeStop = datetime.datetime.now()
         self.thread = None
         self.state_checker = None
-        if self.__timeWidget is not None:
-            self.__timeWidget.close() 
-            self.__timeWidget = None
-        if self.__serverStatusWidget is not None:
-            self.__serverStatusWidget.close()
-            self.__serverStatusWidget = None
-        if self.__failedParametersWidget is not None:
-            self.__failedParametersWidget.close()
-            self.__failedParametersWidget = None
+        if self._timeWidget is not None:
+            self._timeWidget.close()
+            self._timeWidget = None
+        if self._serverStatusWidget is not None:
+            self._serverStatusWidget.close()
+            self._serverStatusWidget = None
+        if self._failedParametersWidget is not None:
+            self._failedParametersWidget.close()
+            self._failedParametersWidget = None
 
     def getStudyInfo(self) -> str:
         """Get info about performed study such as time and cores used
