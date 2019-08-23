@@ -57,24 +57,23 @@ For installing the virtual cluster rely on the script:
 oardocker.sh
 ```
 
-For starting a virtual cluster:
+For starting a virtual cluster with OAR batch scheduler :
 
 ```bash
 oardocker start -n 3
 ```
 
-For starting a virtual cluster:
+For starting SLURM on the virtual cluster :
 
 ```bash
-oardocker start -n 3
+./start_slurm.sh
 ```
-
-
 
 This virtual cluster will have:
-* 3 compute nodes: node1, node2, node3  (if more nodes needed rememebr to also change slurm.conf accordingly)
+* 3 compute nodes: node1, node2, node3  (if more nodes needed remember to also change slurm.conf accordingly on all nodes and the server)
 * 1 server
 * 1 frontend
+where the  frontend and nodes share the `/home` directory.
 
 
 For connecting to a  cluster node
@@ -85,7 +84,7 @@ To exec command on the frontend for instance:
 ```bash
 oardocker exec frontend ls -al 
 ```
-To stop the custer
+To stop the cluster
 ```bash
 oardocker stop 
 ```
@@ -94,7 +93,7 @@ To stop the virtual machines:
 ```bash
 docker stop $(docker ps -a -q)
 ```
-To delete the images
+To delete the running containers and the images
 
 ```bash
 docker rm $(docker ps -a -q)
