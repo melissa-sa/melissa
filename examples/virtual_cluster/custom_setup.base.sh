@@ -14,8 +14,8 @@ echo "Slurm"
 #apt-get update
 apt-get install -y slurm-wlm
 #apt-get install -y mailutils
-cp /tmp/config/slurm.conf /etc/slurm-llnl/slurm.conf
- # Does not work. Use start_slurm.sh script instead 
+#cp /tmp/config/slurm.conf /etc/slurm-llnl/slurm.conf # done in slurm_start.sh
+ # Does not work. Use slurm_start.sh  instead 
 #systemctl enable munge
 
 

@@ -66,7 +66,7 @@ oardocker start -n 3
 For starting SLURM on the virtual cluster :
 
 ```bash
-./start_slurm.sh
+./slurm_start.sh
 ```
 
 This virtual cluster will have:

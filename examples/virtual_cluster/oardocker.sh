@@ -23,20 +23,21 @@ oardocker init -e stretch
 cp custom_setup.base.sh  .oardocker/images/base/custom_setup.sh
 cp custom_setup.node.sh  .oardocker/images/node/custom_setup.sh
 cp custom_setup.server.sh  .oardocker/images/server/custom_setup.sh
-# copy the slurm config file
-cp slurm.conf .oardocker/images/base/config/slurm.conf
+
+# copy the slurm config file (done in slurm_start.sh)
+# cp slurm.conf .oardocker/images/base/config/slurm.conf
 
 # build the images. must be done each time Dockerfile is modified
 oardocker build
 # install OAR on the cluster
 oardocker install http://oar-ftp.imag.fr/oar/2.5/sources/testing/oar-2.5.8.tar.gz
+
 # start the cluster, with -n <number of nodes>
 oardocker start -n 3
 # we can also share a directory:
 # oardocker start -n 3 -v $HOME/mon_super_projet:/data
 # start slurm on the virtual cluster
-./start_slurm.sh
-
+./slurm_start.sh
 
 # get Melissa from github
 #oardocker exec frontend git clone https://github.com/melissa-sa/melissa.git
