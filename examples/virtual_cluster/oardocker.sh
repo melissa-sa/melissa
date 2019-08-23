@@ -36,19 +36,27 @@ oardocker install http://oar-ftp.imag.fr/oar/2.5/sources/testing/oar-2.5.8.tar.g
 oardocker start -n 3
 # we can also share a directory:
 # oardocker start -n 3 -v $HOME/mon_super_projet:/data
-# start slurm on the virtual cluster
+
+
+# Start slurm on the virtual cluster
 ./slurm_start.sh
 
-# get Melissa from github
+
+# Get Melissa from github
 #oardocker exec frontend git clone https://github.com/melissa-sa/melissa.git
 
-# configure, build and test melissa
+# Configure, build, install and test  melissa
 #oardocker exec frontend mkdir melissa/build
 #oardocker exec frontend cd melissa/build && cmake ../source -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON && make install && source ../install/melissa_set_env.sh && ctest
 
-# # stop the cluster
-# docker stop $(docker ps -a -q)
+# # Stop the cluster 
+# oardocker stop 
+# # Stop and remove all images (except the base lunix container) 
+# docker destroy 
 
+# Similar but from docker 
+# # Stop the cluster
+# docker stop $(docker ps -a -q)
 # # delete the containers and images
 # docker rm $(docker ps -a -q)
 # docker rmi $(docker images -q)

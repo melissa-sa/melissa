@@ -30,7 +30,7 @@ function dockercp {
 
 
 # CP slurm conf file 
-dockercp  "$nodes $server"  "slurm.conf"  "/etc/slurm-llnl/slurm.conf"
+dockercp  "$nodes $server $frontend"  "slurm.conf"  "/etc/slurm-llnl/slurm.conf"
 
 
 # Start services
@@ -39,5 +39,5 @@ dockerexec  "$nodes"  "systemctl start  munge slurmd"
 dockerexec  "$frontend"  "systemctl start  munge"
 dockerexec  "$server"  "systemctl start  munge slurmctld"
 
-# Resume nodes (in some case start in drain state)
-dockerexec  "$frontend"  "scontrol update NodeName=node[1-3] State=RESUME"
+# Resume nodes (in some cases start in drain state)
+#dockerexec  "$frontend"  "scontrol update NodeName=node[1-3] State=RESUME"

@@ -138,7 +138,7 @@ Go to melissa directory and recompile in specific build and install directories,
 cd ~/melissa/Melissa
 mkdir build-oardocker
 cd build-oardocker
-cmake ../source -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/melissa/Melissa/install-oardocker
+cmake ../source -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/melissa/install-oardocker
 make install
 source ../install-oardocker/bin/melissa_set_env.sh
 ```
@@ -148,7 +148,7 @@ source ../install-oardocker/bin/melissa_set_env.sh
 Compile the heat example solver:
 
 ```bash
-cd /home/docker/melissa/Melissa/install-oardocker/share/melissa/examples/heat_example/
+cd /home/docker/melissa/install-oardocker/share/melissa/examples/heat_example/
 mkdir build
 cd build
 cmake ../solver
@@ -165,7 +165,7 @@ cd ..
 Go to the installed heat example directory in the OAR specific directory:
 
 ```bash
-cd /home/docker/melissa/Melissa/install-oardocker/share/melissa/examples/heat_example/study_OAR
+cd /home/docker/melissa/install-oardocker/share/melissa/examples/heat_example/study_OAR
 ```
 and run:
 
