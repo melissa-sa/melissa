@@ -107,14 +107,16 @@ docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
 
 ## Installing Melissa <a name="melissa"></a>
 
-Start a virtual cluster. You can share the Melissa directory with the host machine to avoid having to download and install melissa everytime you start the cluster:
-
+Start a virtual cluster. We advice you to use one the 2 following methods to ensure that your Melissa install is not lost when you reboot the virtual cluster:
+* Use a  shared  directory with the host machine:
 ```bash
 oardocker start -n 3  -v ~/path/to/melissa/on/host/machine:/home/docker/melissa
 ```
+* Use the `oardocker exec frontend ....` command  to modify the state of the frontend container.
+
+
 
 Connect to the frontend:
-
 ```bash
 oardocker connect frontend
 ```
@@ -125,8 +127,9 @@ You are now on the cluster frontend. If you shared the Melissa folder like shown
 /home/docker/melissa
 ```
 
-You can also just clone it from the repo:
+You can also just clone it from the repo (in the melissa dir not to loss it once you reboot the cluster):
 ```bash
+cd melissa
 git clone https://github.com/melissa-sa/melissa.git
 ```
 

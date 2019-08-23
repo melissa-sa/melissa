@@ -18,9 +18,10 @@
 set(clusterfiles README.md
           oardocker.sh
           slurm.conf
-	  Dockerfile.base
-	  Dockerfile.server
-	  Dockerfile.node
+	  slurm_start.sh
+	  custom_setup.base.sh
+	  custom_setup.server.sh
+	  custom_setup.node.sh
 	  )
 	
 install(FILES ${clusterfiles}  DESTINATION ${EXAMPLES_DIR}/virtual_cluster)
