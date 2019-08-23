@@ -51,17 +51,25 @@ id
 
 ## Virtual Cluster Installation <a name="cluster"></a>
 
-For installing the virtual cluster rely on the script
+For installing the virtual cluster rely on the script:
 
 ```bash
-    oardocker.sh
+oardocker.sh
 ```
 
-For starting a virtual cluster
+For starting a virtual cluster:
 
 ```bash
-   oardocker start -n 3
+oardocker start -n 3
 ```
+
+For starting a virtual cluster:
+
+```bash
+oardocker start -n 3
+```
+
+
 
 This virtual cluster will have:
 * 3 compute nodes: node1, node2, node3  (if more nodes needed rememebr to also change slurm.conf accordingly)
