@@ -1,16 +1,16 @@
-# Virtual culster 
+# Virtual Cluster 
 
 ## Table of contents
-* [Introduction] (#intro)
+* [Introduction](#intro)
 * [Docker Installation](#docker)
-* [Virtual Cluster Installation] (#cluster)
-* [Installing Melissa] (#melissa)
-* [Running the Heat Example  with OAR] (#heatoar)
-* [Running the Heat Example  with Slurm] (#heatslurm)
+* [Virtual Cluster Installation](#cluster)
+* [Installing Melissa](#melissa)
+* [Running the Heat Example  with OAR](#heatoar)
+* [Running the Heat Example  with Slurm](#heatslurm)
 
 
 
-## Introduction < a name="intro"></a>
+## Introduction <a name="intro"></a>
 We show here how to setup a virtual cluster on your local machine, and how to run
 the Melissa heat example. The  virtual cluster enables you to run various nodes, through Docker containers,
 managed by the [OAR batch scheduler](http://oar.imag.fr)  on  your local machine.
@@ -97,13 +97,13 @@ docker stop $(docker ps -a -q)
 To delete the images
 
 ```bash
- docker rm $(docker ps -a -q)
- docker rmi $(docker images -q)
+docker rm $(docker ps -a -q)
+docker rmi $(docker images -q)
 ```
 
 To copy a file to a virtual machine (use `docker ps` to retreive the vm name):
 ```bash
- docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
+docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
 ``` 
 
 ## Installing Melissa <a name="melissa"></a>
