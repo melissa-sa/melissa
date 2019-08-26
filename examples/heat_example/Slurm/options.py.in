@@ -99,7 +99,7 @@ def launch_simu(simulation):
                              '-n',
                              str(NODES_GROUP),
                              '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/solver/install/bin/'+EXECUTABLE,
-                             str(simulation.simu_id), str(simulation.coupling),
+                             str(simulation.simu_id[0]), str(simulation.coupling),
                              ' '.join(str(i) for i in simulation.param_set)))
     print(command)
 

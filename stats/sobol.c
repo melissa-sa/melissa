@@ -339,6 +339,33 @@ void confidence_sobol_martinez(sobol_array_t *sobol_array,
  *
  * @ingroup sobol
  *
+ * This function computes the confidence interval for Martinez Sobol indices
+ * as if the worst value was 0
+ *
+ *******************************************************************************
+ *
+ * @param[out] *sobol_array
+ * Sobol indices
+ *
+ *******************************************************************************/
+
+double simplified_confidence_sobol_martinez(int iteration)
+{
+    double temp;
+
+    if (iteration < 4)
+    {
+        return 2.0;
+    }
+    temp = 1.96/(sqrt(iteration-3));
+    return tanh(temp) - tanh(0.0 - temp);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup sobol
+ *
  * This function check if the Sobol indice convergence has been reached
  *
  *******************************************************************************
