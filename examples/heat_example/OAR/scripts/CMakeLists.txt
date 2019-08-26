@@ -36,5 +36,3 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/run_simu.sh
                 WORLD_READ
                 WORLD_EXECUTE)
 
-install(FILES Dockerfile DESTINATION ${EXAMPLES_DIR}/heat_example/study_OAR/scripts)
-install(FILES oardocker.sh DESTINATION ${EXAMPLES_DIR}/heat_example/study_OAR/scripts)

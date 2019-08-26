@@ -7,7 +7,7 @@ build_local:
   tags:
     - linux
   script:
-    - "mkdir build && cd build && cmake -DINSTALL_ZMQ=ON ../ && make install && source ../install/bin/melissa_set_env.sh"
+    - "mkdir build && cd build && cmake -DINSTALL_ZMQ=ON -DBUILD_DOCUMENTATION=OFF ../ && make install && source ../install/bin/melissa_set_env.sh"
   artifacts:
     paths:
       - build/
