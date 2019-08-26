@@ -140,7 +140,7 @@ Go to melissa directory and recompile in specific build and install directories,
 cd ~/melissa/Melissa
 mkdir build-oardocker
 cd build-oardocker
-cmake ../source -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/melissa/install-oardocker
+cmake ../. -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/melissa/install-oardocker
 make install
 source ../install-oardocker/bin/melissa_set_env.sh
 ```
