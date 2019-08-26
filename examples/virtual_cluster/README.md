@@ -54,7 +54,7 @@ id
 For installing the virtual cluster rely on the script:
 
 ```bash
-oardocker.sh
+[oardocker.sh](examples/virtual_cluster/oardocker.sh)
 ```
 
 For starting a virtual cluster with OAR batch scheduler :
