@@ -268,6 +268,9 @@ set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
 add_subdirectory(examples)
 
 # set environement variables
+#if(INSTALL_ZMQ)
+#  set(ZeroMQ_DIR "export ZeroMQ=${CMAKE_INSTALL_PREFIX}/share/cmake/ZeroMQ")
+#endif(INSTALL_ZMQ)
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     PERMISSIONS OWNER_WRITE
