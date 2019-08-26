@@ -236,6 +236,10 @@ else(DOXYGEN_FOUND)
   option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
 endif(DOXYGEN_FOUND)
 
+# If we run on a Omnipath cluster, we need to check simulation deconnection.
+
+option(CHECK_SIMU_DECONNECTION "check simulation deconnection" OFF)
+
 #set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
 
 # Load local include directories before. This ensures that no old installed headers are

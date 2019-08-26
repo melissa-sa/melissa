@@ -496,7 +496,7 @@ void melissa_print (int msg_priority, const char* func_name, const char* format,
  *
  *******************************************************************************/
 
-void set_bit (int32_t *vect, int pos)
+void set_bit (uint32_t *vect, int pos)
 {
     vect[pos/32] |= 1 << (pos%32);
 }
@@ -518,7 +518,7 @@ void set_bit (int32_t *vect, int pos)
  *
  *******************************************************************************/
 
-void clear_bit (int32_t *vect, int pos)
+void clear_bit (uint32_t *vect, int pos)
 {
     vect[pos/32] &= ~(1 << (pos%32));
 }
@@ -540,7 +540,7 @@ void clear_bit (int32_t *vect, int pos)
  *
  *******************************************************************************/
 
-int test_bit (int32_t *vect, int pos)
+int test_bit (uint32_t *vect, int pos)
 {
     if ( (vect[pos/32] & (1 << (pos%32) )) != 0 )
     {

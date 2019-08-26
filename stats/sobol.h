@@ -117,6 +117,8 @@ void confidence_sobol_martinez(sobol_array_t *sobol_array,
                                int            nb_parameters,
                                int            vect_size);
 
+double simplified_confidence_sobol_martinez(int iteration);
+
 int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
                                      double          confidence_value,
                                      int             nb_time_steps,
