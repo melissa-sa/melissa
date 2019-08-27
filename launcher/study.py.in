@@ -198,6 +198,8 @@ class Responder(Thread):
                 melissa_comm4py.get_resp_message(buff)
                 if buff.value.decode != 'nothing':
                     logging.debug('message: '+buff.value.decode())
+                    #with self.server[0].lock:
+                        #self.server[0].status = RUNNING
                     #print('message: '+buff.value.decode())
                 message = buff.value.decode().split()
                 if message[0] == 'simu_info':
@@ -745,7 +747,7 @@ class Study(object):
             time.sleep(3)
             sleep = False
 
-        if (((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status != RUNNING)
+        if (((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
                 and self.server_obj[0].status != FINISHED)
                 and not all([i.status == FINISHED for i in self.groups])):
             print('server status: '+str(self.server_obj[0].status)+' job_status: '+str(self.server_obj[0].job_status))
@@ -756,6 +758,7 @@ class Study(object):
             logging.info('resubmit server job')
             time.sleep(1)
             try:
+                self.server_obj[0].cancel()
                 self.server_obj[0].restart()
             except:
                 logging.error('Error while restarting server')
