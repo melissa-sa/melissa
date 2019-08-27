@@ -95,7 +95,7 @@ def launch_simu(simulation):
             command += ' '.join(('-n',
                                  str(PROC_PER_NODE*NODES_SIMU),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]),
+                                 str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         command = command[:-2]

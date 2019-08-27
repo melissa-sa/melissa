@@ -114,7 +114,6 @@ class Messenger(Thread):
             last_msg_to_server = 0
             buff = create_string_buffer(melissa_comm4py.melissa_get_message_len())
             while self.running_study:
-#                if np.random.rand() < 0.2: print('r' + 1)
                 melissa_comm4py.wait_message(buff)
                 last_server = time.time()
                 message = buff.value.decode().split()
@@ -137,7 +136,7 @@ class Messenger(Thread):
                         if self.groups[group_id].job_type == 3:
                             if self.groups[group_id].status < 2:
                                 self.groups[group_id].status = int(message[2])
-                            print("group " +str(group_id)+ " simu "+str(simu_id))
+                            #print("group " +str(group_id)+ " simu "+str(simu_id))
                             self.groups[group_id].simu_status[simu_id] = int(message[2])
                             if all(simu_status == 2 for simu_status in self.groups[group_id].simu_status):
                                 self.groups[group_id].status = 2

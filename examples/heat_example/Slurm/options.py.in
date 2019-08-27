@@ -89,18 +89,21 @@ def launch_simu(simulation):
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
-                                 '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/solver/install/bin/'+EXECUTABLE,
+                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         command = command[:-2]
     else:
-        command = ' '.join(('mpirun',
-                             '-n',
-                             str(NODES_GROUP),
-                             '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/solver/install/bin/'+EXECUTABLE,
-                             str(simulation.simu_id[0]), str(simulation.coupling),
-                             ' '.join(str(i) for i in simulation.param_set)))
+        command = 'mpirun '
+        for i in range(simulation.size):
+            command += ' '.join(('-n',
+                                 str(PROC_PER_NODE*NODES_SIMU),
+                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
+                                 str(simulation.simu_id[i]), str(simulation.coupling),
+                                 ' '.join(str(j) for j in simulation.param_set[i]),
+                                 ': '))
+        command = command[:-2]
     print(command)
 
     content = ""
