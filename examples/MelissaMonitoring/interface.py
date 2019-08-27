@@ -27,7 +27,7 @@ class MelissaDash:
     def __init(self):
         self.__initPlots()
         self.__initMenu()
-        #self.__initStudyInfo()
+        self.__initStudyInfo()
         #self.__initFailedParamInfo()
         self.__initFooter()
         self.__initApp()
@@ -51,18 +51,27 @@ class MelissaDash:
             button_style='',
         )
         menu.observe(self.__changeView, 'value')
-        #TODO: Add sever status widget (_serverStatusWidget is None)
-        serverStatus = self.monitoring._serverStatusWidget
-        self.__menu = widgets.VBox([menu])
+        serverStatus = self.monitoring._createServerStatusWidget()
+        self.__menu = widgets.VBox([menu, serverStatus])
 
+        # FIXME: Fix swapping between views
     def __changeView(self, change):
-        pass
+        newView = change['new']
+        if newView == 'Plots':
+            self.app.center = self.__plots
+            #self.__displayPlots()
+        elif newView == 'Failed parameters':
+            pass
+        elif newView == 'Study information':
+            self.app.center = self.__studyInfo
 
     def __initStudyInfo(self):
         self.__studyInfo = widgets.Tab()
         tabNames = ['Remaining job time', 'CPU job usage', 'Server status & failed parameters']
-        #TODO: Add widgets
-        children = [self.monitoring._timeWidget]
+        children = [self.monitoring._createRemainingJobsTimeWidget(), self.monitoring._createJobsCPUCountWidget(), self.monitoring._createFailedParametersWidget()]
+        self.__studyInfo.children = children
+        for index, title in enumerate(tabNames):
+            self.__studyInfo.set_title(index,title)
 
     def __initFailedParamInfo(self):
         raise NotImplementedError
@@ -82,22 +91,31 @@ class MelissaDash:
 
     def __displayApp(self):
         display(self.app)
+        self.__displayPlots()
+    
+    def __displayPlots(self):
         for plot in self.__tabbedPlots:
             with plot.widget:
                 display(plot.figure)
 
-        self.monitoring.showServerStatus()
-
     def start(self, refreshRate:float = 1):
         with HiddenPrints():
             self.__displayApp()
-            #self.monitoring.startStudyInThread()
-            #self.__monitoringThread = Thread(target=self.__runMonitoringThread, args=(refreshRate,))
-            #self.__monitoringThread.start()
+            self.monitoring.startStudyInThread()
+            self.__monitoringThread = Thread(target=self.__runMonitoringThread, args=(refreshRate,))
+            self.__monitoringThread.start()
         
-
+    # TODO: Check for possible threading problems
+    # Notebook kernel busy after finished study
     def __runMonitoringThread(self, refreshRate):
-        while self.monitoring.isStudyRunning():
-            for plot in self.__tabbedPlots:
-                plot.plot()
-            sleep(refreshRate)
+        with HiddenPrints():
+            self.monitoring.showServerStatus()
+            self.monitoring.waitForInitialization()
+            while self.monitoring.isStudyRunning():
+                for plot in self.__tabbedPlots:
+                    plot.plot()
+                self.monitoring.showServerStatus()
+                self.monitoring.showFailedParameters()
+                self.monitoring.showRemainingJobsTime()
+                self.monitoring.showJobsCPUCount()
+                sleep(refreshRate)

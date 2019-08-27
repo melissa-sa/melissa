@@ -23,10 +23,12 @@ class MelissaMonitoring:
         self.state_checker = None
         self.jobRestartThreshold = 3
 
-        self.__coreUsageData = None
-        self._timeWidget = None
-        self._serverStatusWidget = None
-        self._failedParametersWidget = None
+        self.coreUsageData = None
+
+        self.timeWidget = None
+        self.serverStatusWidget = None
+        self.failedParametersWidget = None
+        self.jobsCPUCountWidget = None
 
     def startStudyInThread(self) -> Thread:
         """Starts study with options from the constructor
@@ -35,11 +37,18 @@ class MelissaMonitoring:
             Thread -- Thread object used to control the study
         """
 
-        self.__coreUsageData = OrderedDict()
+        self.coreUsageData = OrderedDict()
         self.thread = Thread(target=self.study.run)
         self.thread.start()
 
-        # wait for the state checker thread to initialize
+        self.timeStart = datetime.datetime.now()
+
+        return self.thread
+
+    def waitForInitialization(self) -> None:
+        """Waits for melissa server to fully initialize
+        """
+
         while self.study.threads.get('state_checker', None) is None:
             time.sleep(0.001)
         else:
@@ -47,10 +56,6 @@ class MelissaMonitoring:
         
         while not self.state_checker.is_alive():
             time.sleep(0.001)
-
-        self.timeStart = datetime.datetime.now()
-
-        return self.thread
 
     def isStudyRunning(self) -> bool:
         """Checks if study is still running
@@ -134,7 +139,7 @@ class MelissaMonitoring:
 
     def getRemainingJobsTime(self) -> Dict[str, str]:
         """Get the current remaining time of your jobs. Slurm specific
-        
+
         Returns:
             Dict[str,str] -- Mapped as name_of_the_job -> remaining_time
         """
@@ -175,7 +180,7 @@ class MelissaMonitoring:
 
     def getFailedParametersList(self) -> List:
         """Get list of failed parameters in the study
-        
+
         Returns:
             list -- nested list of failed parameters
         """
@@ -185,20 +190,20 @@ class MelissaMonitoring:
 
     def plotCoresUsage(self, ax: matplotlib.axes) -> None:
         """Automatically plot cores usage as time series
-        
+
         Arguments:
             ax {matplotlib.axes} -- Axes object that should be plotted
         """
 
         ax.clear()
-        self.__coreUsageData[datetime.datetime.now() - self.timeStart] = self.getCPUCount()
-        ax.plot(list(map(lambda x: str(x), self.__coreUsageData.keys())), list(self.__coreUsageData.values()))
+        self.coreUsageData[datetime.datetime.now() - self.timeStart] = self.getCPUCount()
+        ax.plot(list(map(lambda x: str(x), self.coreUsageData.keys())), list(self.coreUsageData.values()))
         ax.set_title('Cores usage vs time')
         ax.get_figure().autofmt_xdate()
 
     def plotJobStatus(self, ax: matplotlib.axes) -> None:
         """Automatically plot job statuses as pie chart
-        
+
         Arguments:
             ax {matplotlib.axes} -- Axes object that should be plotted
         """
@@ -211,51 +216,112 @@ class MelissaMonitoring:
         ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
         ax.set_title('Job statuses')
 
-    def showRemainingJobsTime(self) -> None:
-        """Show remaining time of your jobs on cluster 
+    def _createJobsCPUCountWidget(self):
+        """Create jobs cpu count widget, used by showJobsCPUCount & MelissaDash
+
+        Returns:
+            widgets.HTML -- customed widget for showing Jobs remaining time
         """
 
-        if self._timeWidget is None:
-            style = {'description_width': 'initial'}
-            self._timeWidget = widgets.HTML(value="",
-                                            description='Remaining Job Time: ',
-                                            style=style,
-                                            )
-            display(self._timeWidget)
+        style = {'description_width': 'initial'}
+        self.jobsCPUCountWidget = widgets.HTML(value="",
+                                        description='Jobs CPU count: ',
+                                        style=style,
+                                        )
+        return self.jobsCPUCountWidget
+
+    def showJobsCPUCount(self):
+        """Create widget (if not created) & show jobs cpu count of your jobs on cluster 
+        """
+
+        if self.jobsCPUCountWidget is None:
+            self._createJobsCPUCountWidget()
+            display(self.jobsCPUCountWidget)
+
+        data = self.getJobsCPUCount()
+        data = [f'{k} - {v}' for k,v in data.items()]
+        value = '<br/>'.join(data)
+        self.jobsCPUCountWidget.value = value
+
+
+    def _createRemainingJobsTimeWidget(self) -> widgets.HTML:
+        """Create remaining time widget, used by showRemainingJobsTime & MelissaDash
+
+        Returns:
+            widgets.HTML -- customed widget for showing Jobs remaining time
+        """
+
+        style = {'description_width': 'initial'}
+        self.timeWidget = widgets.HTML(value="",
+                                        description='Remaining job time: ',
+                                        style=style,
+                                        )
+        return self.timeWidget
+
+    def showRemainingJobsTime(self) -> None:
+        """Create widget (if not created) & show remaining time of your jobs on cluster 
+        """
+
+        if self.timeWidget is None:
+            self._createRemainingJobsTimeWidget()
+            display(self.timeWidget)
 
         data = self.getRemainingJobsTime()
         data = [f'{k} - {v}' for k,v in data.items()]
         value = '<br/>'.join(data)
-        self._timeWidget.value = value
+        self.timeWidget.value = value
 
-    def showServerStatus(self) -> None:
-        """Show the status of the Melissa server
+    def _createServerStatusWidget(self) -> widgets.HTML:
+        """Create server status widget, used by showServerStatus & MelissaDash
+
+        Returns:
+            widgets.HTML -- customed widget for showing server status
         """
 
-        if self._serverStatusWidget is None:
-            style = {'description_width': 'initial'}
-            self._serverStatusWidget = widgets.HTML(value="",
-                                            description='Server status: ',
+        style = {'description_width': 'initial'}
+        self.serverStatusWidget = widgets.HTML(value="",
+                                        description='Server status: ',
+                                        style=style,
+                                        )
+        
+        return self.serverStatusWidget
+
+    def showServerStatus(self) -> None:
+        """Create widget (if not created) & show the status of the Melissa server
+        """
+
+        if self.serverStatusWidget is None:
+            self._createServerStatusWidget()
+            display(self.serverStatusWidget)
+
+
+        self.serverStatusWidget.value = self.getServerStatusData()
+
+    def _createFailedParametersWidget(self) -> widgets.HTML:
+        """Create failed parameters widget, used by showServerStatus & MelissaDash
+
+        Returns:
+            widgets.HTML -- customed widget for showing failed parameters
+        """
+
+        style = {'description_width': 'initial'}
+        self.failedParametersWidget = widgets.HTML(value="",
+                                            description='Failed parameters: ',
                                             style=style,
                                             )
-            display(self._serverStatusWidget)
-
-
-        self._serverStatusWidget.value = self.getServerStatusData()
+        return self.failedParametersWidget
 
     def showFailedParameters(self) -> None:
+        """Create widget (if not created) & show simulations' failed parameters
+        """
 
-        if self._failedParametersWidget is None:
-            style = {'description_width': 'initial'}
-            self._failedParametersWidget = widgets.HTML(value="",
-                                            description='Failed Parameters: ',
-                                            style=style,
-                                            )
-            display(self._failedParametersWidget)
+        if self.failedParametersWidget is None:
+            self._createFailedParametersWidget()
+            display(self.failedParametersWidget)
 
         data = self.getFailedParametersList()
         value = '<br/>'.join(map(lambda x: str(x), data))
-        self._failedParametersWidget.value = value
+        self.failedParametersWidget.value = value
 
     def cleanUp(self) -> None:
         """Clean up after study
@@ -265,15 +331,15 @@ class MelissaMonitoring:
         self.timeStop = datetime.datetime.now()
         self.thread = None
         self.state_checker = None
-        if self._timeWidget is not None:
-            self._timeWidget.close()
-            self._timeWidget = None
-        if self._serverStatusWidget is not None:
-            self._serverStatusWidget.close()
-            self._serverStatusWidget = None
-        if self._failedParametersWidget is not None:
-            self._failedParametersWidget.close()
-            self._failedParametersWidget = None
+        if self.timeWidget is not None:
+            self.timeWidget.close()
+            self.timeWidget = None
+        if self.serverStatusWidget is not None:
+            self.serverStatusWidget.close()
+            self.serverStatusWidget = None
+        if self.failedParametersWidget is not None:
+            self.failedParametersWidget.close()
+            self.failedParametersWidget = None
 
     def getStudyInfo(self) -> str:
         """Get info about performed study such as time and cores used
@@ -286,8 +352,8 @@ class MelissaMonitoring:
         Study started: {self.timeStart}
         Study ended: {self.timeStop}
         Elapsed time: {self.timeStop - self.timeStart}
-        Max cores used: {max(list(self.__coreUsageData.values()))}
-        Avg cores used: {statistics.mean(list(self.__coreUsageData.values()))}
+        Max cores used: {max(list(self.coreUsageData.values()))}
+        Avg cores used: {statistics.mean(list(self.coreUsageData.values()))}
         """
         return info
 
