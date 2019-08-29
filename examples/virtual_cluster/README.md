@@ -69,7 +69,7 @@ For starting SLURM on the virtual cluster :
 ```
 
 This virtual cluster will have:
-* 3 compute nodes: node1, node2, node3  (if more nodes needed remember to also change slurm.conf accordingly on all nodes and the server)
+* 3 compute nodes: node1, node2, node3  
 * 1 server
 * 1 frontend
 where the  frontend and nodes share the `/home` directory.
