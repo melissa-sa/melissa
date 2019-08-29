@@ -5,6 +5,7 @@
 
 # Collect container ids
 nodes=$(docker ps  | grep -e "oar.*node" | awk '{print $1}')
+nb_nodes=$(echo "$nodes" | wc -w)
 server=$(docker ps  | grep -e "oar.*server" | awk '{print $1}')
 frontend=$(docker ps  | grep -e "oar.*frontend" | awk '{print $1}')
 
@@ -29,7 +30,8 @@ function dockercp {
 }
 
 
-# CP slurm conf file 
+# Update  slurm conf file with actual number of compute nodes and copy to cluster nodes
+sed -n -e s/nb_nodes/"$nb_nodes"/ -e p slurm.conf.in  >  slurm.conf 
 dockercp  "$nodes $server $frontend"  "slurm.conf"  "/etc/slurm-llnl/slurm.conf"
 
 
