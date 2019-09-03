@@ -188,6 +188,11 @@ class MelissaMonitoring:
         data = filter(lambda x: x.nb_restarts > self.jobRestartThreshold ,self.study.groups)
         return list(map(lambda x: x.param_set, data))
 
+    # TODO: Add docstring
+    def getSobolConfidenceInterval(self):
+
+        return self.study.threads['messenger'].confidence_interval.get('Sobol', None)
+
     def plotCoresUsage(self, ax: matplotlib.axes) -> None:
         """Automatically plot cores usage as time series
 
