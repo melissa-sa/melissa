@@ -23,6 +23,7 @@ class MelissaMonitoring:
         self.jobRestartThreshold = 3
 
         self.coreUsageData = None
+        self.sobolConfidenceInterval = None
 
         self.timeWidget = None
         self.serverStatusWidget = None
@@ -187,8 +188,15 @@ class MelissaMonitoring:
         data = filter(lambda x: x.nb_restarts > self.jobRestartThreshold ,self.study.groups)
         return list(map(lambda x: x.param_set, data))
 
-    # TODO: Add docstring
+
     def getSobolConfidenceInterval(self):
+        """Get current sobol confidence interval
+        
+        Returns:
+            float -- real number between 1 and 2 
+            or
+            None -- if confidence interval couldn't be calculated at the moment
+        """
 
         return self.study.threads['messenger'].confidence_interval.get('Sobol', None)
 
@@ -219,6 +227,21 @@ class MelissaMonitoring:
         labels = [x for x in jobStatusData.keys()]
         ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
         ax.set_title('Job statuses')
+
+    def plotSobolConfidenceInterval(self, ax):
+        """Automatically plot cores usage as time series
+
+        Arguments:
+            ax {matplotlib.axes} -- Axes object that should be plotted
+        """
+
+        data = self.getSobolConfidenceInterval()
+        if data is not None:
+            ax.clear()
+            self.sobolConfidenceInterval[datetime.datetime.now() - self.timeStart] = data
+            ax.plot(list(map(lambda x: str(x), self.sobolConfidenceInterval.keys())), list(self.sobolConfidenceInterval.values()))
+            ax.set_title('Sobol confidence interval')
+            ax.get_figure().autofmt_xdate()
 
     def _createJobsCPUCountWidget(self):
         """Create jobs cpu count widget, used by showJobsCPUCount & MelissaDash
