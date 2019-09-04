@@ -1,6 +1,5 @@
 from threading import Thread
 from collections import Counter, OrderedDict
-from typing import Dict, List
 import subprocess
 import time, datetime
 import statistics
@@ -30,7 +29,7 @@ class MelissaMonitoring:
         self.failedParametersWidget = None
         self.jobsCPUCountWidget = None
 
-    def startStudyInThread(self) -> Thread:
+    def startStudyInThread(self):
         """Starts study with options from the constructor
         
         Returns:
@@ -45,7 +44,7 @@ class MelissaMonitoring:
 
         return self.thread
 
-    def waitForInitialization(self) -> None:
+    def waitForInitialization(self):
         """Waits for melissa server to fully initialize
         """
 
@@ -57,7 +56,7 @@ class MelissaMonitoring:
         while not self.state_checker.is_alive():
             time.sleep(0.001)
 
-    def isStudyRunning(self) -> bool:
+    def isStudyRunning(self):
         """Checks if study is still running
         
         Returns:
@@ -66,7 +65,7 @@ class MelissaMonitoring:
 
         return self.state_checker.running_study if self.state_checker.is_alive() else False
 
-    def getJobStatusData(self) -> Dict[str, int]:
+    def getJobStatusData(self):
         """Get dictionary with current number of jobs with particular job status
         
         Returns:
@@ -76,7 +75,7 @@ class MelissaMonitoring:
         data = dict(Counter(map(lambda x: x.job_status, self.study.groups)))
         return {self.jobStates[statusCode]: value for statusCode, value in data.items()}
 
-    def getServerStatusData(self) -> str:
+    def getServerStatusData(self):
         """Get server job status
 
         Returns:
@@ -85,7 +84,7 @@ class MelissaMonitoring:
 
         return self.jobStates[self.study.server_obj[0].status]
 
-    def getCPUCount(self) -> int:
+    def getCPUCount(self):
         """Get the number of user's current total CPU usage. Slurm specific
 
         Returns:
@@ -93,7 +92,7 @@ class MelissaMonitoring:
         """
 
         ids = self.getJobsIDs()
-        process = subprocess.Popen(f'squeue -h -o "%C" -j {",".join(ids)} -t RUNNING',
+        process = subprocess.Popen('squeue -h -o "%C" -j {} -t RUNNING'.format(",".join(ids)),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 shell=True,
@@ -102,7 +101,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return sum([int(x) for x in list(out.splitlines())])
 
-    def getJobCPUCount(self, ID:str) -> str:
+    def getJobCPUCount(self, ID):
         """Get CPU usage of particular job. Slurm specific
 
         Arguments:
@@ -112,7 +111,7 @@ class MelissaMonitoring:
             str -- CPU usage of the job
         """
 
-        process = subprocess.Popen(f'squeue -h -o "%C" -j {ID} -t RUNNING',
+        process = subprocess.Popen('squeue -h -o "%C" -j {} -t RUNNING'.format(ID),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 shell=True,
@@ -120,7 +119,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return str(out).strip()
 
-    def getJobsCPUCount(self) -> Dict[str,str]:
+    def getJobsCPUCount(self):
         """Get the current CPU usage of your jobs. Slurm specific
 
         Returns:
@@ -128,7 +127,7 @@ class MelissaMonitoring:
         """
 
         ids = self.getJobsIDs()
-        process = subprocess.Popen(f'squeue -h -o "%j %C" -j {",".join(ids)} -t RUNNING',
+        process = subprocess.Popen('squeue -h -o "%j %C" -j {} -t RUNNING'.format(",".join(ids)),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 shell=True,
@@ -137,7 +136,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
-    def getRemainingJobsTime(self) -> Dict[str, str]:
+    def getRemainingJobsTime(self):
         """Get the current remaining time of your jobs. Slurm specific
 
         Returns:
@@ -145,7 +144,7 @@ class MelissaMonitoring:
         """
 
         ids = self.getJobsIDs()
-        process = subprocess.Popen(f'squeue -h -o "%j %L" -j {",".join(ids)} -t RUNNING',
+        process = subprocess.Popen('squeue -h -o "%j %L" -j {} -t RUNNING'.format(",".join(ids)),
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
@@ -154,7 +153,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
-    def getJobsIDs(self, include_server:bool = True) -> List[str]:
+    def getJobsIDs(self, include_server = True):
         """Get the list of jobs ids'
 
         Keyword Arguments:
@@ -169,7 +168,7 @@ class MelissaMonitoring:
             data.append(str(self.study.server_obj[0].job_id))
         return data
 
-    def getServerID(self) -> str:
+    def getServerID(self):
         """Get server ID
 
         Returns:
@@ -178,7 +177,7 @@ class MelissaMonitoring:
 
         return str(self.study.server_obj[0].job_id)
 
-    def getFailedParametersList(self) -> List:
+    def getFailedParametersList(self):
         """Get list of failed parameters in the study
 
         Returns:
@@ -193,7 +192,7 @@ class MelissaMonitoring:
 
         return self.study.threads['messenger'].confidence_interval.get('Sobol', None)
 
-    def plotCoresUsage(self, ax: matplotlib.axes) -> None:
+    def plotCoresUsage(self, ax):
         """Automatically plot cores usage as time series
 
         Arguments:
@@ -206,7 +205,7 @@ class MelissaMonitoring:
         ax.set_title('Cores usage vs time')
         ax.get_figure().autofmt_xdate()
 
-    def plotJobStatus(self, ax: matplotlib.axes) -> None:
+    def plotJobStatus(self, ax):
         """Automatically plot job statuses as pie chart
 
         Arguments:
@@ -244,12 +243,12 @@ class MelissaMonitoring:
             display(self.jobsCPUCountWidget)
 
         data = self.getJobsCPUCount()
-        data = [f'{k} - {v}' for k,v in data.items()]
+        data = ['{} - {}'.format(k,v) for k,v in data.items()]
         value = '<br/>'.join(data)
         self.jobsCPUCountWidget.value = value
 
 
-    def _createRemainingJobsTimeWidget(self) -> widgets.HTML:
+    def _createRemainingJobsTimeWidget(self):
         """Create remaining time widget, used by showRemainingJobsTime & MelissaDash
 
         Returns:
@@ -263,7 +262,7 @@ class MelissaMonitoring:
                                         )
         return self.timeWidget
 
-    def showRemainingJobsTime(self) -> None:
+    def showRemainingJobsTime(self):
         """Create widget (if not created) & show remaining time of your jobs on cluster 
         """
 
@@ -272,11 +271,11 @@ class MelissaMonitoring:
             display(self.timeWidget)
 
         data = self.getRemainingJobsTime()
-        data = [f'{k} - {v}' for k,v in data.items()]
+        data = ['{} - {}'.format(k,v) for k,v in data.items()]
         value = '<br/>'.join(data)
         self.timeWidget.value = value
 
-    def _createServerStatusWidget(self) -> widgets.HTML:
+    def _createServerStatusWidget(self):
         """Create server status widget, used by showServerStatus & MelissaDash
 
         Returns:
@@ -291,7 +290,7 @@ class MelissaMonitoring:
         
         return self.serverStatusWidget
 
-    def showServerStatus(self) -> None:
+    def showServerStatus(self):
         """Create widget (if not created) & show the status of the Melissa server
         """
 
@@ -302,7 +301,7 @@ class MelissaMonitoring:
 
         self.serverStatusWidget.value = self.getServerStatusData()
 
-    def _createFailedParametersWidget(self) -> widgets.HTML:
+    def _createFailedParametersWidget(self):
         """Create failed parameters widget, used by showServerStatus & MelissaDash
 
         Returns:
@@ -316,7 +315,7 @@ class MelissaMonitoring:
                                             )
         return self.failedParametersWidget
 
-    def showFailedParameters(self) -> None:
+    def showFailedParameters(self):
         """Create widget (if not created) & show simulations' failed parameters
         """
 
@@ -328,7 +327,7 @@ class MelissaMonitoring:
         value = '<br/>'.join(map(lambda x: str(x), data))
         self.failedParametersWidget.value = value
 
-    def cleanUp(self) -> None:
+    def cleanUp(self):
         """Clean up after study
         """
 
@@ -346,7 +345,7 @@ class MelissaMonitoring:
             self.failedParametersWidget.close()
             self.failedParametersWidget = None
 
-    def getStudyInfo(self) -> str:
+    def getStudyInfo(self):
         """Get info about performed study such as time and cores used
         
         Returns:

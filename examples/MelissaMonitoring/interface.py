@@ -27,7 +27,6 @@ class MelissaDash:
         self.__initPlots()
         self.__initStudyInfo()
         self.__initStudyStatus()
-        #self.__initFailedParamInfo()
         self.__initFooter()
         self.__initApp()
 
@@ -53,9 +52,6 @@ class MelissaDash:
         header = widgets.HTML("<h2>Study status</h2><hr/>")
         self.__studyStatus = widgets.VBox([header, self.monitoring._createServerStatusWidget()])
 
-    def __initFailedParamInfo(self):
-        raise NotImplementedError
-
     def __initFooter(self):
         self.__footerOutput = widgets.Output()
 
@@ -69,7 +65,7 @@ class MelissaDash:
                                     right_sidebar=self.__studyStatus,
                                     footer=self.__footerOutput)
 
-    def start(self, refreshRate:float = 1):
+    def start(self, refreshRate = 1):
         with HiddenPrints():
             display(self.app)
             self.monitoring.startStudyInThread()
