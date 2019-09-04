@@ -398,7 +398,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             melissa_print(VERBOSE_DEBUG, "Chekpoint time: %g (proc %d)\n", server_ptr->end_save_time - server_ptr->start_save_time, server_ptr->comm_data.rank);
             server_ptr->total_save_time += server_ptr->end_save_time - server_ptr->start_save_time;
             simu_data->status = 2;
-            if (server_ptr->melissa_options.learning == 1)
+            if (server_ptr->melissa_options.learning > 0)
             {
                 break;
             }
@@ -488,7 +488,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             MPI_Bcast(server_ptr->rinit_tab, 2, MPI_INT, 0, server_ptr->comm_data.comm);
 #endif // BUILD_WITH_MPI
             server_ptr->comm_data.client_comm_size = server_ptr->rinit_tab[0];
-            if (server_ptr->melissa_options.learning == 1)
+            if (server_ptr->melissa_options.learning > 0)
             {
                 server_ptr->comm_data.client_comm_size = 1;
             }
@@ -618,7 +618,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
             simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[simu_data->simu_id];
 
-            if (simu_ptr->parameters == NULL && server_ptr->melissa_options.learning == 1 && recv_vect_size > 0)
+            if (simu_ptr->parameters == NULL && server_ptr->melissa_options.learning > 0 && recv_vect_size > 0)
             {
                 // ask launcher for the simulation informations
                 sprintf (txt_buffer, "simu_info %d", simu_data->simu_id);
@@ -709,7 +709,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
             server_ptr->end_computation_time = melissa_get_time();
             server_ptr->total_computation_time += server_ptr->end_computation_time - server_ptr->start_computation_time;
-            if (server_ptr->melissa_options.learning == 1)
+            if (server_ptr->melissa_options.learning > 0)
             {
                 if (wait_launcher_msg == 1)
                 {
@@ -882,7 +882,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             break;
         }
 
-        if (new_data == 1 && server_ptr->melissa_options.learning == 1 && simu_data->val_size > 0)
+        if (new_data == 1 && server_ptr->melissa_options.learning > 0 && simu_data->val_size > 0)
         {
             break;
         }
