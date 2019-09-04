@@ -34,7 +34,7 @@ USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 EXECUTABLE='heatc'
 NODES_SERVER = 1
-NODES_GROUP = 2
+NODES_GROUP = 1
 WALLTIME_SERVER = "0:10:00"
 WALLTIME_SIMU = "0:05:00"
 NODES_SIMU = NODES_GROUP
@@ -89,18 +89,21 @@ def launch_simu(simulation):
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
-                                 '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/solver/install/bin/'+EXECUTABLE,
+                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         command = command[:-2]
     else:
-        command = ' '.join(('mpirun',
-                             '-n',
-                             str(NODES_GROUP),
-                             '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/solver/install/bin/'+EXECUTABLE,
-                             str(simulation.simu_id[0]), str(simulation.coupling),
-                             ' '.join(str(i) for i in simulation.param_set)))
+        command = 'mpirun '
+        for i in range(simulation.size):
+            command += ' '.join(('-n',
+                                 str(PROC_PER_NODE*NODES_SIMU),
+                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
+                                 str(simulation.simu_id[i]), str(simulation.coupling),
+                                 ' '.join(str(j) for j in simulation.param_set[i]),
+                                 ': '))
+        command = command[:-2]
     print(command)
 
     content = ""
@@ -175,7 +178,7 @@ STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 20          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 
 MELISSA_STATS = {}

@@ -89,24 +89,17 @@ def launch_simu(simulation):
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         command = command[:-2]
-    elif STUDY_OPTIONS['batch_size'] > 1:
+    else:
         command = 'mpirun '
         for i in range(simulation.size):
             command += ' '.join(('-n',
                                  str(PROC_PER_NODE*NODES_SIMU),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]),
+                                 str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
-        print(command[:-2])
-    else:
-        command = ' '.join(('mpirun',
-                             '-n',
-                             str(PROC_PER_NODE*NODES_SIMU),
-                             '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                             str(simulation.simu_id), str(simulation.coupling),
-                             ' '.join(str(i) for i in simulation.param_set)))
-        print(command)
+        command = command[:-2]
+    print(command[:-2])
 
     content = ""
     file=open("@EXAMPLES_DIR@/heat_example/study_OAR/scripts/run_simu.sh", "r")
@@ -146,7 +139,7 @@ def check_job(job):
                             universal_newlines=True)
     time.sleep(1)
     (out, err) = proc.communicate()
-    if "Waiting" in out:
+    if "Waiting" or "Hold" or "toLaunch" or "Launching" or "toAckReservation" in out:
         state = 0
     elif "Running" in out:
         state = 1
@@ -174,15 +167,15 @@ STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_OAR/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
-STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['nb_timesteps'] = 100                # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 20          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
-STUDY_OPTIONS['batch_size'] = 2
+STUDY_OPTIONS['batch_size'] = 1
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

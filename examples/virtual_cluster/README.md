@@ -109,7 +109,7 @@ docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
 Start a virtual cluster. We advice you to use one the 2 following methods to ensure that your Melissa install is not lost when you reboot the virtual cluster:
 * Use a  shared  directory with the host machine:
 ```bash
-oardocker start -n 3  -v ~/path/to/melissa/on/host/machine:/home/docker/melissa
+oardocker start -n 3 -v ~/path/to/melissa/on/host/machine:/home/docker/melissa
 ```
 * Use the `oardocker exec frontend ....` command  to modify the state of the frontend container.
 
