@@ -48,7 +48,11 @@ class CoreUsageDashPlot(DashPlot):
         self.widget.layout.autosize = True
         self.widget.layout.showlegend = True
         self.widget.layout.xaxis.rangeslider.visible = True
-        self.widget.layout.title.text = 'Core usage vs time'
+        self.widget.layout.title.text = 'Core usage'
+        self.widget.layout.xaxis.title.text = 'Time elapsed'
+        self.widget.layout.yaxis.title.text = '# of cores'
+        self.widget.layout.xaxis.tick0 = 0
+        self.widget.layout.yaxis.tick0 = 0
         self.widget.layout.hovermode = 'x'
 
     def plot(self):
@@ -70,6 +74,10 @@ class SobolConfidenceIntervalDashPlot(DashPlot):
         self.widget.layout.showlegend = True
         self.widget.layout.xaxis.rangeslider.visible = True
         self.widget.layout.title.text = 'Sobol confidence interval'
+        self.widget.layout.xaxis.title.text = 'Time elapsed'
+        self.widget.layout.yaxis.title.text = 'Confidence value'
+        self.widget.layout.xaxis.tick0 = 0
+        self.widget.layout.yaxis.tick0 = 1
         self.widget.layout.hovermode = 'x'
 
     def plot(self):
