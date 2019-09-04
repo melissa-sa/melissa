@@ -55,6 +55,11 @@ For installing the virtual cluster rely on the script:
 
 [oardocker.sh](examples/virtual_cluster/oardocker.sh)
 
+The script creates a venv (but you are free to use your own). So, after you have installed it, activate your environment before you start using oardocker :
+
+```bash
+source env3.7/bin/activate
+``` 
 
 For starting a virtual cluster with OAR batch scheduler :
 
