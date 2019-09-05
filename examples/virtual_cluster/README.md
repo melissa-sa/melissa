@@ -55,6 +55,11 @@ For installing the virtual cluster rely on the script:
 
 [oardocker.sh](examples/virtual_cluster/oardocker.sh)
 
+The script creates a venv (but you are free to use your own). So, after you have installed it, activate your environment before you start using oardocker :
+
+```bash
+source env3.7/bin/activate
+``` 
 
 For starting a virtual cluster with OAR batch scheduler :
 
@@ -69,7 +74,7 @@ For starting SLURM on the virtual cluster :
 ```
 
 This virtual cluster will have:
-* 4 compute nodes: node1, node2, node3  (if more nodes needed remember to also change slurm.conf accordingly on all nodes and the server)
+* 3 compute nodes: node1, node2, node3  
 * 1 server
 * 1 frontend
 where the  frontend and nodes share the `/home` directory.
