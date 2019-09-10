@@ -191,6 +191,7 @@ class MelissaMonitoring:
 
     def getSobolConfidenceInterval(self):
         """Get current sobol confidence interval
+        If Sobol Indicies wasn't selected in the options file, function will always return None.
         
         Returns:
             float -- real number between 1 and 2 
@@ -229,7 +230,8 @@ class MelissaMonitoring:
         ax.set_title('Job statuses')
 
     def plotSobolConfidenceInterval(self, ax):
-        """Automatically plot cores usage as time series
+        """Automatically plot cores usage as time series.
+        If Sobol Indicies wasn't selected in the options file, nothing will be plotted.
 
         Arguments:
             ax {matplotlib.axes} -- Axes object that should be plotted

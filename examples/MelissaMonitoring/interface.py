@@ -66,6 +66,11 @@ class MelissaDash:
                                     footer=self.__footerOutput)
 
     def start(self, refreshRate = 1):
+        """Run the study and show Melissa Dash interface
+        
+        Keyword Arguments:
+            refreshRate {int} -- Delay after which Melissa Dash refresh the data (default: {1})
+        """
         with HiddenPrints():
             display(self.app)
             self.monitoring.startStudyInThread()
