@@ -3,8 +3,8 @@
 # Script to install a oardocker virtual cluster with melissa dependencies installed, oar and slurm batch scehduler.
 
 # # Set Python virtual env:
- virtualenv -p python3.5 env3.5
- source env3.5/bin/activate
+ virtualenv -p python@PYTHON_VERSION_MAJOR@.@PYTHON_VERSION_MINOR@ env@PYTHON_VERSION_MAJOR@.@PYTHON_VERSION_MINOR@
+ source env@PYTHON_VERSION_MAJOR@.@PYTHON_VERSION_MINOR@/bin/activate
 
 
 # # get and install oar-docker
@@ -35,7 +35,7 @@ oardocker install http://oar-ftp.imag.fr/oar/2.5/sources/testing/oar-2.5.8.tar.g
 # start the cluster, with -n <number of nodes>
 oardocker start -n 3
 # we can also share a directory:
-# oardocker start -n 3 -v $HOME/mon_super_projet:/data
+# oardocker start -n 4 -v $HOME/mon_super_projet:/data
 
 
 # Start slurm on the virtual cluster

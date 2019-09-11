@@ -53,9 +53,13 @@ id
 
 For installing the virtual cluster rely on the script:
 
+[oardocker.sh](examples/virtual_cluster/oardocker.sh)
+
+The script creates a venv (but you are free to use your own). So, after you have installed it, activate your environment before you start using oardocker :
+
 ```bash
-oardocker.sh
-```
+source env3.7/bin/activate
+``` 
 
 For starting a virtual cluster with OAR batch scheduler :
 
@@ -70,7 +74,7 @@ For starting SLURM on the virtual cluster :
 ```
 
 This virtual cluster will have:
-* 3 compute nodes: node1, node2, node3  (if more nodes needed remember to also change slurm.conf accordingly on all nodes and the server)
+* 3 compute nodes: node1, node2, node3  
 * 1 server
 * 1 frontend
 where the  frontend and nodes share the `/home` directory.
@@ -110,7 +114,7 @@ docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
 Start a virtual cluster. We advice you to use one the 2 following methods to ensure that your Melissa install is not lost when you reboot the virtual cluster:
 * Use a  shared  directory with the host machine:
 ```bash
-oardocker start -n 3  -v ~/path/to/melissa/on/host/machine:/home/docker/melissa
+oardocker start -n 3 -v ~/path/to/melissa/on/host/machine:/home/docker/melissa
 ```
 * Use the `oardocker exec frontend ....` command  to modify the state of the frontend container.
 
@@ -141,7 +145,7 @@ Go to melissa directory and recompile in specific build and install directories,
 cd ~/melissa/Melissa
 mkdir build-oardocker
 cd build-oardocker
-cmake ../source -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/melissa/install-oardocker
+cmake ../. -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/melissa/install-oardocker
 make install
 source ../install-oardocker/bin/melissa_set_env.sh
 ```
