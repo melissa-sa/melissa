@@ -57,13 +57,7 @@ void init_quantile (quantile_t   *quantile,
                     const int     vect_size,
                     const double  alpha)
 {
-    int i;
-
     quantile->quantile = melissa_calloc (vect_size, sizeof(double));
-    for (i=0; i<vect_size; i++)
-    {
-        quantile->quantile[i] = alpha;
-    }
     quantile->increment = 0;
     quantile->alpha = alpha;
 }
@@ -121,11 +115,12 @@ void increment_quantile (quantile_t *quantile,
     }
     else
     {
-#pragma omp parallel for schedule(static)
-        for (i=0; i<vect_size; i++)
-        {
-            quantile->quantile[i] = in_vect[i];
-        }
+//#pragma omp parallel for schedule(static)
+//        for (i=0; i<vect_size; i++)
+//        {
+//            quantile->quantile[i] = in_vect[i];
+//        }
+        memcpy (quantile->quantile, in_vect, vect_size * sizeof(double));
     }
 }
 

@@ -5,7 +5,8 @@ apt-get update
 apt-get install -y pkg-config
 apt-get install -y gfortran libopenmpi-dev openmpi-bin
 apt-get install -y cmake cmake-curses-gui
-apt-get install -y python3
+# assumption: Python3 module is available in the Virtual Cluster
+#apt-get install -y python3
 python3 -m pip install numpy
 
 
