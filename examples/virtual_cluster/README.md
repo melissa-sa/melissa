@@ -53,7 +53,7 @@ id
 
 For installing the virtual cluster rely on the script:
 
-[oardocker.sh](examples/virtual_cluster/oardocker.sh)
+[oardocker.sh](examples/virtual_cluster/oardocker.sh.in)
 
 The script creates a venv (but you are free to use your own). So, after you have installed it, activate your environment before you start using oardocker :
 
