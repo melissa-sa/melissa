@@ -369,6 +369,9 @@ class MelissaMonitoring:
         if self.failedParametersWidget is not None:
             self.failedParametersWidget.close()
             self.failedParametersWidget = None
+        if self.jobsCPUCountWidget is not None:
+            self.jobsCPUCountWidget.close()
+            self.jobsCPUCountWidget = None
 
     def getStudyInfo(self):
         """Get info about performed study such as time and cores used
@@ -377,13 +380,14 @@ class MelissaMonitoring:
             str -- info about study 
         """
 
-        info = f"""
-        Study started: {self.timeStart}
-        Study ended: {self.timeStop}
-        Elapsed time: {self.timeStop - self.timeStart}
-        Max cores used: {max(list(self.coreUsageData.values()))}
-        Avg cores used: {statistics.mean(list(self.coreUsageData.values()))}
-        """
+        info = """
+        Study started: {}
+        Study ended: {}
+        Elapsed time: {}
+        Max cores used: {}
+        Avg cores used: {}
+        """.format(self.timeStart, self.timeStop, self.timeStop - self.timeStart,
+        max(list(self.coreUsageData.values())), statistics.mean(list(self.coreUsageData.values())))
         return info
 
     

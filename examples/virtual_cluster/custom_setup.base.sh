@@ -10,6 +10,15 @@ apt-get install -y cmake cmake-curses-gui
 python3 -m pip install numpy
 
 
+# Jupyter Notebook
+echo "Jupyter Notebook"
+python3 -m pip install jupyter matplotlib ipywidgets plotly
+# https://stackoverflow.com/questions/51676835/ipython-cannot-import-name-create-prompt-application-from-prompt-toolkit-s
+python3 -m pip install 'prompt-toolkit<2.0.0,>=1.0.15' --force-reinstall
+jupyter nbextension enable --py widgetsnbextension
+jupyter nbextension enable --py plotlywidget
+
+
 # SLURM
 echo "Slurm"
 #apt-get update
