@@ -45,7 +45,7 @@ Known nbextensions:
 source /home/docker/melissa/install-oardocker/bin/melissa_set_env.sh
 jupyter notebook --no-browser --ip=$(hostname -I) --port=8888 &
 ```
-Copy the URL printed on the screen and paste it in your browser. The notebook is located in `/home/docker/melissa/examples/Melissa-monitoring-notebook.ipynb`
+Copy the URL printed on the screen and paste it in your browser. The notebook is located in `/home/docker/melissa/install/share/melissa/examples/Melissa-monitoring-notebook.ipynb`
 
 ### 2.2 Running Notebook on the real cluster
 
