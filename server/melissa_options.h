@@ -58,8 +58,7 @@ struct melissa_options_s
     double              *quantile_order;     /**< array of quantile orders                                         */
     int                  sobol_op;           /**< 1 if the user needs to compute sobol indices, 0 otherwise        */
     int                  sobol_order;        /**< max order of the computes sobol indices                          */
-    int                  learning_op;        /**< 1 if the user needs to do learning, 0 otherwise.                 */
-    int                  learning;           /**< 1 if the user needs to do learning, 0 otherwise.                 */
+    int                  learning;           /**< > 1 if the user needs to do learning, 0 otherwise.               */
     char                 nn_path[256];       /**< path to neural network python file                               */
 //    int                  global_vect_size;   /**< global size of input vector                                      */
     int                  restart;            /**< 1 if restart, 0 otherwise                                        */

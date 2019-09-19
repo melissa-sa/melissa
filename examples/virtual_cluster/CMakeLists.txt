@@ -16,7 +16,7 @@
 
 # Just copy content
 set(clusterfiles README.md
-          slurm.conf
+          slurm.conf.in
 	  slurm_start.sh
 	  custom_setup.base.sh
 	  custom_setup.server.sh
