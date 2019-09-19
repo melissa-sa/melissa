@@ -12,13 +12,14 @@ int main(int argc, char *argv[])
     std::uniform_int_distribution<int> randINT(0,100);
     int nRows, nCols, nTime, simuID, coupling;
     std::string fieldName("GOL");
+    bool bMelissa;
 
     MPI::Init(argc,argv);
     auto mpisize = MPI::COMM_WORLD.Get_size();
     auto mpirank = MPI::COMM_WORLD.Get_rank();
     auto mpiroot = 0;
     
-    if (argc != 5){
+    if (argc != 6){
         std::cerr << "Invalid number of parameters" << std::endl;
         MPI::COMM_WORLD.Abort(1);
     }
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
     nRows = atoi(argv[2]);
     nCols = atoi(argv[3]);
     nTime = atoi(argv[4]);
+    bMelissa = argv[5] == "melissa" ? true : false;
     coupling = MELISSA_COUPLING_ZMQ;
 
     auto nRowsLocal = nRows / mpisize;
@@ -53,7 +55,8 @@ int main(int argc, char *argv[])
     MPI_Comm world_comm; 
     MPI_Comm_dup(MPI_COMM_WORLD, &world_comm);
     
-    melissa_init(fieldName.c_str(), local_vec_size, mpisize, mpirank, simuID, world_comm, coupling);
+    if(bMelissa)
+        melissa_init(fieldName.c_str(), local_vec_size, mpisize, mpirank, simuID, world_comm, coupling);
 
     // Time loop
     for (auto iTime = 0; iTime < nTime; ++iTime){
@@ -61,15 +64,16 @@ int main(int argc, char *argv[])
         communicateAndExchangeInfo(gameBoard, nColsLocalWithPadding, nCols, nRowsLocalWithPadding, nRowsLocal, upperNeighbour, lowerNeighbour);
         
         // ! not useful when doing simulations using melissa
-        //displayTheBoard(gameBoard, mpirank, mpisize, nRowsLocal, nRows, nCols, iTime);
-
-        sendMatrixToMelissa(gameBoard, nRowsLocal, nCols, fieldName.c_str());
+        if(!bMelissa)
+            displayTheBoard(gameBoard, mpirank, mpisize, nRowsLocal, nRows, nCols, iTime);
+        if(bMelissa)
+            sendMatrixToMelissa(gameBoard, nRowsLocal, nCols, fieldName.c_str());
 
         updateBoard(gameBoard, nextBoard, nRowsLocal, nCols);
        
     }
-    
-    melissa_finalize();
+    if(bMelissa)
+        melissa_finalize();
     MPI::Finalize();
     return 0;
 }
