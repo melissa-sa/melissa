@@ -521,7 +521,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
         }
 
         // === Data reception and statistics computation === //
-
+        // code where the data for one time step from one simulation and one field arrives
         if (items[2].revents & ZMQ_POLLIN)
         {
             server_ptr->start_comm_time = melissa_get_time();
