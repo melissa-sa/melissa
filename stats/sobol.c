@@ -53,8 +53,8 @@ static inline void increment_sobol_covariance (double    *covariance,
 #pragma omp parallel for schedule(static) firstprivate(incr)
         for (i=0; i<vect_size; i++)
         {
-            covariance[i] *= (incr - 1)/(incr);
-            covariance[i] += (in_vect1[i] - mean1[i]) * (in_vect2[i] - mean2[i]) / (incr+1);
+            covariance[i] *= incr/(incr+1);
+            covariance[i] += (in_vect1[i] - mean1[i]) * (in_vect2[i] - mean2[i]) / incr;
         }
     }
 }
@@ -254,9 +254,12 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
     int i, j;
     double epsylon = 1e-12;
 
+    increment_variance (&(sobol_array->variance_a), in_vect_tab[0], vect_size);
+    increment_variance (&(sobol_array->variance_b), in_vect_tab[1], vect_size);
 
     for (i=0; i< nb_parameters; i++)
     {
+        increment_variance (&(sobol_array->sobol_martinez[i].variance_k), in_vect_tab[i+2], vect_size);
         increment_sobol_covariance (sobol_array->sobol_martinez[i].first_order_covariance,
                                     in_vect_tab[1],
                                     in_vect_tab[i+2],
@@ -271,14 +274,6 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
                                     sobol_array->sobol_martinez[i].variance_k.mean_structure.mean,
                                     vect_size,
                                     sobol_array->iteration);
-    }
-
-    increment_variance (&(sobol_array->variance_a), in_vect_tab[0], vect_size);
-    increment_variance (&(sobol_array->variance_b), in_vect_tab[1], vect_size);
-
-    for (i=0; i< nb_parameters; i++)
-    {
-        increment_variance (&(sobol_array->sobol_martinez[i].variance_k), in_vect_tab[i+2], vect_size);
 //        increment_covariance (&(sobol_array->sobol_martinez[i].first_order_covariance), in_vect_tab[1], in_vect_tab[i+2], vect_size);
 //        increment_covariance (&(sobol_array->sobol_martinez[i].total_order_covariance), in_vect_tab[0], in_vect_tab[i+2], vect_size);
 

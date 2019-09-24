@@ -82,23 +82,39 @@ void init_variance (variance_t *variance,
 void increment_mean_and_variance (variance_t *partial_variance,
                                   double      in_vect[],
                                   const int   vect_size)
-{
-    int     i;
+//{
+//    int     i;
 
-#pragma omp parallel for schedule(static)
-    for (i=0; i<vect_size; i++)
+//#pragma omp parallel for schedule(static)
+//    for (i=0; i<vect_size; i++)
+//    {
+//        double temp = partial_variance->mean_structure.mean[i];
+//        partial_variance->mean_structure.mean[i] = temp + (in_vect[i] - temp)/(partial_variance->mean_structure.increment+1);
+//        if (partial_variance->mean_structure.increment > 0)
+//        {
+//            partial_variance->variance[i] = (partial_variance->variance[i]*(partial_variance->mean_structure.increment-1)
+//                                             + (in_vect[i] - temp) * (in_vect[i] - partial_variance->mean_structure.mean[i]))
+//                                             / (partial_variance->mean_structure.increment);
+//        }
+//    }
+
+//    partial_variance->mean_structure.increment += 1;
+//}
+
+{
+    int i;
+    double  incr = 0;
+
+    increment_mean(&(partial_variance->mean_structure), in_vect, vect_size);
+    incr = (double)partial_variance->mean_structure.increment;
+    if (partial_variance->mean_structure.increment > 1)
     {
-        double temp = partial_variance->mean_structure.mean[i];
-        partial_variance->mean_structure.mean[i] = temp + (in_vect[i] - temp)/(partial_variance->mean_structure.increment+1);
-        if (partial_variance->mean_structure.increment > 0)
+        for (i=0; i<vect_size; i++)
         {
-            partial_variance->variance[i] = (partial_variance->variance[i]*(partial_variance->mean_structure.increment-1)
-                                             + (in_vect[i] - temp) * (in_vect[i] - partial_variance->mean_structure.mean[i]))
-                                             / (partial_variance->mean_structure.increment);
+            partial_variance->variance[i] *= (incr - 1)/(incr);
+            partial_variance->variance[i] += (in_vect[i] - partial_variance->mean_structure.mean[i]) * (in_vect[i] - partial_variance->mean_structure.mean[i]) / (incr-1);
         }
     }
-
-    partial_variance->mean_structure.increment += 1;
 }
 
 /**
@@ -171,15 +187,15 @@ void update_variance (variance_t *variance1,
     {
         double delta = (variance1->mean_structure.mean[i] - variance2->mean_structure.mean[i]);
 // Classic :
-//        updated_variance->variance[i] = variance1->variance[i] + variance2->variance[i]
-//                                        + variance1->mean_structure.increment * variance2->mean_structure.increment
-//                                        * delta * delta / updated_variance->mean_structure.increment;
-// Unbiased :
-        updated_variance->variance[i] = ((variance1->mean_structure.increment - 1) * variance1->variance[i]
-                                        + (variance2->mean_structure.increment - 1) * variance2->variance[i]
+        updated_variance->variance[i] = variance1->variance[i] + variance2->variance[i]
                                         + variance1->mean_structure.increment * variance2->mean_structure.increment
-                                        * delta * delta / updated_variance->mean_structure.increment)
-                                        / (updated_variance->mean_structure.increment - 1);
+                                        * delta * delta / updated_variance->mean_structure.increment;
+// Unbiased :
+//        updated_variance->variance[i] = ((variance1->mean_structure.increment - 1) * variance1->variance[i]
+//                                        + (variance2->mean_structure.increment - 1) * variance2->variance[i]
+//                                        + variance1->mean_structure.increment * variance2->mean_structure.increment
+//                                        * delta * delta / updated_variance->mean_structure.increment)
+//                                        / (updated_variance->mean_structure.increment - 1);
     }
 }
 

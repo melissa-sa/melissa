@@ -95,7 +95,7 @@ int main(int argc, char **argv)
     }
     for (i=0; i<vect_size; i++)
     {
-        if (fabs((my_variance.variance[i] - (ref_variance[i] / (n-1)))/(ref_variance[i] / (n-1))) > 10E-12)
+        if (fabs((my_variance.variance[i] - (ref_variance[i] / (n)))/(ref_variance[i] / (n))) > 10E-12)
         {
             fprintf (stdout, "variance failed\n");
             ret = 1;
