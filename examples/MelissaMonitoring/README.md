@@ -39,6 +39,8 @@ Known nbextensions:
 
 ### 2.1 Running Notebook in virtual cluster
 
+To set up virtual cluster on your machine please follow [this README](../virtual_cluster/README.md).
+
 *Script that builds virtual cluster already enables required extensions. It is configured to be run out-of-the-box.*
 
 ```bash
