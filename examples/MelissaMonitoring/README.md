@@ -39,13 +39,15 @@ Known nbextensions:
 
 ### 2.1 Running Notebook in virtual cluster
 
+To set up virtual cluster on your machine please follow [this README](../virtual_cluster/README.md).
+
 *Script that builds virtual cluster already enables required extensions. It is configured to be run out-of-the-box.*
 
 ```bash
 source /home/docker/melissa/install-oardocker/bin/melissa_set_env.sh
 jupyter notebook --no-browser --ip=$(hostname -I) --port=8888 &
 ```
-Copy the URL printed on the screen and paste it in your browser. The notebook is located in `/home/docker/melissa/examples/Melissa-monitoring-notebook.ipynb`
+Copy the URL printed on the screen and paste it in your browser. The notebook is located in `/home/docker/melissa/install/share/melissa/examples/Melissa-monitoring-notebook.ipynb`
 
 ### 2.2 Running Notebook on the real cluster
 
