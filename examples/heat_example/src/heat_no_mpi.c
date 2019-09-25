@@ -20,7 +20,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/timeb.h>
-#include <zmq.h>
 #include <melissa_api_no_mpi.h>
 
 // Fortran interfaces:
