@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/bash -e
 
 # Script to install a oardocker virtual cluster with melissa dependencies installed, oar and slurm batch scehduler.
 

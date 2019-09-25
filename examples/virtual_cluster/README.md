@@ -1,4 +1,4 @@
-# Virtual Cluster 
+# Virtual Cluster
 
 ## Table of contents
 * [Introduction](#intro)
@@ -12,7 +12,7 @@
 
 ## Introduction <a name="intro"></a>
 We show here how to setup a virtual cluster on your local machine, and how to run
-the Melissa heat example. The  virtual cluster enables you to run various nodes, through Docker containers,
+the Melissa heat example on it. The  virtual cluster enables you to run various nodes, through Docker containers,
 managed by the [OAR batch scheduler](http://oar.imag.fr)  on  your local machine.
 
 This is a very handy intermediate step to validate your developments without having the burden to
@@ -63,7 +63,7 @@ The script creates a venv (but you are free to use your own). So, after you have
 
 ```bash
 source env3.7/bin/activate
-``` 
+```
 
 For starting a virtual cluster with OAR batch scheduler :
 
@@ -78,7 +78,7 @@ For starting SLURM on the virtual cluster :
 ```
 
 This virtual cluster will have:
-* 3 compute nodes: node1, node2, node3  
+* 3 compute nodes: node1, node2, node3
 * 1 server
 * 1 frontend
 where the  frontend and nodes share the `/home` directory.
@@ -90,11 +90,11 @@ oardocker connect frontend
 ```
 To exec command on the frontend for instance:
 ```bash
-oardocker exec frontend ls -al 
+oardocker exec frontend ls -al
 ```
 To stop the cluster
 ```bash
-oardocker stop 
+oardocker stop
 ```
 
 To stop the virtual machines:
@@ -111,7 +111,7 @@ docker rmi $(docker images -q)
 To copy a file to a virtual machine (use `docker ps` to retreive the vm name):
 ```bash
 docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
-``` 
+```
 
 ## Installing Melissa <a name="melissa"></a>
 
@@ -141,7 +141,7 @@ cd melissa
 git clone https://github.com/melissa-sa/melissa.git
 ```
 
-### Compile Melissa 
+### Compile Melissa
 
 Go to melissa directory and recompile in specific build and install directories, to avoid  mixing  it with your local host install (if you shared the directory):
 
@@ -154,7 +154,7 @@ make install
 source ../install-oardocker/bin/melissa_set_env.sh
 ```
 
-### Compile the Study 
+### Compile the Study
 
 Compile the heat example solver:
 
