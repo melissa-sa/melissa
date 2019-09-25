@@ -37,6 +37,7 @@ extern "C" {
 #include <mpi.h>
 #endif // BUILD_WITH_MPI
 #include <stdio.h>
+#include <stdint.h>
 
 #ifndef MPI_MAX_PROCESSOR_NAME
 #define MPI_MAX_PROCESSOR_NAME 256 /**< Define the macro if mpi.h not present */
@@ -71,8 +72,8 @@ void* melissa_realloc (void   *ptr,
 
 void melissa_free (void *ptr);
 
-void melissa_bind (void *socket,
-                   char *port_name);
+void melissa_bind (void       *socket,
+                   const char *port_name);
 
 void melissa_connect (void *socket,
                    char *port_name);
@@ -87,11 +88,11 @@ void melissa_print (int         msg_type,
                     const char* func_name,
                     const char* format, ...);
 
-void set_bit (int32_t *vect, int pos);
+void set_bit (uint32_t *vect, int pos);
 
-void clear_bit (int32_t *vect, int pos);
+void clear_bit (uint32_t *vect, int pos);
 
-int test_bit (int32_t *vect, int pos);
+int test_bit (uint32_t *vect, int pos);
 
 #ifdef __cplusplus
 }

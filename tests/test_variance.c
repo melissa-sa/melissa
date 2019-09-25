@@ -38,6 +38,7 @@ int main(int argc, char **argv)
     double       *tableau = NULL;
     double       *ref_mean = NULL;
     variance_t    my_variance;
+    variance_t    my_other_variance;
     moments_t     my_moments;
     double       *ref_variance;
     int           n = 10000; // n expériences
@@ -48,6 +49,7 @@ int main(int argc, char **argv)
     double        end_time = 0;
 
     init_variance (&my_variance, vect_size);
+    init_variance (&my_other_variance, vect_size);
     init_moments (&my_moments, vect_size, 2);
     tableau = melissa_calloc (n * vect_size, sizeof(double));
     ref_mean = melissa_calloc (vect_size, sizeof(double));
@@ -70,6 +72,14 @@ int main(int argc, char **argv)
     {
         increment_variance (&my_variance, &tableau[j * vect_size], vect_size);
         increment_moments (&my_moments, &tableau[j * vect_size], vect_size);
+        // More stable algo :
+        for (i=0; i<vect_size; i++)
+        {
+            double temp = my_other_variance.mean_structure.mean[i];
+            my_other_variance.mean_structure.mean[i] = my_other_variance.mean_structure.mean[i] + (tableau[j * vect_size + i] - my_other_variance.mean_structure.mean[i]) / (my_other_variance.mean_structure.increment + 1);
+            my_other_variance.variance[i] = my_other_variance.variance[i] + my_other_variance.mean_structure.increment * (tableau[j * vect_size + i] - temp) * (tableau[j * vect_size + i] - temp) / (my_other_variance.mean_structure.increment + 1);
+        }
+        my_other_variance.mean_structure.increment += 1;
     }
     end_time = melissa_get_time();
     fprintf (stdout, "variance time: %g\n", end_time - start_time);
@@ -101,7 +111,17 @@ int main(int argc, char **argv)
         }
     }
 
+    for (i=0; i<vect_size; i++)
+    {
+        if (fabs((my_other_variance.variance[i]/my_other_variance.mean_structure.increment - (ref_variance[i] / n))/(ref_variance[i] / n)) > 10E-12)
+        {
+            fprintf (stdout, "other variance failed (%g and %g)\n", my_other_variance.variance[i]/my_other_variance.mean_structure.increment, ref_variance[i] / n);
+            ret = 1;
+        }
+    }
+
     free_variance(&my_variance);
+    free_variance(&my_other_variance);
     melissa_free(tableau);
     melissa_free(ref_mean);
     melissa_free(ref_variance);

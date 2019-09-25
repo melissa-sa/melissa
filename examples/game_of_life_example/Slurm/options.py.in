@@ -25,34 +25,32 @@ import subprocess
 import getpass
 import imp
 import logging
-#from matplotlib import pyplot as plt
-#from matplotlib import cm
 from string import Template
 from shutil import copyfile
 
+imp.load_source('BaseOptions','@EXAMPLES_DIR@/game_of_life_example/BaseOptions.py')
+import examples.game_of_life_example.BaseOptions as BaseOptions
 
-USERNAME = getpass.getuser()
-BUILD_WITH_MPI = 'ON'.upper()
-EXECUTABLE='game'
+# Standard options
+USERNAME = BaseOptions.USERNAME
+BUILD_WITH_MPI = BaseOptions.BUILD_WITH_MPI
+EXECUTABLE= BaseOptions.EXECUTABLE
 NODES_SERVER = 2
 NODES_GROUP = 10
 WALLTIME_SERVER = "00:10:00"
 WALLTIME_SIMU = "0:05:00"
 NODES_SIMU = NODES_GROUP
 PROC_PER_NODE = 1
+BaseOptions.NUMBER_OF_ROWS = 100
+BaseOptions.NUMBER_OF_COLUMNS = 100
 
-NUMBER_OF_ROWS = 100
-NUMBER_OF_COLUMNS = 100
+# Study options
+STUDY_OPTIONS = BaseOptions.STUDY_OPTIONS
+STUDY_OPTIONS['nb_time_steps'] = 100
 
-def draw_param_set():
-    """
-    Game of Life isn't a standard binary to be run with melissa.
-    It randomize the starting board internaly and only arguments that it takes are:
-    ! [simulationID] [numberOfRows] [numberOfColumns] [numberOfTimesteps]
-    Simulation ID is given and rows, columns and timesteps have to be the same in every simulation.
-    Because of this, you cannot randomize the parameters and Game of Life isn't typical problem to be run with melissa.
-    """
-    return [NUMBER_OF_ROWS, NUMBER_OF_COLUMNS, STUDY_OPTIONS['nb_time_steps']]
+# Melissa options
+MELISSA_STATS = BaseOptions.MELISSA_STATS
+
 
 def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
@@ -163,37 +161,11 @@ def kill_job(job):
     print('killing job ...')
     os.system("scancel "+str(job.job_id))
 
-STUDY_OPTIONS = {}
-STUDY_OPTIONS['user_name'] = USERNAME
-STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/game_of_life_example/results'
-STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 20                 # initial number of parameter sets
-STUDY_OPTIONS['nb_time_steps'] = 100               # number of timesteps, from Melissa point of view
-STUDY_OPTIONS['threshold_values'] = 0.7
-STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
-STUDY_OPTIONS['field_names'] = ["GOL"]           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 10          # server checkpoints every 30 seconds
-STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_ZMQ" # option for Sobol' simulation groups coupling
-
-MELISSA_STATS = {}
-MELISSA_STATS['mean'] = True
-MELISSA_STATS['variance'] = True
-MELISSA_STATS['skewness'] = False
-MELISSA_STATS['kurtosis'] = False
-MELISSA_STATS['min'] = False
-MELISSA_STATS['max'] = False
-MELISSA_STATS['threshold_exceedance'] = False
-MELISSA_STATS['quantiles'] = False
-MELISSA_STATS['sobol_indices'] = False
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
-USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
+USER_FUNCTIONS['draw_parameter_set'] = BaseOptions.draw_param_set
 USER_FUNCTIONS['create_group'] = None
-#if MELISSA_STATS['sobol_indices']:
-#    USER_FUNCTIONS['launch_group'] = launch_group
-#else:
 USER_FUNCTIONS['launch_group'] = launch_simu
 USER_FUNCTIONS['launch_server'] = launch_server
 USER_FUNCTIONS['check_server_job'] = check_job

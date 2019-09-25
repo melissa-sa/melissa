@@ -27,7 +27,7 @@
 
 #include <string.h>
 #include "fault_tolerance.h"
-#include "zmq.h"
+#include "melissa_messages.h"
 
 /**
  *******************************************************************************
@@ -152,13 +152,11 @@ void send_timeouts (int       detected_timeouts,
                     void     *python_pusher)
 {
     int                   i;
-    char                  txt_buffer[32];
     melissa_simulation_t *simu_ptr;
 
     if (detected_timeouts < 1)
     {
-        sprintf(txt_buffer, "timeout -1");
-        zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+        send_message_timeout(-1, python_pusher, 0);
     }
     else
     {
@@ -167,8 +165,7 @@ void send_timeouts (int       detected_timeouts,
             simu_ptr = vector_get (simulations, i);
             if (simu_ptr->timeout == 1)
             {
-                sprintf(txt_buffer, "timeout %d", i);
-                zmq_send(python_pusher, txt_buffer, strlen(txt_buffer), 0);
+                send_message_timeout(i, python_pusher, 0);
                 simu_ptr->timeout = 0;
             }
         }

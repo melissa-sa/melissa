@@ -95,7 +95,7 @@ static inline void init_options (melissa_options_t *options)
     options->nb_quantiles    = 0;
     options->sobol_op        = 0;
     options->sobol_order     = 0;
-    options->learning_op     = 0;
+    options->learning        = 0;
     options->restart         = 0;
     options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
@@ -241,7 +241,7 @@ static inline void get_operations (char              *name,
         exit (1);
     }
 
-    /* juste to be sure */
+    /* just to be sure */
     options->mean_op         = 0;
     options->variance_op     = 0;
     options->skewness_op     = 0;
@@ -250,7 +250,6 @@ static inline void get_operations (char              *name,
     options->threshold_op    = 0;
     options->quantile_op     = 0;
     options->sobol_op        = 0;
-    options->learning_op     = 0;
     /* get the first token */
     temp_char = strtok (name, s);
 
@@ -293,10 +292,6 @@ static inline void get_operations (char              *name,
         else if (0 == strcmp(temp_char, "sobol") || 0 == strcmp(temp_char, "sobol_indices"))
         {
             options->sobol_op = 1;
-        }
-        else if (0 == strcmp(temp_char, "learning"))
-        {
-            options->learning_op = 1;
         }
         else
         {
@@ -350,7 +345,7 @@ void melissa_print_options (melissa_options_t *options)
         melissa_print(VERBOSE_INFO, "    quantiles (%d values)\n", options->nb_quantiles);
     if (options->sobol_op != 0)
         melissa_print(VERBOSE_INFO, "    sobol indices\n");
-    if (options->learning_op != 0)
+    if (options->learning != 0)
         melissa_print(VERBOSE_INFO, "    learning\n");
 //    if (options->restart != 0)
 //        fprintf(stdout, "using options.save restart file\n");
@@ -416,6 +411,7 @@ void melissa_get_options (int                 argc,
                                 { "txt_pull_port",  required_argument, NULL, 1001 },
                                 { "data_port",      required_argument, NULL, 1002 },
                                 { "req_port",       required_argument, NULL, 1003 },
+                                { "horovod",        required_argument, NULL, 1004 },
                                 { NULL,             0,                 NULL,  0  }};
 
     do
@@ -461,7 +457,10 @@ void melissa_get_options (int                 argc,
             options->sampling_size = atoi (optarg);
             break;
         case 'l':
-            options->learning = 1;
+            if (options->learning < 1)
+            {
+                options->learning = 1;
+            }
             sprintf (options->nn_path, "%s", optarg);
             break;
         case 'n':
@@ -490,6 +489,9 @@ void melissa_get_options (int                 argc,
             break;
         case 1003:
             options->txt_req_port = atoi (optarg);
+            break;
+        case 1004:
+            options->learning = 2;
             break;
         case 'h':
             stats_usage ();
@@ -537,8 +539,7 @@ void melissa_check_options (melissa_options_t  *options)
         options->threshold_op == 0 &&
         options->quantile_op == 0 &&
         options->sobol_op == 0 &&
-        options->learning_op == 0 &&
-        options->learning != 1)
+        options->learning == 0)
     {
         // default values
         fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");

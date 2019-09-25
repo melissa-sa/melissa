@@ -125,7 +125,6 @@ void compute_stats (melissa_data_t  *data,
 
         if (data->options->quantile_op == 1)
         {
-            int i;
             for (i=0; i<data->options->nb_quantiles; i++)
             {
                 increment_quantile (&(data->quantiles[time_step][i]),

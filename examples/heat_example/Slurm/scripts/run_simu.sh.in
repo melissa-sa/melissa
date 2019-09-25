@@ -2,7 +2,6 @@
 
 #SBATCH -N ${NODES_SIMU}
 #SBATCH --ntasks-per-node=${PROC_PER_NODE}
-#SBATCH --partition=cn
 #SBATCH --time=${WALLTIME_SIMU}
 #SBATCH -o simu.%j.log
 #SBATCH -e simu.%j.err

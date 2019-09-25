@@ -24,10 +24,16 @@ import os
 import time
 import subprocess
 import logging
+#import openturns as ot
 from threading import RLock
-from ctypes import cdll, create_string_buffer, c_char_p
-melissa_message = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_message.so')
-melissa_message.send_message.argtypes = [c_char_p]
+from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
+c_int_p = POINTER(c_int)
+c_double_p = POINTER(c_double)
+melissa_comm4py = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_comm4py.so')
+melissa_comm4py.send_message.argtypes = [c_char_p]
+melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
+melissa_comm4py.send_drop.argtypes = [c_int, c_char_p]
+melissa_comm4py.send_options.argtypes = [c_char_p]
 
 # Jobs and executions status
 
@@ -50,6 +56,7 @@ class Job(object):
     usr_func = {}
     stdy_opt = {}
     ml_stats = {}
+    nb_param = 0
     def __init__(self):
         """
             Job constructor
@@ -59,6 +66,7 @@ class Job(object):
         self.cmd_opt = ''
         self.start_time = 0.0
         self.job_type = 0
+        self.node_name = ['']
 
     def set_usr_func(usr_func):
         Job.usr_func = usr_func
@@ -69,9 +77,13 @@ class Job(object):
     def set_ml_stats(ml_stats):
         Job.ml_stats = ml_stats
 
+    def set_nb_param(nb_param):
+        Job.nb_param = nb_param
+
     set_usr_func = staticmethod(set_usr_func)
     set_stdy_opt = staticmethod(set_stdy_opt)
     set_ml_stats = staticmethod(set_ml_stats)
+    set_nb_param = staticmethod(set_nb_param)
 
     def cancel(self):
         """
@@ -84,6 +96,12 @@ class Job(object):
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
 
+    def finalize(self):
+        """
+            Finalize a job (optional)
+        """
+        pass
+
 class Group(Job):
     """
         Group class
@@ -94,12 +112,13 @@ class Group(Job):
             Group constructor
         """
         Job.__init__(self)
-        self.node_name = ''
+        self.nb_param = Job.nb_param
+        self.size = 0
         self.server_node_name = ''
         self.nb_restarts = 0
         self.status = NOT_SUBMITTED
         self.lock = RLock()
-        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
+        self.coupling = 0
         self.rank = Group.nb_groups
         Group.nb_groups += 1
 
@@ -136,72 +155,36 @@ class Group(Job):
         """
         if "check_group_job" in Job.usr_func.keys() \
         and Job.usr_func['check_group_job']:
-            Job.usr_func['check_group_job'](self)
+            return Job.usr_func['check_group_job'](self)
+        elif "check_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_job']:
+            return Job.usr_func['check_job'](self)
         else:
             logging.error('Error: no \'check_group_job\''
                           +' function provided')
+            exit()
+
+    def cancel(self):
+        """
+            Cancels a simulation job (mandatory)
+        """
+        if "cancel_group_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_group_job']:
+            return Job.usr_func['cancel_group_job'](self)
+        elif "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
+           return Job.usr_func['cancel_job'](self)
+        else:
+            logging.error('Error: no \'cancel_job\' function provided')
             exit()
 
     def finalize(self):
         """
             Finalize the group (optional)
         """
-
         if "finalize_group" in Job.usr_func.keys():
             if Job.usr_func['finalize_group']:
                 Job.usr_func['finalize_group'](self)
-
-
-class SingleSimuGroup(Group):
-    """
-    Single simulation group class
-    """
-    def __init__(self, param_set):
-        """
-            SingleSimuGroup constructor
-        """
-        Group.__init__(self)
-        self.simu_id = self.rank
-        self.param_set = numpy.copy(param_set)
-        self.coupling = 0
-        self.job_type = 2
-
-    def launch(self):
-        Group.launch(self)
-        message_str = "job "+str(self.rank)+" " +str(self.job_id)
-        param_str = " ".join(str(i) for i in self.param_set)
-        melissa_message.send_message((message_str+" " +param_str).encode())
-
-    def restart(self):
-        """
-            Ends and restarts the simulation (mandatory)
-        """
-        self.cancel()
-        self.nb_restarts += 1
-        crashs_before_redraw = 5
-        crashs_before_redraw = 1
-        if self.nb_restarts >= crashs_before_redraw:
-            logging.warning('Simulation ' + str(self.rank) +
-                                        'crashed %d times, drawing new parameter set' % crashs_before_redraw)
-
-            logging.warning('Bad parameter set: ' + str(self.param_set))
-            melissa_message.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
-            self.job_status = FINISHED
-            self.status = FINISHED
-            return
-
-        if "restart_group" in Job.usr_func.keys() \
-        and Job.usr_func['restart_group']:
-            Job.usr_func['restart_group'](self)
-        else:
-            logging.warning('warning: no \'restart_group\''
-                            +' function provided,'
-                            +' using \'launch_group\' instead')
-            self.launch()
-        self.job_status = PENDING
-        self.status = WAITING
-        melissa_message.send_message(("job "+str(self.rank)+" " +str(self.job_id)).encode())
-
 
 class MultiSimuGroup(Group):
     """
@@ -220,25 +203,37 @@ class MultiSimuGroup(Group):
         self.coupling = 0
         self.job_type = 3
         for i in range(self.size):
+            #if isinstance(param_sets[i], ot.Point):
+                #self.param_set.append(numpy.zeros(self.nb_param))
+                #for j in range(self.nb_param):
+                    #self.param_set[i][j] = float(param_sets[i][j])
+            #else:
             self.param_set.append(numpy.copy(param_sets[i]))
             self.simu_id.append(MultiSimuGroup.nb_simu)
             self.simu_status.append(0)
             MultiSimuGroup.nb_simu += 1
 
+    def reset():
+        MultiSimuGroup.nb_simu = 0
+
+    reset = staticmethod(reset)
+
     def launch(self):
         Group.launch(self)
         for i in range(self.size):
-            message_str = "job "+str(self.simu_id[i])+" " +str(self.job_id)
-            param_str = " ".join(str(j) for j in self.param_set[i])
-            melissa_message.send_message((message_str+" " +param_str).encode())
+            melissa_comm4py.send_job(self.simu_id[i],
+                                     str(self.job_id).encode(),
+                                     len(self.param_set[i]),
+                                     self.param_set[i].ctypes.data_as(POINTER(c_double)))
 
     def restart(self):
         """
             Ends and restarts the simulations (mandatory)
         """
+        crashs_before_redraw = 3
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
+        if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.rank) +
                             #'crashed 5 times, drawing new parameter sets')
             #for i in range(self.size):
@@ -247,10 +242,10 @@ class MultiSimuGroup(Group):
                 #logging.info('new parameter set: ' + str(self.param_set[i]))
             #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.rank) +
-                            'crashed 5 times, remove simulation')
+                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             for i in range(self.size):
                 logging.warning('Bad parameter set '+str(i)+': ' + str(self.param_set[i]))
-                melissa_message.send_message(("drop "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
+                melissa_comm4py.send_drop(self.simu_id[i], str(self.job_id).encode())
             self.job_status = FINISHED
             self.status = FINISHED
             return
@@ -265,8 +260,12 @@ class MultiSimuGroup(Group):
             self.launch()
         self.job_status = PENDING
         self.status = WAITING
+        ParamArray = c_double * len(self.param_set[0])
         for i in range(self.size):
-            melissa_message.send_message(("job "+str(self.simu_id[i])+" " +str(self.job_id)).encode())
+            melissa_comm4py.send_job(self.simu_id[i],
+                                     str(self.job_id).encode(),
+                                     len(self.param_set[i]),
+                                     self.param_set[i].ctypes.data_as(POINTER(c_double)))
 
 
 class SobolGroup(Group):
@@ -281,8 +280,19 @@ class SobolGroup(Group):
         self.param_set = list()
         self.simu_id = list()
         self.job_type = 4
+        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
+        #if isinstance(param_set_a, ot.Point):
+            #self.param_set.append(numpy.zeros(self.nb_param))
+            #for j in range(self.nb_param):
+                #self.param_set[0][j] = float(param_set_a[j])
+        #else:
         self.param_set.append(numpy.copy(param_set_a))
         self.simu_id.append(self.rank*(len(param_set_a)+2))
+        #if isinstance(param_set_b, ot.Point):
+            #self.param_set.append(numpy.zeros(self.nb_param))
+            #for j in range(self.nb_param):
+                #self.param_set[1][j] = float(param_set_b[j])
+        #else:
         self.param_set.append(numpy.copy(param_set_b))
         self.simu_id.append(self.rank*(len(param_set_a)+2)+1)
         for i in range(len(param_set_a)):
@@ -293,17 +303,19 @@ class SobolGroup(Group):
 
     def launch(self):
         Group.launch(self)
-        message_str = "job "+str(self.rank)+" " +str(self.job_id)
-        param_str = " ".join(str(j) for j in self.param_set[0])
-        melissa_message.send_message((message_str+" " +param_str).encode())
+        melissa_comm4py.send_job(self.simu_id[0],
+                                 str(self.job_id).encode(),
+                                 len(self.param_set[0]),
+                                 self.param_set[0].ctypes.data_as(POINTER(c_double)))
 
     def restart(self):
         """
             Ends and restarts the Sobol group (mandatory)
         """
+        crashs_before_redraw = 3
         self.cancel()
         self.nb_restarts += 1
-        if self.nb_restarts > 4:
+        if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Group ' +
                             #str(self.rank) +
                             #'crashed 5 times, drawing new parameter sets')
@@ -318,10 +330,10 @@ class SobolGroup(Group):
                 #self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
             #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.rank) +
-                            'crashed 5 times, remove simulation')
+                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
             logging.warning('Bad parameter set A: ' + str(self.param_set[0]))
             logging.warning('Bad parameter set B: ' + str(self.param_set[1]))
-            melissa_message.send_message(("drop "+str(self.rank)+" " +str(self.job_id)).encode())
+            melissa_comm4py.send_drop(self.rank, str(self.job_id).encode())
             self.job_status = FINISHED
             self.status = FINISHED
             return
@@ -339,8 +351,10 @@ class SobolGroup(Group):
             self.launch()
         self.job_status = PENDING
         self.status = WAITING
-        message_str = "job "+str(self.rank)+" " +str(self.job_id)
-        melissa_message.send_message((message_str+" " +param_str).encode())
+        melissa_comm4py.send_job(self.simu_id[0],
+                                 str(self.job_id).encode(),
+                                 len(self.param_set[0]),
+                                 self.param_set[0].ctypes.data_as(POINTER(c_double)))
 
 class Server(Job):
     """
@@ -351,20 +365,26 @@ class Server(Job):
             Server constructor
         """
         Job.__init__(self)
+        self.nb_param = 0
         self.status = WAITING
         self.first_job_id = ''
+        self.directory = "./"
 #        self.create_options()
         self.lock = RLock()
         self.path = '@CMAKE_INSTALL_PREFIX@/bin'
         self.job_type = 1
+        self.options = ''
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir
 
+    def set_nb_param(self, nb_param):
+        self.nb_param = nb_param
+
     def write_node_name(self):
         os.chdir(self.directory)
         fichier=open("server_name.txt", "w")
-        fichier.write(self.node_name)
+        fichier.write(self.node_name[0])
         fichier.close()
         os.system("chmod 744 server_name.txt")
 
@@ -373,10 +393,13 @@ class Server(Job):
             Melissa Server command line options
         """
         op_str = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
+        self.options = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
         if op_str == '':
             logging.error('error bad option: no operation given')
             return
         field_str = ':'.join([x for x in Job.stdy_opt['field_names']])
+        self.options += ' '
+        self.options += ':'.join([x for x in Job.stdy_opt['field_names']])
         if field_str == '':
             logging.error('error bad option: no field name given')
             return
@@ -386,18 +409,22 @@ class Server(Job):
             if quantile_str == '':
                 logging.error('error bad option: no quantile value given')
                 return
+        self.options += ' '
+        self.options += quantile_str
         threshold_str = '0'
         if Job.ml_stats['threshold_exceedances']:
             threshold_str = ':'.join([str(x) for x in Job.stdy_opt['threshold_values']])
             if threshold_str == '':
                 logging.error('error bad option: no threshold value given')
                 return
+        self.options += ' '
+        self.options += threshold_str
         buff = create_string_buffer(256)
-        melissa_message.get_node_name(buff)
+        melissa_comm4py.get_node_name(buff)
         self.cmd_opt = ' '.join(('-o', op_str,
-                                 '-p', str(Job.stdy_opt['nb_parameters']),
+                                 '-p', str(self.nb_param),
                                  '-s', str(Job.stdy_opt['sampling_size']),
-                                 '-t', str(Job.stdy_opt['nb_time_steps']),
+                                 '-t', str(Job.stdy_opt['nb_timesteps']),
                                  '-q', quantile_str,
                                  '-e', threshold_str,
                                  '-c', str(Job.stdy_opt['checkpoint_interval']),
@@ -469,6 +496,31 @@ class Server(Job):
         if "check_server_job" in Job.usr_func.keys() \
          and Job.usr_func['check_server_job']:
             Job.usr_func['check_server_job'](self)
+        elif "check_job" in Job.usr_func.keys() \
+        and Job.usr_func['check_job']:
+            Job.usr_func['check_job'](self)
         else:
             logging.error('Error: no \'check_server_job\' function provided')
             exit()
+
+    def cancel(self):
+        """
+            Cancels a simulation job (mandatory)
+        """
+        if "cancel_server_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_server_job']:
+            return Job.usr_func['cancel_server_job'](self)
+        elif "cancel_job" in Job.usr_func.keys() \
+        and Job.usr_func['cancel_job']:
+           return Job.usr_func['cancel_job'](self)
+        else:
+            logging.error('Error: no \'cancel_job\' function provided')
+            exit()
+
+    def finalize(self):
+        """
+            Finalize the group (optional)
+        """
+        if "finalize_server" in Job.usr_func.keys():
+            if Job.usr_func['finalize_server']:
+                Job.usr_func['finalize_server'](self)

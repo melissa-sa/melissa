@@ -22,6 +22,7 @@
  *
  **/
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +30,12 @@
 #include <errno.h>
 #include <math.h>
 #include <zmq.h>
+#ifdef BUILD_WITH_MPI
+#include <mpi.h>
+#endif // BUILD_WITH_MPI
+//#include <openturns/Study.hxx>
+
+extern "C" {
 #include "server.h"
 #include "melissa_io.h"
 #include "compute_stats.h"
@@ -36,6 +43,8 @@
 #include "melissa_data.h"
 #include "melissa_utils.h"
 #include "fault_tolerance.h"
+#include "melissa_messages.h"
+}
 
 static volatile int end_signal = 0;
 
@@ -66,11 +75,13 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 //#endif // MELISSA4PY
     int                   i;
     melissa_simulation_t *simu_ptr;
-    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME];
+    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50];
+//    OT::Study             OTStudy;
+    zmq_msg_t             msg;
 
-   *server_handle = melissa_malloc (sizeof(melissa_server_t));
+    *server_handle = melissa_malloc (sizeof(melissa_server_t));
 
-    server_ptr = *server_handle;
+    server_ptr = (melissa_server_t*)*server_handle;
 
     // === init variables === //
 
@@ -105,11 +116,15 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     server_ptr->context = zmq_ctx_new ();
     server_ptr->connexion_responder = zmq_socket (server_ptr->context, ZMQ_REP);
+#ifdef CHECK_SIMU_DECONNECTION
     server_ptr->deconnexion_responder = zmq_socket (server_ptr->context, ZMQ_REP);
+#endif // CHECK_SIMU_DECONNECTION
     server_ptr->data_puller = zmq_socket (server_ptr->context, ZMQ_PULL);
     server_ptr->text_puller = zmq_socket (server_ptr->context, ZMQ_SUB);
     server_ptr->text_pusher = zmq_socket (server_ptr->context, ZMQ_PUSH);
     server_ptr->text_requester = zmq_socket (server_ptr->context, ZMQ_REQ);
+
+//    OTStudy.hasObject("toto");
 
 #ifdef BUILD_WITH_MPI
 
@@ -153,7 +168,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         melissa_print_options (&server_ptr->melissa_options);
 //        melissa_write_options (&melissa_options);
 
-        server_ptr->port_names = melissa_malloc (MPI_MAX_PROCESSOR_NAME * server_ptr->comm_data.comm_size);
+        server_ptr->port_names = (char*)melissa_malloc (MPI_MAX_PROCESSOR_NAME * server_ptr->comm_data.comm_size);
     }
 
     // === load the output library === //
@@ -162,7 +177,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 //    melissa_get_output_lib (melissa_output_lib, melissa_output_func);
 //#endif // MELISSA4PY
 
-    server_ptr->fields = melissa_malloc (server_ptr->melissa_options.nb_fields * sizeof(melissa_field_t));
+    server_ptr->fields = (melissa_field_t*)melissa_malloc (server_ptr->melissa_options.nb_fields * sizeof(melissa_field_t));
     melissa_get_fields (argc, argv, server_ptr->fields, server_ptr->melissa_options.nb_fields);
 
     // === Open data puller port === //
@@ -195,19 +210,17 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     zmq_setsockopt (server_ptr->text_pusher, ZMQ_LINGER, &i, sizeof(int));
     melissa_connect (server_ptr->text_pusher, txt_buffer);
 
-    if (server_ptr->melissa_options.learning == 1)
-    {
-        sprintf (txt_buffer, "tcp://%s:%d", server_ptr->melissa_options.launcher_name, server_ptr->melissa_options.txt_req_port);
-        zmq_setsockopt (server_ptr->text_requester, ZMQ_LINGER, &i, sizeof(int));
-        i = 100000; // recv timeout
-        zmq_setsockopt (server_ptr->text_requester, ZMQ_RCVTIMEO, &i, sizeof(int));
-        melissa_connect (server_ptr->text_requester, txt_buffer);
-    }
-
     sprintf (txt_buffer, "tcp://%s:%d", server_ptr->melissa_options.launcher_name, server_ptr->melissa_options.txt_pull_port);
     zmq_setsockopt(server_ptr->text_puller, ZMQ_SUBSCRIBE, "", 0);
     zmq_setsockopt (server_ptr->text_puller, ZMQ_LINGER, &i, sizeof(int));
     melissa_connect (server_ptr->text_puller, txt_buffer);
+
+    // === opent req-rep port  === //
+    sprintf (txt_buffer, "tcp://%s:%d", server_ptr->melissa_options.launcher_name, server_ptr->melissa_options.txt_req_port);
+    zmq_setsockopt (server_ptr->text_requester, ZMQ_LINGER, &i, sizeof(int));
+    i = 100000; // recv timeout
+    zmq_setsockopt (server_ptr->text_requester, ZMQ_RCVTIMEO, &i, sizeof(int));
+    melissa_connect (server_ptr->text_requester, txt_buffer);
 
     if (server_ptr->comm_data.rank == 0)
     {
@@ -216,7 +229,9 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 //        melissa_bind (server_ptr->text_puller, txt_buffer);
 
         melissa_print (VERBOSE_INFO, "Server connected to launcher\n");
+#ifdef CHECK_SIMU_DECONNECTION
         melissa_bind (server_ptr->deconnexion_responder, "tcp://*:2002");
+#endif // CHECK_SIMU_DECONNECTION
         melissa_bind (server_ptr->connexion_responder, "tcp://*:2003");
         server_ptr->first_init = 2;
     }
@@ -228,12 +243,25 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     // === send node 0 name to launcher === //
 
+    send_message_server_name(server_ptr->node_name, server_ptr->comm_data.rank, server_ptr->text_pusher, 0);
     if (server_ptr->comm_data.rank == 0)
     {
-        sprintf (txt_buffer, "server %s", server_ptr->node_name);
-        zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
         melissa_print (VERBOSE_INFO, "Server node name sent to launcher\n");
     }
+
+    // === get stats options from the launcher === //
+    zmq_msg_init_size (&msg, strlen("options") + 1);
+    sprintf((char*)zmq_msg_data (&msg), "options");
+    zmq_msg_send (&msg, server_ptr->text_requester, 0);
+    int size = 0;
+    zmq_msg_init(&msg);
+    while (size < 1)
+    {
+        size = zmq_msg_recv (&msg, server_ptr->text_requester, 0);
+    }
+    server_ptr->last_msg_launcher = melissa_get_time();
+    process_launcher_message (zmq_msg_data (&msg), server_ptr);
+    zmq_msg_close (&msg);
 
     if (server_ptr->melissa_options.restart != 1)
     {
@@ -253,7 +281,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         read_simu_states(&server_ptr->simulations, &server_ptr->melissa_options, &server_ptr->comm_data);
         for (i=0; i<server_ptr->simulations.size; i++)
         {
-            simu_ptr = server_ptr->simulations.items[i];
+            simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[i];
             if (simu_ptr->status == 2)
             {
                 server_ptr->nb_finished_simulations += 1;
@@ -261,7 +289,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         }
         for (i=0; i<server_ptr->simulations.size; i++)
         {
-            simu_ptr = server_ptr->simulations.items[i];
+            simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[i];
             if (simu_ptr->status == 1)
             {
                 simu_ptr->status = 0;
@@ -271,10 +299,9 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
         {
             for (i=0; i<server_ptr->simulations.size; i++)
             {
-                simu_ptr = server_ptr->simulations.items[i];
+                simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[i];
                 melissa_print (VERBOSE_DEBUG, "Simu_state %d %d\n", i, simu_ptr->status);
-                sprintf (txt_buffer, "simu_state %d %d", i, simu_ptr->status);
-                zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
+                send_message_simu_status(i, simu_ptr->status, server_ptr->text_pusher, 0);
             }
         }
         server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
@@ -291,7 +318,9 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
     int                   simu_id, i;
     int                   field_id;
     int                   old_simu_state;
+#ifdef CHECK_SIMU_DECONNECTION
     int                   old_last_time_step_state;
+#endif // CHECK_SIMU_DECONNECTION
     int                   recv_vect_size = 0;
     int                   client_rank;
     int                   new_data = 0;
@@ -303,7 +332,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
     char                 *field_name_ptr = NULL;
     melissa_data_t       *data_ptr = NULL;
 
-    server_ptr = *server_handle;
+    server_ptr = (melissa_server_t*)*server_handle;
 
     simu_data->first_init = 0;
     simu_data->status = 0;
@@ -369,7 +398,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             melissa_print(VERBOSE_DEBUG, "Chekpoint time: %g (proc %d)\n", server_ptr->end_save_time - server_ptr->start_save_time, server_ptr->comm_data.rank);
             server_ptr->total_save_time += server_ptr->end_save_time - server_ptr->start_save_time;
             simu_data->status = 2;
-            if (server_ptr->melissa_options.learning == 1)
+            if (server_ptr->melissa_options.learning > 0)
             {
                 break;
             }
@@ -381,10 +410,16 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
         zmq_pollitem_t items [] = {
             { server_ptr->text_puller, 0, ZMQ_POLLIN, 0 },
             { server_ptr->connexion_responder, 0, ZMQ_POLLIN, 0 },
-            { server_ptr->data_puller, 0, ZMQ_POLLIN, 0 },
-            { server_ptr->deconnexion_responder, 0, ZMQ_POLLIN, 0 }
+            { server_ptr->data_puller, 0, ZMQ_POLLIN, 0 }
+#ifdef CHECK_SIMU_DECONNECTION
+            ,{ server_ptr->deconnexion_responder, 0, ZMQ_POLLIN, 0 }
+#endif // CHECK_SIMU_DECONNECTION
         };
+#ifdef CHECK_SIMU_DECONNECTION
         zmq_poll (items, 4, 100);
+#else // CHECK_SIMU_DECONNECTION
+        zmq_poll (items, 3, 100);
+#endif // CHECK_SIMU_DECONNECTION
         server_ptr->end_wait_time = melissa_get_time();
         server_ptr->total_wait_time += server_ptr->end_wait_time - server_ptr->start_wait_time;
 
@@ -392,18 +427,18 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
         if (items[0].revents & ZMQ_POLLIN)
         {
-            char text[melissa_get_message_len()];
-//            zmq_msg_init (&msg);
-//            zmq_msg_recv (&msg, server_ptr->text_puller, 0);
-//            melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", zmq_msg_data (&msg), server_ptr->comm_data.rank);
-//            server_ptr->last_msg_launcher = melissa_get_time();
-//            process_txt_message(zmq_msg_data (&msg), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
-//            server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
-//            zmq_msg_close (&msg);
-            zmq_recv (server_ptr->text_puller, text, melissa_get_message_len()-1, 0);
-            melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", text, server_ptr->comm_data.rank);
+//            char text[melissa_get_message_len()];
+            zmq_msg_init (&msg);
+            zmq_msg_recv (&msg, server_ptr->text_puller, 0);
+            melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", zmq_msg_data (&msg), server_ptr->comm_data.rank);
             server_ptr->last_msg_launcher = melissa_get_time();
-            process_txt_message(text, server_ptr, server_ptr->melissa_options.nb_parameters);
+            process_launcher_message(zmq_msg_data (&msg), server_ptr);
+            server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
+            zmq_msg_close (&msg);
+//            zmq_recv (server_ptr->text_puller, text, melissa_get_message_len()-1, 0);
+//            melissa_print (VERBOSE_DEBUG, "Recieved %s (rank %d)\n", text, server_ptr->comm_data.rank);
+//            server_ptr->last_msg_launcher = melissa_get_time();
+//            process_launcher_message(text, server_ptr);
             if (server_ptr->melissa_options.sampling_size < server_ptr->simulations.size)
             {
                 server_ptr->melissa_options.sampling_size = server_ptr->simulations.size;
@@ -423,7 +458,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 memcpy(server_ptr->rinit_tab, zmq_msg_data (&msg), 2 * sizeof(int));
                 zmq_msg_close (&msg);
                 zmq_msg_init_size (&msg, 5 * sizeof(int) + server_ptr->comm_data.comm_size * MPI_MAX_PROCESSOR_NAME * sizeof(char));
-                buf_ptr = zmq_msg_data (&msg);
+                buf_ptr = (char*)zmq_msg_data (&msg);
                 memcpy (buf_ptr, &server_ptr->comm_data.comm_size, sizeof(int));
                 buf_ptr += sizeof(int);
                 memcpy (buf_ptr, &server_ptr->melissa_options.sobol_op, sizeof(int));
@@ -453,22 +488,22 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             MPI_Bcast(server_ptr->rinit_tab, 2, MPI_INT, 0, server_ptr->comm_data.comm);
 #endif // BUILD_WITH_MPI
             server_ptr->comm_data.client_comm_size = server_ptr->rinit_tab[0];
-            if (server_ptr->melissa_options.learning == 1)
+            if (server_ptr->melissa_options.learning > 0)
             {
                 server_ptr->comm_data.client_comm_size = 1;
             }
-            server_ptr->first_send = melissa_calloc(server_ptr->melissa_options.nb_fields*server_ptr->comm_data.client_comm_size, sizeof(int));
+            server_ptr->first_send = (int*)melissa_calloc(server_ptr->melissa_options.nb_fields*server_ptr->comm_data.client_comm_size, sizeof(int));
             for (i=0; i<server_ptr->melissa_options.nb_fields; i++)
             {
-                server_ptr->fields[i].client_vect_sizes = melissa_calloc (server_ptr->comm_data.client_comm_size, sizeof(int));
+                server_ptr->fields[i].client_vect_sizes = (int*)melissa_calloc (server_ptr->comm_data.client_comm_size, sizeof(int));
             }
             if (server_ptr->melissa_options.sobol_op == 1)
             {
-                server_ptr->buff_tab_ptr = melissa_malloc ((server_ptr->melissa_options.nb_parameters + 2) * sizeof(double*));
+                server_ptr->buff_tab_ptr = (double**)melissa_malloc ((server_ptr->melissa_options.nb_parameters + 2) * sizeof(double*));
             }
             else
             {
-                server_ptr->buff_tab_ptr = melissa_malloc (sizeof(double*));
+                server_ptr->buff_tab_ptr = (double**)melissa_malloc (sizeof(double*));
             }
             server_ptr->local_nb_messages = 0;
             add_fields(server_ptr->fields,
@@ -481,7 +516,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             simu_data->val_size = 0;
             simu_data->max_val_size = 0;
             simu_data->nb_param = server_ptr->melissa_options.nb_parameters;
-            simu_data->parameters = melissa_malloc(server_ptr->melissa_options.nb_parameters * sizeof(double));
+            simu_data->parameters = (double*)melissa_malloc(server_ptr->melissa_options.nb_parameters * sizeof(double));
 //            return;
         }
 
@@ -492,7 +527,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             server_ptr->start_comm_time = melissa_get_time();
             zmq_msg_init (&msg);
             zmq_msg_recv (&msg, server_ptr->data_puller, 0);
-            buf_ptr = zmq_msg_data (&msg);
+            buf_ptr = (char*)zmq_msg_data (&msg);
             server_ptr->end_comm_time = melissa_get_time();
             server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
 
@@ -511,7 +546,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             if (recv_vect_size > simu_data->max_val_size && recv_vect_size > 0)
             {
                 melissa_print (VERBOSE_DEBUG, "realloc, new size: %d\n", recv_vect_size);
-                simu_data->val = melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
+                simu_data->val = (double*)melissa_realloc(simu_data->val, recv_vect_size*sizeof(double));
                 simu_data->max_val_size = recv_vect_size;
             }
             simu_data->val_size = recv_vect_size;
@@ -581,9 +616,9 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 melissa_init_data (&data_ptr[client_rank], &server_ptr->melissa_options, recv_vect_size);
                 server_ptr->last_checkpoint_time = melissa_get_time();
             }
-            simu_ptr = server_ptr->simulations.items[simu_data->simu_id];
+            simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[simu_data->simu_id];
 
-            if (simu_ptr->parameters == NULL && server_ptr->melissa_options.learning == 1 && recv_vect_size > 0)
+            if (simu_ptr->parameters == NULL && server_ptr->melissa_options.learning > 0 && recv_vect_size > 0)
             {
                 // ask launcher for the simulation informations
                 sprintf (txt_buffer, "simu_info %d", simu_data->simu_id);
@@ -603,16 +638,16 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
             if (simu_data->simu_id >= data_ptr[client_rank].step_simu.size)
             {
-                int32_t *item;
+                uint32_t *item;
                 for (i=data_ptr[client_rank].step_simu.size; i<simu_data->simu_id; i++)
                 {
-                    item = melissa_calloc((data_ptr[client_rank].options->nb_time_steps+31)/32, sizeof(int32_t));
+                    item = (uint32_t*)melissa_calloc((data_ptr[client_rank].options->nb_time_steps+31)/32, sizeof(uint32_t));
                     vector_add(&data_ptr[client_rank].step_simu, (void*)item);
 
                 }
             }
 
-            if (test_bit (data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp) != 0)
+            if (test_bit ((uint32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp) != 0)
             {
                 // Time step already computed, message ignored.
                 melissa_print (VERBOSE_WARNING,  "Allready computed time step (simulation %d, time step %d)\n", simu_data->simu_id, simu_data->time_stamp);
@@ -644,17 +679,23 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                                        simu_data->time_stamp,
                                        server_ptr->melissa_options.nb_parameters+2,
                                        server_ptr->buff_tab_ptr);
-                        confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
-                                server_ptr->melissa_options.nb_parameters,
-                                data_ptr[client_rank].vect_size);
+//                        confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+//                                server_ptr->melissa_options.nb_parameters,
+//                                data_ptr[client_rank].vect_size);
 
                         if (server_ptr->comm_data.rank == 0 &&
                                 simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps -1)
                         {
                             // REM: atm only showing for last timestep on 0 rank
-                            log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
-                                    server_ptr->melissa_options.nb_parameters,
-                                    data_ptr[client_rank].vect_size);
+//                            log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
+//                                    server_ptr->melissa_options.nb_parameters,
+//                                    data_ptr[client_rank].vect_size);
+
+                            send_message_confidence_interval("Sobol",
+                                                             field_name_ptr,
+                                                             simplified_confidence_sobol_martinez (data_ptr[client_rank].sobol_indices[simu_data->time_stamp].iteration),
+                                                             server_ptr->text_pusher,
+                                                             0);
 
                         }
 
@@ -664,26 +705,27 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                                                                                             server_ptr->melissa_options.nb_parameters);
                     }
                 }
-                set_bit(data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp);
+                set_bit((uint32_t*)data_ptr[client_rank].step_simu.items[simu_data->simu_id], simu_data->time_stamp);
             }
             server_ptr->end_computation_time = melissa_get_time();
             server_ptr->total_computation_time += server_ptr->end_computation_time - server_ptr->start_computation_time;
-            if (server_ptr->melissa_options.learning == 1)
+            if (server_ptr->melissa_options.learning > 0)
             {
                 if (wait_launcher_msg == 1)
                 {
                     wait_launcher_msg = 0;
-                    char text[melissa_get_message_len()];
-//                    printf (" Waiting launcher message\n");
-//                    zmq_msg_init (&msg2);
-//                    zmq_msg_recv (server_ptr->text_requester, &msg2, 0);
-//                    printf (" -- > message: %s\n", zmq_msg_data (&msg2));
-//                    server_ptr->last_msg_launcher = melissa_get_time();
-//                    process_txt_message(zmq_msg_data (&msg2), &server_ptr->simulations, server_ptr->melissa_options.nb_parameters);
-//                    zmq_msg_close (&msg2);                wait_launcher_msg = 0;
-                    zmq_recv (server_ptr->text_requester, text, melissa_get_message_len()-1, 0);
+                    zmq_msg_t msg2;
+//                    char text[melissa_get_message_len()];
+                    printf (" Waiting launcher message\n");
+                    zmq_msg_init (&msg2);
+                    zmq_msg_recv (&msg2, server_ptr->text_requester, 0);
+                    printf (" -- > message: %s\n", (char*)zmq_msg_data (&msg2));
                     server_ptr->last_msg_launcher = melissa_get_time();
-                    process_txt_message(text, server_ptr, server_ptr->melissa_options.nb_parameters);
+                    process_launcher_message(zmq_msg_data (&msg2), server_ptr);
+                    zmq_msg_close (&msg2);
+//                    zmq_recv (server_ptr->text_requester, text, melissa_get_message_len()-1, 0);
+//                    server_ptr->last_msg_launcher = melissa_get_time();
+//                    process_launcher_message(text, server_ptr);
                 }
                 memcpy(simu_data->parameters, simu_ptr->parameters, sizeof(double)*server_ptr->melissa_options.nb_parameters);
             }
@@ -694,6 +736,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             simu_ptr->job_status = 1;
             melissa_print(VERBOSE_DEBUG, "Group %d, rank %d, status %d\n", simu_data->simu_id, server_ptr->comm_data.rank, simu_ptr->status);
 
+#ifdef CHECK_SIMU_DECONNECTION
             // check if we recieved all the last timestep messages //
             if (simu_data->time_stamp == server_ptr->melissa_options.nb_time_steps-1)
             {
@@ -701,23 +744,36 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 simu_ptr->last_time_step = check_last_timestep(server_ptr->fields, server_ptr->melissa_options.nb_fields, simu_data->simu_id, server_ptr->melissa_options.nb_time_steps, &server_ptr->comm_data);
                 melissa_print(VERBOSE_DEBUG, "Group %d, rank %d, last timestep status: %d\n", simu_data->simu_id, server_ptr->comm_data.rank, simu_ptr->status);
             }
+#endif // CHECK_SIMU_DECONNECTION
 
             if (simu_ptr->status == 2)
             {
+#ifdef CHECK_SIMU_DECONNECTION
                 if (server_ptr->comm_data.rank != 0)
                 {
                     server_ptr->nb_finished_simulations += 1;
                 }
+#else // CHECK_SIMU_DECONNECTION
+                server_ptr->nb_finished_simulations += 1;
+#endif // CHECK_SIMU_DECONNECTION
             }
 
             // === Send a message to the Python master in case of simulation status update === //  TODO: can't we put all this stuff into functions?  technical debt?
+#ifdef CHECK_SIMU_DECONNECTION
             if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0 && simu_ptr->status == 1)
+#else // CHECK_SIMU_DECONNECTION
+            if (old_simu_state != simu_ptr->status && server_ptr->comm_data.rank == 0)
+#endif // CHECK_SIMU_DECONNECTION
             {
-                sprintf (txt_buffer, "group_state %d %d", simu_data->simu_id, simu_ptr->status);
-                melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
-                zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
+                send_message_simu_status(simu_data->simu_id, simu_ptr->status, server_ptr->text_pusher, 0);
+                if (simu_ptr->status == 2)
+                {
+                    melissa_print(VERBOSE_INFO, "Simulation %d finished\n", simu_data->simu_id);
+                    melissa_print(VERBOSE_INFO, "Finished simulations: %d/%d\n", server_ptr->nb_finished_simulations, server_ptr->simulations.size);
+                }
             }
 
+#ifdef CHECK_SIMU_DECONNECTION
             // === Send a message to the Python master in case of last timestep status update === //
             if (old_last_time_step_state != simu_ptr->last_time_step && server_ptr->comm_data.rank == 0 && simu_ptr->last_time_step == 1)
             {
@@ -725,15 +781,24 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
                 zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
             }
+#endif // CHECK_SIMU_DECONNECTION
 
-            for (i=0; i<sizeof(server_ptr->buff_tab_ptr)/sizeof(double*); i++)
+            if (server_ptr->melissa_options.sobol_op != 1)
             {
-                server_ptr->buff_tab_ptr[i] = NULL;
+                server_ptr->buff_tab_ptr[0] = NULL;
+            }
+            else
+            {
+                for (i=0; i<server_ptr->melissa_options.nb_parameters+2; i++)
+                {
+                    server_ptr->buff_tab_ptr[i] = NULL;
+                }
             }
             buf_ptr = NULL;
             zmq_msg_close (&msg);
         }
 
+#ifdef CHECK_SIMU_DECONNECTION
         if (items[3].revents & ZMQ_POLLIN)
         {
             if (server_ptr->comm_data.rank == 0)
@@ -745,7 +810,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 zmq_msg_close (&msg);
                 melissa_print (VERBOSE_DEBUG, "Group %d ask to disconnect \n", simu_data->simu_id);
                 // simulation wants to disconnect
-                simu_ptr = server_ptr->simulations.items[simu_data->simu_id];
+                simu_ptr = (melissa_simulation_t*)server_ptr->simulations.items[simu_data->simu_id];
                 zmq_msg_init_size (&msg, sizeof(int));
                 memcpy (zmq_msg_data (&msg), &simu_ptr->last_time_step, sizeof(int));
                 zmq_msg_send (&msg, server_ptr->deconnexion_responder, 0);
@@ -753,9 +818,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
                 if (simu_ptr->status == 2)
                 {
-                    sprintf (txt_buffer, "group_state %d %d", simu_data->simu_id, simu_ptr->status);
-                    melissa_print(VERBOSE_DEBUG, "Send \"%s\" to launcher\n", txt_buffer);
-                    zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer), 0);
+                    send_message_simu_status(simu_data->simu_id, simu_ptr->status, server_ptr->text_pusher, 0);
                     simu_ptr->status = 3;
                     server_ptr->nb_finished_simulations += 1;
                     melissa_print(VERBOSE_INFO, "Simulation %d finished\n", simu_data->simu_id);
@@ -763,6 +826,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 }
             }
         }
+#endif // CHECK_SIMU_DECONNECTION
 
         // === Signal handling === //
 
@@ -789,7 +853,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 #ifdef BUILD_WITH_MPI
                 MPI_Finalize ();
 #endif // BUILD_WITH_MPI
-                return 0;
+                return;
             }
             server_ptr->end_save_time = melissa_get_time();
             melissa_print(VERBOSE_DEBUG, "Chekpoint time: %g (proc %d)\n", server_ptr->end_save_time - server_ptr->start_save_time, server_ptr->comm_data.rank);
@@ -818,7 +882,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             break;
         }
 
-        if (new_data == 1 && server_ptr->melissa_options.learning == 1 && simu_data->val_size > 0)
+        if (new_data == 1 && server_ptr->melissa_options.learning > 0 && simu_data->val_size > 0)
         {
             break;
         }
@@ -829,11 +893,11 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data)
 {
     melissa_server_t *server_ptr;
-    double            interval1, interval_tot;
+    double            interval1;
+//    double            interval_tot;
     int               i;
-    char              txt_buffer[MPI_MAX_PROCESSOR_NAME];
 
-    server_ptr = *server_handle;
+    server_ptr = (melissa_server_t*)*server_handle;
 
     melissa_free (simu_data->val);
 
@@ -855,14 +919,15 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     melissa_free(simu_data->parameters);
 
     interval1 = 0;
-    interval_tot = 0;
+//    interval_tot = 0;
     if (server_ptr->melissa_options.sobol_op == 1)
     {
-        global_confidence_sobol_martinez (server_ptr->fields,
-                                          server_ptr->melissa_options.nb_fields,
-                                          &server_ptr->comm_data,
-                                          &interval1,
-                                          &interval_tot);
+//        global_confidence_sobol_martinez (server_ptr->fields,
+//                                          server_ptr->melissa_options.nb_fields,
+//                                          &server_ptr->comm_data,
+//                                          &interval1,
+//                                          &interval_tot);
+        interval1 = simplified_confidence_sobol_martinez (server_ptr->nb_finished_simulations);
     }
 
     if (end_signal == 0)
@@ -880,8 +945,8 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     long int temp2;
     MPI_Reduce (&interval1, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     interval1 = temp1;
-    MPI_Reduce (&interval_tot, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    interval_tot = temp1;
+//    MPI_Reduce (&interval_tot, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+//    interval_tot = temp1;
     MPI_Reduce (&server_ptr->total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     server_ptr->total_comm_time = temp1 / server_ptr->comm_data.comm_size;
     MPI_Reduce (&server_ptr->total_mbytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -904,8 +969,9 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
         melissa_print (VERBOSE_INFO, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&server_ptr->melissa_options));
         if (server_ptr->melissa_options.sobol_op == 1)
         {
-            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
-            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
+            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g \n", interval1);
+//            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (first order)\n", interval1);
+//            melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g (total order)\n", interval_tot);
         }
 //        melissa_print (VERBOSE_INFO, " \n");
     }
@@ -917,20 +983,18 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     // === Sockets deconnexion === //
 
     zmq_close (server_ptr->connexion_responder);
+#ifdef CHECK_SIMU_DECONNECTION
     zmq_close (server_ptr->deconnexion_responder);
+#endif // CHECK_SIMU_DECONNECTION
     zmq_close (server_ptr->data_puller);
 
     if (server_ptr->comm_data.rank == 0 && end_signal == 0)
     {
-        sprintf (txt_buffer, "stop");
-        zmq_send(server_ptr->text_pusher, txt_buffer, strlen(txt_buffer) * sizeof(char), 0);
+        send_message_stop (server_ptr->text_pusher, 0);
     }
     zmq_close (server_ptr->text_pusher);
     zmq_close (server_ptr->text_puller);
-    if (server_ptr->melissa_options.learning == 1)
-    {
-        zmq_close (server_ptr->text_requester);
-    }
+    zmq_close (server_ptr->text_requester);
     zmq_ctx_term (server_ptr->context);
 
 }
@@ -942,7 +1006,7 @@ int main (int argc, char **argv)
     simu_data.status = 0;
     simu_data.val_size = 0;
     simu_data.max_val_size = 0;
-    simu_data.val = melissa_malloc(0);
+    simu_data.val = (double*)melissa_malloc(0);
 #ifdef BUILD_WITH_MPI
     int i;
     MPI_Init_thread (&argc, &argv, MPI_THREAD_FUNNELED , &i);
