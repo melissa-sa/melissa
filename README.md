@@ -10,7 +10,8 @@ To run Melissa you will need:
 * C and Fortran Compiler
 * MPI, OpenMP: for Melissa parallel server. A sequential server will be built if not available
   ZeroMQ: version 4.1.5 or above. CMake can download and install it if option turned on (-DINSTALL_ZMQ=ON)
-* Python 3
+* Python 3.5 or higher
+* virtualenv
 * PythonLibs, Numpy
 
 ## Installing and running example study
