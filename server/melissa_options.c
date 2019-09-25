@@ -411,7 +411,7 @@ void melissa_get_options (int                 argc,
                                 { "txt_pull_port",  required_argument, NULL, 1001 },
                                 { "data_port",      required_argument, NULL, 1002 },
                                 { "req_port",       required_argument, NULL, 1003 },
-                                { "horovod",        required_argument, NULL, 1004 },
+                                { "horovod",        no_argument,       NULL, 1004 },
                                 { NULL,             0,                 NULL,  0  }};
 
     do

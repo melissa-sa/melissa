@@ -23,7 +23,6 @@ add_subdirectory(heat_example)
 add_subdirectory(droplet_example)
 add_subdirectory(fluid_example)
 add_subdirectory(game_of_life_example)
-add_subdirectory(virtual_cluster)
 add_subdirectory(MelissaMonitoring)
 
 install(FILES Melissa-monitoring-notebook.ipynb
