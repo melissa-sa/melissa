@@ -1,4 +1,5 @@
 #include <iostream>      // I/O
+#include <string>        // argv conversion
 #include <random>        // random number generator
 #include <vector>        // matrix
 #include <mpi.h>         // mpi framework
@@ -28,7 +29,8 @@ int main(int argc, char *argv[])
     nRows = atoi(argv[2]);
     nCols = atoi(argv[3]);
     nTime = atoi(argv[4]);
-    bMelissa = argv[5] == "melissa" ? true : false;
+    std::string melissa = std::string(argv[5]);
+    bMelissa = melissa == "melissa";
     coupling = MELISSA_COUPLING_ZMQ;
 
     auto nRowsLocal = nRows / mpisize;
