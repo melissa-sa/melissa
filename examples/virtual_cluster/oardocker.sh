@@ -33,7 +33,7 @@ fi
 if [ "$1" != "install" ]
 then
     # start the cluster, with -n <number of nodes>
-    oardocker start -n 3 -v $PWD/../../:/home/docker/melissa
+    oardocker start -n 3 -v $PWD/../../../:/home/docker/melissa
     # we can also share a directory:
     # oardocker start -n 4 -v $HOME/mon_super_projet:/data
 
