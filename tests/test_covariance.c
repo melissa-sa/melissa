@@ -83,7 +83,7 @@ int main(int argc, char **argv)
         {
             ref_covariance[i] += (tableau1[i + j*vect_size] - ref_mean1[i])*(tableau2[i + j*vect_size] - ref_mean2[i]);
         }
-        ref_covariance[i] /= n;
+        ref_covariance[i] /= (n-1);
     }
     for (i=0; i<vect_size; i++)
     {

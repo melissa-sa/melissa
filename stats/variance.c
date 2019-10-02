@@ -111,8 +111,9 @@ void increment_mean_and_variance (variance_t *partial_variance,
     {
         for (i=0; i<vect_size; i++)
         {
-            partial_variance->variance[i] *= (incr - 1)/(incr);
-            partial_variance->variance[i] += (in_vect[i] - partial_variance->mean_structure.mean[i]) * (in_vect[i] - partial_variance->mean_structure.mean[i]) / (incr-1);
+            partial_variance->variance[i] *= (incr - 2);
+            partial_variance->variance[i] += (in_vect[i] - partial_variance->mean_structure.mean[i]) * (in_vect[i] - partial_variance->mean_structure.mean[i]) * (incr/(incr-1));
+            partial_variance->variance[i] /= (incr - 1);
         }
     }
 }

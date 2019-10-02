@@ -20,7 +20,7 @@ confront directly with the supercomputer environment.
 
 
 This directory contains the necessary files and scripts to install and run a virtual cluster with 2 batch schedulers: OAR and Slurm.
-We consider that you cloned the sources of Melissa in
+We consider that you cloned the sources of Melissa in <Your_Melissa_Folder>.
 
 We modified the original [OAR-docker](https://oar.imag.fr/wiki:oar-docker) to:
 

@@ -48,13 +48,14 @@ static inline void increment_sobol_covariance (double    *covariance,
     double  incr = 0;
 
     incr = (double)increment;
-    if (increment > 0)
+    if (increment > 1)
     {
 #pragma omp parallel for schedule(static) firstprivate(incr)
         for (i=0; i<vect_size; i++)
         {
-            covariance[i] *= incr/(incr+1);
-            covariance[i] += (in_vect1[i] - mean1[i]) * (in_vect2[i] - mean2[i]) / incr;
+            covariance[i] *= (incr - 2);
+            covariance[i] += (in_vect1[i] - mean1[i]) * (in_vect2[i] - mean2[i]) * (incr/(incr-1));
+            covariance[i] /= (incr - 1);
         }
     }
 }
