@@ -1,4 +1,4 @@
-# Virtual Cluster 
+# Virtual Cluster
 
 ## Table of contents
 * [Introduction](#intro)
@@ -12,7 +12,7 @@
 
 ## Introduction <a name="intro"></a>
 We show here how to setup a virtual cluster on your local machine, and how to run
-the Melissa heat example. The  virtual cluster enables you to run various nodes, through Docker containers,
+the Melissa heat example on it. The  virtual cluster enables you to run various nodes, through Docker containers,
 managed by the [OAR batch scheduler](http://oar.imag.fr)  on  your local machine.
 
 This is a very handy intermediate step to validate your developments without having the burden to
@@ -20,6 +20,7 @@ confront directly with the supercomputer environment.
 
 
 This directory contains the necessary files and scripts to install and run a virtual cluster with 2 batch schedulers: OAR and Slurm.
+We consider that you cloned the sources of Melissa in <Your_Melissa_Folder>.
 
 We modified the original [OAR-docker](https://oar.imag.fr/wiki:oar-docker) to:
 
@@ -51,36 +52,30 @@ id
 
 ## Virtual Cluster Installation <a name="cluster"></a>
 
-For installing the virtual cluster rely on the script:
+You don't need to install Melissa first. All the next steps can be done in the sources.
+
+For installing and starting the virtual cluster rely on the script:
 
 ```bash
 oardocker.sh
 ```
-built from [oardocker.sh.in](examples/virtual_cluster/oardocker.sh.in) by cmake.
 
-The script creates a venv (but you are free to use your own). So, after you have installed it, activate your environment before you start using oardocker :
-
+If you only want to install the virtual cluster (without starting it):
 ```bash
-source env3.7/bin/activate
-``` 
-
-For starting a virtual cluster with OAR batch scheduler :
-
-```bash
-oardocker start -n 3
+oardocker.sh install
 ```
 
-For starting SLURM on the virtual cluster :
-
+If you already installed the virtual cluster, start it with:
 ```bash
-./slurm_start.sh
+oardocker.sh start
 ```
 
 This virtual cluster will have:
-* 3 compute nodes: node1, node2, node3  
+* 3 compute nodes: node1, node2, node3
 * 1 server
 * 1 frontend
-where the  frontend and nodes share the `/home` directory.
+where the frontend and nodes share the `/home` directory.
+By default, the directory containing Melissa sources will be shared with the virtual cluster.
 
 
 For connecting to a  cluster node
@@ -89,11 +84,11 @@ oardocker connect frontend
 ```
 To exec command on the frontend for instance:
 ```bash
-oardocker exec frontend ls -al 
+oardocker exec frontend ls -al
 ```
 To stop the cluster
 ```bash
-oardocker stop 
+oardocker stop
 ```
 
 To stop the virtual machines:
@@ -110,55 +105,51 @@ docker rmi $(docker images -q)
 To copy a file to a virtual machine (use `docker ps` to retreive the vm name):
 ```bash
 docker cp  slurm.conf 72ca2488b353:/etc/slurm-llnl/slurm.conf
-``` 
+```
 
 ## Installing Melissa <a name="melissa"></a>
 
-Start a virtual cluster. We advice you to use one the 2 following methods to ensure that your Melissa install is not lost when you reboot the virtual cluster:
-* Use a  shared  directory with the host machine:
+Start a virtual cluster:
 ```bash
-oardocker start -n 3 -v ~/path/to/melissa/on/host/machine:/home/docker/melissa
+oardocker.sh start
 ```
-* Use the `oardocker exec frontend ....` command  to modify the state of the frontend container.
-
-
 
 Connect to the frontend:
 ```bash
 oardocker connect frontend
 ```
 
-You are now on the cluster frontend. If you shared the Melissa folder like shown above, you should find it in
+You are now on the cluster frontend. Melissa folder was shared with the virtual cluster, you should find it in
 
 ```bash
-/home/docker/melissa
+/home/docker/<Your_Melissa_Folder>/melissa
 ```
 
-You can also just clone it from the repo (in the melissa dir not to loss it once you reboot the cluster):
+You can also just clone it from the repo (in <Your_Melissa_Folder> dir not to loss it once you reboot the cluster):
 ```bash
-cd melissa
+cd <Your_Melissa_Folder>
 git clone https://github.com/melissa-sa/melissa.git
 ```
 
-### Compile Melissa 
+### Compile Melissa
 
-Go to melissa directory and recompile in specific build and install directories, to avoid  mixing  it with your local host install (if you shared the directory):
+Go to <Your_Melissa_Folder> directory and recompile in specific build and install directories, to avoid  mixing  it with your local host install:
 
 ```bash
-cd ~/melissa/Melissa
+cd ~/<Your_Melissa_Folder>
 mkdir build-oardocker
 cd build-oardocker
-cmake ../. -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/melissa/install-oardocker
+cmake ../. -DBUILD_DOCUMENTATION=OFF -DINSTALL_ZMQ=ON -DCMAKE_INSTALL_PREFIX=/home/docker/<Your_Melissa_Folder>/install-oardocker
 make install
 source ../install-oardocker/bin/melissa_set_env.sh
 ```
 
-### Compile the Study 
+### Compile the Study
 
 Compile the heat example solver:
 
 ```bash
-cd /home/docker/melissa/install-oardocker/share/melissa/examples/heat_example/
+cd /home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/
 mkdir build
 cd build
 cmake ../solver
@@ -175,7 +166,7 @@ cd ..
 Go to the installed heat example directory in the OAR specific directory:
 
 ```bash
-cd /home/docker/melissa/install-oardocker/share/melissa/examples/heat_example/study_OAR
+cd /home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/study_OAR
 ```
 and run:
 
@@ -192,7 +183,7 @@ oarstat
 At the end of the study, the results are in
 
 ```
-/home/docker/melissa/Melissa/install-oardocker/share/melissa/examples/heat_example/OAR/STATS
+/home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/OAR/STATS
 ```
 
 ### OAR Monitoring tools
@@ -213,7 +204,7 @@ http://localhost:40080/drawgantt-svg/
 Go to the installed heat example directory in the SLURM specific directory:
 
 ```bash
-cd /home/docker/melissa/Melissa/install-oardocker/share/melissa/examples/heat_example/study_Slurm
+cd /home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/study_Slurm
 ```
 and run:
 
@@ -229,7 +220,7 @@ sinfo -i 5
 At the end of the study, the results are in
 
 ```
-/home/docker/melissa/Melissa/install-oardocker/share/melissa/examples/heat_example/Slurm/STATS
+/home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/Slurm/STATS
 ```
 
 

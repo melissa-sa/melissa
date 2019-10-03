@@ -11,6 +11,7 @@ Requirements:
 *  Matplotlib - `pip install ---user matplotlib` (used in manual plotting)
 *  Plotly - `pip install --user plotly` (used in Melissa Dash)
 *  Ipywidgets - `pip install --user ipywidgets` (used in Melissa Dash and manual plotting)
+*  Compiled and installed Melissa + solvers
 
 *Requirements for manual plotting are optional. There are methods to make manual plotting easier which use these libraries. If you use your own plotting libraries or just want the raw data, you don't have to install them.*
 
@@ -36,9 +37,21 @@ Known nbextensions:
 
 **!! Be mindful that this instalation guide is ment for Jupyter Notebook. Enabling extensions is different when JupyterLab is used. Please reffer to [ipywidgets installation guide](https://ipywidgets.readthedocs.io/en/latest/user_install.html#installing-the-jupyterlab-extension) and [plotly.py github page](https://github.com/plotly/plotly.py#jupyterlab-support-python-35)  !!**
 
-### 2.1 Running Notebook on the cluster
+### 2.1 Running Notebook in virtual cluster
 
-To run Jupyter Notebook on the cluster please follow [this tutorial](https://oncomputingwell.princeton.edu/2018/05/jupyter-on-the-cluster/). Remember to source **melissa_set_env.sh** and import right python modules **before** running Jupyter Notebook!
+To set up virtual cluster on your machine please follow [this README](../virtual_cluster/README.md).
+
+*Script that builds virtual cluster already enables required extensions. It is configured to be run out-of-the-box.*
+
+```bash
+source /home/docker/melissa/install-oardocker/bin/melissa_set_env.sh
+jupyter notebook --no-browser --ip=$(hostname -I) --port=8888 &
+```
+Copy the URL printed on the screen and paste it in your browser. The notebook is located in `/home/docker/melissa/install/share/melissa/examples/Melissa-monitoring-notebook.ipynb`
+
+### 2.2 Running Notebook on the real cluster
+
+To run Jupyter Notebook on the cluster please follow [this tutorial](https://oncomputingwell.princeton.edu/2018/05/jupyter-on-the-cluster/). Remember to source **melissa_set_env.sh**, install right python libraries and enable extensions **before** running Jupyter Notebook!
 
 ## 3. Manual plotting
 

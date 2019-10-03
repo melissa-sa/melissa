@@ -36,6 +36,30 @@
 #include "sobol.h"
 #include "melissa_utils.h"
 
+static inline void increment_sobol_covariance (double    *covariance,
+                                               double     in_vect1[],
+                                               double     in_vect2[],
+                                               double     mean1[],
+                                               double     mean2[],
+                                               const int  vect_size,
+                                               const int  increment)
+{
+    int     i;
+    double  incr = 0;
+
+    incr = (double)increment;
+    if (increment > 1)
+    {
+#pragma omp parallel for schedule(static) firstprivate(incr)
+        for (i=0; i<vect_size; i++)
+        {
+            covariance[i] *= (incr - 2);
+            covariance[i] += (in_vect1[i] - mean1[i]) * (in_vect2[i] - mean2[i]) * (incr/(incr-1));
+            covariance[i] /= (incr - 1);
+        }
+    }
+}
+
 /**
  *******************************************************************************
  *
@@ -105,8 +129,10 @@ void init_sobol_martinez (sobol_array_t *sobol_array,
     init_variance (&sobol_array->variance_a, vect_size);
     for (j=0; j<nb_parameters; j++)
     {
-        init_covariance (&(sobol_array->sobol_martinez[j].first_order_covariance), vect_size);
-        init_covariance (&(sobol_array->sobol_martinez[j].total_order_covariance), vect_size);
+//        init_covariance (&(sobol_array->sobol_martinez[j].first_order_covariance), vect_size);
+//        init_covariance (&(sobol_array->sobol_martinez[j].total_order_covariance), vect_size);
+        sobol_array->sobol_martinez[j].first_order_covariance= melissa_calloc (vect_size, sizeof(double));
+        sobol_array->sobol_martinez[j].total_order_covariance= melissa_calloc (vect_size, sizeof(double));
         init_variance (&(sobol_array->sobol_martinez[j].variance_k), vect_size);
 
         sobol_array->sobol_martinez[j].first_order_values = melissa_calloc (vect_size, sizeof(double));
@@ -235,8 +261,22 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
     for (i=0; i< nb_parameters; i++)
     {
         increment_variance (&(sobol_array->sobol_martinez[i].variance_k), in_vect_tab[i+2], vect_size);
-        increment_covariance (&(sobol_array->sobol_martinez[i].first_order_covariance), in_vect_tab[1], in_vect_tab[i+2], vect_size);
-        increment_covariance (&(sobol_array->sobol_martinez[i].total_order_covariance), in_vect_tab[0], in_vect_tab[i+2], vect_size);
+        increment_sobol_covariance (sobol_array->sobol_martinez[i].first_order_covariance,
+                                    in_vect_tab[1],
+                                    in_vect_tab[i+2],
+                                    sobol_array->variance_b.mean_structure.mean,
+                                    sobol_array->sobol_martinez[i].variance_k.mean_structure.mean,
+                                    vect_size,
+                                    sobol_array->iteration);
+        increment_sobol_covariance (sobol_array->sobol_martinez[i].total_order_covariance,
+                                    in_vect_tab[0],
+                                    in_vect_tab[i+2],
+                                    sobol_array->variance_a.mean_structure.mean,
+                                    sobol_array->sobol_martinez[i].variance_k.mean_structure.mean,
+                                    vect_size,
+                                    sobol_array->iteration);
+//        increment_covariance (&(sobol_array->sobol_martinez[i].first_order_covariance), in_vect_tab[1], in_vect_tab[i+2], vect_size);
+//        increment_covariance (&(sobol_array->sobol_martinez[i].total_order_covariance), in_vect_tab[0], in_vect_tab[i+2], vect_size);
 
 #pragma omp parallel
         {
@@ -245,7 +285,7 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
             {
                 if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_b.variance[j] > epsylon)
                 {
-                    sobol_array->sobol_martinez[i].first_order_values[j] = sobol_array->sobol_martinez[i].first_order_covariance.covariance[j]
+                    sobol_array->sobol_martinez[i].first_order_values[j] = sobol_array->sobol_martinez[i].first_order_covariance[j]
                             / ( sqrt(sobol_array->variance_b.variance[j])
                                 * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
                 }
@@ -260,7 +300,7 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
             {
                 if (sobol_array->sobol_martinez[i].variance_k.variance[j] > epsylon && sobol_array->variance_a.variance[j] > epsylon)
                 {
-                    sobol_array->sobol_martinez[i].total_order_values[j] = 1.0 - sobol_array->sobol_martinez[i].total_order_covariance.covariance[j]
+                    sobol_array->sobol_martinez[i].total_order_values[j] = 1.0 - sobol_array->sobol_martinez[i].total_order_covariance[j]
                             / ( sqrt(sobol_array->variance_a.variance[j])
                                 * sqrt(sobol_array->sobol_martinez[i].variance_k.variance[j]) );
                 }
@@ -662,9 +702,11 @@ void free_sobol_martinez (sobol_array_t *sobol_array,
     free_variance (&sobol_array->variance_b);
     for (j=0; j<nb_parameters; j++)
     {
-        free_covariance (&sobol_array->sobol_martinez[j].first_order_covariance);
-        free_covariance (&sobol_array->sobol_martinez[j].total_order_covariance);
+//        free_covariance (&sobol_array->sobol_martinez[j].first_order_covariance);
+//        free_covariance (&sobol_array->sobol_martinez[j].total_order_covariance);
         free_variance (&sobol_array->sobol_martinez[j].variance_k);
+        melissa_free (sobol_array->sobol_martinez[j].first_order_covariance);
+        melissa_free (sobol_array->sobol_martinez[j].total_order_covariance);
         melissa_free (sobol_array->sobol_martinez[j].first_order_values);
         melissa_free (sobol_array->sobol_martinez[j].total_order_values);
     }
