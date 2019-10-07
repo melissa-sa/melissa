@@ -24,7 +24,7 @@ import numpy as np
 import ctypes
 from mpi4py import MPI
 
-melissa_c_api = np.ctypeslib.load_library('libmelissa_api','@CMAKE_INSTALL_PREFIX@/lib/libmelissa_api.so')
+c_melissa_api_no_mpi = np.ctypeslib.load_library('libmelissa_api',os.path.join(os.path.dirname(__file__),"libmelissa_api.so"))
 
 # C prototypes
 c_char_ptr = ctypes.POINTER(ctypes.c_char)

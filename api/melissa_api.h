@@ -16,16 +16,18 @@
 
 /**
  *
- * @file melissa_api_no_mpi.h
+ * @file melissa_api.h
  * @author Terraz Théophile
  * @date 2016-09-05
  *
+ * @defgroup melissa_api API
+ *
  **/
 
-#ifndef MELISSA_API_NO_MPI_H
-#define MELISSA_API_NO_MPI_H
+#ifndef MELISSA_API_H
+#define MELISSA_API_H
 
-#include "zmq.h"
+#include <mpi.h>
 
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
 #define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
@@ -37,13 +39,29 @@
 extern "C" {
 #endif
 
-void melissa_init_no_mpi(const char *field_name,
-                         const int  vect_size,
-                         const int  simu_id,
-                         const int  coupling);
+void melissa_init_mpi (const char *field_name,
+                       const int  vect_size,
+                       MPI_Comm comm,
+                       const int  coupling);
 
-void melissa_send_no_mpi(const char *field_name,
-                         const double *send_vect);
+void melissa_init(const char *field_name,
+                  const int  local_vect_size,
+                  const int  comm_size,
+                  const int  rank,
+                  const int  simu_id,
+                  MPI_Comm   comm,
+                  const int  coupling);
+
+void melissa_init_f(const char *field_name,
+                    int        *local_vect_size,
+                    int        *comm_size,
+                    int        *rank,
+                    const int  *simu_id,
+                    MPI_Fint   *comm_fortran,
+                    int        *coupling);
+
+void melissa_send(const char   *field_name,
+                  const double *send_vect);
 
 void melissa_finalize(void);
 
@@ -51,4 +69,4 @@ void melissa_finalize(void);
 }
 #endif
 
-#endif // MELISSA_API_NO_MPI_H
+#endif // MELISSA_API_H
