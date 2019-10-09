@@ -67,7 +67,7 @@ def launch_group(group):
     if (not os.path.isdir(WORKDIR+"/group"+str(group.rank))):
         os.mkdir(WORKDIR+"/group"+str(group.rank))
     os.chdir(WORKDIR+"/group"+str(group.rank))
-    os.environ['MELISSA_SERVER_NODE_NAME'] = group.server_node_name
+    #os.environ['MELISSA_SERVER_NODE_NAME'] = group.server_node_name
 
     if group.ml_stats['sobol_indices']:
 
@@ -98,6 +98,9 @@ def launch_group(group):
             for i, simu_id in enumerate(group.simu_id):
                 command += ' '.join(('-n',
                                      str(NODES_GROUP),
+                                     '-x',
+                                     'MELISSA_SIMU_ID='+str(simu_id),
+                                     'MELISSA_SERVER_NODE_NAME='+str(group.server_node_name,
                                      '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                      str(simu_id), str(group.coupling),
                                      ' '.join(str(j) for j in group.param_set[i]),
@@ -116,6 +119,9 @@ def launch_group(group):
         for i in range(group.size):
             command += ' '.join(('-n',
                                  str(NODES_GROUP),
+                                 '-x',
+                                 'MELISSA_SIMU_ID='+str(group.simu_id[i]),
+                                 'MELISSA_SERVER_NODE_NAME='+str(group.server_node_name,
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(group.simu_id[i]),
                                  str(group.coupling),

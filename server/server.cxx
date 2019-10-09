@@ -746,7 +746,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             }
 #endif // CHECK_SIMU_DECONNECTION
 
-            if (simu_ptr->status == 2)
+            if (simu_ptr->status == 2 && old_simu_state != 2)
             {
 #ifdef CHECK_SIMU_DECONNECTION
                 if (server_ptr->comm_data.rank != 0)
@@ -964,7 +964,7 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
         melissa_print (VERBOSE_INFO, " --- Writing time:                    %g s\n", server_ptr->total_write_time);
         melissa_print (VERBOSE_INFO, " --- Chekpointing time:               %g s\n", server_ptr->total_save_time);
         melissa_print (VERBOSE_INFO, " --- Total time:                      %g s\n", melissa_get_time() - server_ptr->start_time);
-        melissa_print (VERBOSE_INFO, " --- MB recieved:                     %ld MB\n",server_ptr->total_mbytes_recv);
+        melissa_print (VERBOSE_INFO, " --- MB received:                     %ld MB\n",server_ptr->total_mbytes_recv);
 //        melissa_print (VERBOSE_INFO, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
         melissa_print (VERBOSE_INFO, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&server_ptr->melissa_options));
         if (server_ptr->melissa_options.sobol_op == 1)
