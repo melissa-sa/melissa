@@ -117,6 +117,8 @@ class Messenger(Thread):
                 melissa_comm4py.wait_message(buff)
                 last_server = time.time()
                 message = buff.value.decode().split()
+                if buff.value.decode != 'nothing':
+                    logging.debug('message: '+buff.value.decode())
                 if message[0] == 'stop':
                     with self.server[0].lock:
                         self.server[0].status = FINISHED # finished

@@ -37,6 +37,9 @@ STUDY_OPTIONS['checkpoint_interval'] = 300         # server checkpoints every 30
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
 STUDY_OPTIONS['batch_size'] = 2
+STUDY_OPTIONS['resp_port'] = 5546
+STUDY_OPTIONS['recv_port'] = 5547
+STUDY_OPTIONS['send_port'] = 5548
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
