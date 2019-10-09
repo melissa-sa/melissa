@@ -664,6 +664,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                         // === Compute classical statistics === //
                         compute_stats (&data_ptr[client_rank],
                                        simu_data->time_stamp,
+                                       simu_data->simu_id,
                                        1,
                                        server_ptr->buff_tab_ptr);
                     }
@@ -677,6 +678,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                         // === Compute classical statistics + Sobol indices === //
                         compute_stats (&data_ptr[client_rank],
                                        simu_data->time_stamp,
+                                       simu_data->simu_id,
                                        server_ptr->melissa_options.nb_parameters+2,
                                        server_ptr->buff_tab_ptr);
 //                        confidence_sobol_martinez (&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),

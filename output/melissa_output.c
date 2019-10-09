@@ -328,6 +328,34 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
         MPI_Barrier(comm_data->comm);
 #endif // BUILD_WITH_MPI
+        i_buffer = (int*)d_buffer;
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_min_id.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if ((*data)[i].vect_size > 0)
+                {
+                    memcpy(&i_buffer[temp_offset], (*data)[i].min_max[t].min_id, (*data)[i].vect_size*sizeof(int));
+                    temp_offset += (*data)[i].vect_size;
+                }
+            }
+            temp_offset = 0;
+            igather_data (comm_data, local_vect_sizes, i_buffer);
+            if (comm_data->rank == 0)
+            {
+                (*write_output_i)(file_name,
+                                  field,
+                                  "min_id",
+                                  t,
+                                  global_vect_size,
+                                  i_buffer);
+            }
+        }
+
+#ifdef BUILD_WITH_MPI
+        MPI_Barrier(comm_data->comm);
+#endif // BUILD_WITH_MPI
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_max.%.*d", field, max_size_time, (int)t+1);
@@ -349,6 +377,34 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                                   t,
                                   global_vect_size,
                                   d_buffer);
+            }
+        }
+
+#ifdef BUILD_WITH_MPI
+        MPI_Barrier(comm_data->comm);
+#endif // BUILD_WITH_MPI
+        i_buffer = (int*)d_buffer;
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_max_id.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if ((*data)[i].vect_size > 0)
+                {
+                    memcpy(&i_buffer[temp_offset], (*data)[i].min_max[t].max_id, (*data)[i].vect_size*sizeof(int));
+                    temp_offset += (*data)[i].vect_size;
+                }
+            }
+            temp_offset = 0;
+            igather_data (comm_data, local_vect_sizes, i_buffer);
+            if (comm_data->rank == 0)
+            {
+                (*write_output_i)(file_name,
+                                  field,
+                                  "max_id",
+                                  t,
+                                  global_vect_size,
+                                  i_buffer);
             }
         }
     }

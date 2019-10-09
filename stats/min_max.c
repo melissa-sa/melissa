@@ -54,6 +54,8 @@ void init_min_max (min_max_t *min_max,
 {
     min_max->min = melissa_malloc (vect_size * sizeof(double));
     min_max->max = melissa_malloc (vect_size * sizeof(double));
+    min_max->min_id = melissa_calloc (vect_size, sizeof(int));
+    min_max->max_id = melissa_calloc (vect_size, sizeof(int));
     min_max->is_init = 0;
 }
 
@@ -80,6 +82,7 @@ void init_min_max (min_max_t *min_max,
 
 void min_and_max (min_max_t *min_max,
                   double     in_vect[],
+                  const int  simu_id,
                   const int  vect_size)
 {
     if (min_max->is_init == 0)
@@ -95,9 +98,15 @@ void min_and_max (min_max_t *min_max,
         for (i=0; i<vect_size; i++)
         {
             if (min_max->min[i] > in_vect[i])
+            {
                 min_max->min[i] = in_vect[i];
+                min_max->min_id[i] = simu_id;
+            }
             if (min_max->max[i] < in_vect[i])
+            {
                 min_max->max[i] = in_vect[i];
+                min_max->max_id[i] = simu_id;
+            }
         }
     }
 }
@@ -135,6 +144,8 @@ void save_min_max(min_max_t *minmax,
     {
         fwrite(minmax[i].min, sizeof(double), vect_size, f);
         fwrite(minmax[i].max, sizeof(double), vect_size, f);
+        fwrite(minmax[i].min_id, sizeof(int), vect_size, f);
+        fwrite(minmax[i].max_id, sizeof(int), vect_size, f);
         fwrite(&minmax[i].is_init, sizeof(int), 1, f);
     }
 }
@@ -172,6 +183,8 @@ void read_min_max(min_max_t *minmax,
     {
         fread(minmax[i].min, sizeof(double), vect_size, f);
         fread(minmax[i].max, sizeof(double), vect_size, f);
+        fread(minmax[i].min_id, sizeof(int), vect_size, f);
+        fread(minmax[i].max_id, sizeof(int), vect_size, f);
         fread(&minmax[i].is_init, sizeof(int), 1, f);
     }
 }
@@ -194,4 +207,6 @@ void free_min_max (min_max_t *min_max)
 {
     melissa_free (min_max->min);
     melissa_free (min_max->max);
+    melissa_free (min_max->min_id);
+    melissa_free (min_max->max_id);
 }
