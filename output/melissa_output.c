@@ -1021,9 +1021,8 @@ void write_simu_param (vector_t *simulations,
     int                   i, j;
     melissa_simulation_t *simu_ptr;
 
-    printf ("write filename\n");
     sprintf(file_name, "simu_param.txt");
-    printf ("filename: %s\n", file_name);
+    melissa_print (VERBOSE_DEBUG, "Write simulation parameters in %s (write_simu_param)\n", file_name);
     f = fopen(file_name, "w");
     if (f == NULL)
     {

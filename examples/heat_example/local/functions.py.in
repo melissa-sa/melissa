@@ -93,7 +93,7 @@ def launch_group(group):
             os.system('python create_group'+str(group.rank)+'.py')
             group.job_id = subprocess.Popen('flowvr group'+str(group.rank), shell=True).pid
         else:
-            os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
+            #os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
             command = 'mpirun '
             for i, simu_id in enumerate(group.simu_id):
                 command += ' '.join(('-n',
@@ -130,7 +130,7 @@ def launch_group(group):
                                  ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
         print(command[:-2])
-        os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
+        #os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
         group.job_id = subprocess.Popen(command[:-2].split()).pid
 
     os.chdir(WORKDIR)
