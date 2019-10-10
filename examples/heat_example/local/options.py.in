@@ -50,7 +50,7 @@ MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = True
 MELISSA_STATS['quantiles'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None

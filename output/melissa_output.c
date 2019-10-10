@@ -32,7 +32,8 @@
 #include <math.h>
 //#include "hdf5.h"
 #include "melissa_output.h"
-
+#include "melissa_utils.h"
+#include "fault_tolerance.h"
 
 static inline void dgather_data(comm_data_t *comm_data,
                                int *local_vect_sizes,
@@ -994,3 +995,52 @@ void write_stats_bin (melissa_data_t    **data,
 //#endif // BUILD_WITH_MPI
 //}
 #endif // TOTO
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_output
+ *
+ * This function writes the simu_id and the corresponding parameter set
+ *
+ *******************************************************************************
+ *
+ * @param[out] *simu
+ * simulations vector
+ *
+ * @param[out] nb_parameters
+ * number of simulation parameters
+ *
+ *******************************************************************************/
+
+void write_simu_param (vector_t *simulations,
+                       int       nb_parameters)
+{
+    char                  file_name[256];
+    FILE*                 f = NULL;
+    int                   i, j;
+    melissa_simulation_t *simu_ptr;
+
+    printf ("write filename\n");
+    sprintf(file_name, "simu_param.txt");
+    printf ("filename: %s\n", file_name);
+    f = fopen(file_name, "w");
+    if (f == NULL)
+    {
+      melissa_print (VERBOSE_WARNING, "Can not open %s (write_simu_param)\n", file_name);
+      return;
+    }
+
+    printf ("nb_param: %d \n", nb_parameters);
+    for (i=0; i<simulations->size; i++)
+    {
+        simu_ptr = simulations->items[i];
+        fprintf (f, "%d ", i);
+        for (j=0; j<nb_parameters; j++)
+        {
+            fprintf (f, "%g ", simu_ptr->parameters[j]);
+        }
+        fprintf (f, "\n");
+    }
+    fclose(f);
+}
