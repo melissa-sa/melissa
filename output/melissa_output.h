@@ -78,6 +78,9 @@ void write_output_i(const char   *file_name,
                         const size_t  vec_size,
                         const int     vec[]);
 
+void write_simu_param (vector_t *simulations,
+                       int       nb_parameters);
+
 #ifdef __cplusplus
 }
 #endif

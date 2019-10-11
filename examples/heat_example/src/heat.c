@@ -192,6 +192,7 @@ int main( int argc, char **argv )
   // melissa_init is the first Melissa function to call, and it is called only once by each process in comm.
   // It mainly contacts the server.
   melissa_init (field_name, vect_size, np, me, simu_id, comm, coupling);
+//  melissa_init_mpi (field_name, vect_size, comm, coupling);
 
   // main loop:
   for(n=1; n<=nmax; n++)

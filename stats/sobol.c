@@ -535,8 +535,8 @@ void save_sobol_martinez(sobol_array_t *sobol_array,
     {
         for (j=0; j<nb_parameters; j++)
         {
-            save_covariance (&sobol_array[i].sobol_martinez[j].first_order_covariance, vect_size, 1, f);
-            save_covariance (&sobol_array[i].sobol_martinez[j].total_order_covariance, vect_size, 1, f);
+            fwrite(sobol_array[i].sobol_martinez[j].first_order_covariance, sizeof(double), vect_size,f);
+            fwrite(sobol_array[i].sobol_martinez[j].total_order_covariance, sizeof(double), vect_size,f);
             save_variance (&sobol_array[i].sobol_martinez[j].variance_k, vect_size, 1, f);
             fwrite(sobol_array[i].sobol_martinez[j].first_order_values, sizeof(double), vect_size,f);
             fwrite(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
@@ -632,8 +632,8 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
     {
         for (j=0; j<nb_parameters; j++)
         {
-            read_covariance (&sobol_array[i].sobol_martinez[j].first_order_covariance, vect_size, 1, f);
-            read_covariance (&sobol_array[i].sobol_martinez[j].total_order_covariance, vect_size, 1, f);
+            fread(sobol_array[i].sobol_martinez[j].first_order_covariance, sizeof(double), vect_size,f);
+            fread(sobol_array[i].sobol_martinez[j].total_order_covariance, sizeof(double), vect_size,f);
             read_variance (&sobol_array[i].sobol_martinez[j].variance_k, vect_size, 1, f);
             fread(sobol_array[i].sobol_martinez[j].first_order_values, sizeof(double), vect_size,f);
             fread(sobol_array[i].sobol_martinez[j].total_order_values, sizeof(double), vect_size,f);
