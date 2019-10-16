@@ -18,7 +18,7 @@ test_local:
   tags:
     - linux
   script:
-    - "cd build && source ../install/bin/melissa_set_env.sh && ctest"
+    - "cd build && source ../install/bin/melissa_set_env.sh && ctest --verbose"
   dependencies:
     - build_local
 
