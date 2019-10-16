@@ -13,10 +13,13 @@ build_local:
       - build/
       - install/
 
-build_local:
+test_local:
   type: test
   tags:
     - linux
   script:
     - "cd build && source ../install/bin/melissa_set_env.sh && ctest --verbose"
+  dependencies:
+    - build_local
+
 
