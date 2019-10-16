@@ -13,7 +13,7 @@ build_local:
       - build/
       - install/
 
-test_local:
+build_local:
   type: test
   tags:
     - linux
