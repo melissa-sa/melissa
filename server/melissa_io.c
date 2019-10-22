@@ -167,7 +167,7 @@ void save_stats (melissa_data_t *data,
 //            {
 //                save_variance(data[i].variances, data[i].vect_size, data[i].options->nb_time_steps, f);
 //            }
-            melissa_print (VERBOSE_DEBUG, "Save min and max (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
+            melissa_print (VERBOSE_DEBUG, "Save moments (field %s, server rank %d, client rank %d) (save_stats)\n", field_name, comm_data->rank, i);
             save_moments(data[i].moments, data[i].vect_size, data[i].options->nb_time_steps, f);
             if (data[i].options->min_and_max_op != 0)
             {
@@ -258,17 +258,17 @@ void read_saved_stats (melissa_data_t *data,
         }
         if (data[client_rank].options->threshold_op != 0)
         {
-            melissa_print (VERBOSE_DEBUG, "Read min and max (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
+            melissa_print (VERBOSE_DEBUG, "Read threshold exceedances (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             read_threshold(data[client_rank].thresholds, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_thresholds, f);
         }
         if (data[client_rank].options->quantile_op != 0)
         {
-            melissa_print (VERBOSE_DEBUG, "Read min and max (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
+            melissa_print (VERBOSE_DEBUG, "Read quantiles (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             read_quantile(data[client_rank].quantiles, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_quantiles, f);
         }
         if (data[client_rank].options->sobol_op != 0)
         {
-            melissa_print (VERBOSE_DEBUG, "Read min and max (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
+            melissa_print (VERBOSE_DEBUG, "Read sobol indices (field %s, server rank %d, client rank %d) (read_saved_stats)\n", field_name, comm_data->rank, client_rank);
             data[client_rank].read_sobol(data[client_rank].sobol_indices, data[client_rank].vect_size, data[client_rank].options->nb_time_steps, data[client_rank].options->nb_parameters, f);
         }
         if (data[client_rank].options->restart == 1)

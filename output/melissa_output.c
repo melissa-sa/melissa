@@ -416,27 +416,31 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         MPI_Barrier(comm_data->comm);
 #endif // BUILD_WITH_MPI
         i_buffer = (int*)d_buffer;
-        for (t=0; t<options->nb_time_steps; t++)
+        int value;
+        for (value=0; value<options->nb_thresholds; value++)
         {
-            sprintf(file_name, "results.%s_threshold.%.*d", field, max_size_time, (int)t+1);
-            for (i=0; i<comm_data->client_comm_size; i++)
+            for (t=0; t<options->nb_time_steps; t++)
             {
-                if ((*data)[i].vect_size > 0)
+                sprintf(file_name, "results.%s_threshold%g.%.*d", field, options->threshold[value], max_size_time, (int)t+1);
+                for (i=0; i<comm_data->client_comm_size; i++)
                 {
-                    memcpy(&i_buffer[temp_offset], (*data)[i].thresholds[t], (*data)[i].vect_size*sizeof(int));
-                    temp_offset += (*data)[i].vect_size;
+                    if ((*data)[i].vect_size > 0)
+                    {
+                        memcpy(&i_buffer[temp_offset], (*data)[i].thresholds[t][value].threshold_exceedance, (*data)[i].vect_size*sizeof(int));
+                        temp_offset += (*data)[i].vect_size;
+                    }
                 }
-            }
-            temp_offset = 0;
-            igather_data (comm_data, local_vect_sizes, i_buffer);
-            if (comm_data->rank == 0)
-            {
-                (*write_output_i)(file_name,
-                                  field,
-                                  "threshold",
-                                  t,
-                                  global_vect_size,
-                                  i_buffer);
+                temp_offset = 0;
+                igather_data (comm_data, local_vect_sizes, i_buffer);
+                if (comm_data->rank == 0)
+                {
+                    (*write_output_i)(file_name,
+                                      field,
+                                      "threshold",
+                                      t,
+                                      global_vect_size,
+                                      i_buffer);
+                }
             }
         }
     }
