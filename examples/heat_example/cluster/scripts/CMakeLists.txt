@@ -14,10 +14,25 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-set (SCHED_VERSIONS "local" "OAR" "cluster" "Slurm")  ## TODO: remove Slurm
 
-foreach(sched_version ${SCHED_VERSIONS})
-    add_subdirectory(${sched_version})
-endforeach(sched_version in ${SCHED_VERSIONS})
+configure_file(run_server.sh.in run_server.sh @ONLY)
+configure_file(run_simu.sh.in run_simu.sh @ONLY)
 
-add_subdirectory(src)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/run_server.sh
+    DESTINATION ${EXAMPLES_DIR}/heat_example/study_cluster/scripts
+    PERMISSIONS OWNER_WRITE
+                OWNER_READ
+                OWNER_EXECUTE
+                GROUP_READ
+                GROUP_EXECUTE
+                WORLD_READ
+                WORLD_EXECUTE)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/run_simu.sh
+    DESTINATION ${EXAMPLES_DIR}/heat_example/study_cluster/scripts
+    PERMISSIONS OWNER_WRITE
+                OWNER_READ
+                OWNER_EXECUTE
+                GROUP_READ
+                GROUP_EXECUTE
+                WORLD_READ
+                WORLD_EXECUTE)
