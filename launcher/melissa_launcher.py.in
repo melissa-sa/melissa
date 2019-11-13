@@ -45,6 +45,8 @@ def main():
     """
     cwd = os.getcwd()
     sys.path.append('@CMAKE_INSTALL_PREFIX@/share/melissa/launcher')
+    sys.path.append(  ## FIXME: it's a workaround for imp.load_source()
+        '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example/study_cluster/')
 
     options_path = ""
 
