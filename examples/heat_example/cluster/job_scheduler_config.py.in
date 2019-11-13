@@ -1,0 +1,10 @@
+import batchspawner
+
+
+spawner = batchspawner.batchspawner.SlurmSpawner
+spawner.batch_submit_cmd = 'sbatch'
+spawner.job_name = '--job-name='  ## TODO: ?
+spawner.batch_query_user_cmd = 'squeue --user='
+spawner.batch_cancel_cmd = 'scancel '
+
+spawner.batch_script = ''  ## TODO
