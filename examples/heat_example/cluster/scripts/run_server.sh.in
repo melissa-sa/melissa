@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#SBATCH -N ${NODES_SERVER}
+#SBATCH --ntasks-per-node=${PROC_PER_NODE}
+#SBATCH --mem=0
+#SBATCH --time=${WALLTIME_SERVER}
+#SBATCH -o melissa.%j.log
+#SBATCH -e melissa.%j.err
+#SBATCH --job-name=Melissa
+
+date +\"%d/%m/%y %T\"
+source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
+# run Melissa
+echo  \"### Launch Melissa\"
+mkdir stats${CLUSTER_JOB_ID}.resu
+cd stats${CLUSTER_JOB_ID}.resu
+${SERVER_CMD}
+wait %1
+date +\"%d/%m/%y %T\"
+cd ..
+
+
+##########
+## c.XXXXSpawner.batch_script?
+## TODO: has to be explicit
+## req_... ? https://github.com/jupyterhub/batchspawner#example
+## batchspawner.format_template
