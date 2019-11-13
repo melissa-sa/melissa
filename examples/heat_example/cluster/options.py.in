@@ -28,8 +28,11 @@ import imp
 #from matplotlib import cm
 from string import Template
 from shutil import copyfile
-# import job_scheduler_config as config  ## jakoś tak
+import batchspawner
+import job_scheduler_config  ## overwriting batchspawner defaults
 
+
+spawner = job_scheduler_config.spawner()
 
 USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
@@ -67,7 +70,7 @@ def launch_server(server):
     file.close()
     os.system("chmod 744 run_server.sh")
 
-    proc = subprocess.Popen('sbatch "./run_server.sh"',  ## SLURM TODO batch_submit_cmd
+    proc = subprocess.Popen(spawner.batch_submit_cmd + ' "./run_server.sh"',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
@@ -122,7 +125,7 @@ def launch_simu(simulation):
     file.close()
     os.system("chmod 744 run_simu.sh")
 
-    proc = subprocess.Popen('sbatch -J Simu'+str(simulation.rank)+' "./run_simu.sh"',  ## SLURM TODO batch_submit_cmd job_name
+    proc = subprocess.Popen(spawner.batch_submit_cmd + ' ' + spawner.job_name + 'Simu'+str(simulation.rank)+' "./run_simu.sh"',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,
@@ -137,26 +140,14 @@ def launch_simu(simulation):
 
 def check_job(job):
     state = 0
-    proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",  ## SLURM TODO batch_query_cmd
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            shell=True,
-                            universal_newlines=True)
-    (out, err) = proc.communicate()
-    if (not "PENDING" in out):  ## SLURM TODO state_pending_re
+    if spawner.state_ispending():
         state = 1
-        proc = subprocess.Popen("squeue --job="+str(job.job_id)+" -l",  ## SLURM TODO batch_query_cmd
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                shell=True,
-                                universal_newlines=True)
-        (out, err) = proc.communicate()
-        if (not "RUNNING" in out):  ## SLURM TODO state_running_re
+        if spawner.state_isrunning():
             state = 2
     job.job_status = state
 
 def check_load():
-    proc = subprocess.Popen("squeue -u "+STUDY_OPTIONS['user_name']+" | wc -l",  ## SLURM TODO batch_query_cmd
+    proc = subprocess.Popen(spawner.batch_query_cmd + STUDY_OPTIONS['user_name']+" | wc -l",
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             shell=True,
@@ -167,7 +158,7 @@ def check_load():
 
 def kill_job(job):  ## TODO: check if such methods are replaceable
     print('killing job ...')
-    os.system("scancel "+str(job.job_id))  ## SLURM TODO batch_cancel_cmd
+    os.system(spawner.batch_cancel_cmd + str(job.job_id))
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
