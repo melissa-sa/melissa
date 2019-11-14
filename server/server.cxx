@@ -634,7 +634,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 buf_ptr += MAX_FIELD_NAME * sizeof(char);
                 memcpy(simu_data->val, buf_ptr, recv_vect_size*sizeof(double));
             }
-            server_ptr->total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
+            server_ptr->total_mbytes_recv += zmq_msg_size (&msg);
             server_ptr->start_computation_time = melissa_get_time();
 
             if (simu_data->simu_id >= data_ptr[client_rank].step_simu.size)
@@ -959,7 +959,7 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     MPI_Reduce (&server_ptr->total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     server_ptr->total_comm_time = temp1 / server_ptr->comm_data.comm_size;
     MPI_Reduce (&server_ptr->total_mbytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    server_ptr->total_mbytes_recv = temp2;
+    server_ptr->total_mbytes_recv = temp2 / 1000000;
 #endif // BUILD_WITH_MPI
     if (server_ptr->comm_data.rank==0)
     {
@@ -975,7 +975,7 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
         melissa_print (VERBOSE_INFO, " --- Total time:                      %g s\n", melissa_get_time() - server_ptr->start_time);
         melissa_print (VERBOSE_INFO, " --- MB received:                     %ld MB\n",server_ptr->total_mbytes_recv);
 //        melissa_print (VERBOSE_INFO, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
-        melissa_print (VERBOSE_INFO, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&server_ptr->melissa_options));
+//        melissa_print (VERBOSE_INFO, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&server_ptr->melissa_options));
         if (server_ptr->melissa_options.sobol_op == 1)
         {
             melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g \n", interval1);
