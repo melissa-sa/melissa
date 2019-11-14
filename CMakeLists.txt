@@ -26,7 +26,7 @@ if(${srcdir} STREQUAL ${bindir})
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
-project(Melissa VERSION 0.4.0 LANGUAGES C Fortran CXX)
+project(Melissa VERSION 0.5.0 LANGUAGES C Fortran CXX)
 
 cmake_minimum_required(VERSION 3.2.2)
 

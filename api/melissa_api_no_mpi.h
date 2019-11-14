@@ -35,6 +35,10 @@
 extern "C" {
 #endif
 
+#define MELISSA_MAJOR_NUM @Melissa_VERSION_MAJOR@
+#define MELISSA_MINOR_NUM @Melissa_VERSION_MINOR@
+#define MELISSA_RELEASE_NUM @Melissa_VERSION_PATCH@
+
 void melissa_init_no_mpi(const char *field_name,
                          const int  vect_size,
                          const int  simu_id,
