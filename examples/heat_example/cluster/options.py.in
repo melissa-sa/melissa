@@ -57,6 +57,7 @@ def launch_server(server):
     #create_run_server(server)
     server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
 
+    ## TODO: JS
     content = ""
     file=open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_server.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
@@ -110,6 +111,7 @@ def launch_simu(simulation):
         command = command[:-2]
     print(command)
 
+    ## TODO: JS
     content = ""
     file=open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_simu.sh", "r")
     content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
