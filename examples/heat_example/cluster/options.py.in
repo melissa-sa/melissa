@@ -58,12 +58,10 @@ def launch_server(server):
     server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
 
     ## TODO: JS
-    content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_server.sh", "r")
-    content = Template(file.read()).substitute(WALLTIME_SERVER=str(WALLTIME_SERVER),
-                                               NODES_SERVER=str(NODES_SERVER),
-                                               PROC_PER_NODE=str(PROC_PER_NODE),
-                                               SERVER_CMD=str(server_cmd),
+    content = ""  ## from jsc
+    file = open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_server.sh", "r")
+    content = spawner.server_script
+    content += Template(file.read()).substitute(SERVER_CMD=str(server_cmd),
                                                CLUSTER_JOB_ID="${CLUSTER_JOB_ID}")
     file.close()
     file=open("run_server.sh", "w")
@@ -113,11 +111,9 @@ def launch_simu(simulation):
 
     ## TODO: JS
     content = ""
-    file=open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_simu.sh", "r")
-    content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
-                                               NODES_SIMU=str(NODES_SIMU),
-                                               PROC_PER_NODE=str(PROC_PER_NODE),
-                                               SIMU_ID=str(simulation.rank),
+    file = open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_simu.sh", "r")
+    content = spawner.simu_script
+    content += Template(file.read()).substitute(SIMU_ID=str(simulation.rank),
                                                SIMU_CMD=str(command),
                                                SERVER_NODE_NAME=simulation.server_node_name,
                                                HOSTNAME=str("$(hostname)"))

@@ -12,7 +12,6 @@ spawner.req_memory = 0
 spawner.req_runtime = '0:10:00'  # WALLTIME_SERVER / SIMU
 spawner.req_output_log = 'melissa.%j.log'
 spawner.req_error_log = 'melissa.%j.err'
-spawner.req_job_id = '?'  # CLUSTER_JOB_ID
 
 
 ## replacing spawner.batch_script
@@ -24,17 +23,6 @@ spawner.server_script = '''#!/bin/bash
 #SBATCH -o {output_log}
 #SBATCH -e {error_log}
 #SBATCH --job-name=Melissa
-## TODO: what's below is going to be appended in options.py
-date +\"%d/%m/%y %T\"
-source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
-# run Melissa
-echo  \"### Launch Melissa\"
-mkdir stats${CLUSTER_JOB_ID}.resu
-cd stats${CLUSTER_JOB_ID}.resu
-${SERVER_CMD}
-wait %1
-date +\"%d/%m/%y %T\"
-cd ..
 '''
 
 spawner.simu_script = '''#!/bin/bash
@@ -43,12 +31,4 @@ spawner.simu_script = '''#!/bin/bash
 #SBATCH --time={runtime}
 #SBATCH -o simu.%j.log
 #SBATCH -e simu.%j.err
-#SBATCH --job-name=Simu${SIMU_ID}
-## TODO: what's below is going to be appended in options.py
-source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
-export MELISSA_SERVER_NODE_NAME=${SERVER_NODE_NAME}
-export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
-date +\"%d/%m/%y %T\"
-${SIMU_CMD}
-date +\"%d/%m/%y %T\"
 '''
