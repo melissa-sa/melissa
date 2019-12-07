@@ -20,7 +20,7 @@ echo  \"### Launch Melissa\"
 mkdir stats${job_id}.resu
 cd stats${job_id}.resu
 ${SERVER_CMD}
-wait %1
+# wait %1
 date +\"%d/%m/%y %T\"
 cd ..
 '''

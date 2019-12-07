@@ -56,7 +56,7 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
     #create_run_server(server)
-    server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt+" &"
+    server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt # +" &"
 
     ## TODO: JS
     content = ""  ## from jsc
