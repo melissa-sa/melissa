@@ -71,6 +71,14 @@ def launch_server(server):
     file.write(content)
     file.close()
     os.system("chmod 744 run_server.sh")
+    template_file = open("@EXAMPLES_DIR@/heat_example/study_cluster/job_scheduler_config.py", "r")
+    content = Template(template_file.read()).substitute(  ## TODO: jinja?
+        SERVER_CMD=str(server_cmd),
+        JOB_ID=spawner.job_id)
+    template_file.close()
+    template_file = open("@EXAMPLES_DIR@/heat_example/study_cluster/job_scheduler_config.py", "w")
+    template_file.write(content)
+    template_file.close()
     asyncio.get_event_loop().run_until_complete(
         spawner.submit_batch_script())
 
@@ -79,7 +87,7 @@ def launch_server(server):
 #                                  stderr=subprocess.PIPE,
 #                                  shell=True,
 #                                  universal_newlines=True)
-#    # get the job ID  ## TODO: from submit_batch_script
+#    # get the job ID
 #    (out, err) = proc.communicate()
 #    if len(out.split()) > 0:
 #        server.job_id = out.split()[-1]

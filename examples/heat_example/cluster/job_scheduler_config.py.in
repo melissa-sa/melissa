@@ -17,8 +17,8 @@ spawner.req_options = '''date +\"%d/%m/%y %T\"
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 # run Melissa
 echo  \"### Launch Melissa\"
-mkdir stats${job_id}.resu
-cd stats${job_id}.resu
+mkdir stats${JOB_ID}.resu
+cd stats${JOB_ID}.resu
 ${SERVER_CMD}
 # wait %1
 date +\"%d/%m/%y %T\"
