@@ -13,17 +13,17 @@ spawner.req_memory = '0'
 spawner.req_runtime = '0:10:00'  # WALLTIME_SERVER / SIMU
 spawner.req_output_log = 'melissa.%j.log'
 spawner.req_error_log = 'melissa.%j.err'
-spawner.req_options = '''date +\"%d/%m/%y %T\"
-source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
-# run Melissa
-echo  \"### Launch Melissa\"
-mkdir stats${JOB_ID}.resu
-cd stats${JOB_ID}.resu
-${SERVER_CMD}
-# wait %1
-date +\"%d/%m/%y %T\"
-cd ..
-'''
+#spawner.req_options = '''date +\"%d/%m/%y %T\"
+#source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
+## run Melissa
+#echo  \"### Launch Melissa\"
+#mkdir stats${JOB_ID}.resu
+#cd stats${JOB_ID}.resu
+#${SERVER_CMD}
+## wait %1
+#date +\"%d/%m/%y %T\"
+#cd ..
+#'''
 
 
 ## replacing spawner.batch_script
@@ -34,7 +34,7 @@ spawner.batch_script = '''#!/bin/bash
 #SBATCH --job-name=Melissa
 #SBATCH -o melissa.%j.log
 #SBATCH -e melissa.%j.err
-{options}
+#{options}
 '''
 #SBATCH --ntasks-per-node={ntasks_per_node}  ## TODO: not implemented
 #SBATCH -o {output_log}
@@ -47,3 +47,6 @@ spawner.simu_script = '''#!/bin/bash
 #SBATCH -o simu.%j.log
 #SBATCH -e simu.%j.err
 '''
+
+# simulation.py? -> umieść tam, nie tylko w heat example!
+# nie usuwać launch_simu
