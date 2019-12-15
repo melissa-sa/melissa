@@ -247,7 +247,6 @@ class BatchSpawnerBase(Spawner):
         script = await self._get_batch_script(**subvars)
         self.log.info('Spawner submitting job using ' + cmd)
         self.log.info('Spawner submitted script:\n' + script)
-        print('@@@@', script)
         out = await self.run_command(cmd, input=script)#, env=self.get_env())
         try:
             self.log.info('Job submitted. cmd: ' + cmd + ' output: ' + out)
@@ -607,7 +606,8 @@ echo "jupyterhub-singleuser ended gracefully"
 {{epilogue}}
 """).tag(config=True)
 
-    job_id = "${SLURM_JOB_ID}"
+    ## an initial template, is substituted later with an actual number
+    job_id = "$SLURM_JOB_ID"
 
     # all these req_foo traits will be available as substvars for templated strings
     req_cluster = Unicode('',
