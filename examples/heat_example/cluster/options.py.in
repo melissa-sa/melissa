@@ -78,6 +78,7 @@ def launch_server(server):
 #    template_file = open("@EXAMPLES_DIR@/heat_example/study_cluster/job_scheduler_config.py", "w")
 #    template_file.write(content)
 #    template_file.close()
+    spawner.batch_script = spawner.server_script
     spawner.batch_script += Template('''date +\"%d/%m/%y %T\"
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 # run Melissa
@@ -136,30 +137,45 @@ def launch_simu(simulation):
     print(command)
 
     ## TODO: JS
-    content = ""
-    file = open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_simu.sh", "r")
-    content = spawner.simu_script
-    content += Template(file.read()).substitute(SIMU_ID=str(simulation.rank),
-                                               SIMU_CMD=str(command),
-                                               SERVER_NODE_NAME=simulation.server_node_name,
-                                               HOSTNAME=str("$(hostname)"))
-    file.close()
-    file=open("run_simu.sh", "w")
-    file.write(content)
-    file.close()
-    os.system("chmod 744 run_simu.sh")
+    # content = ""
+    # file = open("@EXAMPLES_DIR@/heat_example/study_cluster/scripts/run_simu.sh", "r")
+    # content = spawner.simu_script
+    # content += Template(file.read()).substitute(SIMU_ID=str(simulation.rank),
+    #                                            SIMU_CMD=str(command),
+    #                                            SERVER_NODE_NAME=simulation.server_node_name,
+    #                                            HOSTNAME=str("$(hostname)"))
+    # file.close()
+    # file=open("run_simu.sh", "w")
+    # file.write(content)
+    # file.close()
+    # os.system("chmod 744 run_simu.sh")
+    spawner.batch_script = spawner.simu_script
+    spawner.batch_script += Template('''#SBATCH --job-name=Simu${SIMU_ID}
+source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
+export MELISSA_SERVER_NODE_NAME=${SERVER_NODE_NAME}
+export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
+date +\"%d/%m/%y %T\"
+${SIMU_CMD}
+date +\"%d/%m/%y %T\"
+''').substitute(SIMU_ID=str(simulation.rank),
+               SIMU_CMD=str(command),
+               SERVER_NODE_NAME=simulation.server_node_name,
+               HOSTNAME=str("$(hostname)"))
+    asyncio.get_event_loop().run_until_complete(
+        spawner.submit_batch_script())
 
-    proc = subprocess.Popen(spawner.batch_submit_cmd + ' ' + spawner.job_name + 'Simu'+str(simulation.rank)+' "./run_simu.sh"',
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  shell=True,
-                                  universal_newlines=True)
-    # get the job ID
-    (out, err) = proc.communicate()
-    if len(out.split()) > 0:
-        simulation.job_id = out.split()[-1]
-    else:
-        print(err)
+    # proc = subprocess.Popen(spawner.batch_submit_cmd + ' ' + spawner.job_name + 'Simu'+str(simulation.rank)+' "./run_simu.sh"',
+    #                               stdout=subprocess.PIPE,
+    #                               stderr=subprocess.PIPE,
+    #                               shell=True,
+    #                               universal_newlines=True)
+    # # get the job ID
+    # (out, err) = proc.communicate()
+    # if len(out.split()) > 0:
+    #     simulation.job_id = out.split()[-1]
+    # else:
+    #     print(err)
+    simulation.job_id = spawner.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):

@@ -27,7 +27,7 @@ spawner.req_error_log = 'melissa.%j.err'
 
 
 ## replacing spawner.batch_script
-spawner.batch_script = '''#!/bin/bash
+spawner.server_script = '''#!/bin/bash
 #SBATCH -N {nprocs}
 #SBATCH --mem={memory}
 #SBATCH --time={runtime}
@@ -41,12 +41,12 @@ spawner.batch_script = '''#!/bin/bash
 #SBATCH -e {error_log}
 
 spawner.simu_script = '''#!/bin/bash
-#SBATCH -N {nnprocs}
-#SBATCH --ntasks-per-node={ntasks_per_node}
+#SBATCH -N {nprocs}
 #SBATCH --time={runtime}
 #SBATCH -o simu.%j.log
 #SBATCH -e simu.%j.err
 '''
+#SBATCH --ntasks-per-node={ntasks_per_node}  ## TODO: not implemented
 
 # simulation.py? -> umieść tam, nie tylko w heat example!
 # nie usuwać launch_simu
