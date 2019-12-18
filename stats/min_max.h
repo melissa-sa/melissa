@@ -44,6 +44,8 @@ struct min_max_s
 {
     double *min;     /**< min[vect_size]                          */
     double *max;     /**< max[vect_size]                          */
+    int    *min_id;  /**< min[vect_size]                          */
+    int    *max_id;  /**< max[vect_size]                          */
     int     is_init; /**< 0 before the first update, 1 otherwhise */
 };
 
@@ -54,6 +56,7 @@ void init_min_max(min_max_t *min_max,
 
 void min_and_max (min_max_t *min_max,
                   double     in_vect[],
+                  const int  simu_id,
                   const int  vect_size);
 
 void save_min_max(min_max_t *minmax,

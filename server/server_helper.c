@@ -211,7 +211,7 @@ void process_launcher_message (void*             msg_data,
     case ALIVE:
         break;
     case OPTIONS:
-        melissa_print(VERBOSE_INFO, " === Options (not implemented yet) ===\n");
+        melissa_print(VERBOSE_DEBUG, " === Options (not implemented yet) ===\n");
         break;
     default:
         melissa_print(VERBOSE_WARNING, "Unknown message type: %d\n", message_type);

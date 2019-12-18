@@ -13,7 +13,7 @@ void write_output_d(const char   *file_name,
     f = fopen(file_name, "w");
     for (i=0; i<vec_size; i++)
     {
-        fprintf (f, "%g\n", vec[i]);
+        fprintf (f, "%.*e\n", 12, vec[i]);
     }
     fclose(f);
 }

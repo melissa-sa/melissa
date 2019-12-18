@@ -156,7 +156,7 @@ int main (int argc, char **argv)
     {
         increment_mean (&my_mean, tableau, vect_size);
         increment_variance (&my_variance, tableau, vect_size);
-        min_and_max (&my_min_and_max, tableau, vect_size);
+        min_and_max (&my_min_and_max, tableau, i, vect_size);
         update_threshold_exceedance (&my_threshold_exceedance, tableau, vect_size);
 
         for (j=0; j<vect_size; j++)

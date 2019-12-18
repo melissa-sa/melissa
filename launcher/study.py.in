@@ -117,6 +117,8 @@ class Messenger(Thread):
                 melissa_comm4py.wait_message(buff)
                 last_server = time.time()
                 message = buff.value.decode().split()
+                if message[0] != 'nothing':
+                    logging.debug('message: '+buff.value.decode())
                 if message[0] == 'stop':
                     with self.server[0].lock:
                         self.server[0].status = FINISHED # finished
@@ -195,31 +197,31 @@ class Responder(Thread):
             while self.running_study:
                 buff = create_string_buffer(melissa_comm4py.melissa_get_message_len())
                 melissa_comm4py.get_resp_message(buff)
-                if buff.value.decode != 'nothing':
-                    logging.debug('message: '+buff.value.decode())
                     #with self.server[0].lock:
                         #self.server[0].status = RUNNING
                     #print('message: '+buff.value.decode())
                 message = buff.value.decode().split()
+                if message[0] != 'nothing':
+                    logging.debug('message: '+buff.value.decode())
                 if message[0] == 'simu_info':
                     group = int(message[1])//self.batch_size
                     simu = int(message[1])%self.batch_size
                     with self.groups[group].lock:
                         if self.groups[group].job_type == 4:
-                            send_job(self.groups[group].rank,
-                                     str(self.groups[group].job_id).encode(),
-                                     len(self.groups[group].param_set[0]),
-                                     self.groups[group].param_set[0].ctypes.data_as(POINTER(c_double)))
+                            melissa_comm4py.send_job(self.groups[group].rank,
+                                                     str(self.groups[group].job_id).encode(),
+                                                     len(self.groups[group].param_set[0]),
+                                                     self.groups[group].param_set[0].ctypes.data_as(POINTER(c_double)))
                         elif self.groups[group].job_type == 3:
-                            send_job(self.groups[group].simu_id[simu],
-                                     str(self.groups[group].job_id).encode(),
-                                     len(self.groups[group].param_set[0]),
-                                     self.groups[group].param_set[simu].ctypes.data_as(POINTER(c_double)))
+                            melissa_comm4py.send_job(self.groups[group].simu_id[simu],
+                                                     str(self.groups[group].job_id).encode(),
+                                                     len(self.groups[group].param_set[0]),
+                                                     self.groups[group].param_set[simu].ctypes.data_as(POINTER(c_double)))
                         elif self.groups[group].job_type == 2:
-                            send_job(self.groups[group].rank,
-                                     str(self.groups[group].job_id).encode(),
-                                     len(self.groups[group].param_set[0]),
-                                     self.groups[group].param_set.ctypes.data_as(POINTER(c_double)))
+                            melissa_comm4py.send_job(self.groups[group].rank,
+                                                     str(self.groups[group].job_id).encode(),
+                                                     len(self.groups[group].param_set[0]),
+                                                     self.groups[group].param_set.ctypes.data_as(POINTER(c_double)))
                 if message[0] == 'test_timeout':
                     melissa_comm4py.send_alive()
                 if message[0] == 'options':

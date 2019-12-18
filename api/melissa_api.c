@@ -624,9 +624,13 @@ void melissa_init (const char *field_name,
             global_data.sobol_rank = simu_id % (global_data.nb_parameters + 2);
             global_data.sample_id = simu_id / (global_data.nb_parameters + 2);
 
-            master_node_name = getenv("MELISSA_MASTER_NODE_NAME");
+            ret = sprintf(master_node_name, "%s", getenv("MELISSA_MASTER_NODE_NAME"));
+            if (strcmp(master_node_name, "(null)") == 0)
+            {
+                ret = 0;
+            }
             // write master node name node name if not found in env
-            if (rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && master_node_name == NULL)
+            if (rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && ret < 1)
             {
                 melissa_get_node_name (master_node_name);
                 sprintf (port_name, "master_name%d.txt", global_data.sample_id);
@@ -731,10 +735,14 @@ void melissa_init (const char *field_name,
             }
             if (global_data.sobol_rank != 0)
             {
-                master_node_name = getenv("MELISSA_MASTER_NODE_NAME");
-                if (master_node_name == NULL)
+                ret = sprintf(master_node_name, "%s", getenv("MELISSA_MASTER_NODE_NAME"));
+                if (strcmp(master_node_name, "(null)") == 0)
                 {
-                    master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME);
+                    ret = 0;
+                }
+                if (ret == 0)
+                {
+//                    master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME);
                     sprintf (port_name, "master_name%d.txt", global_data.sample_id);
                     file = fopen(port_name, "r");
                     if (file != NULL)
@@ -761,6 +769,10 @@ void melissa_init (const char *field_name,
                         }
                     }
                 }
+            }
+            if (0 == strcmp(master_node_name, "(null)"))
+            {
+                sprintf (master_node_name, "localhost");
             }
 
             if (global_data.sobol_rank == 0)

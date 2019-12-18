@@ -310,7 +310,7 @@ module heat_utils
     real*8, dimension(3) :: a
     real*8, dimension(:), pointer, intent(in) :: x, x1, x2
     integer, intent(in) :: nx, ny
-    real*8, dimension(:), pointer, intent(out) :: y
+    real*8, dimension(:), pointer, intent(inout) :: y
     integer :: j, i, k, l, m, i1, in
     
     l = 1

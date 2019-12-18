@@ -18,10 +18,3 @@ install(FILES main.cpp DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver/s
 install(FILES include/lifeUtils.hpp DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver/src/include)
 configure_file(CMakeLists.txt.in CMakeLists.txt.in @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt.in DESTINATION ${EXAMPLES_DIR}/game_of_life_example/solver RENAME CMakeLists.txt)
-
-
-if (BUILD_WITH_MPI)
-    add_test(NAME ConfigureGameOfLife COMMAND cmake ${EXAMPLES_DIR}/game_of_life_example/solver WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example/solver)
-    add_test(NAME CompileGameOfLife COMMAND make install WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example/solver)
-    add_test(NAME TestGameOfLife COMMAND melissa_launcher ${EXAMPLES_DIR}/game_of_life_example/study_local WORKING_DIRECTORY ${EXAMPLES_DIR}/game_of_life_example)
-endif (BUILD_WITH_MPI)

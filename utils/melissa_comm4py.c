@@ -57,6 +57,10 @@ void send_job(int     simu_id,
               char*   job_id,
               int     nb_param,
               double *param_set);
+void send_job_init(int     simu_id,
+                   char*   job_id,
+                   int     nb_param,
+                   double *param_set);
 
 void send_drop (int   simu_id,
                 char* job_id);
@@ -262,6 +266,19 @@ void send_job(int     simu_id,
                      nb_param,
                      param_set,
                      message.message_resp,
+                     0);
+}
+
+void send_job_init(int     simu_id,
+                   char*   job_id,
+                   int     nb_param,
+                   double* param_set)
+{
+    send_message_job(simu_id,
+                     job_id,
+                     nb_param,
+                     param_set,
+                     message.message_pusher,
                      0);
 }
 
