@@ -5,8 +5,9 @@
 * [Docker Installation](#docker)
 * [Virtual Cluster Installation](#cluster)
 * [Installing Melissa](#melissa)
-* [Running the Heat Example  with OAR](#heatoar)
-* [Running the Heat Example  with Slurm](#heatslurm)
+* [Running the Heat Example with OAR](#heatoar)
+* [Running the Heat Example with Slurm](#heatslurm)
+* [Running the Heat Example on cluster](#heatcluster)
 
 
 
@@ -224,10 +225,26 @@ At the end of the study, the results are in
 ```
 
 
+## Running the Heat Example on cluster <a name="heatcluster"></a>
 
+Go to the study_cluster directory in heat example:
 
+```bash
+cd /home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/study_cluster
+```
+and run:
 
+```bash
+melissa_launcher -o options.py &
+```
+To monitor job execution:
 
+```bash
+sinfo -i 5
+```
 
+At the end of the study, the results are in
 
-
+```
+/home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/study_cluster/STATS
+```
