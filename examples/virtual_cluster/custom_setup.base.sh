@@ -8,15 +8,11 @@ apt-get install -y cmake cmake-curses-gui
 # assumption: Python3 module is available in the Virtual Cluster
 #apt-get install -y python3
 python3 -m pip install numpy
-## TODO: review at the end:
-python3 -m pip install async_generator
-python3 -m pip install asyncio
-python3 -m pip install xml
-python3 -m pip install jinja2
-python3 -m pip install tornado
-python3 -m pip install subprocess
 python3 -m pip install jupyterhub
 python3 -m pip install traitlets
+python3 -m pip install async_generator
+python3 -m pip install jinja2
+python3 -m pip install asyncio
 
 
 # Jupyter Notebook
