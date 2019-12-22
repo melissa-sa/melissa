@@ -95,6 +95,14 @@ class BatchSpawnerBase(Spawner):
         help="Memory to request from resource manager"
         ).tag(config=True)
 
+    req_nodes = Unicode('',
+            help='Number of nodes allocated to a job.'
+        ).tag(config=True)
+
+    req_tasks_per_node = Unicode('',
+            help='Number of tasks invoked on each node.'
+        ).tag(config=True)
+
     req_nprocs = Unicode('',
         help="Number of processors to request from resource manager"
         ).tag(config=True)
@@ -113,6 +121,14 @@ class BatchSpawnerBase(Spawner):
 
     req_account = Unicode('',
         help="Account name string to pass to the resource manager"
+        ).tag(config=True)
+
+    req_output_log = Unicode('',
+            help='Batch script standard output file.'
+        ).tag(config=True)
+
+    req_error_log = Unicode('',
+            help='Batch script standard error file.'
         ).tag(config=True)
 
     req_options = Unicode('',
@@ -493,7 +509,7 @@ class TorqueSpawner(BatchSpawnerRegexStates):
     batch_script = Unicode("""#!/bin/sh
 #PBS -q {queue}@{host}
 #PBS -l walltime={runtime}
-#PBS -l nodes=1:ppn={nprocs}
+#PBS -l nodes={nodes}:ppn={nprocs}
 #PBS -l mem={memory}
 #PBS -N jupyterhub-singleuser
 #PBS -v {keepvars}
@@ -531,10 +547,10 @@ class PBSSpawner(TorqueSpawner):
 {% if queue or host %}#PBS -q {% if queue  %}{{queue}}{% endif %}\
 {% if host %}@{{host}}{% endif %}{% endif %}
 #PBS -l walltime={{runtime}}
-#PBS -l select=1:ncpus={{nprocs}}:mem={{memory}}
+#PBS -l select={{nodes}}:ncpus={{nprocs}}:mem={{memory}}
 #PBS -N jupyterhub-singleuser
-#PBS -o {{homedir}}/.jupyterhub.pbs.out
-#PBS -e {{homedir}}/.jupyterhub.pbs.err
+#PBS -o {{homedir}}/{{output_log}}
+#PBS -e {{homedir}}/{{error_log}}
 #PBS -v {{keepvars}}
 {% if options %}#PBS {{options}}{% endif %}
 
@@ -581,7 +597,7 @@ class UserEnvMixin:
 
 class SlurmSpawner(UserEnvMixin,BatchSpawnerRegexStates):
     batch_script = Unicode("""#!/bin/bash
-#SBATCH --output={{homedir}}/jupyterhub_slurmspawner_%j.log
+#SBATCH --output={{homedir}}/{{output_log}}
 #SBATCH --job-name=spawner-jupyterhub
 #SBATCH --workdir={{homedir}}
 #SBATCH --export={{keepvars}}
@@ -663,8 +679,8 @@ class GridengineSpawner(BatchSpawnerBase):
     batch_script = Unicode("""#!/bin/bash
 #$ -j yes
 #$ -N spawner-jupyterhub
-#$ -o {homedir}/.jupyterhub.sge.out
-#$ -e {homedir}/.jupyterhub.sge.err
+#$ -o {homedir}/{output_log}
+#$ -e {homedir}/{error_log}
 #$ -v {keepvars}
 #$ {options}
 
@@ -716,8 +732,8 @@ RequestMemory = {memory}
 RequestCpus = {nprocs}
 Arguments = \"-c 'exec {cmd}'\"
 Remote_Initialdir = {homedir}
-Output = {homedir}/.jupyterhub.condor.out
-Error = {homedir}/.jupyterhub.condor.err
+Output = {homedir}/{output_log}
+Error = {homedir}/{error_log}
 ShouldTransferFiles = False
 GetEnv = True
 {options}
@@ -755,8 +771,8 @@ class LsfSpawner(BatchSpawnerBase):
 #BSUB -R "span[hosts=1]"        # Only spawn job on one server
 #BSUB -q {queue}
 #BSUB -J spawner-jupyterhub
-#BSUB -o {homedir}/.jupyterhub.lsf.out
-#BSUB -e {homedir}/.jupyterhub.lsf.err
+#BSUB -o {homedir}/{output_log}
+#BSUB -e {homedir}/{error_log}
 
 {prologue}
 {cmd}
