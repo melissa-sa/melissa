@@ -78,7 +78,7 @@ class BatchSpawnerBase(Spawner):
     # override default server ip since batch jobs normally running remotely
     ip = Unicode("0.0.0.0", help="Address for singleuser server to listen at").tag(config=True)
 
-    exec_prefix = Unicode('sudo -E -u {username}',
+    exec_prefix = Unicode('',
         help="Standard executon prefix (e.g. the default sudo -E -u {username})"
         ).tag(config=True)
 
@@ -177,6 +177,7 @@ class BatchSpawnerBase(Spawner):
         ).tag(config=True)
 
     # Raw output of job submission command unless overridden
+    ## initially env var template, substituted later with an actual number
     job_id = Unicode()
 
     # Will get the raw output of the job status command unless overridden
@@ -529,6 +530,7 @@ class TorqueSpawner(BatchSpawnerRegexStates):
     state_pending_re = Unicode(r'<job_state>[QH]</job_state>').tag(config=True)
     state_running_re = Unicode(r'<job_state>R</job_state>').tag(config=True)
     state_exechost_re = Unicode(r'<exec_host>((?:[\w_-]+\.?)+)/\d+').tag(config=True)
+    job_id = Unicode('$PBS_JOBID').tag(config=True)
 
 
 class MoabSpawner(TorqueSpawner):
@@ -540,6 +542,7 @@ class MoabSpawner(TorqueSpawner):
     state_pending_re = Unicode(r'State="Idle"').tag(config=True)
     state_running_re = Unicode(r'State="Running"').tag(config=True)
     state_exechost_re = Unicode(r'AllocNodeList="([^\r\n\t\f :"]*)').tag(config=True)
+    job_id = Unicode('$MOAB_JOBID').tag(config=True)
 
 
 class PBSSpawner(TorqueSpawner):
@@ -617,8 +620,7 @@ echo "jupyterhub-singleuser ended gracefully"
 {{epilogue}}
 """).tag(config=True)
 
-    ## an initial template, is substituted later with an actual number
-    job_id = "$SLURM_JOB_ID"
+    job_id = Unicode('$SLURM_JOB_ID').tag(config=True)
 
     # all these req_foo traits will be available as substvars for templated strings
     req_cluster = Unicode('',
@@ -655,7 +657,8 @@ echo "jupyterhub-singleuser ended gracefully"
         try:
             # use only last line to circumvent slurm bug
             output = output.splitlines()[-1]
-            job_id = output.split()[-1]
+            job_id = output.split(';')[0]
+            int(job_id)
         except Exception as e:
             self.log.error("SlurmSpawner unable to parse job ID from text: " + output)
             raise e
@@ -694,6 +697,7 @@ class GridengineSpawner(BatchSpawnerBase):
     # outputs job data XML string
     batch_query_cmd = Unicode('qstat -xml').tag(config=True)
     batch_cancel_cmd = Unicode('qdel {job_id}').tag(config=True)
+    job_id = Unicode('$JOB_ID').tag(config=True)
 
     def parse_job_id(self, output):
         return output.split(' ')[2]
@@ -783,6 +787,7 @@ class LsfSpawner(BatchSpawnerBase):
     batch_submit_cmd = Unicode('bsub').tag(config=True)
     batch_query_cmd = Unicode('bjobs -a -noheader -o "STAT EXEC_HOST" {job_id}').tag(config=True)
     batch_cancel_cmd = Unicode('bkill {job_id}').tag(config=True)
+    job_id = Unicode('$LSB_JOBID').tag(config=True)
 
     def get_env(self):
         env = super().get_env()
