@@ -179,10 +179,13 @@ date +\"%d/%m/%y %T\"
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def check_job(job):
+    """
+    0 - pending, 1 - running, 2 - not in queue
+    """
     state = 0
-    if spawner.state_ispending():
+    if not spawner.state_ispending():  ## not pending...
         state = 1
-        if spawner.state_isrunning():
+        if not spawner.state_isrunning():  ## ...and not running either
             state = 2
     job.job_status = state
 
