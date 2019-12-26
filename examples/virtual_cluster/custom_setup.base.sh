@@ -13,6 +13,7 @@ python3 -m pip install traitlets
 python3 -m pip install async_generator
 python3 -m pip install jinja2
 python3 -m pip install asyncio
+python3 -m pip install tornado
 
 
 # Jupyter Notebook
