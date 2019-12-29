@@ -26,6 +26,7 @@ import asyncio
 import jupyterhub
 import re
 from tornado import gen
+import getpass
 # import os
 # import sys
 # import xml.etree.ElementTree as ET
@@ -146,7 +147,8 @@ class BatchSpawnerBase(Spawner):
     req_username = Unicode()
     @default('req_username')
     def _req_username_default(self):
-        return self.user.name
+        # return self.user.name
+        return getpass.getuser()
 
     # Useful IF getpwnam on submit host returns correct info for exec host
     req_homedir = Unicode()
@@ -274,7 +276,21 @@ class BatchSpawnerBase(Spawner):
              "and self.job_id as {job_id}."
         ).tag(config=True)
 
-    async def read_job_state(self):
+    batch_query_user_cmd = Unicode('',
+                                   help='Command to run to read user\'s '
+                                   'jobs status. Formatted using req_xyz '
+                                   'traits as {xyz} and req_username as '
+                                   '{username}. Returns lines count '
+                                   'excluding header.'
+                                   ).tag(config=True)
+
+    async def read_job_state(self, query_cmd):
+        """
+        Get job status based on a query.
+        :param traitlets.Unicode query_cmd: Query with parameters.
+        :return: Job status.
+        :rtype: str
+        """
         if self.job_id is None or len(self.job_id) == 0:
             # job not running
             self.job_status = ''
@@ -282,7 +298,7 @@ class BatchSpawnerBase(Spawner):
         subvars = self.get_req_subvars()
         subvars['job_id'] = self.job_id
         cmd = ' '.join((format_template(self.exec_prefix, **subvars),
-                        format_template(self.batch_query_cmd, **subvars)))
+                        format_template(query_cmd, **subvars)))
         self.log.debug('Spawner querying job: ' + cmd)
         try:
             out = await self.run_command(cmd)
@@ -345,7 +361,7 @@ class BatchSpawnerBase(Spawner):
     async def poll(self):
         """Poll the process"""
         if self.job_id is not None and len(self.job_id) > 0:
-            await self.read_job_state()
+            await self.read_job_state(self.batch_query_cmd)
             if self.state_isrunning() or self.state_ispending():
                 return None
             else:
@@ -525,6 +541,8 @@ class TorqueSpawner(BatchSpawnerRegexStates):
     batch_submit_cmd = Unicode('qsub').tag(config=True)
     # outputs job data XML string
     batch_query_cmd = Unicode('qstat -x {job_id}').tag(config=True)
+    batch_query_user_cmd = Unicode('qstat -u {username} | wc -l'
+                                  ).tag(config=True)
     batch_cancel_cmd = Unicode('qdel {job_id}').tag(config=True)
     # search XML string for job_state - [QH] = pending, R = running, [CE] = done
     state_pending_re = Unicode(r'<job_state>[QH]</job_state>').tag(config=True)
@@ -538,6 +556,8 @@ class MoabSpawner(TorqueSpawner):
     batch_submit_cmd = Unicode('msub').tag(config=True)
     # outputs job data XML string
     batch_query_cmd = Unicode('mdiag -j {job_id} --xml').tag(config=True)
+    batch_query_user_cmd = Unicode('mdiag -j -w user={username} | wc -l'
+                                  ).tag(config=True)
     batch_cancel_cmd = Unicode('mjobctl -c {job_id}').tag(config=True)
     state_pending_re = Unicode(r'State="Idle"').tag(config=True)
     state_running_re = Unicode(r'State="Running"').tag(config=True)
@@ -644,7 +664,9 @@ echo "jupyterhub-singleuser ended gracefully"
     # outputs line like "Submitted batch job 209"
     batch_submit_cmd = Unicode('sbatch --parsable').tag(config=True)
     # outputs status and exec node like "RUNNING hostname"
-    batch_query_cmd = Unicode("squeue -h -j {job_id} -o '%T %B'").tag(config=True) #
+    batch_query_cmd = Unicode("squeue -h -j {job_id} -o '%T %B'").tag(config=True)  #
+    batch_query_user_cmd = Unicode('squeue -h --user={username} | wc -l',
+                                  ).tag(config=True)
     batch_cancel_cmd = Unicode('scancel {job_id}').tag(config=True)
     # use long-form states: PENDING,  CONFIGURING = pending
     #  RUNNING,  COMPLETING = running
@@ -696,6 +718,8 @@ class GridengineSpawner(BatchSpawnerBase):
     batch_submit_cmd = Unicode('qsub').tag(config=True)
     # outputs job data XML string
     batch_query_cmd = Unicode('qstat -xml').tag(config=True)
+    batch_query_user_cmd = Unicode('qstat -u {username} | wc -l'
+                                  ).tag(config=True)
     batch_cancel_cmd = Unicode('qdel {job_id}').tag(config=True)
     job_id = Unicode('$JOB_ID').tag(config=True)
 
@@ -748,6 +772,8 @@ Queue
     batch_submit_cmd = Unicode('condor_submit').tag(config=True)
     # outputs job data XML string
     batch_query_cmd = Unicode('condor_q {job_id} -format "%s, " JobStatus -format "%s" RemoteHost -format "\n" True').tag(config=True)
+    batch_query_user_cmd = Unicode('condor_q -submitter {username} | wc -l'
+                                  ).tag(config=True)
     batch_cancel_cmd = Unicode('condor_rm {job_id}').tag(config=True)
     # job status: 1 = pending, 2 = running
     state_pending_re = Unicode(r'^1,').tag(config=True)
@@ -786,6 +812,7 @@ class LsfSpawner(BatchSpawnerBase):
 
     batch_submit_cmd = Unicode('bsub').tag(config=True)
     batch_query_cmd = Unicode('bjobs -a -noheader -o "STAT EXEC_HOST" {job_id}').tag(config=True)
+    batch_query_user_cmd = Unicode('bjobs -noheader -u {username} | wc -l').tag(config=True)
     batch_cancel_cmd = Unicode('bkill {job_id}').tag(config=True)
     job_id = Unicode('$LSB_JOBID').tag(config=True)
 
