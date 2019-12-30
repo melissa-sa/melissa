@@ -137,7 +137,7 @@ def check_load():
         spawner.read_job_state(spawner.batch_query_user_cmd))
     return int(spawner.job_status) < 250  ## running jobs count
 
-def kill_job(job):  ## TODO: check if such methods are replaceable
+def kill_job(job):
     print('killing job ...')
     os.system(spawner.batch_cancel_cmd + str(job.job_id))
 
@@ -179,6 +179,6 @@ USER_FUNCTIONS['check_group_job'] = check_job
 USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
-USER_FUNCTIONS['cancel_job'] = kill_job
+USER_FUNCTIONS['cancel_job'] = spawner.cancel_batch_job()  ## magically, it works TODO: shaky logic?
 USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None
