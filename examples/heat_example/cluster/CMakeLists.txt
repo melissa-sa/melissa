@@ -15,7 +15,6 @@
 ###################################################################
 
 
-add_subdirectory(scripts)
 configure_file(options.py.in options.py @ONLY)
 install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/options.py DESTINATION
