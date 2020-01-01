@@ -124,12 +124,20 @@ class BatchSpawnerBase(Spawner):
         help="Account name string to pass to the resource manager"
         ).tag(config=True)
 
-    req_output_log = Unicode('',
-            help='Batch script standard output file.'
+    req_server_output_log = Unicode('',
+            help='Server batch script standard output file.'
         ).tag(config=True)
 
-    req_error_log = Unicode('',
-            help='Batch script standard error file.'
+    req_server_error_log = Unicode('',
+            help='Server batch script standard error file.'
+        ).tag(config=True)
+
+    req_simu_output_log = Unicode('',
+            help='Simulation batch script standard output file.'
+        ).tag(config=True)
+
+    req_simu_error_log = Unicode('',
+            help='Simulation batch script standard error file.'
         ).tag(config=True)
 
     req_options = Unicode('',
@@ -572,8 +580,8 @@ class PBSSpawner(TorqueSpawner):
 #PBS -l walltime={{runtime}}
 #PBS -l select={{nodes}}:ncpus={{nprocs}}:mem={{memory}}
 #PBS -N jupyterhub-singleuser
-#PBS -o {{homedir}}/{{output_log}}
-#PBS -e {{homedir}}/{{error_log}}
+#PBS -o {{homedir}}/{{simu_output_log}}
+#PBS -e {{homedir}}/{{simu_error_log}}
 #PBS -v {{keepvars}}
 {% if options %}#PBS {{options}}{% endif %}
 
@@ -620,7 +628,7 @@ class UserEnvMixin:
 
 class SlurmSpawner(UserEnvMixin,BatchSpawnerRegexStates):
     batch_script = Unicode("""#!/bin/bash
-#SBATCH --output={{homedir}}/{{output_log}}
+#SBATCH --output={{homedir}}/{{simu_output_log}}
 #SBATCH --job-name=spawner-jupyterhub
 #SBATCH --workdir={{homedir}}
 #SBATCH --export={{keepvars}}
@@ -704,8 +712,8 @@ class GridengineSpawner(BatchSpawnerBase):
     batch_script = Unicode("""#!/bin/bash
 #$ -j yes
 #$ -N spawner-jupyterhub
-#$ -o {homedir}/{output_log}
-#$ -e {homedir}/{error_log}
+#$ -o {homedir}/{simu_output_log}
+#$ -e {homedir}/{simu_error_log}
 #$ -v {keepvars}
 #$ {options}
 
@@ -760,8 +768,8 @@ RequestMemory = {memory}
 RequestCpus = {nprocs}
 Arguments = \"-c 'exec {cmd}'\"
 Remote_Initialdir = {homedir}
-Output = {homedir}/{output_log}
-Error = {homedir}/{error_log}
+Output = {homedir}/{simu_output_log}
+Error = {homedir}/{simu_error_log}
 ShouldTransferFiles = False
 GetEnv = True
 {options}
@@ -801,8 +809,8 @@ class LsfSpawner(BatchSpawnerBase):
 #BSUB -R "span[hosts=1]"        # Only spawn job on one server
 #BSUB -q {queue}
 #BSUB -J spawner-jupyterhub
-#BSUB -o {homedir}/{output_log}
-#BSUB -e {homedir}/{error_log}
+#BSUB -o {homedir}/{simu_output_log}
+#BSUB -e {homedir}/{simu_error_log}
 
 {prologue}
 {cmd}
