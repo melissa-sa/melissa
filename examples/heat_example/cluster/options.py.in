@@ -35,15 +35,10 @@ import asyncio
 
 spawner = job_scheduler_config.spawner
 
-USERNAME = getpass.getuser()
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 EXECUTABLE='heatc'
-NODES_SERVER = 1
-NODES_GROUP = 1
 WALLTIME_SERVER = "0:10:00"
 WALLTIME_SIMU = "0:05:00"
-NODES_SIMU = NODES_GROUP
-PROC_PER_NODE = 1
 
 def draw_param_set():
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
@@ -56,7 +51,7 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
     #create_run_server(server)
-    server_cmd = "mpirun -n "+str(PROC_PER_NODE*NODES_SERVER) + " " +server.path+"/melissa_server "+server.cmd_opt # +" &"
+    server_cmd = "mpirun -n "+str(spawner.req_tasks_per_node*int(spawner.req_nodes)) + " " +server.path+"/melissa_server "+server.cmd_opt # +" &"
     spawner.batch_script = spawner.server_script
     spawner.batch_script += Template('''date +\"%d/%m/%y %T\"
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
@@ -86,7 +81,7 @@ def launch_simu(simulation):
         command = 'mpirun '
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
-                                 str(NODES_GROUP),
+                                 spawner.req_nodes,
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
@@ -96,7 +91,7 @@ def launch_simu(simulation):
         command = 'mpirun '
         for i in range(simulation.size):
             command += ' '.join(('-n',
-                                 str(PROC_PER_NODE*NODES_SIMU),
+                                 str(spawner.req_tasks_per_node*int(spawner.req_nodes)),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
                                  str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
@@ -142,7 +137,7 @@ def kill_job(job):
     os.system(spawner.batch_cancel_cmd + str(job.job_id))
 
 STUDY_OPTIONS = {}
-STUDY_OPTIONS['user_name'] = USERNAME
+STUDY_OPTIONS['user_name'] = spawner.req_username
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_cluster/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
