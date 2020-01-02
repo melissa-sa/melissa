@@ -10,21 +10,8 @@ spawner.req_server_output_log = 'melissa.%j.log'
 spawner.req_server_error_log = 'melissa.%j.err'
 spawner.req_simu_output_log = 'simu.%j.log'
 spawner.req_simu_error_log = 'simu.%j.err'
-#spawner.req_options = '''date +\"%d/%m/%y %T\"  ## FIXME: wont work because of {}
-#source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
-## run Melissa
-#echo  \"### Launch Melissa\"
-#mkdir stats${JOB_ID}.resu
-#cd stats${JOB_ID}.resu
-#${SERVER_CMD}
-## wait %1
-#date +\"%d/%m/%y %T\"
-#cd ..
-#'''
 
 
-## TODO: make base scripts more generic?
-## replacing spawner.batch_script
 spawner.server_script = '''#!/bin/bash
 #SBATCH -N {nodes}
 #SBATCH --ntasks-per-node={tasks_per_node}
