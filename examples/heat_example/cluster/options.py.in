@@ -16,109 +16,111 @@
 
 
 """
-    User defined options module
+User defined options module
 """
-import os
-import time
-import numpy as np
-import subprocess
-import getpass
-import imp
-#from matplotlib import pyplot as plt
-#from matplotlib import cm
-from string import Template
-from shutil import copyfile
-import batchspawner
-import job_scheduler_config  ## overwriting batchspawner defaults
-import asyncio
+
+
+import job_scheduler_config, numpy, os, string, asyncio, shutil
 
 
 spawner = job_scheduler_config.spawner
 
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
-EXECUTABLE='heatc'
-WALLTIME_SERVER = "0:10:00"
-WALLTIME_SIMU = "0:05:00"
+EXECUTABLE = 'heatc'
+WALLTIME_SERVER = '0:10:00'
+WALLTIME_SIMU = '0:05:00'
+
 
 def draw_param_set():
-    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
+    """
+    :rtype: numpy.ndarray
+    """
+    param_set = numpy.zeros(STUDY_OPTIONS['nb_parameters'])
     for i in range(STUDY_OPTIONS['nb_parameters']):
-        param_set[i] = np.random.uniform(0, 1)
+        param_set[i] = numpy.random.uniform(0, 1)
     return param_set
 
+
 def launch_server(server):
+    """
+    :param simulation.Server server:
+    """
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
-    #create_run_server(server)
-    server_cmd = "mpirun -n "+str(spawner.req_tasks_per_node*int(spawner.req_nodes)) + " " +server.path+"/melissa_server "+server.cmd_opt # +" &"
+    server_cmd = 'mpirun -n {} {}/melissa_server {}'.format(
+        str(spawner.req_tasks_per_node * int(spawner.req_nodes)),
+        server.path,
+        server.cmd_opt)
     spawner.batch_script = spawner.server_script
-    spawner.batch_script += Template('''date +\"%d/%m/%y %T\"
+    spawner.batch_script += string.Template('''date +\'%d/%m/%y %T\'
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 # run Melissa
-echo  \"### Launch Melissa\"
+echo  '### Launch Melissa'
 mkdir stats${JOB_ID}.resu
 cd stats${JOB_ID}.resu
 ${SERVER_CMD}
 # wait %1
-date +\"%d/%m/%y %T\"
+date +\'%d/%m/%y %T\'
 cd ..
-''').substitute(  ## TODO: jinja?
-        SERVER_CMD=str(server_cmd),
-        JOB_ID=spawner.job_id)
-    asyncio.get_event_loop().run_until_complete(
-        spawner.start())
-        # spawner.submit_batch_script())
+''').substitute(JOB_ID=spawner.job_id, SERVER_CMD=str(server_cmd))  ## TODO: jinja?
+    asyncio.get_event_loop().run_until_complete(spawner.start())
     server.job_id = spawner.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])
 
+
 def launch_simu(simulation):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
+    """
+    :param simulation.MultiSimuGroup simulation:
+    """
+    simulation_directory = os.path.join(STUDY_OPTIONS['working_directory'],
+                                        'simu{}'.format((simulation.rank)))
+    if not os.path.isdir(simulation_directory):
+        os.mkdir(simulation_directory)
+    os.chdir(simulation_directory)
+    shutil.copyfile(os.path.join(STUDY_OPTIONS['working_directory'],
+                                 'server_name.txt'),
+                    './server_name.txt')
+    command = 'mpirun '
     if MELISSA_STATS['sobol_indices']:
-        command = 'mpirun '
-        for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-            command += ' '.join(('-n',
-                                 spawner.req_nodes,
-                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]), str(simulation.coupling),
-                                 ' '.join(str(j) for j in simulation.param_set[i]),
-                                 ': '))
-        command = command[:-2]
+        size = STUDY_OPTIONS['nb_parameters'] + 2
+        nodes = spawner.req_nodes
     else:
-        command = 'mpirun '
-        for i in range(simulation.size):
-            command += ' '.join(('-n',
-                                 str(spawner.req_tasks_per_node*int(spawner.req_nodes)),
-                                 '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]), str(simulation.coupling),
-                                 ' '.join(str(j) for j in simulation.param_set[i]),
-                                 ': '))
-        command = command[:-2]
+        size = simulation.size
+        nodes = str(spawner.req_tasks_per_node * int(spawner.req_nodes))
+    for n in range(size):
+        command += '{} {} {} {} {} {} : '.format(
+            '-n',
+            nodes,
+            os.path.join(
+                '@EXAMPLES_DIR@/heat_example/solver/install/bin',
+                EXECUTABLE),
+            str(simulation.simu_id[n]),
+            str(simulation.coupling),
+            ' '.join(str(p) for p in simulation.param_set[n]))
+    command = command[:-2]
     print(command)
     spawner.batch_script = spawner.simu_script
-    spawner.batch_script += Template('''#SBATCH --job-name=Simu${SIMU_ID}
+    spawner.batch_script += string.Template('''#SBATCH --job-name=Simu${SIMU_ID}
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 export MELISSA_SERVER_NODE_NAME=${SERVER_NODE_NAME}
 export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
-date +\"%d/%m/%y %T\"
+date +\'%d/%m/%y %T\'
 ${SIMU_CMD}
-date +\"%d/%m/%y %T\"
+date +\'%d/%m/%y %T\'
 ''').substitute(SIMU_ID=str(simulation.rank),
                SIMU_CMD=str(command),
                SERVER_NODE_NAME=simulation.server_node_name,
-               HOSTNAME=str("$(hostname)"))
-    asyncio.get_event_loop().run_until_complete(
-        spawner.start())
-        # spawner.submit_batch_script())
+               HOSTNAME=str('$(hostname)'))
+    asyncio.get_event_loop().run_until_complete(spawner.start())
     simulation.job_id = spawner.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])
+
 
 def check_job(job):
     """
     0 - pending, 1 - running, 2 - not in queue
+    :param simulation.Server | simulation.MultiSimuGroup job:
     """
     state = 0
     if not spawner.state_ispending():  ## not pending...
@@ -127,27 +129,33 @@ def check_job(job):
             state = 2
     job.job_status = state
 
+
 def check_load():
+    """
+    :rtype: bool
+    """
     asyncio.get_event_loop().run_until_complete(
         spawner.read_job_state(spawner.batch_query_user_cmd))
     return int(spawner.job_status) < 250  ## running jobs count
 
+
 def kill_job(job):
     print('killing job ...')
     os.system(spawner.batch_cancel_cmd + str(job.job_id))
+
 
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = spawner.req_username
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_cluster/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
-STUDY_OPTIONS['nb_timesteps'] = 100               # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['nb_timesteps'] = 100                # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
-STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
+STUDY_OPTIONS['field_names'] = ['heat1']           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 20          # server checkpoints every 30 seconds
-STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['coupling'] = 'MELISSA_COUPLING_MPI' # option for Sobol' simulation groups coupling
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
