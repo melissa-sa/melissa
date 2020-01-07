@@ -1,6 +1,6 @@
 # Melissa installation and usage guide
 
-Aim of this tutorial is to install Melissa and run three sensitivity studies, one on the local machine, one on the local cluster and the last one on the actual cluster. After reading this guide, user will be able to install Melissa and run own sensitivity studies using own solver.
+Aim of this tutorial is to install Melissa and run three sensitivity studies, one on the local machine, one on the local cluster and the last one on the actual cluster. After reading this guide, users will be able to install Melissa and run own sensitivity studies using own solver. Further documentation can be found in [the wiki on github](https://github.com/melissa-sa/melissa/wiki/1-Home).
 
 ### Requirements
 
@@ -18,7 +18,8 @@ To run Melissa you will need:
 
 ### 1. Get latest Melissa source code.
 
-You can manually download the zip package or use `git clone https://gitlab.inria.fr/melissa/melissa.git`
+You can manually download the zip package or use `git clone https://gitlab.inria.fr/melissa/melissa.git`.
+If you do not have acces rights to the inria gitlab you can clone the repository from github too: `git clone https://github.com/melissa-sa/melissa.git`.
 
 ### 2. Building and installing Melissa
 
