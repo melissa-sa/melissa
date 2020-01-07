@@ -101,9 +101,10 @@ def launch_group(group):
                                      '-x',
                                      'MELISSA_SIMU_ID='+str(simu_id),
                                      '-x',
+                                     'MELISSA_COUPLING='+str(group.coupling),
+                                     '-x',
                                      'MELISSA_SERVER_NODE_NAME='+str(group.server_node_name),
                                      '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                     str(simu_id), str(group.coupling),
                                      ' '.join(str(j) for j in group.param_set[i]),
                                      ': '))
             print(command[:-2])
@@ -125,8 +126,6 @@ def launch_group(group):
                                  '-x',
                                  'MELISSA_SERVER_NODE_NAME='+str(group.server_node_name),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(group.simu_id[i]),
-                                 str(group.coupling),
                                  ' '.join(str(j) for j in group.param_set[i]),
                                  ': '))
         print(command[:-2])

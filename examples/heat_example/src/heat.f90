@@ -32,39 +32,30 @@ program heat
   real*8,dimension(5) :: param
   character(len=32) :: arg
   integer :: comm
-  integer :: simu_id = 0, coupling = MELISSA_COUPLING_DEFAULT
   integer(kind=MPI_ADDRESS_KIND) :: appnum
   character(len=5) :: name = C_CHAR_"heat1"  !C_NULL_CHAR
 
   call mpi_init(statinfo)
 
-  ! The program now takes at least 3 parameter:
-  ! - the simulation id given by the launcher
+  ! The program now takes at least 2 parameter:
   ! - The coupling method for Sobol' groups
   ! - the initial temperature
 
   narg = iargc()
   param(:) = 0
-  if (narg .lt. 4) then
+  if (narg .lt. 2) then
     print*,"Missing parameter"
     stop
   endif
 
   param(:) = 0.
-  call getarg(1, arg)
-  read( arg, * ) simu_id ! simulation id
-  call getarg(2, arg)
-  read( arg, * ) coupling ! coupling method
-  if (coupling .ne. MELISSA_COUPLING_ZMQ .and. coupling .ne. MELISSA_COUPLING_MPI .and. coupling .ne. MELISSA_COUPLING_FLOWVR) then
-    coupling = MELISSA_COUPLING_DEFAULT
-  endif
 
   ! The initial temperature is stored in param(1)
   ! The four next optional parameters are the boundary temperatures
-  do n=3, 7
+  do n=1, 5
     if(narg .ge. n) then
       call getarg(n, arg)
-      read( arg, * ) param(n-2)
+      read( arg, * ) param(n)
     endif
   enddo
 
@@ -115,7 +106,7 @@ program heat
 
   ! melissa_init is the first Melissa function to call, and it is called only once by each process in comm.
   ! It mainly contacts the server.
-  call melissa_init (name, vect_size, np, me, simu_id, comm, coupling)
+  call melissa_init (name, vect_size, comm)
 
   ! main loop:
   do n=1, nmax
@@ -128,9 +119,6 @@ program heat
     ! melissa_send is called at each iteration to send u to the server.
     call melissa_send(name, u)
   end do
-
-  ! write results on disk
-  call finalize(dx, dy, nx, ny, i1, in, u, f, me, simu_id)
 
   ! melissa_finalize closes the connexion with the server.
   ! No Melissa function should be called after melissa_finalize.

@@ -107,28 +107,19 @@ int main( int argc, char **argv )
   MPI_Comm comm;
   int fcomm;
   struct timeb tp;
-  int coupling = MELISSA_COUPLING_DEFAULT;
-  int simu_id = 0;
   int *appnum, statinfo;
   char *field_name = "heat1";
 
   MPI_Init(&argc, &argv);
 
-  // The program now takes at least 3 parameter:
-  // - the simulation id given by the launcher
+  // The program now takes at least 2 parameter:
   // - The coupling method for Sobol' groups
   // - the initial temperature
 
-  if (argc < 4)
+  if (argc < 2)
   {
       fprintf (stderr, "Missing parameter");
       return -1;
-  }
-  simu_id = (int)strtol(argv[1], NULL, 10);
-  coupling = (int)strtol(argv[2], NULL, 10);
-  if (coupling != MELISSA_COUPLING_ZMQ && coupling != MELISSA_COUPLING_MPI && coupling != MELISSA_COUPLING_FLOWVR)
-  {
-    coupling = MELISSA_COUPLING_DEFAULT;
   }
 
   // The initial temperature is stored in param[0]
@@ -136,9 +127,9 @@ int main( int argc, char **argv )
   for (n=0; n<5; n++)
   {
     param[n] = 0;
-    if (argc > n+3)
+    if (argc > n+1)
     {
-       param[n] = strtod(argv[n+3], NULL);
+       param[n] = strtod(argv[n+1], NULL);
     }
   }
 
@@ -191,8 +182,7 @@ int main( int argc, char **argv )
 
   // melissa_init is the first Melissa function to call, and it is called only once by each process in comm.
   // It mainly contacts the server.
-  melissa_init (field_name, vect_size, np, me, simu_id, comm, coupling);
-//  melissa_init_mpi (field_name, vect_size, comm, coupling);
+  melissa_init (field_name, vect_size, comm);
 
   // main loop:
   for(n=1; n<=nmax; n++)
@@ -206,9 +196,6 @@ int main( int argc, char **argv )
     // melissa_send is called at each iteration to send u to the server.
     melissa_send (field_name, u);
   }
-
-  // write results on disk
-  finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &simu_id);
 
   // melissa_finalize closes the connexion with the server.
   // No Melissa function should be called after melissa_finalize.

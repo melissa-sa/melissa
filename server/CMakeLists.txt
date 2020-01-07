@@ -27,6 +27,12 @@ file(GLOB
      )
 
 add_executable(melissa_server ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
+
+
+if(INSTALL_ZMQ)
+  add_dependencies(melissa_server ZeroMQ)
+endif(INSTALL_ZMQ)
+
 if (BUILD_WITH_MPI)
     target_link_libraries(melissa_server ${EXTRA_LIBS}
                                          ${ZeroMQ_LIBRARY}
