@@ -44,6 +44,11 @@ void melissa_init_no_mpi(const char *field_name,
                          const int  simu_id,
                          const int  coupling);
 
+void melissa_init_no_mpi_f (const char *field_name,
+                            const int  *vect_size,
+                            const int  *simu_id,
+                            const int  *coupling);
+
 void melissa_send_no_mpi(const char *field_name,
                          const double *send_vect);
 

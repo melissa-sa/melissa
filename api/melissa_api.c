@@ -35,6 +35,7 @@
 #endif // BUILD_WITH_MPI
 #include "melissa_api_no_mpi.h"
 #include "melissa_utils.h"
+#include <signal.h>
 
 #ifndef MPI_MAX_PROCESSOR_NAME
 #define MPI_MAX_PROCESSOR_NAME 256 /**< maximum size of processor names */
@@ -1006,6 +1007,42 @@ void melissa_init (const char *field_name,
  * @param[in] *local_vect_size
  * size of the local data vector to send to the library
  *
+ * @param[in] *comm_fortran
+ * Fortran MPI communicator
+ *
+ * @param[in] *coupling
+ * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
+ *
+ *******************************************************************************/
+
+void melissa_init_mpi_f (const char *field_name,
+                     int        *local_vect_size,
+                     MPI_Fint   *comm_fortran,
+                     int        *coupling)
+{
+#ifdef BUILD_WITH_MPI
+    MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
+#else // BUILD_WITH_MPI
+    int comm = *comm_fortran;
+#endif // BUILD_WITH_MPI
+    melissa_init_mpi(field_name, *local_vect_size, comm, *coupling);
+}
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_api
+ *
+ * Fortran wrapper for melissa_init (convert MPI communicator)
+ *
+ *******************************************************************************
+ *
+ * @param[in] *field_name
+ * name of the field to initialize
+ *
+ * @param[in] *local_vect_size
+ * size of the local data vector to send to the library
+ *
  * @param[in] *comm_size
  * size of the MPI communicator comm
  *
@@ -1085,6 +1122,28 @@ void melissa_init_no_mpi (const char *field_name,
                   simu_id,
                   comm,
                   coupling);
+}
+
+void melissa_init_no_mpi_f (const char *field_name,
+                            const int  *vect_size,
+                            const int  *simu_id,
+                            const int  *coupling)
+{
+    int rank = 0;
+    int comm_size = 1;
+    MPI_Comm comm = 0;
+    if (coupling == MELISSA_COUPLING_MPI)
+    {
+        melissa_print(VERBOSE_ERROR, "MPI coupling not available in melissa_init_no_mpi");
+        exit;
+    }
+    melissa_init (field_name,
+                  *vect_size,
+                  comm_size,
+                  rank,
+                  *simu_id,
+                  comm,
+                  *coupling);
 }
 
 /**
@@ -1186,7 +1245,8 @@ void melissa_send (const char   *field_name,
     if (field_data_ptr == NULL)
     {
         fprintf (stdout, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
-        return;
+        raise(SIGINT);
+        exit(1);
     }
 
     local_vect_size = field_data_ptr->local_vect_sizes[global_data.rank];

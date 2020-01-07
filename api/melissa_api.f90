@@ -17,6 +17,17 @@
 
 interface
 
+subroutine melissa_init_mpi(field_name,&
+                        local_vect_size,&
+                        comm,&
+                        coupling) bind(c, name = 'melissa_init_mpi_f')
+    use ISO_C_BINDING, only: C_INT, C_CHAR
+    character(kind=C_CHAR),dimension(*) :: field_name
+    integer(kind=C_INT) :: local_vect_size
+    integer(kind=C_INT) :: comm
+    integer(kind=C_INT) :: coupling
+end subroutine melissa_init_mpi
+
 subroutine melissa_init(field_name,&
                         local_vect_size,&
                         comm_size,&
@@ -37,7 +48,7 @@ end subroutine melissa_init
 subroutine melissa_init_no_mpi(field_name,&
                                vect_size,&
                                simu_id,&
-                               coupling) bind(c, name = 'melissa_init_no_mpi')
+                               coupling) bind(c, name = 'melissa_init_no_mpi_f')
     use ISO_C_BINDING, only: C_INT, C_CHAR
     character(kind=C_CHAR),dimension(*) :: field_name
     integer(kind=C_INT) :: vect_size

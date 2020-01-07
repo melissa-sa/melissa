@@ -17,6 +17,18 @@
 
       INTERFACE
 
+      SUBROUTINE MELISSA_INIT_MPI(FIELD_NAME,
+     & LOCAL_VECT_SIZE,
+     & COMM,
+     & COUPLING)
+     & BIND(C, NAME = 'melissa_init_f')
+          USE ISO_C_BINDING, ONLY: C_INT, C_CHAR
+          CHARACTER(KIND=C_CHAR),DIMENSION(*) :: FIELD_NAME
+          INTEGER(KIND=C_INT) :: LOCAL_VECT_SIZE
+          INTEGER(KIND=C_INT) :: COMM
+          INTEGER(KIND=C_INT) :: COUPLING
+      END SUBROUTINE MELISSA_INIT
+
       SUBROUTINE MELISSA_INIT(FIELD_NAME,
      & LOCAL_VECT_SIZE,
      & COMM_SIZE,
@@ -39,7 +51,7 @@
      & VECT_SIZE,
      & SIMU_ID,
      & COUPLING)
-     & BIND(C, NAME = 'melissa_init_no_mpi')
+     & BIND(C, NAME = 'melissa_init_no_mpi_f')
           USE ISO_C_BINDING, ONLY: C_INT, C_CHAR
           CHARACTER(KIND=C_CHAR),DIMENSION(*) :: FIELD_NAME
           INTEGER(KIND=C_INT) :: VECT_SIZE

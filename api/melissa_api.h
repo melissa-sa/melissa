@@ -35,7 +35,7 @@
 #define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
 #define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
 
-#ifdef __cplusplus
+#if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -56,6 +56,11 @@ void melissa_init(const char *field_name,
                   MPI_Comm   comm,
                   const int  coupling);
 
+void melissa_init_mpi_f(const char *field_name,
+                    int        *local_vect_size,
+                    MPI_Fint   *comm_fortran,
+                    int        *coupling);
+
 void melissa_init_f(const char *field_name,
                     int        *local_vect_size,
                     int        *comm_size,
@@ -69,7 +74,7 @@ void melissa_send(const char   *field_name,
 
 void melissa_finalize(void);
 
-#ifdef __cplusplus
+#if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
 

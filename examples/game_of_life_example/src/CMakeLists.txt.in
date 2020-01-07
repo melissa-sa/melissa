@@ -25,14 +25,11 @@ cmake_minimum_required(VERSION 3.2.2)
 include(CTest)
 
 set(Melissa_DIR @CMAKE_INSTALL_PREFIX@/share/cmake/Melissa)
-find_package(ZeroMQ NO_MODULE REQUIRED)
 find_package(Melissa CONFIG REQUIRED)
-include_directories( ${ZeroMQ_INCLUDE_DIR} )
 include_directories( ${Melissa_INCLUDE_DIR} )
 message(STATUS "include ${Melissa_INCLUDE_DIR}")
 message(STATUS "libraries ${Melissa_LIBRARY}")
 
-include_directories(@ZeroMQ_INCLUDE_DIR@)
 include_directories(src/include)
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix." FORCE)
