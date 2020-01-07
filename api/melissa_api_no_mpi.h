@@ -25,12 +25,6 @@
 #ifndef MELISSA_API_NO_MPI_H
 #define MELISSA_API_NO_MPI_H
 
-#define MELISSA_COUPLING_NONE 0    /**< No coupling */
-#define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
-#define MELISSA_COUPLING_ZMQ 0     /**< ZeroMQ coupling */
-#define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
-#define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,14 +34,10 @@ extern "C" {
 #define MELISSA_RELEASE_NUM @Melissa_VERSION_PATCH@
 
 void melissa_init_no_mpi(const char *field_name,
-                         const int  vect_size,
-                         const int  simu_id,
-                         const int  coupling);
+                         const int  vect_size);
 
 void melissa_init_no_mpi_f (const char *field_name,
-                            const int  *vect_size,
-                            const int  *simu_id,
-                            const int  *coupling);
+                            const int  *vect_size);
 
 void melissa_send_no_mpi(const char *field_name,
                          const double *send_vect);

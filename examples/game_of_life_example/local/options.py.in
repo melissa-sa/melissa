@@ -73,6 +73,8 @@ def launch_simu(simulation):
     for i, simu_id in enumerate(simulation.simu_id):
         command += ' '.join(('-n',
                              str(NODES_GROUP),
+                             '-x',
+                             'MELISSA_SIMU_ID='+str(group.simu_id[i]),
                              '@EXAMPLES_DIR@/game_of_life_example/solver/'+EXECUTABLE,
                              str(simu_id),
                             ' '.join(str(j) for j in simulation.param_set[i]),

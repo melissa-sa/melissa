@@ -37,6 +37,12 @@
 #include "melissa_utils.h"
 #include <signal.h>
 
+#define MELISSA_COUPLING_NONE 0    /**< No coupling */
+#define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
+#define MELISSA_COUPLING_ZMQ 0     /**< ZeroMQ coupling */
+#define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
+#define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
+
 #ifndef MPI_MAX_PROCESSOR_NAME
 #define MPI_MAX_PROCESSOR_NAME 256 /**< maximum size of processor names */
 #endif
@@ -437,28 +443,21 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
  * @param[in] rank
  * MPI rank
  *
- * @param[in] simu_id
- * ID of the calling simulation
- *
  * @param[in] comm
  * MPI communicator
  *
- * @param[in] coupling
- * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
- *
  *******************************************************************************/
 
-void melissa_init (const char *field_name,
-                   const int  local_vect_size,
-                   const int  comm_size,
-                   const int  rank,
-                   const int  simu_id,
-                   MPI_Comm   comm,
-                   const int  coupling)
+static void melissa_init_internal (const char *field_name,
+                            const int  local_vect_size,
+                            const int  comm_size,
+                            const int  rank,
+                            MPI_Comm   comm)
 {
     char          *server_node_name;
     char           port_name[MPI_MAX_PROCESSOR_NAME] = {0};
     int            i, j, ret;
+    int            simu_id;
     FILE*          file = NULL;
     int            linger = -1;
     char          *master_node_name;
@@ -470,9 +469,10 @@ void melissa_init (const char *field_name,
     char          *buf_ptr = NULL;
 
 //    global_data.sobol_rank = *sobol_rank;
-    global_data.coupling = coupling;
+
     total_comm_time = 0.0;
     total_bytes_sent = 0;
+
     if (first_init != 0)
     {
         global_data.buff_size = 0;
@@ -489,6 +489,13 @@ void melissa_init (const char *field_name,
 #else // BUILD_WITH_MPI
         global_data.comm = comm;
 #endif // BUILD_WITH_MPI
+        char* simu_id_a = getenv("MELISSA_SIMU_ID");
+        if (simu_id_a == 0)
+        {
+            printf("Specify the MELISSA_SIMU_ID environment variable as an int in your launch_group command in options.py! (e.g. cmd = 'mpirun -x MELISSA_SIMU_ID=%%d' %% group.simu_id ");
+            exit(1);
+        }
+        simu_id = atoi(simu_id_a);
     }
 
     // get main server node name
@@ -620,6 +627,14 @@ void melissa_init (const char *field_name,
         init_verbose_lvl (global_data.rinit_tab[4]);
         if (global_data.sobol == 1)
         {
+            char* coupling_a = getenv("MELISSA_COUPLING");
+            if (coupling_a == 0)
+            {
+                printf("Specify the MELISSA_COUPLING environment variable as an int in your launch_group command in options.py! (e.g. cmd = 'mpirun -x MELISSA_COUPLING=%%d' %% group.coupling ");
+                exit(1);
+            }
+            global_data.coupling = atoi(coupling_a);
+
             master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME * sizeof(char));
             global_data.sobol_rank = simu_id % (global_data.nb_parameters + 2);
             global_data.sample_id = simu_id / (global_data.nb_parameters + 2);
@@ -643,6 +658,7 @@ void melissa_init (const char *field_name,
         {
             global_data.sobol_rank = 0;
             global_data.sample_id = simu_id;
+            global_data.coupling = MELISSA_COUPLING_DEFAULT;
         }
         global_data.rank = rank;
         port_names = malloc (global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
@@ -1010,73 +1026,18 @@ void melissa_init (const char *field_name,
  * @param[in] *comm_fortran
  * Fortran MPI communicator
  *
- * @param[in] *coupling
- * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
- *
- *******************************************************************************/
-
-void melissa_init_mpi_f (const char *field_name,
-                     int        *local_vect_size,
-                     MPI_Fint   *comm_fortran,
-                     int        *coupling)
-{
-#ifdef BUILD_WITH_MPI
-    MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
-#else // BUILD_WITH_MPI
-    int comm = *comm_fortran;
-#endif // BUILD_WITH_MPI
-    melissa_init_mpi(field_name, *local_vect_size, comm, *coupling);
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
- * Fortran wrapper for melissa_init (convert MPI communicator)
- *
- *******************************************************************************
- *
- * @param[in] *field_name
- * name of the field to initialize
- *
- * @param[in] *local_vect_size
- * size of the local data vector to send to the library
- *
- * @param[in] *comm_size
- * size of the MPI communicator comm
- *
- * @param[in] *rank
- * MPI rank
- *
- * @param[in] *sobol_rank
- * Sobol indice rank in Sobol group
- *
- * @param[in] *simu_id
- * ID of the calling simulation
- *
- * @param[in] *comm_fortran
- * Fortran MPI communicator
- *
- * @param[in] *coupling
- * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
- *
  *******************************************************************************/
 
 void melissa_init_f (const char *field_name,
                      int        *local_vect_size,
-                     int        *comm_size,
-                     int        *rank,
-                     const int  *simu_id,
-                     MPI_Fint   *comm_fortran,
-                     int        *coupling)
+                     MPI_Fint   *comm_fortran)
 {
 #ifdef BUILD_WITH_MPI
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
 #else // BUILD_WITH_MPI
     int comm = *comm_fortran;
 #endif // BUILD_WITH_MPI
-    melissa_init(field_name, *local_vect_size, *comm_size, *rank, *simu_id, comm, *coupling);
+    melissa_init(field_name, *local_vect_size, comm);
 }
 
 /**
@@ -1094,56 +1055,32 @@ void melissa_init_f (const char *field_name,
  * @param[in] *vect_size
  * size of the data vector to send to the library
  *
- * @param[in] *simu_id
- * ID of the calling simulation
- *
- * @param[in] *coupling
- * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
- *
  *******************************************************************************/
 
 void melissa_init_no_mpi (const char *field_name,
-                          const int  vect_size,
-                          const int  simu_id,
-                          const int  coupling)
+                          const int  vect_size)
 {
     int rank = 0;
     int comm_size = 1;
     MPI_Comm comm = 0;
-    if (coupling == MELISSA_COUPLING_MPI)
-    {
-        melissa_print(VERBOSE_ERROR, "MPI coupling not available in melissa_init_no_mpi");
-        exit;
-    }
-    melissa_init (field_name,
-                  vect_size,
-                  comm_size,
-                  rank,
-                  simu_id,
-                  comm,
-                  coupling);
+    melissa_init_internal (field_name,
+                           vect_size,
+                           comm_size,
+                           rank,
+                           comm);
 }
 
 void melissa_init_no_mpi_f (const char *field_name,
-                            const int  *vect_size,
-                            const int  *simu_id,
-                            const int  *coupling)
+                            const int  *vect_size)
 {
     int rank = 0;
     int comm_size = 1;
     MPI_Comm comm = 0;
-    if (coupling == MELISSA_COUPLING_MPI)
-    {
-        melissa_print(VERBOSE_ERROR, "MPI coupling not available in melissa_init_no_mpi");
-        exit;
-    }
-    melissa_init (field_name,
-                  *vect_size,
-                  comm_size,
-                  rank,
-                  *simu_id,
-                  comm,
-                  *coupling);
+    melissa_init_internal (field_name,
+                           *vect_size,
+                           comm_size,
+                           rank,
+                           comm);
 }
 
 /**
@@ -1164,44 +1101,28 @@ void melissa_init_no_mpi_f (const char *field_name,
  * size of the data vector to send to the library
  *
  * @param[in] comm
- * MPI communicator. Each rank in it must call melissa_init_mpi. Later each rank must
+ * MPI communicator. Each rank in it must call melissa_init. Later each rank must
  * send its part of every field to melissa.
- *
- * @param[in] *coupling
- * 1 if simulation are coupled in the same MPI_COMM_WORLD, 0 otherwhise
  *
  *******************************************************************************/
 
-void melissa_init_mpi (const char *field_name,
-                       const int  vect_size,
-                       MPI_Comm comm,
-                       const int  coupling)
+void melissa_init (const char *field_name,
+                   const int  vect_size,
+                   MPI_Comm   comm)
 {
 #ifdef BUILD_WITH_MPI
     int rank;
     int comm_size;
-    int simu_id;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &comm_size);
 
-    char* simu_id_a = getenv("MELISSA_SIMU_ID");
-    if (simu_id_a == 0)
-    {
-        printf("Specify the MELISSA_SIMU_ID environment variable as an int in your launch_group command in options.py! (e.g. cmd = 'mpirun -x MELISSA_SIMU_ID=%%d' %% group.simu_id ");
-        exit(1);
-    }
-    simu_id = atoi(simu_id_a);
-
-
-    melissa_init (field_name,
-                  vect_size,
-                  comm_size,
-                  rank,
-                  simu_id,
-                  comm,
-                  coupling);
+    melissa_init_internal (field_name,
+                           vect_size,
+                           comm_size,
+                           rank,
+                           comm);
 #else
-    printf("melissa_init_mpi was called but melissa was compiled without MPI!");
+    printf("melissa_init was called but melissa was compiled without MPI!");
     exit(1);
 #endif
 }
@@ -1498,7 +1419,7 @@ void melissa_finalize (void)
         // Check that we called melissa_send for the same amount for every field
         assert(field_data_ptr->timestamp == field_data->timestamp);
     }
-    
+
 #ifdef CHECK_SIMU_DECONNECTION
     if (global_data.rank == 0 && global_data.sobol_rank == 0)
     {
