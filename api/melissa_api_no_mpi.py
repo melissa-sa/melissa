@@ -35,7 +35,7 @@ c_melissa_api_no_mpi.melissa_send_no_mpi.argtypes = (c_char_ptr,   #field_name
 
 c_melissa_api_no_mpi.melissa_finalize.argtypes = ()
 
-def melissa_init(field_name, vect_size, simu_id, coupling):
+def melissa_init(field_name, vect_size):
     buff = ctypes.create_string_buffer(len(field_name)+1)
     buff.value = field_name.encode()
     c_melissa_api_no_mpi.melissa_init_no_mpi(
