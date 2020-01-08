@@ -84,8 +84,9 @@ def launch_simu(simulation):
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
             command += ' '.join(('-n',
                                  str(PROC_PER_NODE*NODES_SIMU),
+                                 '-x',
+                                 'MELISSA_SIMU_ID='+str(simu_id),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         command = command[:-2]
@@ -94,8 +95,9 @@ def launch_simu(simulation):
         for i in range(simulation.size):
             command += ' '.join(('-n',
                                  str(PROC_PER_NODE*NODES_SIMU),
+                                 '-x',
+                                 'MELISSA_SIMU_ID='+str(simu_id),
                                  '@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE,
-                                 str(simulation.simu_id[i]), str(simulation.coupling),
                                  ' '.join(str(j) for j in simulation.param_set[i]),
                                  ': '))
         command = command[:-2]
@@ -106,8 +108,8 @@ def launch_simu(simulation):
     content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
                                                NODES_SIMU=str(NODES_SIMU*simulation.size),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
-                                               SIMU_ID=str(simulation.rank),
                                                SIMU_CMD=str(command),
+                                               COUPLING=str(simulation.coupling),
                                                SERVER_NODE_NAME=str(simulation.server_node_name),
                                                HOSTNAME=str("$(hostname)"))
     file.close()

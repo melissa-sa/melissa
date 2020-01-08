@@ -32,7 +32,8 @@
 #include <math.h>
 //#include "hdf5.h"
 #include "melissa_output.h"
-
+#include "melissa_utils.h"
+#include "fault_tolerance.h"
 
 static inline void dgather_data(comm_data_t *comm_data,
                                int *local_vect_sizes,
@@ -328,6 +329,34 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 #ifdef BUILD_WITH_MPI
         MPI_Barrier(comm_data->comm);
 #endif // BUILD_WITH_MPI
+        i_buffer = (int*)d_buffer;
+        for (t=0; t<options->nb_time_steps; t++)
+        {
+            sprintf(file_name, "results.%s_min_id.%.*d", field, max_size_time, (int)t+1);
+            for (i=0; i<comm_data->client_comm_size; i++)
+            {
+                if ((*data)[i].vect_size > 0)
+                {
+                    memcpy(&i_buffer[temp_offset], (*data)[i].min_max[t].min_id, (*data)[i].vect_size*sizeof(int));
+                    temp_offset += (*data)[i].vect_size;
+                }
+            }
+            temp_offset = 0;
+            igather_data (comm_data, local_vect_sizes, i_buffer);
+            if (comm_data->rank == 0)
+            {
+                (*write_output_i)(file_name,
+                                  field,
+                                  "min_id",
+                                  t,
+                                  global_vect_size,
+                                  i_buffer);
+            }
+        }
+
+#ifdef BUILD_WITH_MPI
+        MPI_Barrier(comm_data->comm);
+#endif // BUILD_WITH_MPI
         for (t=0; t<options->nb_time_steps; t++)
         {
             sprintf(file_name, "results.%s_max.%.*d", field, max_size_time, (int)t+1);
@@ -351,22 +380,19 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                                   d_buffer);
             }
         }
-    }
 
-    if (options->threshold_op == 1)
-    {
 #ifdef BUILD_WITH_MPI
         MPI_Barrier(comm_data->comm);
 #endif // BUILD_WITH_MPI
         i_buffer = (int*)d_buffer;
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_threshold.%.*d", field, max_size_time, (int)t+1);
+            sprintf(file_name, "results.%s_max_id.%.*d", field, max_size_time, (int)t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
                 {
-                    memcpy(&i_buffer[temp_offset], (*data)[i].thresholds[t], (*data)[i].vect_size*sizeof(int));
+                    memcpy(&i_buffer[temp_offset], (*data)[i].min_max[t].max_id, (*data)[i].vect_size*sizeof(int));
                     temp_offset += (*data)[i].vect_size;
                 }
             }
@@ -376,10 +402,45 @@ void melissa_write_stats_seq(melissa_data_t    **data,
             {
                 (*write_output_i)(file_name,
                                   field,
-                                  "threshold",
+                                  "max_id",
                                   t,
                                   global_vect_size,
                                   i_buffer);
+            }
+        }
+    }
+
+    if (options->threshold_op == 1)
+    {
+#ifdef BUILD_WITH_MPI
+        MPI_Barrier(comm_data->comm);
+#endif // BUILD_WITH_MPI
+        i_buffer = (int*)d_buffer;
+        int value;
+        for (value=0; value<options->nb_thresholds; value++)
+        {
+            for (t=0; t<options->nb_time_steps; t++)
+            {
+                sprintf(file_name, "results.%s_threshold%g.%.*d", field, options->threshold[value], max_size_time, (int)t+1);
+                for (i=0; i<comm_data->client_comm_size; i++)
+                {
+                    if ((*data)[i].vect_size > 0)
+                    {
+                        memcpy(&i_buffer[temp_offset], (*data)[i].thresholds[t][value].threshold_exceedance, (*data)[i].vect_size*sizeof(int));
+                        temp_offset += (*data)[i].vect_size;
+                    }
+                }
+                temp_offset = 0;
+                igather_data (comm_data, local_vect_sizes, i_buffer);
+                if (comm_data->rank == 0)
+                {
+                    (*write_output_i)(file_name,
+                                      field,
+                                      "threshold",
+                                      t,
+                                      global_vect_size,
+                                      i_buffer);
+                }
             }
         }
     }
@@ -938,3 +999,50 @@ void write_stats_bin (melissa_data_t    **data,
 //#endif // BUILD_WITH_MPI
 //}
 #endif // TOTO
+
+/**
+ *******************************************************************************
+ *
+ * @ingroup melissa_output
+ *
+ * This function writes the simu_id and the corresponding parameter set
+ *
+ *******************************************************************************
+ *
+ * @param[out] *simu
+ * simulations vector
+ *
+ * @param[out] nb_parameters
+ * number of simulation parameters
+ *
+ *******************************************************************************/
+
+void write_simu_param (vector_t *simulations,
+                       int       nb_parameters)
+{
+    char                  file_name[256];
+    FILE*                 f = NULL;
+    int                   i, j;
+    melissa_simulation_t *simu_ptr;
+
+    sprintf(file_name, "simu_param.txt");
+    melissa_print (VERBOSE_DEBUG, "Write simulation parameters in %s (write_simu_param)\n", file_name);
+    f = fopen(file_name, "w");
+    if (f == NULL)
+    {
+      melissa_print (VERBOSE_WARNING, "Can not open %s (write_simu_param)\n", file_name);
+      return;
+    }
+
+    for (i=0; i<simulations->size; i++)
+    {
+        simu_ptr = simulations->items[i];
+        fprintf (f, "%d ", i);
+        for (j=0; j<nb_parameters; j++)
+        {
+            fprintf (f, "%g ", simu_ptr->parameters[j]);
+        }
+        fprintf (f, "\n");
+    }
+    fclose(f);
+}

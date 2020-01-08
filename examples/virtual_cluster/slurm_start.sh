@@ -31,9 +31,8 @@ function dockercp {
 
 
 # Update  slurm conf file with actual number of compute nodes and copy to cluster nodes
-sed -n -e s/nb_nodes/"$nb_nodes"/ -e p slurm.conf.in  >  slurm.conf 
+sed -n -e s/nb_nodes/"$nb_nodes"/ -e p slurm.conf.in  >  slurm.conf
 dockercp  "$nodes $server $frontend"  "slurm.conf"  "/etc/slurm-llnl/slurm.conf"
-
 
 # Start services
 
@@ -41,5 +40,7 @@ dockerexec  "$nodes"  "systemctl start  munge slurmd"
 dockerexec  "$frontend"  "systemctl start  munge"
 dockerexec  "$server"  "systemctl start  munge slurmctld"
 
+rm slurm.conf
+
 # Resume nodes (in some cases start in drain state)
-#dockerexec  "$frontend"  "scontrol update NodeName=node[1-3] State=RESUME"
+# dockerexec  "$frontend"  "scontrol update NodeName=node[1-3] State=RESUME"

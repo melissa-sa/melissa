@@ -37,18 +37,16 @@ A = A_array()
 
 # The program takes at least one parameter: the initial temperature
 narg = len(sys.argv)
-if (narg < 4):
+if (narg < 3):
     print("Missing parameter")
     exit()
-simu_id = int(sys.argv[1]);
-coupling = int(sys.argv[2]);
 # The initial temperature is stored in param[0]
 # The four next optional parameters are the boundary temperatures
 param_array = c_double * 5
 pyparam = []
 for i in range(5):
-    if (narg > i+3):
-        pyparam.append(float(sys.argv[i+3]))
+    if (narg > i+1):
+        pyparam.append(float(sys.argv[i+1]))
     else:
         pyparam.append(0)
 param = param_array(pyparam[0],pyparam[1],pyparam[2],pyparam[3],pyparam[4])
@@ -118,7 +116,7 @@ heat_utils.filling_A(byref(d),
                      byref(ny),
                      A) # fill A
 
-melissa_api.melissa_init (field_name, vect_size, NP.value, me.value, simu_id, comm, coupling);
+melissa_api.melissa_init (field_name, vect_size, comm);
 
 # main loop:
 for i in range(nmax.value):
@@ -154,19 +152,6 @@ for i in range(nmax.value):
                         byref(c_int(comm.py2f())))
     # The result is U
     melissa_api.melissa_send (field_name, U);
-
-
-# write results on disk
-heat_utils.finalize(byref(dx),
-                    byref(dy),
-                    byref(nx),
-                    byref(ny),
-                    byref(i1),
-                    byref(iN),
-                    U,
-                    F,
-                    byref(me),
-                    byref(c_int(0)))
 
 melissa_api.melissa_finalize ();
 

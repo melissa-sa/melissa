@@ -55,6 +55,7 @@
 
 void compute_stats (melissa_data_t  *data,
                     const int        time_step,
+                    const int        simu_id,
                     const int        nb_vect,
                     double         **in_vect_tab)
 {
@@ -70,7 +71,10 @@ void compute_stats (melissa_data_t  *data,
 
     if (data->options->min_and_max_op == 1)
     {
-        min_and_max (&(data->min_max[time_step]), in_vect_tab[0], data->vect_size);
+        min_and_max (&(data->min_max[time_step]),
+                     in_vect_tab[0],
+                     simu_id,
+                     data->vect_size);
     }
 
     if (data->options->threshold_op == 1)
@@ -110,7 +114,10 @@ void compute_stats (melissa_data_t  *data,
 
         if (data->options->min_and_max_op == 1)
         {
-            min_and_max (&(data->min_max[time_step]), in_vect_tab[1], data->vect_size);
+            min_and_max (&(data->min_max[time_step]),
+                         in_vect_tab[1],
+                         simu_id,
+                         data->vect_size);
         }
 
         if (data->options->threshold_op == 1)

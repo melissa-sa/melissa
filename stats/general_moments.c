@@ -441,7 +441,7 @@ void compute_variance (moments_t *moments,
 #pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
-        variance[i] = moments->theta2[i];
+        variance[i] = moments->theta2[i]*moments->increment/(moments->increment-1);
     }
 }
 

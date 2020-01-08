@@ -94,6 +94,8 @@ def launch_simu(simulation):
     command = ' '.join(('mpirun',
                             '-n',
                             str(NODES_GROUP),
+                            '-x',
+                            'MELISSA_SIMU_ID='+str(group.simu_id[i]),
                             '@CMAKE_INSTALL_PREFIX@/share/melissa/examples/game_of_life_example/'+EXECUTABLE,
                             str(simulation.simu_id),
                             ' '.join(str(i) for i in simulation.param_set)))

@@ -27,9 +27,9 @@ from functions import *
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_local/STATS'
 STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 20                # initial number of parameter sets
+STUDY_OPTIONS['sampling_size'] = 6                # initial number of parameter sets
 STUDY_OPTIONS['nb_timesteps'] = 100                # number of timesteps, from Melissa point of view
-STUDY_OPTIONS['threshold_values'] = 0.7
+STUDY_OPTIONS['threshold_values'] = [0.7, 0.8]
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 400          # simulations are restarted if no life sign for 400 seconds
@@ -37,17 +37,20 @@ STUDY_OPTIONS['checkpoint_interval'] = 300         # server checkpoints every 30
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
 STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
 STUDY_OPTIONS['batch_size'] = 2
+STUDY_OPTIONS['resp_port'] = 5546
+STUDY_OPTIONS['recv_port'] = 5547
+STUDY_OPTIONS['send_port'] = 5548
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = False
 MELISSA_STATS['skewness'] = False
 MELISSA_STATS['kurtosis'] = False
-MELISSA_STATS['min'] = False
-MELISSA_STATS['max'] = False
+MELISSA_STATS['min'] = True
+MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = True
 MELISSA_STATS['quantiles'] = True
-MELISSA_STATS['sobol_indices'] = False
+MELISSA_STATS['sobol_indices'] = True
 
 USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
