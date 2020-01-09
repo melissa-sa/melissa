@@ -14,6 +14,14 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/stats")
+
+add_subdirectory(stats)
+
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/output")
+
+add_subdirectory(output)
+
 add_definitions(-DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
 set(MELISSA_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")

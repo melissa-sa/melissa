@@ -244,23 +244,15 @@ option(CHECK_SIMU_DECONNECTION "check simulation deconnection" OFF)
 
 # Load local include directories before. This ensures that no old installed headers are
 # loaded.
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/utils")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/common")
 
-add_subdirectory(utils)
+add_subdirectory(common)
 
 include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
 
 add_subdirectory(api)
 
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/stats")
-
-add_subdirectory(stats)
-
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/output")
-
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
-
-add_subdirectory(output)
 
 add_subdirectory(server)
 
