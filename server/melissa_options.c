@@ -541,37 +541,44 @@ void melissa_check_options (melissa_options_t  *options)
         options->learning == 0)
     {
         // default values
-        fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");
+        melissa_print (VERBOSE_WARNING, "no operation given, set to mean and variance\n");
         options->mean_op = 1;
         options->variance_op = 1;
     }
 
     if (options->threshold_op != 0 && options->nb_thresholds < 1)
     {
-        fprintf (stderr, "ERROR: you must provide at least 1 threshold value\n");
+        melissa_print (VERBOSE_ERROR, "you must provide at least 1 threshold value\n");
         stats_usage ();
         exit (1);
     }
 
     if (options->quantile_op != 0 && options->nb_quantiles < 1)
     {
-        fprintf (stderr, "ERROR: you must provide at least 1 quantile value\n");
+        melissa_print (VERBOSE_ERROR, "you must provide at least 1 quantile value\n");
         stats_usage ();
         exit (1);
     }
 
     if (options->sampling_size < 2)
     {
-        fprintf (stderr, "ERROR: study sampling size must be greater than 1\n");
-        stats_usage ();
-        exit (1);
+        if (options->sampling_size < 1)
+        {
+            melissa_print (VERBOSE_ERROR, "study sampling size must be greater than 0\n");
+            stats_usage ();
+            exit (1);
+        }
+        else
+        {
+            melissa_print (VERBOSE_WARNING, "study sampling size must be greater than 1\n");
+        }
     }
 
     if (options->sobol_op != 0)
     {
         if (options->nb_parameters < 2)
         {
-            fprintf (stderr, "ERROR: simulations must have at least 2 variable parameter\n");
+            melissa_print (VERBOSE_ERROR, "simulations must have at least 2 variable parameter\n");
             stats_usage ();
             exit (1);
         }
@@ -583,13 +590,13 @@ void melissa_check_options (melissa_options_t  *options)
         options->nb_simu = options->sampling_size;
         if (options->sampling_size < 2)
         {
-            fprintf (stderr, "ERROR: sampling size must be > 1\n");
+            melissa_print (VERBOSE_ERROR, "sampling size must be > 1\n");
             stats_usage ();
             exit (1);
         }
         if (options->nb_parameters < 1)
         {
-            fprintf (stderr, "ERROR: simulations must have at least 1 variable parameter\n");
+            melissa_print (VERBOSE_ERROR, "simulations must have at least 1 variable parameter\n");
             stats_usage ();
             exit (1);
         }
@@ -597,32 +604,32 @@ void melissa_check_options (melissa_options_t  *options)
 
     if (options->nb_time_steps < 1)
     {
-        fprintf (stderr, "ERROR: simulations must have at least 1 time step\n");
+        melissa_print (VERBOSE_ERROR, "simulations must have at least 1 time step\n");
         stats_usage ();
         exit (1);
     }
 
     if (options->launcher_name == NULL)
     {
-        fprintf (stderr, "Warning: Melissa Launcher node name set to \"localhost\"\n");
+        melissa_print (VERBOSE_WARNING, "Melissa Launcher node name set to \"localhost\"\n");
         sprintf (options->launcher_name, "localhost");
     }
 
     if (strlen(options->restart_dir) < 1)
     {
-        fprintf (stderr, "options->restart_dir= %s changing to .\n", options->restart_dir);
+        melissa_print (VERBOSE_WARNING, "options->restart_dir= %s changing to .\n", options->restart_dir);
         sprintf (options->restart_dir, ".");
     }
 
     if (options->check_interval < 5.0)
     {
-        fprintf (stderr, "checkpoint interval too small, changing to 5.0\n");
+        melissa_print (VERBOSE_WARNING, "checkpoint interval too small, changing to 5.0\n");
         options->check_interval = 5.0;
     }
 
     if (options->timeout_simu < 5.0)
     {
-        fprintf (stderr, "time before simulation timeout too small, changing to 5.0\n");
+        melissa_print (VERBOSE_WARNING, "time before simulation timeout too small, changing to 5.0\n");
         options->timeout_simu = 5.0;
     }
 }

@@ -64,9 +64,9 @@ def launch_server(server):
 # Once we have set the job IDs of our jobs, we can use it to define the fault tolerance functions. In our case, we will use the same function for the server and the simulations. It takes a `Job` object as argument, and sets its `status` attribute to 0 if it is waiting to be scheduled, 1 if it is currently running, or 2 if it is not running anymore. In your local machine, a job will never be have a 0 status, because it is launched immediately when `USER_FUNCTIONS['launch_group']` is called.
 
 def launch_group(group):
-    if (not os.path.isdir(WORKDIR+"/group"+str(group.rank))):
-        os.mkdir(WORKDIR+"/group"+str(group.rank))
-    os.chdir(WORKDIR+"/group"+str(group.rank))
+    if (not os.path.isdir(WORKDIR+"/group"+str(group.group_id))):
+        os.mkdir(WORKDIR+"/group"+str(group.group_id))
+    os.chdir(WORKDIR+"/group"+str(group.group_id))
     #os.environ['MELISSA_SERVER_NODE_NAME'] = group.server_node_name
 
     if group.ml_stats['sobol_indices']:
@@ -82,16 +82,16 @@ def launch_group(group):
             content = ""
             file=open("@EXAMPLES_DIR@/heat_example/study_local/scripts/flowvr_group.py", "r")
             content = Template(file.read()).substitute(args=str(args),
-                               group_id=str(group.rank),
+                               group_id=str(group.group_id),
                                np_simu=str(int(NODES_GROUP)),
                                nb_param=str(group.nb_param),
                                executable='@EXAMPLES_DIR@/heat_example/solver/install/bin/'+EXECUTABLE)
             file.close()
-            file=open("create_group"+str(group.rank)+".py", "w")
+            file=open("create_group"+str(group.group_id)+".py", "w")
             file.write(content)
             file.close()
-            os.system('python create_group'+str(group.rank)+'.py')
-            group.job_id = subprocess.Popen('flowvr group'+str(group.rank), shell=True).pid
+            os.system('python create_group'+str(group.group_id)+'.py')
+            group.job_id = subprocess.Popen('flowvr group'+str(group.group_id), shell=True).pid
         else:
             #os.environ['MELISSA_MASTER_NODE_NAME'] = socket.gethostname()
             command = 'mpirun '

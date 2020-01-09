@@ -86,9 +86,9 @@ def launch_server(server):
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.group_id))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.group_id))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.group_id))
     copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
 
     command = ' '.join(('mpirun',
@@ -106,7 +106,7 @@ def launch_simu(simulation):
     content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
                                                NODES_SIMU=str(NODES_SIMU),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
-                                               SIMU_ID=str(simulation.rank),
+                                               SIMU_ID=str(simulation.group_id),
                                                SIMU_CMD=str(command),
                                                SERVER_NODE_NAME=simulation.server_node_name,
                                                HOSTNAME=str("$(hostname)"))
@@ -116,7 +116,7 @@ def launch_simu(simulation):
     file.close()
     os.system("chmod 744 run_simu.sh")
 
-    proc = subprocess.Popen('sbatch '+STUDY_OPTIONS['working_directory']+'/simu'+str(simulation.rank)+'/run_simu.sh',
+    proc = subprocess.Popen('sbatch '+STUDY_OPTIONS['working_directory']+'/simu'+str(simulation.group_id)+'/run_simu.sh',
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE,
                                   shell=True,

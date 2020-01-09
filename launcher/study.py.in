@@ -85,10 +85,10 @@ class StateChecker(Thread):
                             s = copy.deepcopy(group.job_status)
                             group.check_job()
                             if s <= PENDING and group.job_status == RUNNING:
-                                logging.info('group ' + str(group.rank) + ' job started')
+                                logging.info('group ' + str(group.group_id) + ' job started')
                                 group.start_time = time.time()
                             elif s <= RUNNING and group.job_status == FINISHED:
-                                logging.info('end job group ' + str(group.rank))
+                                logging.info('end job group ' + str(group.group_id))
                                 group.finalize()
             logging.info('closing state checker process')
         except:
@@ -208,7 +208,7 @@ class Responder(Thread):
                     simu = int(message[1])%self.batch_size
                     with self.groups[group].lock:
                         if self.groups[group].job_type == 4:
-                            melissa_comm4py.send_job(self.groups[group].rank,
+                            melissa_comm4py.send_job(self.groups[group].group_id,
                                                      str(self.groups[group].job_id).encode(),
                                                      len(self.groups[group].param_set[0]),
                                                      self.groups[group].param_set[0].ctypes.data_as(POINTER(c_double)))
@@ -218,7 +218,7 @@ class Responder(Thread):
                                                      len(self.groups[group].param_set[0]),
                                                      self.groups[group].param_set[simu].ctypes.data_as(POINTER(c_double)))
                         elif self.groups[group].job_type == 2:
-                            melissa_comm4py.send_job(self.groups[group].rank,
+                            melissa_comm4py.send_job(self.groups[group].group_id,
                                                      str(self.groups[group].job_id).encode(),
                                                      len(self.groups[group].param_set[0]),
                                                      self.groups[group].param_set.ctypes.data_as(POINTER(c_double)))
@@ -524,7 +524,7 @@ class Study(object):
             while check_scheduler_load(self.usr_func) == False:
                 time.sleep(1)
                 if self.fault_tolerance() != 0: return
-            logging.info('submit group '+str(group.rank))
+            logging.info('submit group '+str(group.group_id))
             try:
                 group.server_node_name = str(self.server_obj[0].node_name[0])
                 group.launch()
@@ -811,14 +811,14 @@ class Study(object):
             for group in self.groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
-                        logging.info('resubmit group ' + str(group.rank)
+                        logging.info('resubmit group ' + str(group.group_id)
                                      + ' (server crash)')
                         try:
                             group.server_node_name = str(self.server_obj[0].node_name[0])
                             group.restart()
                         except:
-                            logging.error('Error while restarting group '+group.rank)
-                            print('=== Error while restarting group '+group.rank+' ===')
+                            logging.error('Error while restarting group '+group.group_id)
+                            print('=== Error while restarting group '+group.group_id+' ===')
                             logging.error(traceback.print_exc())
                             self.stop()
                             return 1
@@ -834,13 +834,13 @@ class Study(object):
                 sleep = False
                 with group.lock:
                     if group.status <= RUNNING:
-                        logging.info("resubmit group " + str(group.rank)
+                        logging.info("resubmit group " + str(group.group_id)
                                      + " (simulation crashed)")
                         try:
                             group.restart()
                         except:
-                            logging.error('Error while restarting group '+str(group.rank))
-                            print('=== Error while restarting group '+str(group.rank)+' ===')
+                            logging.error('Error while restarting group '+str(group.group_id))
+                            print('=== Error while restarting group '+str(group.group_id)+' ===')
                             logging.error(traceback.print_exc())
                             self.stop()
                             return 1
@@ -848,13 +848,13 @@ class Study(object):
                 if group.status == WAITING:
                     if group.job_status == RUNNING:
                         if time.time() - group.start_time > self.stdy_opt['simulation_timeout']:
-                            logging.info("resubmit group " + str(group.rank)
+                            logging.info("resubmit group " + str(group.group_id)
                                          + " (timeout detected by launcher)")
                             try:
                                 group.restart()
                             except:
-                                logging.error('Error while restarting group '+group.rank)
-                                print('=== Error while restarting group '+group.rank+' ===')
+                                logging.error('Error while restarting group '+group.group_id)
+                                print('=== Error while restarting group '+group.group_id+' ===')
                                 logging.error(traceback.print_exc())
                                 self.stop()
                                 return 1

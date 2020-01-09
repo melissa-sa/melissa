@@ -132,23 +132,23 @@ def create_simu(group):
             contenu += line
     fichier.close()
 
-    if (not os.path.isdir(workdir+"/group" + str(group.rank))):
-        shutil.copytree("./user_fortran", "group"+str(group.rank) + "/rank0/user_fortran")
-        fichier = open("group"+str(group.rank) + "/rank0/t2d_gouttedo.cas", 'w')
+    if (not os.path.isdir(workdir+"/group" + str(group.group_id))):
+        shutil.copytree("./user_fortran", "group"+str(group.group_id) + "/rank0/user_fortran")
+        fichier = open("group"+str(group.group_id) + "/rank0/t2d_gouttedo.cas", 'w')
         fichier.write(contenu)
         fichier.close()
 
         if MELISSA_STATS['sobol_indices']:
             for j in range(STUDY_OPTIONS['nb_parameters'] + 1):
-                shutil.copytree("./user_fortran", "group"+str(group.rank) + "/rank" + str(j+1) + "/user_fortran")
-                fichier = open("group"+str(group.rank) + "/rank" + str(j+1) + "/t2d_gouttedo.cas", 'w')
+                shutil.copytree("./user_fortran", "group"+str(group.group_id) + "/rank" + str(j+1) + "/user_fortran")
+                fichier = open("group"+str(group.group_id) + "/rank" + str(j+1) + "/t2d_gouttedo.cas", 'w')
                 fichier.write(contenu)
                 fichier.close()
 
     if MELISSA_STATS['sobol_indices']:
         # Only works for Sobol
         for simu in range(len(group.param_set)):
-            casedir = workdir+"/group"+str(group.rank)+"/rank"+str(simu)
+            casedir = workdir+"/group"+str(group.group_id)+"/rank"+str(simu)
             #modif fortran routine
             fichier = open(casedir + "/user_fortran/condin.f", 'r')
             contenu = ""
@@ -170,7 +170,7 @@ def create_simu(group):
 
     else:
         contenu = ""
-        casedir = workdir+"/group"+str(group.rank)+"/rank0"
+        casedir = workdir+"/group"+str(group.group_id)+"/rank0"
         #modif fortran routine
         fichier = open(casedir + "/user_fortran/condin.f", 'r')
         for line in fichier:
@@ -192,31 +192,31 @@ def create_simu(group):
 
 
 def launch_simu(simulation):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))):
-        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
-    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))
     shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
        if STUDY_OPTIONS['coupling'] == "MELISSA_COUPLING_FLOWVR":
            args = ['./rank'+str(i)+'/t2d_gouttedo.cas' for i in range(STUDY_OPTIONS['nb_parameters'] + 2)]
            create_flowvr_group('telemac2d.py',
                                args,
-                               simulation.rank,
+                               simulation.group_id,
                                int(NODES_GROUP),
                                STUDY_OPTIONS['nb_parameters'])
-           os.system('python create_group'+str(simulation.rank)+'.py')
+           os.system('python create_group'+str(simulation.group_id)+'.py')
            os.system('flowvrd &')
-           simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.rank), shell=True).pid
+           simulation.job_id = subprocess.Popen('flowvr group'+str(simulation.group_id), shell=True).pid
        else:
             for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-                os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
+                os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id) + "/rank" + str(i))
                 shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
                 command = 'telemac2d.py t2d_gouttedo.cas'
                 print command
                 simulation.job_id = subprocess.Popen(command.split()).pid
 
     else:
-        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank0")
+        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id) + "/rank0")
         shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
         command = 'telemac2d.py t2d_gouttedo.cas'
         print command
@@ -225,9 +225,9 @@ def launch_simu(simulation):
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu_slurm(simulation):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))):
-        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
-    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))
     shutil.copyfile(STUDY_OPTIONS['working_directory']+'/server_name.txt' , './server_name.txt')
     if MELISSA_STATS['sobol_indices']:
         contenu = ""
@@ -246,22 +246,22 @@ def launch_simu_slurm(simulation):
         contenu += "export MELISSA_MASTER_NODE_NAME=$(hostname)\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
         for i in range(STUDY_OPTIONS['nb_parameters'] + 2):
-            if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(i))):
-                os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank"+str(i))
-            os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank) + "/rank" + str(i))
+            if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank"+str(i))):
+                os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank"+str(i))
+            os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id) + "/rank" + str(i))
             contenu += "cd rank"+str(i)+"\n"
             contenu += "srun -N 1 -n 1 telemac2d.py --mpi t2d_gouttedo.cas &\n"
             contenu += "cd ..\n"
         contenu += "wait %1\n"
         contenu += "date +\"%d/%m/%y %T\"\n"
-        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))
+        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))
         fichier.write(contenu)
         fichier.close()
     else:
         contenu = ""
-        if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0")):
-            os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0")
-        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0")
+        if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank0")):
+            os.mkdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank0")
+        os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank0")
         fichier = open("run_telemac", 'w')
         contenu += "#!/bin/bash\n"
         contenu += "#SBATCH --constraint=HSW24\n"
