@@ -1,5 +1,5 @@
 # Table of content
- * [Overview](#overview)
+ * [News](#news)
  * [Getting Started](#getting-started)
  * [Running Melissa](#running-melissa)
     * [Local Execution](#local-execution)
@@ -9,6 +9,26 @@
  * [Publications](#publications)
  * [Contacts](#contacts)
  * [Licence](#licence)
+
+
+# News
+ * **Jan 2020: GitHub continuous update**
+    * Sync our work repo with the github repo so all changes are immediatly visible to all
+    * Major code restructuration  and documentation update
+    * New tools for supporting a virtual cluster mode  and using Jupyter notebook for controlling a Melissa run
+ * **Nov 2018: Melissa release 0.5 available on GitHub**
+    * Changes in the API: remove arguments from the melissa_send function
+    * Add batch mode
+    * Improve launcher fault tolerance
+    * Improve the examples and the install tree
+    * Many fixes
+ * **Nov 2017: Melissa release 0.4 available on GitHub**
+   * Improve quantiles and threshold exceedances
+   * Add iterative skewness and kurtosis
+   * Add a restart mechanism over results of previous study
+   * Add FlowVR coupling mechanism for Sobol' groups
+   * Add Telemac2D example, including FlowVR coupling mechanism
+   * Many bug fixes
 
 
 # Getting Started
