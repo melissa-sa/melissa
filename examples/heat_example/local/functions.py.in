@@ -23,7 +23,6 @@ from string import Template
 from shutil import copyfile
 
 # These variables are only used in this file.
-BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 BUILD_WITH_FLOWVR = '@BUILD_WITH_FLOWVR@'.upper()
 EXECUTABLE='heatc'
 NODES_SERVER = 1
