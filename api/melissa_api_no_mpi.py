@@ -44,8 +44,7 @@ def melissa_init(field_name, vect_size):
     )
     pass
 
-def melissa_send(field_name,
-                 send_vect):
+def melissa_send(field_name, send_vect):
     buff = ctypes.create_string_buffer(len(field_name)+1)
     buff.value = field_name.encode()
     array = (ctypes.c_double * len(send_vect))(*send_vect)
@@ -54,3 +53,10 @@ def melissa_send(field_name,
 
 def melissa_finalize():
     c_melissa_api_no_mpi.melissa_finalize()
+
+def melissa_send_horovod(field_name, send_vect):
+    buff = ctypes.create_string_buffer(len(field_name)+1)
+    buff.value = field_name.encode()
+    array = (ctypes.c_double * len(send_vect))(*send_vect)
+    c_melissa_api_no_mpi.melissa_send_horovod(buff, array)
+    pass
