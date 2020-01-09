@@ -5,6 +5,7 @@
     * [Local Execution](#local-execution)
     * [Virtual Cluster](#virtual-cluster)
     * [Real Cluster](#real-cluster)
+ * [Solver Instrumenting and Study Setup](#solver-instrumenting-and-study-setup)
  * [How to cite Melissa](#how-to-cite-melissa)
  * [Publications](#publications)
  * [Contacts](#contacts)
@@ -111,6 +112,26 @@ All instructions in the [utility/virtual_cluster/Readme.md](utility/virtual_clus
 
  Running Melissa on a real supercomputer will  need some adaptations to the specificity of the target machine (batch scheduler, launcher that can
  be executed or not on the front nodes, etc.).
+
+ Here are a few hints. To run Melissa on a cluster you need to adapt the code to your batch scheduling systems and system environment. Before you try to run anything on remote cluster, please familiarize yourself with batch scheduling system of your cluster and options file (short but precise enough description is in the `Creating your own study` chapter).
+
+  1. In your `study_Slurm/scripts` folder, change the shell files so they are valid with your scheduling system. Pay attention to the commands and partition names.
+  2. In the same shell files add/load appropriate modules for MPI.
+  3. Check options file. Look especially at `launch_server` and `launch_group` and check if commands sending jobs to batch scheduler are valid.
+  4. Check the shebang at `melissa_launcher`. This python interpreter have to have Numpy. If you know that some module have python with numpy, you can
+
+```bash
+module load *python module with numpy*
+which python3
+```
+
+and copy the path to the shebang.
+
+
+# Solver Instrumenting and Study Setup
+
+ * See [examples/heat_example/README.md](examples/heat_example/README.md)
+ 
 
 
 # How to cite Melissa
