@@ -237,8 +237,7 @@ static inline void get_operations (char              *name,
 
     if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
     {
-        stats_usage ();
-        exit (1);
+        return;
     }
 
     /* just to be sure */

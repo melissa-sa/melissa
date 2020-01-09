@@ -14,11 +14,7 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/stats")
-
 add_subdirectory(stats)
-
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/output")
 
 add_subdirectory(output)
 

@@ -252,6 +252,10 @@ include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
 
 add_subdirectory(api)
 
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/stats")
+
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/output")
+
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
 
 add_subdirectory(server)

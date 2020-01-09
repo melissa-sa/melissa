@@ -394,9 +394,6 @@ class Server(Job):
         """
         op_str = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
         self.options = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
-        if op_str == '':
-            logging.error('error bad option: no operation given')
-            return
         field_str = ':'.join([x for x in Job.stdy_opt['field_names']])
         self.options += ' '
         self.options += ':'.join([x for x in Job.stdy_opt['field_names']])
@@ -438,6 +435,11 @@ class Server(Job):
                                  '-n', buff.value.decode()))
         if Job.stdy_opt['learning']:
             self.cmd_opt += " -l "+str(Job.stdy_opt['nn_path'])
+        else:
+            if op_str == '':
+                logging.error('error bad option: no operation given')
+                return
+
 
     def launch(self):
         """
