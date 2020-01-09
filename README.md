@@ -1,12 +1,12 @@
 # Table of content
- * [Overview](# Overview)
- * [Getting Started](# Getting-Started)
- * [Running Melissa](# Running  Started)
-    * [Local Execution](## Local Execution)
-    * [Virtual Cluster](## Virtual Cluster)
-    * [Real Cluster](## Real Cluster)
- * [How to cite Melissa](# How to cite Melissa)
- * [Pulbications](# Publications)
+ * [Overview](#overview)
+ * [Getting Started](#getting-started)
+ * [Running Melissa](#running-melissa)
+    * [Local Execution](#local-execution)
+    * [Virtual Cluster](#virtual-cluster)
+    * [Real Cluster](#real-cluster)
+ * [How to cite Melissa](#how-to-cite-melissa)
+ * [Publications](#publications)
 
 
 # Overview 
@@ -70,8 +70,8 @@ Compilation, installation and environnent variable setting from the Melissa root
 
 ## Testing
 
-The examples are built if CMake finds a Fortran compiler and if you enabled the BUILD_EXAMPLES option. The examples are installed in install/share/melissa/examples. We use a heat equation solver example to test the installation.
-To compile the solver from the install/share/melissa/examples/heat_example/solver directory, run:
+The examples are built if CMake finds a Fortran compiler and if you enabled the BUILD_EXAMPLES option. The examples are installed in `install/share/melissa/examples`. We use a heat equation solver example to test the installation.
+To compile the solver from the `install/share/melissa/examples/heat_example/solver` directory, run:
 
 ```bash
     cd ../install/share/melissa/examples/heat_example/
@@ -82,7 +82,7 @@ To compile the solver from the install/share/melissa/examples/heat_example/solve
     make install
     cd ..
 ```    
-To start  the study (from heat_example dir): 
+To start  the study (from `heat_example` dir): 
 
 ```bash
     melissa_launcher  -o ./study_local/options.py
@@ -94,7 +94,13 @@ The results of this sensitivity analysis are stored in:
 
 # Running Melissa
 ## Local Execution
+
+Running Melissa localy means that all processes run on your local machine, executed directly by the launcher without goign through a  batch scheduler. This is a mode usefull for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution. 
+    
+    
 ## Virtual Cluster
+
+
 ## Real Cluster
 
 # How to cite Melissa
@@ -119,6 +125,6 @@ inproceedings{terraz:hal-01607479,
 ```
 
 
-# Pulbications
+# Publications
    * Melissa: Large Scale In Transit Sensitivity Analysis Avoiding Intermediate Files. Théophile Terraz, Alejandro Ribes, Yvan Fournier, Bertrand Iooss, Bruno Raffin. The International Conference for High Performance Computing, Networking, Storage and Analysis (Supercomputing), Nov 2017, Denver, United States. pp.1 - 14. [PDF](https://hal.inria.fr/hal-01607479/file/main-Sobol-SC-2017-HALVERSION.pdf)
   
