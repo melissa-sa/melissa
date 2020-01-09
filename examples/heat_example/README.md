@@ -1,10 +1,16 @@
-# User Documentation
+# Overview
 
-## Creating your own study
+  Here we take you through the different steps to instrument a solver and run a Melissa sensitivity analysis with it. 
+  It's a 4  step process: 
+1. [Prepare the Study](#prepare-the-study)
+2. [Instrument the solver](#instrument-the-solver)
+3. [Configure Melissa launcher](#configure-melissa-launcher)
+4. [Run the Study](#run-the-study)
+ 
+ 
+# Prepare the Study
 
-### 1. The options file
-
-The options file is located in every example and it's mandatory to run Melissa. The file contains python code with 3 python dictionaries:
+The options file is located in every example and it is mandatory to run Melissa. The file contains python code with 3 python dictionaries:
 
 * `STUDY_OPTIONS` - sets the parameters of the sensitivity study
 * `MELISSA_STATS` - boolean values to activate certain statistics in Melissa server
@@ -32,10 +38,9 @@ The function needs to set the group job ID in the `job_id` attribute. On a clust
 
 This is bare minimum you need to know about the options file to run the sensitivity study. Look at the options file in other example to get an overall understanding how to create such a file. To learn about 2 other groups or optional functions visit [user documentation on github](https://github.com/melissa-sa/melissa/wiki/4-User-Documentation)
 
-### 2. Writing own solver
+# Instrument the Solver
 
-
-# Introduction
+## Introduction
 
 The principle of a global sensitivity analysis is to run a large number of simulations with varying input parameter sets, and measure the influence of the parameters on the solver output. The key to enable large scale sensitivity analysis is to process the data in-situ and iteratively.
 On a cluster, all the simulations from a ensemble study run on their own independent jobs. These simulations can run in any order, asynchronously: they are all independents. In an in-situ sensitivity analysis, the main difference is during the I/O phase. the simulations must send their data to an external server instead of writing them on the filesystem. This server will then use the data to update a set of ubiquitous statistics in an iterative fashion, and discard the data. This server must run during the entire simulation campaign, on its own job. To be able to handle such a study, one need a tool to manage the whole process of generating the study, running the simulations, and controlling the progress of the campaign.
@@ -60,7 +65,7 @@ In these foldable paragraphs, we will go through the prosessus of instrumenting 
 
 </details>
 
-# Melissa API
+## Melissa API
 
 Before anything else, we have to plug Melissa in our solver.
 Melissa API is a shared library composed of three functions, to be integrated in the solver. They are the link between the simulations (clients) and the server. The three functions are as simple as:
@@ -77,7 +82,7 @@ In order to use these functions, you have to link melissa_api.so and include mel
 
 We will now explain how to use each one of these functions.        
 
-## melissa_init
+### melissa_init
 
 This function must be called once for every scalar field to send to Melissa Server. The field names have to be declared in the launcher option file, as we will see later. A scalar field is an array of doubles. It is the simulation result at a given timestep without any other metadata (in particular, without mesh).
 
@@ -96,7 +101,7 @@ variables:
 * vect_size: the size of the local result vector (in number of elements)
 * comm: the local MPI communicator
 
-## melissa_send
+### melissa_send
 
 This function must be called at each time step that needs to be sent to Melissa Server, for each field. It can replace the I/O phase of the code. The field name is used by Melissa to identify the field, and must be declared in the launcher option file. If a field name not declared in the launcher is passed, Melissa will ignore the field. Melissa guaranties to keep the order of the cells (the array of double) and the order of the calls (in the form of timestamps), and it is up to the user to map them to the mesh and to the timesteps afterwards.
 
@@ -113,7 +118,7 @@ variables:
 * field_name: the name of the field sent
 * send_vect: the vector to send to Melissa Server
 
-## melissa_finalize
+### melissa_finalize
 
 This function terminates the Melissa environment.
 It must be called only once, at the end of the solver, before MPI_Finalize.
@@ -220,9 +225,9 @@ This CMakeFile.txt can be a base for your own application.
 
 </details>
 
-# Melissa Launcher
+# Configure Melissa Launcher
 
-Once the simulations are instrumented, they can be managed by Melissa.
+Once the solver  is instrumented, it can be managed by Melissa.
 Melissa Launcher can supervise the whole sensitivity analysis, as long as it knows how to interact with the machine and the solver. These informations are very specific to each environment.
 That's why each user have to provide Melissa the tools to launch the simulations, to check their behavior, and other useful operations, described in more details later in this page.
 This is done by giving the launcher some functions and variables through a python file. The file is usually called options.py. An empty template of this file is provided in `share/melissa/launcher/options.py`. This is not only a configuration file: it contains functions that will be loaded and executed by the launcher. The options supported by Melissa are predefined in this file. You must copy this file and modify it to meet your needs. There are three sets of variables to define, as dictionaries.
@@ -424,7 +429,7 @@ The same as USER_FUNCTIONS['postprocessing'].
 
 
 
-## Run the study
+# Run the study
 
 To run a study, call the launcher with the path to your `options.py` file:
 
@@ -456,5 +461,5 @@ For example, the variance of the field "heat" at the first timestep is stored in
 </details>
 <br />
 
-To go further, we provide a Virtual Cluster to learn how to run a sensitivity analysis on a virtual cluster with a batch scheduler on your local machine.
+You can use the  [virtual cluster](../../utility/virtual_cluster/README.md) to test your code at small scale with a batch scheduler on a local machine before to move to the target supercomputer. That's a good way to solve issues progressively.
 
