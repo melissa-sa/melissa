@@ -5,11 +5,17 @@
     * [Local Execution](#local-execution)
     * [Virtual Cluster](#virtual-cluster)
     * [Real Cluster](#real-cluster)
- * [Solver Instrumenting and Study Setup](#solver-instrumenting-and-study-setup)
+ * [Solver Instrumenting and Study Setup](examples/heat_example/README.md)
+ * Developer Documentation
+    * [Server](server/README.md)
+    * [Launcher](launcher/README.md)
+    * [Solver API](api/README.md)
+    * [Common](api/README.md)
  * [How to cite Melissa](#how-to-cite-melissa)
  * [Publications](#publications)
  * [Contacts](#contacts)
  * [Licence](#licence)
+
 
 
 # News
@@ -127,11 +133,6 @@ which python3
 
 and copy the path to the shebang.
 
-
-# Solver Instrumenting and Study Setup
-
- * See [examples/heat_example/README.md](examples/heat_example/README.md)
- 
 
 
 # How to cite Melissa
