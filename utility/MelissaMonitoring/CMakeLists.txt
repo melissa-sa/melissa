@@ -7,7 +7,7 @@ set(files README.md
 add_subdirectory("internal")
 
 install(FILES ${files}
-        DESTINATION ${EXAMPLES_DIR}/MelissaMonitoring
+        DESTINATION ${UTILITY_DIR}/MelissaMonitoring
         PERMISSIONS OWNER_WRITE
                     OWNER_READ
                     OWNER_EXECUTE

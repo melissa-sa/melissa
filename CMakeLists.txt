@@ -267,6 +267,9 @@ add_subdirectory(tests)
 set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
 add_subdirectory(examples)
 
+set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
+add_subdirectory(utility)
+
 # set environement variables
 #if(INSTALL_ZMQ)
 #  set(ZeroMQ_DIR "export ZeroMQ=${CMAKE_INSTALL_PREFIX}/share/cmake/ZeroMQ")
