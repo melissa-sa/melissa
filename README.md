@@ -20,13 +20,11 @@ Melissa bypasses this limitation by avoiding intermediate file storage. Melissa 
 
 Melissa  comes with iterative algorithms for computing the average, variance and co-variance, skewness, kurtosis, max, min, threshold exceedance, quantiles and Sobol' indices, and can easily be extended with new algorithms. 
 
-
-## Melissa Workflow
-
 Melissa relies on a client/server architecture, composed of three main modules:
 * Melissa Server: an independent parallel executable. It receives data from the simulations, updates iterative statistics as soon as possible, then throw data away.
 * Melissa API: a shared library to be linked within the simulation code. It forwards simulation data to Melissa Server. The simulations of the sensitivity analysis become the clients of Melissa Server.
 * Melissa Launcher: A Python script in charge of generating and driving the whole global sensitivity analysis.
+
 
 
 # Getting Started
