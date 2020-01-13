@@ -1,7 +1,7 @@
 # Table of content
- * [Overview](# Overview)
- * [Getting Started](# Getting Started)
- * [Running Melissa](# Getting Started)
+ * [Overview](#overview)
+ * [Getting Started](#getting-started)
+ * [Running Melissa](#getting-started)
     * [Local Execution](## Local Execution)
     * [Virtual Cluster](## Virtual Cluster)
     * [Real Cluster](## Real Cluster)
