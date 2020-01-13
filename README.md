@@ -3,7 +3,7 @@
  * [Getting Started](#getting-started)
  * [Running Melissa](#getting-started)
     * [Local Execution](##local-execution)
-    * [Virtual Cluster](##virtual-cluster)
+    * [Virtual Cluster](#virtual-cluster)
     * [Real Cluster](##real-cluster)
  * [How to cite Melissa](#how-to-cite-melissa)
  * [Pulbications](#publications)
