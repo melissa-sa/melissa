@@ -2,11 +2,11 @@
  * [Overview](#overview)
  * [Getting Started](#getting-started)
  * [Running Melissa](#getting-started)
-    * [Local Execution](## Local Execution)
-    * [Virtual Cluster](## Virtual Cluster)
-    * [Real Cluster](## Real Cluster)
- * [How to cite Melissa](# How to cite Melissa)
- * [Pulbications](# Publications)
+    * [Local Execution](##local-execution)
+    * [Virtual Cluster](##virtual-cluster)
+    * [Real Cluster](##real-cluster)
+ * [How to cite Melissa](#how-to-cite-melissa)
+ * [Pulbications](#publications)
 
 
 # Overview 
