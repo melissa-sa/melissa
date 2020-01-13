@@ -1,13 +1,11 @@
-set(files README.md
-      __init__.py
-	  interface.py
-	  main.py
-      utils.py
+set(files
+  Melissa-monitoring-notebook.ipynb
+  README.md
 	  )
-add_subdirectory("internal")
+add_subdirectory("MelissaMonitoring")
 
 install(FILES ${files}
-        DESTINATION ${UTILITY_DIR}/MelissaMonitoring
+  DESTINATION ${UTILITY_DIR}/MelissaMonitoring
         PERMISSIONS OWNER_WRITE
                     OWNER_READ
                     OWNER_EXECUTE
