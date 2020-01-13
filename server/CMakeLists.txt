@@ -69,14 +69,3 @@ install(FILES ${CMAKE_BINARY_DIR}/server/melissa_server.py
                     GROUP_EXECUTE
                     WORLD_READ
                     WORLD_EXECUTE)
-
-install(FILES melissa_learning.py
-        DESTINATION lib
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE)
-
