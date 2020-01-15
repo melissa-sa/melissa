@@ -19,25 +19,7 @@ will include notions of:
 """
 
 
-from jupyterhub.spawner import Spawner
-from traitlets import Integer, Unicode, default, Float, Dict
-from async_generator import async_generator#, yield_, yield_from_
-import pwd
-from jinja2 import Template
-import asyncio
-import jupyterhub
-import re
-from tornado import gen
-import getpass
-# import os
-# import sys
-# import xml.etree.ElementTree as ET
-# from tornado.process import Subprocess
-# from subprocess import CalledProcessError
-# from tornado.iostream import StreamClosedError
-# from jupyterhub.traitlets import Command
-# from jupyterhub.utils import random_port
-# from jupyterhub.spawner import set_user_setuid
+import jupyterhub.spawner, traitlets, async_generator, pwd, jinja2, asyncio, re, tornado, getpass, xml, os
 
 
 def format_template(template, *args, **kwargs):
@@ -49,13 +31,14 @@ def format_template(template, *args, **kwargs):
     :param jinja2.Template | str template:
     :rtype: jinja2.Template | str
     """
-    if isinstance(template, Template):
+    if isinstance(template, jinja2.Template):
         return template.render(*args, **kwargs)
     elif '{{' in template or '{%' in template:
-        return Template(template).render(*args, **kwargs)
+        return jinja2.Template(template).render(*args, **kwargs)
     return template.format(*args, **kwargs)
 
 
+class BatchSpawnerBase(jupyterhub.spawner.Spawner):
     """
     Base class for spawners using resource manager batch job submission
     mechanisms.
@@ -77,118 +60,56 @@ def format_template(template, *args, **kwargs):
         state_isrunning
         state_gethost
     """
-
-    # override default since batch systems typically need longer
-    start_timeout = Integer(300).tag(config=True)
-
-    # override default server ip since batch jobs normally running remotely
-    ip = Unicode("0.0.0.0", help="Address for singleuser server to listen at").tag(config=True)
-
-    exec_prefix = Unicode('',
-        help="Standard executon prefix (e.g. the default sudo -E -u {username})"
+    start_timeout = traitlets.Integer(300,  ## TODO
         ).tag(config=True)
 
     # all these req_foo traits will be available as substvars for templated strings
-    req_queue = Unicode('',
-        help="Queue name to submit job to resource manager"
+    req_queue = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_host = Unicode('',
-        help="Host name of batch server to submit job to resource manager"
+    req_host = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_memory = Unicode('',
-        help="Memory to request from resource manager"
+    req_memory = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_nodes = Unicode('',
-            help='Number of nodes allocated to a job.'
+    req_nodes = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_tasks_per_node = Unicode('',
-            help='Number of tasks invoked on each node.'
+    req_tasks_per_node = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_nprocs = Unicode('',
-        help="Number of processors to request from resource manager"
+    req_nprocs = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_ngpus = Unicode('',
-        help="Number of GPUs to request from resource manager"
+    req_ngpus = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_runtime = Unicode('',
-        help="Length of time for submitted job to run"
+    req_runtime = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_partition = Unicode('',
-        help="Partition name to submit job to resource manager"
+    req_partition = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_account = Unicode('',
-        help="Account name string to pass to the resource manager"
+    req_account = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_server_output_log = Unicode('',
-            help='Server batch script standard output file.'
+    req_server_output_log = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_server_error_log = Unicode('',
-            help='Server batch script standard error file.'
+    req_server_error_log = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_simu_output_log = Unicode('',
-            help='Simulation batch script standard output file.'
+    req_simu_output_log = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_simu_error_log = Unicode('',
-            help='Simulation batch script standard error file.'
+    req_simu_error_log = traitlets.Unicode('',
         ).tag(config=True)
-
-    req_options = Unicode('',
-        help="Other options to include into job submission script"
+    req_options = traitlets.Unicode('',  ## TODO
         ).tag(config=True)
-
-    req_prologue = Unicode('',
-        help="Script to run before single user server starts."
+    req_prologue = traitlets.Unicode('',  ## TODO
         ).tag(config=True)
-
-    req_epilogue = Unicode('',
-        help="Script to run after single user server ends."
+    req_epilogue = traitlets.Unicode('',  ## TODO
         ).tag(config=True)
-
-    req_username = Unicode()
-    @default('req_username')
-    def _req_username_default(self):
-        # return self.user.name
-        return getpass.getuser()
-
-    # Useful IF getpwnam on submit host returns correct info for exec host
-    req_homedir = Unicode()
-    @default('req_homedir')
-    def _req_homedir_default(self):
-        return pwd.getpwnam(self.user.name).pw_dir
-
-    req_keepvars = Unicode()
-    @default('req_keepvars')
+    req_username = traitlets.Unicode(getpass.getuser(),
+    req_homedir = traitlets.Unicode(os.path.expanduser('~'),
+    req_keepvars = traitlets.Unicode()
+    @traitlets.default('req_keepvars')
     def _req_keepvars_default(self):
         return ','.join(self.get_env().keys())
-
-    req_keepvars_extra = Unicode(
-        help="Extra environment variables which should be configured, "
-              "added to the defaults in keepvars, "
-              "comma separated list.")
-
-    batch_script = Unicode('',
-        help="Template for job submission script. Traits on this class named like req_xyz "
-             "will be substituted in the template for {xyz} using string.Formatter. "
-             "Must include {cmd} which will be replaced with the jupyterhub-singleuser command line."
+    req_keepvars_extra = traitlets.Unicode(
+    batch_script = traitlets.Unicode('',
         ).tag(config=True)
-
-    batchspawner_singleuser_cmd = Unicode('batchspawner-singleuser',
-        help="A wrapper which is capable of special batchspawner setup: currently sets the port on "
-             "the remote host.  Not needed to be set under normal circumstances, unless path needs "
-             "specification."
+    job_id = traitlets.Unicode()
+    job_status = traitlets.Unicode()
+    batch_submit_cmd = traitlets.Unicode('',
         ).tag(config=True)
 
     # Raw output of job submission command unless overridden
@@ -300,12 +221,10 @@ def format_template(template, *args, **kwargs):
         return self.job_id
 
     # Override if your batch system needs something more elaborate to read the job status
-    batch_query_cmd = Unicode('',
-        help="Command to run to read job status. Formatted using req_xyz traits as {xyz} "
-             "and self.job_id as {job_id}."
+    batch_query_cmd = traitlets.Unicode('',
         ).tag(config=True)
 
-    batch_query_user_cmd = Unicode('',
+    batch_query_user_cmd = traitlets.Unicode('',
                                    help='Command to run to read user\'s '
                                    'jobs status. Formatted using req_xyz '
                                    'traits as {xyz} and req_username as '
@@ -338,8 +257,7 @@ def format_template(template, *args, **kwargs):
         finally:
             return self.job_status
 
-    batch_cancel_cmd = Unicode('',
-        help="Command to stop/cancel a previously submitted job. Formatted like batch_query_cmd."
+    batch_cancel_cmd = traitlets.Unicode('',
         ).tag(config=True)
 
     async def cancel_batch_job(self):
@@ -385,6 +303,7 @@ def format_template(template, *args, **kwargs):
         Making preexec function to change uid (if running as root) before
         job submission.
         """
+        return jupyterhub.spawner.set_user_setuid(name)
 
     def state_ispending(self):
         """
@@ -423,8 +342,7 @@ def format_template(template, *args, **kwargs):
             self.clear_state()
             return 1
 
-    startup_poll_interval = Float(0.5,
-        help="Polling interval (seconds) to check job state during startup"
+    startup_poll_interval = traitlets.Float(0.5,
         ).tag(config=True)
 
     async def start(self):
@@ -461,11 +379,11 @@ def format_template(template, *args, **kwargs):
                     raise RuntimeError('The Jupyter batch job has disappeared'
                            ' while pending in the queue or died immediately'
                            ' after starting.')
-            await gen.sleep(self.startup_poll_interval)
+            await tornado.gen.sleep(self.startup_poll_interval)
 
         self.ip = self.state_gethost()
         # while self.port == 0:
-        #     await gen.sleep(self.startup_poll_interval)
+        #     await tornado.gen.sleep(self.startup_poll_interval)
         #     # Test framework: For testing, mock_port is set because we
         #     # don't actually run the single-user server yet.
         #     if hasattr(self, 'mock_port'):
@@ -496,32 +414,29 @@ def format_template(template, *args, **kwargs):
             await self.poll()
             if not self.state_isrunning():
                 return
-            await gen.sleep(1.0)
+            await tornado.gen.sleep(1.0)
         if self.job_id:
             self.log.warning("Notebook server job {0} at {1}:{2} possibly failed to terminate".format(
                              self.job_id, self.ip, self.port)
                 )
 
-    @async_generator
+    @async_generator.async_generator
     async def progress(self):
         """
         Monitoring job status.
         """
         while True:
             if self.state_ispending():
-                await yield_({
-                    "message": "Pending in queue...",
+                await async_generator.yield_({
                 })
             elif self.state_isrunning():
-                await yield_({
-                    "message": "Cluster job running... waiting to connect",
+                await async_generator.yield_({
                 })
                 return
             else:
-                await yield_({
-                    "message": "Unknown status...",
+                await async_generator.yield_({
                 })
-            await gen.sleep(1)
+            await tornado.gen.sleep(1)
 
 class BatchSpawnerRegexStates(BatchSpawnerBase):
     """
@@ -542,15 +457,10 @@ class BatchSpawnerRegexStates(BatchSpawnerBase):
     match object will be expanded using this string to obtain the
     notebook IP. See Python docs: re.match.expand.
     """
-    state_pending_re = Unicode('',
-        help="Regex that matches job_status if job is waiting to run").tag(config=True)
-    state_running_re = Unicode('',
-        help="Regex that matches job_status if job is running").tag(config=True)
-    state_exechost_re = Unicode('',
-        help="Regex with at least one capture group that extracts "
-             "the execution host from job_status output").tag(config=True)
-    state_exechost_exp = Unicode('',
-        help="""If empty, notebook IP will be set to the contents of the first capture group.
+    state_pending_re = traitlets.Unicode('',
+    state_running_re = traitlets.Unicode('',
+    state_exechost_re = traitlets.Unicode('',
+    state_exechost_exp = traitlets.Unicode('',
 
         If this variable is set, the match object will be expanded using this string
         to obtain the notebook IP.
@@ -596,7 +506,7 @@ class BatchSpawnerRegexStates(BatchSpawnerBase):
 
 
 class TorqueSpawner(BatchSpawnerRegexStates):
-    batch_script = Unicode("""#!/bin/sh
+    batch_script = traitlets.Unicode(
 #PBS -q {queue}@{host}
 #PBS -l walltime={runtime}
 #PBS -l nodes={nodes}:ppn={nprocs}
@@ -611,35 +521,35 @@ class TorqueSpawner(BatchSpawnerRegexStates):
 """).tag(config=True)
 
     # outputs job id string
-    batch_submit_cmd = Unicode('qsub').tag(config=True)
+    batch_submit_cmd = traitlets.Unicode('qsub').tag(config=True)
     # outputs job data XML string
-    batch_query_cmd = Unicode('qstat -x {job_id}').tag(config=True)
-    batch_query_user_cmd = Unicode('qstat -u {username} | wc -l'
+    batch_query_cmd = traitlets.Unicode('qstat -x {job_id}').tag(config=True)
+    batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
                                   ).tag(config=True)
-    batch_cancel_cmd = Unicode('qdel {job_id}').tag(config=True)
+    batch_cancel_cmd = traitlets.Unicode('qdel {job_id}').tag(config=True)
     # search XML string for job_state - [QH] = pending, R = running, [CE] = done
-    state_pending_re = Unicode(r'<job_state>[QH]</job_state>').tag(config=True)
-    state_running_re = Unicode(r'<job_state>R</job_state>').tag(config=True)
-    state_exechost_re = Unicode(r'<exec_host>((?:[\w_-]+\.?)+)/\d+').tag(config=True)
-    job_id = Unicode('$PBS_JOBID').tag(config=True)
+    state_pending_re = traitlets.Unicode(r'<job_state>[QH]</job_state>').tag(config=True)
+    state_running_re = traitlets.Unicode(r'<job_state>R</job_state>').tag(config=True)
+    state_exechost_re = traitlets.Unicode(r'<exec_host>((?:[\w_-]+\.?)+)/\d+').tag(config=True)
+    job_id = traitlets.Unicode('$PBS_JOBID').tag(config=True)
 
 
 class MoabSpawner(TorqueSpawner):
     # outputs job id string
-    batch_submit_cmd = Unicode('msub').tag(config=True)
+    batch_submit_cmd = traitlets.Unicode('msub').tag(config=True)
     # outputs job data XML string
-    batch_query_cmd = Unicode('mdiag -j {job_id} --xml').tag(config=True)
-    batch_query_user_cmd = Unicode('mdiag -j -w user={username} | wc -l'
+    batch_query_cmd = traitlets.Unicode('mdiag -j {job_id} --xml').tag(config=True)
+    batch_query_user_cmd = traitlets.Unicode('mdiag -j -w user={username} | wc -l'
                                   ).tag(config=True)
-    batch_cancel_cmd = Unicode('mjobctl -c {job_id}').tag(config=True)
-    state_pending_re = Unicode(r'State="Idle"').tag(config=True)
-    state_running_re = Unicode(r'State="Running"').tag(config=True)
-    state_exechost_re = Unicode(r'AllocNodeList="([^\r\n\t\f :"]*)').tag(config=True)
-    job_id = Unicode('$MOAB_JOBID').tag(config=True)
+    batch_cancel_cmd = traitlets.Unicode('mjobctl -c {job_id}').tag(config=True)
+    state_pending_re = traitlets.Unicode(r'State="Idle"').tag(config=True)
+    state_running_re = traitlets.Unicode(r'State="Running"').tag(config=True)
+    state_exechost_re = traitlets.Unicode(r'AllocNodeList="([^\r\n\t\f :"]*)').tag(config=True)
+    job_id = traitlets.Unicode('$MOAB_JOBID').tag(config=True)
 
 
 class PBSSpawner(TorqueSpawner):
-    batch_script = Unicode("""#!/bin/sh
+    batch_script = traitlets.Unicode("""#!/bin/sh
 {% if queue or host %}#PBS -q {% if queue  %}{{queue}}{% endif %}\
 {% if host %}@{{host}}{% endif %}{% endif %}
 #PBS -l walltime={{runtime}}
@@ -656,11 +566,11 @@ class PBSSpawner(TorqueSpawner):
 """).tag(config=True)
 
     # outputs job data XML string
-    batch_query_cmd = Unicode('qstat -fx {job_id}').tag(config=True)
+    batch_query_cmd = traitlets.Unicode('qstat -fx {job_id}').tag(config=True)
 
-    state_pending_re = Unicode(r'job_state = [QH]').tag(config=True)
-    state_running_re = Unicode(r'job_state = R').tag(config=True)
-    state_exechost_re = Unicode(r'exec_host = ([\w_-]+)/').tag(config=True)
+    state_pending_re = traitlets.Unicode(r'job_state = [QH]').tag(config=True)
+    state_running_re = traitlets.Unicode(r'job_state = R').tag(config=True)
+    state_exechost_re = traitlets.Unicode(r'exec_host = ([\w_-]+)/').tag(config=True)
 
 
 class UserEnvMixin:
@@ -700,7 +610,7 @@ class UserEnvMixin:
 
 
 class SlurmSpawner(UserEnvMixin,BatchSpawnerRegexStates):
-    batch_script = Unicode("""#!/bin/bash
+    batch_script = traitlets.Unicode(
 #SBATCH --output={{homedir}}/{{simu_output_log}}
 #SBATCH --job-name=spawner-jupyterhub
 #SBATCH --workdir={{homedir}}
@@ -721,39 +631,31 @@ echo "jupyterhub-singleuser ended gracefully"
 {{epilogue}}
 """).tag(config=True)
 
-    job_id = Unicode('$SLURM_JOB_ID').tag(config=True)
+    job_id = traitlets.Unicode('$SLURM_JOB_ID').tag(config=True)
 
     # all these req_foo traits will be available as substvars for templated strings
-    req_cluster = Unicode('',
-        help="Cluster name to submit job to resource manager"
+    req_cluster = traitlets.Unicode('',
         ).tag(config=True)
 
-    req_qos = Unicode('',
-        help="QoS name to submit job to resource manager"
+    req_qos = traitlets.Unicode('',
         ).tag(config=True)
 
-    req_srun = Unicode('srun',
-        help="Set req_srun='' to disable running in job step, and note that "
-             "this affects environment handling.  This is effectively a "
-             "prefix for the singleuser command."
+    req_srun = traitlets.Unicode('srun',
         ).tag(config=True)
 
-    req_reservation = Unicode('', \
-        help="Reservation name to submit to resource manager"
+    req_reservation = traitlets.Unicode('', \
         ).tag(config=True)
 
-    # outputs line like "Submitted batch job 209"
-    batch_submit_cmd = Unicode('sbatch --parsable').tag(config=True)
-    # outputs status and exec node like "RUNNING hostname"
-    batch_query_cmd = Unicode("squeue -h -j {job_id} -o '%T %B'").tag(config=True)  #
-    batch_query_user_cmd = Unicode('squeue -h --user={username} | wc -l',
+    batch_submit_cmd = traitlets.Unicode('sbatch --parsable').tag(config=True)
+    batch_query_cmd = traitlets.Unicode("squeue -h -j {job_id} -o '%T %B'").tag(config=True)  #
+    batch_query_user_cmd = traitlets.Unicode('squeue -h --user={username} | wc -l',
                                   ).tag(config=True)
-    batch_cancel_cmd = Unicode('scancel {job_id}').tag(config=True)
+    batch_cancel_cmd = traitlets.Unicode('scancel {job_id}').tag(config=True)
     # use long-form states: PENDING,  CONFIGURING = pending
     #  RUNNING,  COMPLETING = running
-    state_pending_re = Unicode(r'^(?:PENDING|CONFIGURING)').tag(config=True)
-    state_running_re = Unicode(r'^(?:RUNNING|COMPLETING)').tag(config=True)
-    state_exechost_re = Unicode(r'\s+((?:[\w_-]+\.?)+)$').tag(config=True)
+    state_pending_re = traitlets.Unicode(r'^(?:PENDING|CONFIGURING)').tag(config=True)
+    state_running_re = traitlets.Unicode(r'^(?:RUNNING|COMPLETING)').tag(config=True)
+    state_exechost_re = traitlets.Unicode(r'\s+((?:[\w_-]+\.?)+)$').tag(config=True)
 
     def parse_job_id(self, output):
         """
@@ -795,7 +697,7 @@ class MultiSlurmSpawner(SlurmSpawner):
 
 
 class GridengineSpawner(BatchSpawnerBase):
-    batch_script = Unicode("""#!/bin/bash
+    batch_script = traitlets.Unicode(
 #$ -j yes
 #$ -N spawner-jupyterhub
 #$ -o {homedir}/{simu_output_log}
@@ -809,13 +711,13 @@ class GridengineSpawner(BatchSpawnerBase):
 """).tag(config=True)
 
     # outputs job id string
-    batch_submit_cmd = Unicode('qsub').tag(config=True)
+    batch_submit_cmd = traitlets.Unicode('qsub').tag(config=True)
     # outputs job data XML string
-    batch_query_cmd = Unicode('qstat -xml').tag(config=True)
-    batch_query_user_cmd = Unicode('qstat -u {username} | wc -l'
+    batch_query_cmd = traitlets.Unicode('qstat -xml').tag(config=True)
+    batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
                                   ).tag(config=True)
-    batch_cancel_cmd = Unicode('qdel {job_id}').tag(config=True)
-    job_id = Unicode('$JOB_ID').tag(config=True)
+    batch_cancel_cmd = traitlets.Unicode('qdel {job_id}').tag(config=True)
+    job_id = traitlets.Unicode('$JOB_ID').tag(config=True)
 
     def parse_job_id(self, output):
         """
@@ -833,7 +735,7 @@ class GridengineSpawner(BatchSpawnerBase):
         :rtype: bool
         """
         if self.job_status:
-            job_info = ET.fromstring(self.job_status).find(
+            job_info = xml.etree.ElementTree.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']".format(self.job_id))
             if job_info is not None:
                 return job_info.attrib.get('state') == 'pending'
@@ -846,7 +748,7 @@ class GridengineSpawner(BatchSpawnerBase):
         :rtype: bool
         """
         if self.job_status:
-            job_info = ET.fromstring(self.job_status).find(
+            job_info = xml.etree.ElementTree.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']".format(self.job_id))
             if job_info is not None:
                 return job_info.attrib.get('state') == 'running'
@@ -860,7 +762,7 @@ class GridengineSpawner(BatchSpawnerBase):
         :rtype: str
         """
         if self.job_status:
-            queue_name = ET.fromstring(self.job_status).find(
+            queue_name = xml.etree.ElementTree.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']/queue_name".format(self.job_id))
             if queue_name is not None and queue_name.text:
                 return queue_name.text.split('@')[1]
@@ -870,7 +772,7 @@ class GridengineSpawner(BatchSpawnerBase):
 
 
 class CondorSpawner(UserEnvMixin,BatchSpawnerRegexStates):
-    batch_script = Unicode("""
+    batch_script = traitlets.Unicode(
 Executable = /bin/sh
 RequestMemory = {memory}
 RequestCpus = {nprocs}
@@ -885,16 +787,16 @@ Queue
 """).tag(config=True)
 
     # outputs job id string
-    batch_submit_cmd = Unicode('condor_submit').tag(config=True)
+    batch_submit_cmd = traitlets.Unicode('condor_submit').tag(config=True)
     # outputs job data XML string
-    batch_query_cmd = Unicode('condor_q {job_id} -format "%s, " JobStatus -format "%s" RemoteHost -format "\n" True').tag(config=True)
-    batch_query_user_cmd = Unicode('condor_q -submitter {username} | wc -l'
+    batch_query_cmd = traitlets.Unicode('condor_q {job_id} -format "%s, " JobStatus -format "%s" RemoteHost -format "\n" True').tag(config=True)
+    batch_query_user_cmd = traitlets.Unicode('condor_q -submitter {username} | wc -l'
                                   ).tag(config=True)
-    batch_cancel_cmd = Unicode('condor_rm {job_id}').tag(config=True)
+    batch_cancel_cmd = traitlets.Unicode('condor_rm {job_id}').tag(config=True)
     # job status: 1 = pending, 2 = running
-    state_pending_re = Unicode(r'^1,').tag(config=True)
-    state_running_re = Unicode(r'^2,').tag(config=True)
-    state_exechost_re = Unicode(r'^\w*, .*@([^ ]*)').tag(config=True)
+    state_pending_re = traitlets.Unicode(r'^1,').tag(config=True)
+    state_running_re = traitlets.Unicode(r'^2,').tag(config=True)
+    state_exechost_re = traitlets.Unicode(r'^\w*, .*@([^ ]*)').tag(config=True)
 
     def parse_job_id(self, output):
         """
@@ -921,9 +823,7 @@ class LsfSpawner(BatchSpawnerBase):
     launch notebooks.
     """
 
-    batch_script = Unicode('''#!/bin/sh
-#BSUB -R "select[type==any]"    # Allow spawning on non-uniform hardware
-#BSUB -R "span[hosts=1]"        # Only spawn job on one server
+    batch_script = traitlets.Unicode('''#!/bin/sh
 #BSUB -q {queue}
 #BSUB -J spawner-jupyterhub
 #BSUB -o {homedir}/{simu_output_log}
@@ -935,11 +835,11 @@ class LsfSpawner(BatchSpawnerBase):
 ''').tag(config=True)
 
 
-    batch_submit_cmd = Unicode('bsub').tag(config=True)
-    batch_query_cmd = Unicode('bjobs -a -noheader -o "STAT EXEC_HOST" {job_id}').tag(config=True)
-    batch_query_user_cmd = Unicode('bjobs -noheader -u {username} | wc -l').tag(config=True)
-    batch_cancel_cmd = Unicode('bkill {job_id}').tag(config=True)
-    job_id = Unicode('$LSB_JOBID').tag(config=True)
+    batch_submit_cmd = traitlets.Unicode('bsub').tag(config=True)
+    batch_query_cmd = traitlets.Unicode('bjobs -a -noheader -o "STAT EXEC_HOST" {job_id}').tag(config=True)
+    batch_query_user_cmd = traitlets.Unicode('bjobs -noheader -u {username} | wc -l').tag(config=True)
+    batch_cancel_cmd = traitlets.Unicode('bkill {job_id}').tag(config=True)
+    job_id = traitlets.Unicode('$LSB_JOBID').tag(config=True)
 
     def get_env(self):
         env = super().get_env()
