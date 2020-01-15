@@ -2,15 +2,17 @@
 # Copyright (c) Michael Gilbert
 # Distributed under the terms of the Modified BSD License.
 
-"""Batch spawners
-
-This file contains an abstraction layer for batch job queueing systems, and implements
-Jupyterhub spawners for Torque, SLURM, and eventually others.
-
-Common attributes of batch submission / resource manager environments will include notions of:
+"""
+Batch spawners.
+This file contains an abstraction layer for batch job queueing systems,
+and implements Jupyterhub spawners for Torque, SLURM, and eventually
+others.
+Common attributes of batch submission / resource manager environments
+will include notions of:
   * queue names, resource manager addresses
   * resource limits including runtime, number of processes, memory
-  * singleuser child process running on (usually remote) host not known until runtime
+  * singleuser child process running on (usually remote) host not known
+  until runtime
   * job submission and monitoring via resource manager utilities
   * remote execution via submission of templated scripts
   * job names instead of PIDs
@@ -39,11 +41,13 @@ import getpass
 
 
 def format_template(template, *args, **kwargs):
-    """Format a template, either using jinja2 or str.format().
-
+    """
+    Format a template, either using jinja2 or str.format().
     Use jinja2 if the template is a jinja2.Template, or contains '{{' or
     '{%'.  Otherwise, use str.format() for backwards compatability with
     old scripts (but you can't mix them).
+    :param jinja2.Template | str template:
+    :rtype: jinja2.Template | str
     """
     if isinstance(template, Template):
         return template.render(*args, **kwargs)
@@ -52,21 +56,22 @@ def format_template(template, *args, **kwargs):
     return template.format(*args, **kwargs)
 
 
-class BatchSpawnerBase(Spawner):
-    """Base class for spawners using resource manager batch job submission mechanisms
-
-    This base class is developed targetting the TorqueSpawner and SlurmSpawner, so by default
-    assumes a qsub-like command that reads a script from its stdin for starting jobs,
-    a qstat-like command that outputs some data that can be parsed to check if the job is running
-    and on what remote node, and a qdel-like command to cancel a job. The goal is to be
-    sufficiently general that a broad range of systems can be supported with minimal overrides.
-
-    At minimum, subclasses should provide reasonable defaults for the traits:
+    """
+    Base class for spawners using resource manager batch job submission
+    mechanisms.
+    This base class is developed targetting the TorqueSpawner and
+    SlurmSpawner, so by default assumes a qsub-like command that reads a
+    script from its stdin for starting jobs, a qstat-like command that
+    outputs some data that can be parsed to check if the job is running
+    and on what remote node, and a qdel-like command to cancel a job. The
+    goal is to be sufficiently general that a broad range of systems can
+    be supported with minimal overrides.
+    At minimum, subclasses should provide reasonable defaults for the
+    traits:
         batch_script
         batch_submit_cmd
         batch_query_cmd
         batch_cancel_cmd
-
     and must provide implementations for the methods:
         state_ispending
         state_isrunning
@@ -195,7 +200,12 @@ class BatchSpawnerBase(Spawner):
 
     # Prepare substitution variables for templates using req_xyz traits
     def get_req_subvars(self):
-        reqlist = [ t for t in self.trait_names() if t.startswith('req_') ]
+        """
+        Preparing substitution variables for templates using req_xyz
+        traits.
+        :return: Substitution variables.
+        :rtype: dict
+        """
         subvars = {}
         for t in reqlist:
             subvars[t[4:]] = getattr(self, t, '')
@@ -203,19 +213,21 @@ class BatchSpawnerBase(Spawner):
             subvars['keepvars'] += ',' + subvars['keepvars_extra']
         return subvars
 
-    batch_submit_cmd = Unicode('',
-        help="Command to run to submit batch scripts. Formatted using req_xyz traits as {xyz}."
-        ).tag(config=True)
+        """
+        Parsing output of submit command to get job id.
+        :param str output: Output of submit command, scheduler-specific.
+        :raises NotImplementedError: Must be implemented in a subclass.
+        """
 
-    def parse_job_id(self, output):
-        "Parse output of submit command to get job id."
-        return output
-
-    def cmd_formatted_for_batch(self):
-        """The command which is substituted inside of the batch script"""
-        return ' '.join([self.batchspawner_singleuser_cmd] + self.cmd + self.get_args())
-
-    async def run_command(self, cmd, input=None, env=None):
+        """
+        Running a job scheduler command.
+        :param str cmd: Job scheduler command.
+        :param str | None cmd_input: Batch script or None.
+        :param env: [description], defaults to None
+        :type env: [type], optional
+        :return: Output of a job scheduler command.
+        :rtype: str
+        """
         proc = await asyncio.create_subprocess_shell(cmd, env=env,
                                                     stdin=asyncio.subprocess.PIPE,
                                                     stdout=asyncio.subprocess.PIPE,
@@ -252,11 +264,20 @@ class BatchSpawnerBase(Spawner):
         return out
 
     async def _get_batch_script(self, **subvars):
-        """Format batch script from vars"""
+        """
+        Formating batch script from vars.
+        :return: Formatted script.
+        :rtype: str
+        """
         # Could be overridden by subclasses, but mainly useful for testing
         return format_template(self.batch_script, **subvars)
 
     async def submit_batch_script(self):
+        """
+        Submitting a formated script to queueing system.
+        :return: Job id.
+        :rtype: str
+        """
         subvars = self.get_req_subvars()
         # `cmd` is submitted to the batch system
         cmd = ' '.join((format_template(self.exec_prefix, **subvars),
@@ -294,7 +315,7 @@ class BatchSpawnerBase(Spawner):
 
     async def read_job_state(self, query_cmd):
         """
-        Get job status based on a query.
+        Getting job status (running, pending, etc.) based on a query.
         :param traitlets.Unicode query_cmd: Query with parameters.
         :return: Job status.
         :rtype: str
@@ -322,6 +343,9 @@ class BatchSpawnerBase(Spawner):
         ).tag(config=True)
 
     async def cancel_batch_job(self):
+        """
+        Cancelling a job by job_id.
+        """
         subvars = self.get_req_subvars()
         subvars['job_id'] = self.job_id
         cmd = ' '.join((format_template(self.exec_prefix, **subvars),
@@ -330,13 +354,17 @@ class BatchSpawnerBase(Spawner):
         await self.run_command(cmd)
 
     def load_state(self, state):
-        """load job_id from state"""
+        """
+        Load job_id from state.
+        """
         super(BatchSpawnerBase, self).load_state(state)
         self.job_id = state.get('job_id', '')
         self.job_status = state.get('job_status', '')
 
     def get_state(self):
-        """add job_id to state"""
+        """
+        Adding job_id to state.
+        """
         state = super(BatchSpawnerBase, self).get_state()
         if self.job_id:
             state['job_id'] = self.job_id
@@ -345,29 +373,43 @@ class BatchSpawnerBase(Spawner):
         return state
 
     def clear_state(self):
-        """clear job_id state"""
+        """
+        Clearing job_id and job status.
+        """
         super(BatchSpawnerBase, self).clear_state()
         self.job_id = ""
         self.job_status = ''
 
     def make_preexec_fn(self, name):
-        """make preexec fn to change uid (if running as root) before job submission"""
-        return set_user_setuid(name)
+        """
+        Making preexec function to change uid (if running as root) before
+        job submission.
+        """
 
     def state_ispending(self):
-        "Return boolean indicating if job is still waiting to run, likely by parsing self.job_status"
-        raise NotImplementedError("Subclass must provide implementation")
+        """
+        Returning boolean indicating if job is still waiting to run, likely by parsing self.job_status.
+        :raises NotImplementedError: Must be implemented in a subclass.
+        """
 
     def state_isrunning(self):
-        "Return boolean indicating if job is running, likely by parsing self.job_status"
-        raise NotImplementedError("Subclass must provide implementation")
+        """
+        Returning boolean indicating if job is running, likely by parsing self.job_status.
+        :raises NotImplementedError: Must be implemented in a subclass.
+        """
 
     def state_gethost(self):
-        "Return string, hostname or addr of running job, likely by parsing self.job_status"
-        raise NotImplementedError("Subclass must provide implementation")
+        """
+        Returning string, hostname or addr of running job, likely by parsing self.job_status.
+        :raises NotImplementedError: Must be implemented in a subclass.
+        """
 
     async def poll(self):
-        """Poll the process"""
+        """
+        Polling a process by job_id.
+        :return: None for running or pending job, 1 otherwise.
+        :rtype: str | NoneType
+        """
         if self.job_id is not None and len(self.job_id) > 0:
             await self.read_job_state(self.batch_query_cmd)
             if self.state_isrunning() or self.state_ispending():
@@ -386,7 +428,12 @@ class BatchSpawnerBase(Spawner):
         ).tag(config=True)
 
     async def start(self):
-        """Start the process"""
+        """
+        Start-up method.
+        Submitting batch script and monitoring the progess.
+        :return: IP and port.
+        :rtype: str, int
+        """
         self.ip = self.traits()['ip'].default_value
         self.port = self.traits()['port'].default_value
 
@@ -436,12 +483,12 @@ class BatchSpawnerBase(Spawner):
         return self.ip, self.port
 
     async def stop(self, now=False):
-        """Stop the singleuser server job.
-
-        Returns immediately after sending job cancellation command if now=True, otherwise
-        tries to confirm that job is no longer running."""
-
-        self.log.info("Stopping server job " + self.job_id)
+        """
+        Stopping the singleuser server job.
+        Returns immediately after sending job cancellation command if
+        now=True, otherwise tries to confirm that job is no longer
+        running.
+        """
         await self.cancel_batch_job()
         if now:
             return
@@ -457,6 +504,9 @@ class BatchSpawnerBase(Spawner):
 
     @async_generator
     async def progress(self):
+        """
+        Monitoring job status.
+        """
         while True:
             if self.state_ispending():
                 await yield_({
@@ -474,21 +524,23 @@ class BatchSpawnerBase(Spawner):
             await gen.sleep(1)
 
 class BatchSpawnerRegexStates(BatchSpawnerBase):
-    """Subclass of BatchSpawnerBase that uses config-supplied regular expressions
-    to interact with batch submission system state. Provides implementations of
-        state_ispending
-        state_isrunning
-        state_gethost
-
+    """
+    Subclass of BatchSpawnerBase that uses config-supplied regular
+    expressions to interact with batch submission system state.
+    Provides implementations of
+    * state_ispending
+    * state_isrunning
+    * state_gethost
     In their place, the user should supply the following configuration:
-        state_pending_re - regex that matches job_status if job is waiting to run
-        state_running_re - regex that matches job_status if job is running
-        state_exechost_re - regex with at least one capture group that extracts
-                            execution host from job_status
-        state_exechost_exp - if empty, notebook IP will be set to the contents of the
-            first capture group. If this variable is set, the match object
-            will be expanded using this string to obtain the notebook IP.
-            See Python docs: re.match.expand
+    * state_pending_re - regex that matches job_status if job is waiting
+    to run
+    * state_running_re - regex that matches job_status if job is running
+    * state_exechost_re - regex with at least one capture group that
+    extracts execution host from job_status
+    * state_exechost_exp - if empty, notebook IP will be set to the
+    contents of the first capture group. If this variable is set, the
+    match object will be expanded using this string to obtain the
+    notebook IP. See Python docs: re.match.expand.
     """
     state_pending_re = Unicode('',
         help="Regex that matches job_status if job is waiting to run").tag(config=True)
@@ -505,21 +557,34 @@ class BatchSpawnerRegexStates(BatchSpawnerBase):
         See Python docs: re.match.expand""").tag(config=True)
 
     def state_ispending(self):
-        assert self.state_pending_re, "Misconfigured: define state_running_re"
+        """
+        Querying for "pending" status.
+        :return: True for pending, False otherwise.
+        :rtype: bool
+        """
         if self.job_status and re.search(self.state_pending_re, self.job_status):
             return True
         else:
             return False
 
     def state_isrunning(self):
-        assert self.state_running_re, "Misconfigured: define state_running_re"
+        """
+        Querying for "running" status.
+        :return: True for running, False otherwise.
+        :rtype: bool
+        """
         if self.job_status and re.search(self.state_running_re, self.job_status):
             return True
         else:
             return False
 
     def state_gethost(self):
-        assert self.state_exechost_re, "Misconfigured: define state_exechost_re"
+        """
+        Returning hostname or addr of running job, by parsing
+        self.job_status.
+        :return: Hostname or addr of running job.
+        :rtype: str
+        """
         match = re.search(self.state_exechost_re, self.job_status)
         if not match:
             self.log.error("Spawner unable to match host addr in job status: " + self.job_status)
@@ -599,11 +664,19 @@ class PBSSpawner(TorqueSpawner):
 
 
 class UserEnvMixin:
-    """Mixin class that computes values for USER, SHELL and HOME in the environment passed to
-    the job submission subprocess in case the batch system needs these for the batch script."""
+    """
+    Mixin class that computes values for USER, SHELL and HOME in the
+    environment passed to the job submission subprocess in case the batch
+    system needs these for the batch script.
+    """
 
     def user_env(self, env):
-        """get user environment"""
+        """
+        Augmenting environment of spawned process with user specific env
+        variables.
+        :param env: Environment of spawned process.
+        :return: Augmented environment.
+        """
         env['USER'] = self.user.name
         home = pwd.getpwnam(self.user.name).pw_dir
         shell = pwd.getpwnam(self.user.name).pw_shell
@@ -614,8 +687,8 @@ class UserEnvMixin:
         return env
 
     def get_env(self):
-        """Get user environment variables to be passed to the user's job
-
+        """
+        Getting user environment variables to be passed to the user's job.
         Everything here should be passed to the user's job as
         environment.  Caution: If these variables are used for
         authentication to the batch system commands as an admin, be
@@ -683,6 +756,12 @@ echo "jupyterhub-singleuser ended gracefully"
     state_exechost_re = Unicode(r'\s+((?:[\w_-]+\.?)+)$').tag(config=True)
 
     def parse_job_id(self, output):
+        """
+        Parsing output of submit command to get job id.
+        :param str output: Output of submit command, scheduler-specific.
+        :return: Job id in queue.
+        :rtype: str
+        """
         # make sure jobid is really a number
         try:
             # use only last line to circumvent slurm bug
@@ -696,14 +775,21 @@ echo "jupyterhub-singleuser ended gracefully"
 
 
 class MultiSlurmSpawner(SlurmSpawner):
-    '''When slurm has been compiled with --enable-multiple-slurmd, the
+    """
+    When Slurm has been compiled with --enable-multiple-slurmd, the
        administrator sets the name of the slurmd instance via the slurmd -N
        option. This node name is usually different from the hostname and may
        not be resolvable by JupyterHub. Here we enable the administrator to
-       map the node names onto the real hostnames via a traitlet.'''
-    daemon_resolver = Dict({}, help="Map node names to hostnames").tag(config=True)
+    map the node names onto the real hostnames via a traitlet.
+    """
 
     def state_gethost(self):
+        """
+        Returning hostname or addr of running job, by parsing
+        self.job_status.
+        :return: Hostname or addr of running job.
+        :rtype: str
+        """
         host = SlurmSpawner.state_gethost(self)
         return self.daemon_resolver.get(host, host)
 
@@ -732,9 +818,20 @@ class GridengineSpawner(BatchSpawnerBase):
     job_id = Unicode('$JOB_ID').tag(config=True)
 
     def parse_job_id(self, output):
+        """
+        Parsing output of submit command to get job id.
+        :param str output: Output of submit command, scheduler-specific.
+        :return: Job id in queue.
+        :rtype: str
+        """
         return output.split(' ')[2]
 
     def state_ispending(self):
+        """
+        Querying for "pending" status.
+        :return: True for pending, False otherwise.
+        :rtype: bool
+        """
         if self.job_status:
             job_info = ET.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']".format(self.job_id))
@@ -743,6 +840,11 @@ class GridengineSpawner(BatchSpawnerBase):
         return False
 
     def state_isrunning(self):
+        """
+        Querying for "running" status.
+        :return: True for running, False otherwise.
+        :rtype: bool
+        """
         if self.job_status:
             job_info = ET.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']".format(self.job_id))
@@ -751,6 +853,12 @@ class GridengineSpawner(BatchSpawnerBase):
         return False
 
     def state_gethost(self):
+        """
+        Returning hostname or addr of running job, by parsing
+        self.job_status.
+        :return: Hostname or addr of running job.
+        :rtype: str
+        """
         if self.job_status:
             queue_name = ET.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']/queue_name".format(self.job_id))
@@ -789,6 +897,12 @@ Queue
     state_exechost_re = Unicode(r'^\w*, .*@([^ ]*)').tag(config=True)
 
     def parse_job_id(self, output):
+        """
+        Parsing output of submit command to get job id.
+        :param str output: Output of submit command, scheduler-specific.
+        :return: Job id in queue.
+        :rtype: str
+        """
         match = re.search(r'.*submitted to cluster ([0-9]+)', output)
         if match:
             return match.groups()[0]
@@ -802,7 +916,10 @@ Queue
 
 
 class LsfSpawner(BatchSpawnerBase):
-    '''A Spawner that uses IBM's Platform Load Sharing Facility (LSF) to launch notebooks.'''
+    """
+    A Spawner that uses IBM's Platform Load Sharing Facility (LSF) to
+    launch notebooks.
+    """
 
     batch_script = Unicode('''#!/bin/sh
 #BSUB -R "select[type==any]"    # Allow spawning on non-uniform hardware
@@ -835,21 +952,43 @@ class LsfSpawner(BatchSpawnerBase):
         return env
 
     def parse_job_id(self, output):
+        """
+        Parsing output of submit command to get job id.
+        :param str output: Output of submit command, scheduler-specific.
+        :return: Job id in queue.
+        :rtype: str
+        """
         # Assumes output in the following form:
         # "Job <1815> is submitted to default queue <normal>."
         return output.split(' ')[1].strip('<>')
 
     def state_ispending(self):
+        """
+        Querying for "pending" status.
+        :return: True for pending, False otherwise.
+        :rtype: bool
+        """
         # Parse results of batch_query_cmd
         # Output determined by results of self.batch_query_cmd
         if self.job_status:
             return self.job_status.split(' ')[0].upper() in {'PEND', 'PUSP'}
 
     def state_isrunning(self):
+        """
+        Querying for "running" status.
+        :return: True for running, False otherwise.
+        :rtype: bool
+        """
         if self.job_status:
             return self.job_status.split(' ')[0].upper() == 'RUN'
 
     def state_gethost(self):
+        """
+        Returning hostname or addr of running job, by parsing
+        self.job_status.
+        :return: Hostname or addr of running job.
+        :rtype: str
+        """
         if self.job_status:
             return self.job_status.split(' ')[1].strip()
 
