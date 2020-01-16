@@ -148,15 +148,22 @@ def kill_job(job):
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = spawner.req_username
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_cluster/STATS'
-STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
-STUDY_OPTIONS['sampling_size'] = 6                 # initial number of parameter sets
-STUDY_OPTIONS['nb_timesteps'] = 100                # number of timesteps, from Melissa point of view
+## number of varying parameters of the study:
+STUDY_OPTIONS['nb_parameters'] = 5
+## initial number of parameter sets:
+STUDY_OPTIONS['sampling_size'] = 6
+## number of timesteps, from Melissa point of view:
+STUDY_OPTIONS['nb_timesteps'] = 100
 STUDY_OPTIONS['threshold_values'] = 0.7
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
-STUDY_OPTIONS['field_names'] = ['heat1']           # list of field names
-STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
-STUDY_OPTIONS['checkpoint_interval'] = 20          # server checkpoints every 30 seconds
-STUDY_OPTIONS['coupling'] = 'MELISSA_COUPLING_MPI' # option for Sobol' simulation groups coupling
+## list of field names:
+STUDY_OPTIONS['field_names'] = ['heat1']
+## simulations are restarted if no life sign for 40 seconds:
+STUDY_OPTIONS['simulation_timeout'] = 40
+## server checkpoints every 30 seconds:
+STUDY_OPTIONS['checkpoint_interval'] = 20
+## option for Sobol' simulation groups coupling:
+STUDY_OPTIONS['coupling'] = 'MELISSA_COUPLING_MPI'
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True
