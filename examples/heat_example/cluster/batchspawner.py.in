@@ -35,6 +35,7 @@ def format_template(template, *args, **kwargs):
         return template.render(*args, **kwargs)
     elif '{{' in template or '{%' in template:
         return jinja2.Template(template).render(*args, **kwargs)
+    else:
     return template.format(*args, **kwargs)
 
 
@@ -64,6 +65,12 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
     start_timeout = traitlets.Integer(300,  ## TODO
         ).tag(config=True)
     ## override default server ip since batch jobs normally running remotely
+    ip = traitlets.Unicode('0.0.0.0',  ## TODO
+            help='address for singleuser server to listen at'
+        ).tag(config=True)
+    exec_prefix = traitlets.Unicode('',
+            help='standard executon prefix (e.g. sudo -E -u {username})'
+        ).tag(config=True)
     ## all these req_foo traits will be available as substvars for
     ## templated strings
     req_queue = traitlets.Unicode('',
@@ -118,14 +125,6 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
     batch_submit_cmd = traitlets.Unicode('',
         ).tag(config=True)
 
-    # Raw output of job submission command unless overridden
-    ## initially env var template, substituted later with an actual number
-    job_id = Unicode()
-
-    # Will get the raw output of the job status command unless overridden
-    job_status = Unicode()
-
-    # Prepare substitution variables for templates using req_xyz traits
     def get_req_subvars(self):
         """
         Preparing substitution variables for templates using req_xyz
@@ -134,7 +133,7 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         :rtype: dict
         """
         subvars = {}
-        for t in reqlist:
+        for t in [t for t in self.trait_names() if t.startswith('req_')]:
             subvars[t[4:]] = getattr(self, t, '')
         if subvars.get('keepvars_extra'):
             subvars['keepvars'] += ',' + subvars['keepvars_extra']
@@ -146,6 +145,7 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         :raises NotImplementedError: Must be implemented in a subclass.
         """
 
+    async def run_command(self, cmd, cmd_input=None, env=None):
         """
         Running a job scheduler command.
         :param str cmd: Job scheduler command.
@@ -161,8 +161,8 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
                                                     stderr=asyncio.subprocess.PIPE)
         inbytes=None
 
-        if input:
-            inbytes=input.encode()
+        if cmd_input:
+            inbytes = cmd_input.encode()
 
         try:
             out, eout = await proc.communicate(input=inbytes)
@@ -209,15 +209,12 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         ## `cmd` is submitted to the batch system
         cmd = ' '.join((format_template(self.exec_prefix, **subvars),
                         format_template(self.batch_submit_cmd, **subvars)))
-        # `subvars['cmd']` is what is run _inside_ the batch script,
-        # put into the template.
-        subvars['cmd'] = self.cmd_formatted_for_batch()
         if hasattr(self, 'user_options'):
             subvars.update(self.user_options)
         script = await self._get_batch_script(**subvars)
         self.log.info('Spawner submitting job using ' + cmd)
         self.log.info('Spawner submitted script:\n' + script)
-        out = await self.run_command(cmd, input=script)#, env=self.get_env())
+        out = await self.run_command(cmd, script)#, env=self.get_env())
         try:
             self.log.info('Job submitted. cmd: ' + cmd + ' output: ' + out)
             self.job_id = self.parse_job_id(out)
@@ -523,7 +520,6 @@ class TorqueSpawner(BatchSpawnerRegexStates):
 #PBS {options}
 
 {prologue}
-{cmd}
 {epilogue}
 """).tag(config=True)
 
@@ -568,7 +564,6 @@ class PBSSpawner(TorqueSpawner):
 {% if options %}#PBS {{options}}{% endif %}
 
 {{prologue}}
-{{cmd}}
 {{epilogue}}
 """).tag(config=True)
 
@@ -633,8 +628,7 @@ class SlurmSpawner(UserEnvMixin,BatchSpawnerRegexStates):
 trap 'echo SIGTERM received' TERM
 {{prologue}}
 which jupyterhub-singleuser
-{% if srun %}{{srun}} {% endif %}{{cmd}}
-echo "jupyterhub-singleuser ended gracefully"
+{% if srun %}{{srun}} {% endif %}
 {{epilogue}}
 """).tag(config=True)
 
@@ -715,7 +709,6 @@ class GridengineSpawner(BatchSpawnerBase):
 #$ {options}
 
 {prologue}
-{cmd}
 {epilogue}
 """).tag(config=True)
 
@@ -785,7 +778,7 @@ class CondorSpawner(UserEnvMixin,BatchSpawnerRegexStates):
 Executable = /bin/sh
 RequestMemory = {memory}
 RequestCpus = {nprocs}
-Arguments = \"-c 'exec {cmd}'\"
+Arguments = \'-c 'exec '\'
 Remote_Initialdir = {homedir}
 Output = {homedir}/{simu_output_log}
 Error = {homedir}/{simu_error_log}
@@ -839,7 +832,6 @@ class LsfSpawner(BatchSpawnerBase):
 #BSUB -e {homedir}/{simu_error_log}
 
 {prologue}
-{cmd}
 {epilogue}
 ''').tag(config=True)
 
