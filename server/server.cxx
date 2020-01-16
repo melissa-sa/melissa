@@ -849,6 +849,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     melissa_print(VERBOSE_INFO, "Statistic fields saved in %s\n\n", dir);
                 }
             }
+            simu_data->status = 2;
             save_simu_states (&server_ptr->simulations, &server_ptr->comm_data);
             if (end_signal == SIGINT)
             {

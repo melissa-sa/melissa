@@ -264,23 +264,29 @@ static inline void gatherv_init(field_data_t  *data_field,
     data_field->gatherv_rcvcnt[comm_size-1] = vect_sizes[comm_size-1];
 }
 
+// this function is used when the simulation has only one process
+// it defines the partitioning of the data of one field.
 static inline void comm_1_to_m_init (global_data_t *data_glob,
                                      field_data_t  *data_field,
                                      const int      rank)
 {
     int  i;
-    int  nb_proc_server = data_glob->nb_proc_server;
+    int  nb_proc_server = data_glob->nb_proc_server; // number of processes of the server
 
-    data_field->push_rank = melissa_malloc (nb_proc_server * sizeof(int));
-    data_field->pull_rank = melissa_malloc (nb_proc_server * sizeof(int));
+    data_field->push_rank = melissa_malloc (nb_proc_server * sizeof(int)); // for each of the total_nb_messages messages, the rank of the simulation that will send it (here, 0)
+    data_field->pull_rank = melissa_malloc (nb_proc_server * sizeof(int)); // for each of the total_nb_messages messages, the rank of the server that will receive it
 
     for (i=0; i<nb_proc_server; i++)
     {
+        // here the messages distribution among the processes is trivial.
+        // there will be nb_proc_server mesages, each one sent to its corresponding process, by process 0 of the simulation.
         data_field->push_rank[i] = 0;
         data_field->pull_rank[i] = i;
     }
 
     data_field->sdispls[0] = 0;
+    // rank zero sends everything, evenly partitioned.
+    // in the server side, the same partitiçoning is computed.
     if (rank == 0)
     {
         for (i=0; i<nb_proc_server-1; i++)
@@ -294,6 +300,7 @@ static inline void comm_1_to_m_init (global_data_t *data_glob,
         data_field->local_nb_messages = nb_proc_server;
     }
     else
+    // the other ranks send nothing
     {
         for (i=0; i<nb_proc_server-1; i++)
         {
@@ -308,6 +315,7 @@ static inline void comm_1_to_m_init (global_data_t *data_glob,
 
 }
 
+// this function compute the data redistribution from N simulation processes to M server processes.
 static inline void comm_n_to_m_init (global_data_t *data_glob,
                                      field_data_t  *data_field,
                                      const int      rank)
@@ -318,26 +326,28 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
     int  server_rank  = 0;
     int  server_count = 0;
     int  new_message = 0;
+    // server_vect_size[] will store the local vect sizes from the server point of view
     int *server_vect_size = data_field->server_vect_size;
     int  nb_proc_server = data_glob->nb_proc_server;
     int  nb_messages = 0;
     int  nb_elem_message = 0;
 
-    data_field->total_nb_messages = 1;
-    data_field->local_nb_messages = 0;
+    data_field->total_nb_messages = 1; // at least one message
+    data_field->local_nb_messages = 0; // can stay zero in some extreme cases
 
     if (rank == 0)
     {
         data_field->local_nb_messages = 1;
     }
 
+    // we count and attribute each data point to a simulation rank and a server rank.
     for (i=0; i<data_field->global_vect_size; i++)
     {
         if (client_count < data_field->local_vect_sizes[client_rank])
         {
             client_count += 1;
         }
-        else
+        else // if the current point is on the next simulation rank, we update the client rank and request to add a new message
         {
             client_count = 1;
             client_rank += 1;
@@ -347,7 +357,7 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
         {
             server_count += 1;
         }
-        else
+        else // if the current point is on the next server rank, we update the server rank and request to add a new message
         {
             server_count = 1;
             server_rank += 1;
@@ -356,21 +366,23 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
 
         if (client_rank == rank)
         {
+            // increment the send_count of the server_rank corresponding to the data point
             data_field->send_counts[server_rank] += 1;
         }
 
-        if (new_message == 1)
+        if (new_message == 1) // if one of the conditions before requested a new message:
         {
-            data_field->total_nb_messages += 1;
+            data_field->total_nb_messages += 1; // add a message (global)
             if (client_rank == rank)
             {
-                data_field->local_nb_messages += 1;
+                data_field->local_nb_messages += 1; // add a message (local)
             }
             new_message = 0;
         }
     }
 
     data_field->sdispls[0] = 0;
+    // we compute the sdispls correponding to the send_counts
     for (i=0; i<nb_proc_server-1; i++)
     {
         data_field->sdispls[i+1] = data_field->sdispls[i] + data_field->send_counts[i];
@@ -378,8 +390,8 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
 
     new_message = 0;
 
-    data_field->push_rank = melissa_malloc (data_field->total_nb_messages * sizeof(int));
-    data_field->pull_rank = melissa_malloc (data_field->total_nb_messages * sizeof(int));
+    data_field->push_rank = melissa_malloc (data_field->total_nb_messages * sizeof(int)); // for each of the total_nb_messages messages, the rank of the simulation that will send it
+    data_field->pull_rank = melissa_malloc (data_field->total_nb_messages * sizeof(int)); // for each of the total_nb_messages messages, the rank of the server that will receive it
 
     data_field->push_rank[0] = 0;
     data_field->pull_rank[0] = 0;
@@ -387,6 +399,7 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
     client_count = 0;
     server_rank  = 0;
     server_count = 0;
+    // We do a last loop over the total number of messages, and we compute the push_rank (client) and the pull_rank (server) of each message.
     for (i=0; i<data_field->global_vect_size; i++)
     {
         if (client_count < data_field->local_vect_sizes[client_rank])
@@ -472,39 +485,41 @@ static void melissa_init_internal (const char *field_name,
 
     total_comm_time = 0.0;
     total_bytes_sent = 0;
-
+    // this function is called once per simulation field. However, some actions are required only during the first call (to contact the server for example).
+    // this is the meaning of this condition.
     if (first_init != 0)
     {
         global_data.buff_size = 0;
-        global_data.context = zmq_ctx_new ();
-        global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
+        global_data.context = zmq_ctx_new (); // initialize zmq context
+        global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ); // create a REQ socket to send a request to the server
 #ifdef CHECK_SIMU_DECONNECTION
         global_data.deconnexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
 #endif // CHECK_SIMU_DECONNECTION
         global_data.sobol_requester = NULL;
         global_data.comm_size = comm_size;
 #ifdef BUILD_WITH_MPI
-        if(comm)//comm may be null in case of a call of melissa_init_no_mpi with a libmelissa_api.so compiled with MPI support with a non MPI client. This if is here to avoid a useless MPI call outside MPI context.
+        if(comm) // comm may be null in case of a call of melissa_init_no_mpi with a libmelissa_api.so compiled with MPI support with a non MPI client. This if is here to avoid a useless MPI call outside MPI context.
           MPI_Comm_dup(comm, &global_data.comm);
 #else // BUILD_WITH_MPI
         global_data.comm = comm;
 #endif // BUILD_WITH_MPI
-        char* simu_id_a = getenv("MELISSA_SIMU_ID");
+        char* simu_id_a = getenv("MELISSA_SIMU_ID"); // get the simu ID from the environment variable
         if (simu_id_a == 0)
         {
             printf("Specify the MELISSA_SIMU_ID environment variable as an int in your launch_group command in options.py! (e.g. cmd = 'mpirun -x MELISSA_SIMU_ID=%%d' %% group.simu_id ");
             exit(1);
         }
         simu_id = atoi(simu_id_a);
-    }
+    } // end if (first_init != 0)
 
     // get main server node name
-    if (rank == 0 && first_init != 0)
+    if (rank == 0 && first_init != 0) // only on first call, and for proc 0
     {
-        server_node_name = getenv("MELISSA_SERVER_NODE_NAME");
+        server_node_name = getenv("MELISSA_SERVER_NODE_NAME"); // get the server node name from the environment variable
         melissa_print (VERBOSE_DEBUG, "Server node name: %s\n", server_node_name);
         if (server_node_name == NULL)
         {
+            // here for backward compatibility
             server_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME);
             file = fopen("../../DATA/server_name.txt", "r");
 
@@ -535,15 +550,18 @@ static void melissa_init_internal (const char *field_name,
         global_data.rinit_tab[1] = 1;
         zmq_msg_init_size (&msg, 2 * sizeof(int));
         buf_ptr = zmq_msg_data (&msg);
+        // we put the mpi comm_size and the simu_id in the data buffer of the message
         memcpy (buf_ptr, &comm_size, sizeof(int));
         buf_ptr += sizeof(int);
         memcpy (buf_ptr, &simu_id, sizeof(int));
         sprintf (port_name, "tcp://%s:2003", server_node_name);
+        // we connect to the rank 0 of the server on port 2003
         melissa_connect (global_data.connexion_requester, port_name);
 #ifdef CHECK_SIMU_DECONNECTION
         sprintf (port_name, "tcp://%s:2002", server_node_name);
         melissa_connect (global_data.deconnexion_requester, port_name);
 #endif // CHECK_SIMU_DECONNECTION
+        // we send the message
         ret = zmq_msg_send (&msg, global_data.connexion_requester, 0);
         if (ret == -1)
         {
@@ -552,6 +570,7 @@ static void melissa_init_internal (const char *field_name,
         }
         zmq_msg_close (&msg);
         zmq_msg_init (&msg);
+        // we wait for the response
         ret = zmq_msg_recv (&msg, global_data.connexion_requester, 0);
         if (ret == -1)
         {
@@ -559,52 +578,63 @@ static void melissa_init_internal (const char *field_name,
             print_zmq_error(ret);
         }
         buf_ptr = zmq_msg_data (&msg);
+        // we copy the first 5 int of the response data in the rinit tab. We will need it to init the persistent data structures.
         memcpy(global_data.rinit_tab, buf_ptr, 5 * sizeof(int));
+        // The pointer is set to point after the 5 first int. We will comme to it later. That is why we do not close the message yet.
         buf_ptr += 5 * sizeof(int);
-    }
+    } // endif (rank == 0 && first_init != 0)
 
     // init data structure
     if (first_init != 0)
     {
+        // allocate memory for the first field. The simulation must send at least one field.
         field_data = melissa_malloc(sizeof (field_data_t));
+        // The field is identified by its name.
         memcpy (field_data->name, field_name, MPI_MAX_PROCESSOR_NAME);
         field_data->next = NULL;
         field_data->id = 0;
+        // set field_data_ptr to point to the first field of the list
         field_data_ptr = field_data;
     }
-    else{
+    else
+    {
         field_data_ptr = get_field_data(field_data, field_name);
-        if (field_data_ptr == NULL)
+        if (field_data_ptr == NULL) // then the field does not exist
         {
-            field_data_ptr = get_last_field (field_data);
-            field_data_ptr->next = melissa_malloc(sizeof (field_data_t));
+            field_data_ptr = get_last_field (field_data); // set field_data_ptr to point to the last existing field
+            field_data_ptr->next = melissa_malloc(sizeof (field_data_t)); // we allocate the next one
             field_data_ptr->next->id = field_data_ptr->id + 1;
-            field_data_ptr = field_data_ptr->next;
+            field_data_ptr = field_data_ptr->next; // move forward
             memcpy (field_data_ptr->name, field_name, MPI_MAX_PROCESSOR_NAME);
             field_data_ptr->next = NULL;
         }
-        else
+        else // then the user already called the melissa_init function for this field
         {
             fprintf (stdout, "WARNING: field already initialized (%s)\n", field_name);
             return;
         }
     }
 
+    // field_data_ptr now points to the current field.
     field_data_ptr->global_vect_size = 0;
     field_data_ptr->local_vect_sizes = malloc(comm_size * sizeof(int));
     field_data_ptr->data_pusher = NULL;
     field_data_ptr->timestamp = 0;
 
-    // bcast infos
 #ifdef BUILD_WITH_MPI
     if (comm_size > 1)
     {
+        // bcast server infos from 0 to all
         if (first_init != 0)
         {
             MPI_Bcast(global_data.rinit_tab, 5, MPI_INT, 0, comm);
+            // we will see later the usage of the values in this 5 ints
         }
         i = local_vect_size;
+        // we use a allgather to gather all the local_vect_sizes (notice the "s" at the end)
+        // local_vect_size si a int, field_data_ptr->local_vect_sizes is an array of int of size comm_size
         MPI_Allgather(&i, 1, MPI_INT, field_data_ptr->local_vect_sizes, 1, MPI_INT, comm);
+        // we compute global_vect_size from the local_vect_sizes
         for (i=0; i<comm_size; i++)
         {
             field_data_ptr->global_vect_size += field_data_ptr->local_vect_sizes[i];
@@ -617,16 +647,20 @@ static void melissa_init_internal (const char *field_name,
         field_data_ptr->global_vect_size = local_vect_size;
     }
 
-    if (first_init != 0)
+    if (first_init != 0) // only in the first call
     {
         port_names = NULL;
-        global_data.nb_proc_server = global_data.rinit_tab[0];
-        global_data.sobol = global_data.rinit_tab[1];
-        global_data.learning = global_data.rinit_tab[2];
-        global_data.nb_parameters = global_data.rinit_tab[3];
-        init_verbose_lvl (global_data.rinit_tab[4]);
+        global_data.rank = rank;
+        // this is where we use the 5 int sent by the server to the API.
+        global_data.nb_proc_server = global_data.rinit_tab[0]; // the first one is the size of the server.
+        global_data.sobol = global_data.rinit_tab[1]; // second one is 1 if we compute Sobol' indices, 0 otherwise.
+        global_data.learning = global_data.rinit_tab[2]; // third one is a flag for learning. this one affects the data redistribution in melissa_send (not implemented yet).
+        global_data.nb_parameters = global_data.rinit_tab[3]; // the number of varying parameters of the simulations
+        // In the case of Sobol' indices computation, a special communication patern must be set between the members of one Sobol' group.
         if (global_data.sobol == 1)
         {
+            // the user chose his coupling method with the MELISSA_COUPLING environment variable.
+            // if you use mpirun to launch your simulations, simply define the environment variable with -x MELISSA_COUPLING=...
             char* coupling_a = getenv("MELISSA_COUPLING");
             if (coupling_a == 0)
             {
@@ -634,17 +668,28 @@ static void melissa_init_internal (const char *field_name,
                 exit(1);
             }
             global_data.coupling = atoi(coupling_a);
+            // coupling method can be ZMQ, MPI or FlowVR
 
+            // We must have a master simulation in our group. It will be simulation 0 of the group. Don't confuse this ID with the MPI rank.
+            // We do the same comm patern than with Melissa server. we need the node name of the rank 0 of the simulation 0 of the group.
             master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME * sizeof(char));
+            // The simulation's Sobol' rank is retrieved through its simu ID
             global_data.sobol_rank = simu_id % (global_data.nb_parameters + 2);
             global_data.sample_id = simu_id / (global_data.nb_parameters + 2);
+            // Now, each process have 4 different IDs:
+            // - rank (or global_data.rank): its MPI rank in the single simulation MPI communicator
+            // - simu_id: the unique simulation ID defined by Melissa Launcher. Not used past this point.
+            //            It we do not compute Sobol' indices, equivalent to global_data.sample_id
+            // - global_data.sample_id: the ID of the Sobol' group
+            // - global_data.sobol_rank: the rank of the simulation inside its Sobol' group (from 0 to nb_param+1)
 
+            // get the master node name from the environment variable. Only needed if we use COUPLING_ZMQ
             ret = sprintf(master_node_name, "%s", getenv("MELISSA_MASTER_NODE_NAME"));
             if (strcmp(master_node_name, "(null)") == 0)
             {
                 ret = 0;
             }
-            // write master node name node name if not found in env
+            // write master node name node name if not found in env. Always prefer to use the environment variable.
             if (rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && ret < 1)
             {
                 melissa_get_node_name (master_node_name);
@@ -654,66 +699,84 @@ static void melissa_init_internal (const char *field_name,
                 fclose(file);
             }
         }
-        else
+        else // no Sobol' indices
         {
+            // sobol_rank is useless
             global_data.sobol_rank = 0;
+            // sample_id is simu_id
             global_data.sample_id = simu_id;
+            // we don't need coupling
             global_data.coupling = MELISSA_COUPLING_DEFAULT;
         }
-        global_data.rank = rank;
+
+        // we still have to get the server node names to open the messages ports to each server process.
         port_names = malloc (global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+
+        // now we process the end of the server message. It contains all the node names of the server ranks.
+        if (rank == 0) // only rank 0 has the message
+        {
+            memcpy(port_names, buf_ptr, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
+            buf_ptr = NULL;
+            zmq_msg_close (&msg);
+        }
+#ifdef BUILD_WITH_MPI
+        // then we broadcast these node names to all the MPI ranks.
+        if (comm_size > 1)
+        {
+            MPI_Bcast (port_names, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, comm);
+        }
+#endif // BUILD_WITH_MPI
     }
 
+
+    // we will need to know the local vect sizes of the server. This is computed staticaly. The same partition is computed in the server side.
     field_data_ptr->server_vect_size = calloc (global_data.nb_proc_server, sizeof(int));
 
     for (i=0; i<global_data.nb_proc_server; i++)
     {
+        // Simple data partitioning
         field_data_ptr->server_vect_size[i] = field_data_ptr->global_vect_size / global_data.nb_proc_server;
         if (i < field_data_ptr->global_vect_size % global_data.nb_proc_server)
             field_data_ptr->server_vect_size[i] += 1;
     }
 
+    // here we will define the number of elements from our local data that we will need to sent to each server process.
     field_data_ptr->send_counts = calloc (global_data.nb_proc_server, sizeof(int));
+    // and the corresponding stride in the input buffer.
     field_data_ptr->sdispls     = calloc (global_data.nb_proc_server, sizeof(int));
 
-    if (global_data.learning > 0)
+    if (global_data.learning > 0) // learning case: we need to gather all the data on rank 0 befor the send
     {
         comm_1_to_m_init (&global_data,
                           field_data_ptr,
                           rank);
+        // The gatherv_init initialize the mpi_gatherv that will gather the data on rank 0
         gatherv_init(field_data_ptr,
                      field_data_ptr->local_vect_sizes,
                      comm_size);
     }
-    else
+    else // else, we initialize the NxM comm patern
     {
         comm_n_to_m_init (&global_data,
                           field_data_ptr,
                           rank);
     }
 
-    if (rank == 0 && first_init != 0)
-    {
-        memcpy(port_names, buf_ptr, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME * sizeof(char));
-        buf_ptr = NULL;
-        zmq_msg_close (&msg);
-    }
-
-#ifdef BUILD_WITH_MPI
-    if (comm_size > 1 && first_init != 0)
-    {
-        MPI_Bcast (port_names, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, comm);
-    }
-#endif // BUILD_WITH_MPI
-
+    // --------------- //
     // sobol only part //
-    if (global_data.sobol == 1 && first_init != 0)
+    // --------------- //
+
+    if (global_data.sobol == 1 && first_init != 0) // in this section of code, we define the communication patern between members of the Sobol' group.
     {
+        // Three coupling scenarios: MPI, FlowVR, or ZMQ (default).
         switch (global_data.coupling)
         {
         case MELISSA_COUPLING_MPI:
 #ifdef BUILD_WITH_MPI
-            // split MPI_COMM_WORLD for coupled simulations
+            // split MPI_COMM_WORLD for coupled simulations.
+            // only works if all the simulations of the Sobol' group are launched in asingle  MPI MPMD command.
+            // all the simulation's comm communicator of the group must form a partition of the MPI_COMM_WORLD communicator.
+            // here we create a communicator that connects all the simulations processes with the same rank in the comm communicator.
             MPI_Comm_split(MPI_COMM_WORLD, rank, global_data.sobol_rank, &global_data.comm_sobol);
 #else // BUILD_WITH_MPI
             fprintf (stderr, "ERROR: Build with MPI to use MPI coupling");
@@ -723,6 +786,7 @@ static void melissa_init_internal (const char *field_name,
 
         case MELISSA_COUPLING_FLOWVR:
 #ifdef BUILD_WITH_FLOWVR
+            // flowvr coupling script is outside the C code
             flowvr_init(&comm_size, &rank);
 #else // BUILD_WITH_FLOWVR
             fprintf (stderr, "ERROR: Build with FlowVR to use FlowVR coupling");
@@ -731,8 +795,9 @@ static void melissa_init_internal (const char *field_name,
             break;
 
         case MELISSA_COUPLING_ZMQ:
+            // in the case of a ZMQ coupling, we do the same thing than with the server but with the master simulation.
             // get Sobol master node name
-            if (global_data.sobol_rank == 0)
+            if (global_data.sobol_rank == 0) // master simulation
             {
                 if (rank == 0)
                 {
@@ -741,6 +806,7 @@ static void melissa_init_internal (const char *field_name,
                 }
                 if (comm_size > 1)
                 {
+                    // gather node names
                     MPI_Gather(master_node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, master_node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, comm);
                 }
                 else
@@ -749,8 +815,9 @@ static void melissa_init_internal (const char *field_name,
                     memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
                 }
             }
-            if (global_data.sobol_rank != 0)
+            if (global_data.sobol_rank != 0) // not master simulation
             {
+                // get master node name from environment variable.
                 ret = sprintf(master_node_name, "%s", getenv("MELISSA_MASTER_NODE_NAME"));
                 if (strcmp(master_node_name, "(null)") == 0)
                 {
@@ -791,9 +858,9 @@ static void melissa_init_internal (const char *field_name,
                 sprintf (master_node_name, "localhost");
             }
 
-            if (global_data.sobol_rank == 0)
+            if (global_data.sobol_rank == 0) // master simulation
             {
-                if (rank == 0)
+                if (rank == 0) // MPI rank 0
                 {
                     master_requester = zmq_socket (global_data.context, ZMQ_REP);
                     if (0 == strcmp(master_node_name, "localhost"))
@@ -804,10 +871,10 @@ static void melissa_init_internal (const char *field_name,
                     {
                         sprintf (port_name, "tcp://*:3004");
                     }
-                    melissa_bind (master_requester, port_name);
+                    melissa_bind (master_requester, port_name); // opent req/rep port
                 }
             }
-            else // if *sobol_rank != 0
+            else // not master simulation
             {
                 master_requester = zmq_socket (global_data.context, ZMQ_REQ);
                 if (0 == strcmp(master_node_name, "localhost"))
@@ -818,7 +885,7 @@ static void melissa_init_internal (const char *field_name,
                 {
                     sprintf (port_name, "tcp://%s:3004", master_node_name);
                 }
-                melissa_connect (master_requester, port_name);
+                melissa_connect (master_requester, port_name); // Connect to master simulation
             }
             break;
         default:
@@ -826,16 +893,20 @@ static void melissa_init_internal (const char *field_name,
             exit;
         }
     }
+    // -------------- //
     // end sobol only //
+    // -------------- //
 
     if (global_data.sobol_rank == 0)
     {
+        // allocate the PUSH ports that will send data to the server.
+        // if Sobol, only the master simulation needs these ports.
         field_data_ptr->data_pusher = malloc (field_data_ptr->local_nb_messages * sizeof(void*));
 
         j = 0;
         for (i=0; i<field_data_ptr->total_nb_messages; i++)
         {
-            if (rank == field_data_ptr->push_rank[i])
+            if (rank == field_data_ptr->push_rank[i]) // we only open the ports that actualy needs to send data
             {
                 field_data_ptr->data_pusher[j] = zmq_socket (global_data.context, ZMQ_PUSH);
                 zmq_setsockopt (field_data_ptr->data_pusher[j], ZMQ_SNDHWM, &field_data_ptr->local_nb_messages, sizeof(int));
@@ -844,49 +915,47 @@ static void melissa_init_internal (const char *field_name,
                 j += 1;
             }
         }
-
-        if (j != field_data_ptr->local_nb_messages)
+        if (j != field_data_ptr->local_nb_messages) // should never appen
         {
             melissa_print(VERBOSE_WARNING, "Wrong number of data pusher ports");
         }
-        if (global_data.coupling == MELISSA_COUPLING_ZMQ && first_init != 0)
+
+        // we still have to connect the simulations inside a group to gather the data on sobol_rank 0 when we use COUPLING_ZMQ
+        if (global_data.coupling == MELISSA_COUPLING_ZMQ && first_init != 0 && global_data.sobol == 1)
         {
-            if (global_data.sobol == 1)
+            for (i=0; i<(global_data.nb_parameters+1)*comm_size; i++)
             {
-                for (i=0; i<(global_data.nb_parameters+1)*comm_size; i++)
+                if (rank == 0)
                 {
-                    if (rank == 0)
-                    {
-                        //
-                        // send node name here
-                        //
-                        zmq_recv (master_requester, &j, sizeof(int), 0);
-                        if (0 == strcmp(master_node_name, "localhost"))
-                        {
-                            zmq_send (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-                        }
-                        else
-                        {
-                            zmq_send (master_requester, &master_node_names[j*MPI_MAX_PROCESSOR_NAME], MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
-                        }
-                        //
-                        //
-                    }
-                }
-                global_data.sobol_requester = malloc ((global_data.nb_parameters + 1) * sizeof(void*));
-                for (i=0; i<global_data.nb_parameters + 1; i++)
-                {
-                    global_data.sobol_requester[i] = zmq_socket (global_data.context, ZMQ_PULL);
+                    //
+                    // send node name here.
+                    //
+                    zmq_recv (master_requester, &j, sizeof(int), 0);
                     if (0 == strcmp(master_node_name, "localhost"))
                     {
-                        sprintf (port_name, "tcp://*:4%d", 100 + (global_data.sample_id * comm_size * (global_data.nb_parameters+1) + rank * (global_data.nb_parameters+1) + i));
+                        zmq_send (master_requester, master_node_name, MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
                     }
                     else
                     {
-                        sprintf (port_name, "tcp://*:4%d", 100 + rank * (global_data.nb_parameters+1) + i);
+                        zmq_send (master_requester, &master_node_names[j*MPI_MAX_PROCESSOR_NAME], MPI_MAX_PROCESSOR_NAME * sizeof(char), 0);
                     }
-                    melissa_bind (global_data.sobol_requester[i], port_name);
+                    //
+                    //
                 }
+            }
+            global_data.sobol_requester = malloc ((global_data.nb_parameters + 1) * sizeof(void*));
+            for (i=0; i<global_data.nb_parameters + 1; i++)
+            {
+                global_data.sobol_requester[i] = zmq_socket (global_data.context, ZMQ_PULL);
+                if (0 == strcmp(master_node_name, "localhost"))
+                {
+                    sprintf (port_name, "tcp://*:4%d", 100 + (global_data.sample_id * comm_size * (global_data.nb_parameters+1) + rank * (global_data.nb_parameters+1) + i));
+                }
+                else
+                {
+                    sprintf (port_name, "tcp://*:4%d", 100 + rank * (global_data.nb_parameters+1) + i);
+                }
+                melissa_bind (global_data.sobol_requester[i], port_name);
             }
         }
     }
@@ -916,12 +985,16 @@ static void melissa_init_internal (const char *field_name,
     }
     if (first_init != 0)
     {
+        // we don't need these ports anymore
         zmq_close (global_data.connexion_requester);
         if (global_data.coupling == MELISSA_COUPLING_ZMQ)
         {
             zmq_close (master_requester);
         }
     }
+
+    // In the case of learning, we need to allocate memory to store the incoming data before sending it to the server.
+    // the buffer must be large enough to store all the data on rank 0 of sobol_rank 0
     if (global_data.sobol)
     {
         if (global_data.learning > 0)
@@ -1162,9 +1235,11 @@ void melissa_send (const char   *field_name,
     start_comm_time = melissa_get_time();
 #endif // BUILD_WITH_PROBES
 
+    // me set the field_data_ptr to the initialized field that corresponds to field_name.
     field_data_ptr = get_field_data(field_data, field_name);
     if (field_data_ptr == NULL)
     {
+        // if it does not exist, then it has not be initialized.
         fprintf (stdout, "ERROR: melissa_send call before melissa_init call (%s)\n", field_name );
         raise(SIGINT);
         exit(1);
@@ -1175,6 +1250,7 @@ void melissa_send (const char   *field_name,
 
     if (global_data.learning > 0)
     {
+        // in the case of machine learning, we gather everything on the rank 0
 #ifdef BUILD_WITH_MPI
         MPI_Gatherv(send_vect,
                     local_vect_size,
@@ -1189,17 +1265,18 @@ void melissa_send (const char   *field_name,
 #endif // BUILD_WITH_MPI
         if (global_data.rank == 0)
         {
-            local_vect_size = field_data_ptr->global_vect_size;
+            local_vect_size = field_data_ptr->global_vect_size; //l ocal_vect_size is global_vect_size on rank 0
         }
         else
         {
-            local_vect_size = 0;
+            local_vect_size = 0; // local_vect_size is 0 everywhere else
         }
     }
 
     if (global_data.sobol == 1)
     {
         melissa_print(VERBOSE_DEBUG, "Group %d gather data (rank %d)\n", global_data.sample_id, global_data.rank);
+        // gather data from the Sobol' group to sobol_rank 0
         switch (global_data.coupling)
         {
 #ifdef BUILD_WITH_FLOWVR
@@ -1243,15 +1320,20 @@ void melissa_send (const char   *field_name,
 
     if (global_data.sobol_rank == 0)
     {
+        // Without Sobol, the sobol_rank is always 0.
+        // With Sobol, only the sobol_rank 0 sends the data to the server
         melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", global_data.sample_id, field_data_ptr->timestamp);
         zmq_msg_t msg;
-        if (global_data.learning < 2)
+        if (global_data.learning < 2) // "classic" usage
         {
             j = 0;
+            // loop over the total number of messages
             for (i=0; i<field_data_ptr->total_nb_messages; i++)
             {
-                if (global_data.rank == field_data_ptr->push_rank[i] && global_data.sobol_rank == 0)
+                // if we are push_rank , we have to send the corresponding message. Else, we continue.
+                if (global_data.rank == field_data_ptr->push_rank[i])
                 {
+                    // create the message
                     buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
                     if (global_data.sobol == 1)
                     {
@@ -1274,6 +1356,7 @@ void melissa_send (const char   *field_name,
                     memcpy (buff_ptr, &send_vect_ptr[field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]], field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
                     if (global_data.sobol == 1)
                     {
+                        // add the nb_param+1 data from the other simulations of the group in the message
                         for (k=1; k<global_data.nb_parameters + 2; k++)
                         {
                             buff_ptr += field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
@@ -1281,7 +1364,9 @@ void melissa_send (const char   *field_name,
                                     field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
                         }
                     }
+                    // init the ZMQ message from the buffer
                     zmq_msg_init_data (&msg, global_data.buffer, buff_size, my_free, NULL);
+                    // send the message
                     ret = zmq_msg_send (&msg, field_data_ptr->data_pusher[j], 0);
                     melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent (proc %d)\n", buff_size, field_data_ptr->push_rank[i]);
                     if (ret == -1)
@@ -1294,9 +1379,10 @@ void melissa_send (const char   *field_name,
                 }
             }
         }
-        else
+        else // here, learning >= 2. That means that we d'on' split the data for redistribution, bunt we send everything to one server rank in a round-robin fashion
         {
-            // send all the data round-robin frop proc 0
+            // remember that when learning != 0 we gather all the data on rank 0
+            // send all the data round-robin from proc 0
             j = (field_data_ptr->timestamp) % global_data.nb_proc_server;
             for (i=0; i<global_data.nb_proc_server; i++)
             {
@@ -1387,6 +1473,7 @@ void melissa_send (const char   *field_name,
 void melissa_send_no_mpi (const char *field_name,
                           const double *send_vect)
 {
+    // wrapper around melissa_send (not used anymore)
     melissa_send (field_name,
                   send_vect);
 }
@@ -1402,11 +1489,12 @@ void melissa_send_no_mpi (const char *field_name,
 
 void melissa_finalize (void)
 {
-    int        i, temp, ret;
+    int i, ret;
 
 #ifdef BUILD_WITH_MPI
     if (global_data.comm_size > 1)
     {
+        // wait every processes here
         MPI_Barrier(global_data.comm);
     }
 #endif // BUILD_WITH_MPI
@@ -1420,6 +1508,7 @@ void melissa_finalize (void)
         assert(field_data_ptr->timestamp == field_data->timestamp);
     }
 
+    // in certain cases, we have to ask the server for the permission to disconect.
 #ifdef CHECK_SIMU_DECONNECTION
     if (global_data.rank == 0 && global_data.sobol_rank == 0)
     {
@@ -1456,14 +1545,15 @@ void melissa_finalize (void)
         }
     }
     zmq_close (global_data.deconnexion_requester);
-#endif // CHECK_SIMU_DECONNECTION
 
 #ifdef BUILD_WITH_MPI
     if (global_data.comm_size > 1)
     {
+        // wait every processes here again
         MPI_Barrier(global_data.comm);
     }
 #endif // BUILD_WITH_MPI
+#endif // CHECK_SIMU_DECONNECTION
 
 #ifdef BUILD_WITH_FLOWVR
     if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_FLOWVR)
@@ -1483,6 +1573,7 @@ void melissa_finalize (void)
         zmq_close (global_data.sobol_requester[0]);
     }
 
+    // free everything !!!
     free_field_data(field_data);
     melissa_print(VERBOSE_DEBUG, "Free ZMQ context...\n");
     zmq_ctx_term (global_data.context);
