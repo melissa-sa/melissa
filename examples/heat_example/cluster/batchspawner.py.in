@@ -164,31 +164,29 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         if cmd_input:
             inbytes = cmd_input.encode()
 
-        try:
+        # try:
             out, eout = await proc.communicate(input=inbytes)
-        except:
-            self.log.debug("Exception raised when trying to run command: %s" % command)
-            proc.kill()
-            self.log.debug("Running command failed done kill")
-            out, eout = await proc.communicate()
-            out = out.decode.strip()
-            eout = eout.decode.strip()
-            self.log.error("Subprocess returned exitcode %s" % proc.returncode)
-            self.log.error('Stdout:')
-            self.log.error(out)
-            self.log.error('Stderr:')
-            self.log.error(eout)
-            raise RuntimeError('{} exit status {}: {}'.format(cmd, proc.returncode, eout))
-        else:
+        # except:  ## TODO: except what
+        # self.log.debug('Exception raised when trying to run command: %s' % inbytes)
+        # proc.kill()
+        # self.log.debug('Running command failed done kill')
+        # out, eout = await proc.communicate()
+        # out = out.decode.strip()
+        # eout = eout.decode.strip()
+        # self.log.error('Subprocess returned exitcode %s' % proc.returncode)
+        # self.log.error('Stdout:')
+        # self.log.error(out)
+        # self.log.error('Stderr:')
+        # self.log.error(eout)
+        # raise RuntimeError('{} exit status {}: {}'.format(cmd, proc.returncode, eout))
+        # else:
             eout = eout.decode().strip()
             err = proc.returncode
             if err != 0:
                 self.log.error("Subprocess returned exitcode %s" % err)
                 self.log.error(eout)
                 raise RuntimeError(eout)
-
-        out = out.decode().strip()
-        return out
+        return out.decode().strip()
 
     async def _get_batch_script(self, **subvars):
         """
@@ -215,12 +213,12 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         self.log.info('Spawner submitting job using ' + cmd)
         self.log.info('Spawner submitted script:\n' + script)
         out = await self.run_command(cmd, script)#, env=self.get_env())
-        try:
+        # try:
             self.log.info('Job submitted. cmd: ' + cmd + ' output: ' + out)
             self.job_id = self.parse_job_id(out)
-        except:
-            self.log.error('Job submission failed with exit code ' + out)
-            self.job_id = ''
+        # except:  ## TODO: except what
+        #     self.log.error('Job submission failed with exit code ' + out)
+        #     self.job_id = ''
         return self.job_id
 
     ## override if your batch system needs something more elaborate to read the job status
@@ -251,13 +249,12 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         cmd = ' '.join((format_template(self.exec_prefix, **subvars),
                         format_template(query_cmd, **subvars)))
         self.log.debug('Spawner querying job: ' + cmd)
-        try:
-            out = await self.run_command(cmd)
-            self.job_status = out
-        except Exception as e:
-            self.log.error('Error querying job ' + self.job_id)
-            self.job_status = ''
-        finally:
+        # try:
+        self.job_status = await self.run_command(cmd)
+        # except Exception as e:  ## TODO: except what
+        #     self.log.error('Error querying job ' + self.job_id)
+        #     self.job_status = ''
+        # finally:
             return self.job_status
 
     batch_cancel_cmd = traitlets.Unicode('',
@@ -361,7 +358,7 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         if jupyterhub.version_info >= (0,8) and self.server:
             self.server.port = self.port
 
-        job = await self.submit_batch_script()
+        await self.submit_batch_script()
 
         ## we are called with a timeout, and if the timeout expires this
         ## function will be interrupted at the next yield, and self.stop()
@@ -402,7 +399,7 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
                         self.job_id, self.ip, self.port)
             )
 
-        return self.ip, self.port  ## TODO
+        return self.ip, self.port
 
     async def stop(self, now=False):
         """
@@ -606,9 +603,7 @@ class UserEnvMixin:
         authentication to the batch system commands as an admin, be
         aware that the user will receive access to these as well.
         """
-        env = super().get_env()
-        env = self.user_env(env)
-        return env
+        return self.user_env(super().get_env())
 
 
 class SlurmSpawner(UserEnvMixin,BatchSpawnerRegexStates):
@@ -667,16 +662,14 @@ which jupyterhub-singleuser
         :return: Job id in queue.
         :rtype: str
         """
-        ## make sure jobid is really a number
         try:
             ## use only last line to circumvent slurm bug
             output = output.splitlines()[-1]
             job_id = output.split(';')[0]
-            int(job_id)
-        except Exception as e:
-            self.log.error("SlurmSpawner unable to parse job ID from text: " + output)
+            int(job_id)  ## make sure jobid is really a number...
+        except ValueError as e:
             raise e
-        return job_id
+        return job_id  ## ... but string needs to be returned
 
 
 class MultiSlurmSpawner(SlurmSpawner):
@@ -739,7 +732,7 @@ class GridengineSpawner(BatchSpawnerBase):
         if self.job_status:
             job_info = xml.etree.ElementTree.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']".format(self.job_id))
-            if job_info is not None:
+            if job_info:
                 return job_info.attrib.get('state') == 'pending'
         return False
 
@@ -752,7 +745,7 @@ class GridengineSpawner(BatchSpawnerBase):
         if self.job_status:
             job_info = xml.etree.ElementTree.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']".format(self.job_id))
-            if job_info is not None:
+            if job_info:
                 return job_info.attrib.get('state') == 'running'
         return False
 
@@ -766,7 +759,7 @@ class GridengineSpawner(BatchSpawnerBase):
         if self.job_status:
             queue_name = xml.etree.ElementTree.fromstring(self.job_status).find(
                     ".//job_list[JB_job_number='{0}']/queue_name".format(self.job_id))
-            if queue_name is not None and queue_name.text:
+            if queue_name and queue_name.text:
                 return queue_name.text.split('@')[1]
 
         self.log.error("Spawner unable to match host addr in job {0} with status {1}".format(self.job_id, self.job_status))
@@ -814,9 +807,6 @@ Queue
         error_msg = "CondorSpawner unable to parse jobID from text: " + output
         self.log.error(error_msg)
         raise Exception(error_msg)
-
-    def cmd_formatted_for_batch(self):
-        return super(CondorSpawner,self).cmd_formatted_for_batch().replace('"','""').replace("'","''")
 
 
 class LsfSpawner(BatchSpawnerBase):
@@ -894,7 +884,6 @@ class LsfSpawner(BatchSpawnerBase):
         if self.job_status:
             return self.job_status.split(' ')[1].strip()
 
-        self.log.error("Spawner unable to match host addr in job {0} with status {1}".format(self.job_id, self.job_status))
-        return
+        self.log.error('Spawner unable to match host addr in job {0} with status {1}'.format(self.job_id, self.job_status))
 
 # vim: set ai expandtab softtabstop=4:
