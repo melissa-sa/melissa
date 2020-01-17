@@ -144,6 +144,7 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         :param str output: Output of submit command, scheduler-specific.
         :raises NotImplementedError: Must be implemented in a subclass.
         """
+        raise NotImplementedError('Subclass must provide implementation')
 
     async def run_command(self, cmd, cmd_input=None, env=None):
         """
@@ -533,6 +534,21 @@ class TorqueSpawner(BatchSpawnerRegexStates):
     state_exechost_re = traitlets.Unicode(r'<exec_host>((?:[\w_-]+\.?)+)/\d+').tag(config=True)
     job_id = traitlets.Unicode('$PBS_JOBID').tag(config=True)
 
+    def parse_job_id(self, output):
+        """
+        Parsing output of submit command to get job id.
+        :param str output: Output of submit command, scheduler-specific.
+        :return: Job id in queue.
+        :rtype: str
+        """
+        try:
+            int(output)  ## make sure jobid is really a number...
+            return output  ## ... but string needs to be returned
+        except ValueError as e:
+            self.log.error('Spawner unable to parse job ID from text: {}'
+                           .format(output))
+            raise e
+
 
 class MoabSpawner(TorqueSpawner):
     ## outputs job id string
@@ -546,6 +562,21 @@ class MoabSpawner(TorqueSpawner):
     state_running_re = traitlets.Unicode(r'State="Running"').tag(config=True)
     state_exechost_re = traitlets.Unicode(r'AllocNodeList="([^\r\n\t\f :"]*)').tag(config=True)
     job_id = traitlets.Unicode('$MOAB_JOBID').tag(config=True)
+
+    def parse_job_id(self, output):
+        """
+        Parsing output of submit command to get job id.
+        :param str output: Output of submit command, scheduler-specific.
+        :return: Job id in queue.
+        :rtype: str
+        """
+        try:
+            int(output)  ## make sure jobid is really a number...
+            return output  ## ... but string needs to be returned
+        except ValueError as e:
+            self.log.error('Spawner unable to parse job ID from text: {}'
+                           .format(output))
+            raise e
 
 
 class PBSSpawner(TorqueSpawner):
@@ -667,9 +698,11 @@ which jupyterhub-singleuser
             output = output.splitlines()[-1]
             job_id = output.split(';')[0]
             int(job_id)  ## make sure jobid is really a number...
-        except ValueError as e:
+            return job_id  ## ... but string needs to be returned
+        except (ValueError, IndexError) as e:
+            self.log.error('Spawner unable to parse job ID from text: {}'
+                           .format(output))
             raise e
-        return job_id  ## ... but string needs to be returned
 
 
 class MultiSlurmSpawner(SlurmSpawner):
@@ -705,7 +738,7 @@ class GridengineSpawner(BatchSpawnerBase):
 {epilogue}
 """).tag(config=True)
 
-    ## outputs job id string
+    ## outputs something like: "Your job 1 ("job.sh") has been submitted"
     batch_submit_cmd = traitlets.Unicode('qsub').tag(config=True)
     ## outputs job data XML string
     batch_query_cmd = traitlets.Unicode('qstat -xml').tag(config=True)
@@ -721,7 +754,15 @@ class GridengineSpawner(BatchSpawnerBase):
         :return: Job id in queue.
         :rtype: str
         """
-        return output.split(' ')[2]
+        try:
+            job_id = output.split(' ')[2]
+            int(job_id)  ## make sure jobid is really a number...
+            return job_id  ## ... but string needs to be returned
+        except (ValueError, IndexError) as e:
+            self.log.error('Spawner unable to parse job ID from text: {}'
+                           .format(output))
+            raise e
+
 
     def state_ispending(self):
         """
@@ -801,12 +842,14 @@ Queue
         :rtype: str
         """
         match = re.search(r'.*submitted to cluster ([0-9]+)', output)
-        if match:
-            return match.groups()[0]
-
-        error_msg = "CondorSpawner unable to parse jobID from text: " + output
-        self.log.error(error_msg)
-        raise Exception(error_msg)
+        try:
+            job_id = match.groups()[0]
+            int(job_id)  ## make sure jobid is really a number...
+            return job_id  ## ... but string needs to be returned
+        except (ValueError, IndexError) as e:
+            self.log.error('Spawner unable to parse job ID from text: {}'
+                           .format(output))
+            raise e
 
 
 class LsfSpawner(BatchSpawnerBase):
@@ -846,13 +889,20 @@ class LsfSpawner(BatchSpawnerBase):
     def parse_job_id(self, output):
         """
         Parsing output of submit command to get job id.
+        Assuming output in the following form:
+        'Job <1815> is submitted to default queue <normal>.'
         :param str output: Output of submit command, scheduler-specific.
         :return: Job id in queue.
         :rtype: str
         """
-        ## assumes output in the following form:
-        ## 'Job <1815> is submitted to default queue <normal>.'
-        return output.split(' ')[1].strip('<>')
+        try:
+            job_id = output.split(' ')[1].strip('<>')
+            int(job_id)  ## make sure jobid is really a number...
+            return job_id  ## ... but string needs to be returned
+        except (ValueError, IndexError) as e:
+            self.log.error('Spawner unable to parse job ID from text: {}'
+                           .format(output))
+            raise e
 
     def state_ispending(self):
         """
