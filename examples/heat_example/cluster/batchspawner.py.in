@@ -156,17 +156,19 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         :return: Output of a job scheduler command.
         :rtype: str
         """
-        proc = await asyncio.create_subprocess_shell(cmd, env=env,
-                                                    stdin=asyncio.subprocess.PIPE,
-                                                    stdout=asyncio.subprocess.PIPE,
-                                                    stderr=asyncio.subprocess.PIPE)
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
+            asyncio.subprocess.PIPE,
+            asyncio.subprocess.PIPE,
+            asyncio.subprocess.PIPE,
+            env=env)
         inbytes=None
 
         if cmd_input:
             inbytes = cmd_input.encode()
 
         # try:
-            out, eout = await proc.communicate(input=inbytes)
+        out, eout = await proc.communicate(inbytes)
         # except:  ## TODO: except what
         # self.log.debug('Exception raised when trying to run command: %s' % inbytes)
         # proc.kill()
