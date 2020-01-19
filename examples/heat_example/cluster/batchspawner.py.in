@@ -163,6 +163,7 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
             help='''command to stop/cancel a previously submitted job;
                     formatted like batch_query_cmd'''
         ).tag(config=True)
+
     startup_poll_interval = traitlets.Float(0.5,
             help='''polling interval (seconds) to check job state during
                     startup'''
@@ -486,7 +487,7 @@ class BatchSpawnerRegexStates(BatchSpawnerBase):
     state_exechost_re = traitlets.Unicode('',
             help='''regex with at least one capture group that extracts
                     the execution host from job_status output '''
-        ).tag(config=True)
+                ).tag(config=True)
     state_exechost_exp = traitlets.Unicode('',
             help='''if empty, notebook IP will be set to the contents of
                     the first capture group; if this variable is set, the
@@ -556,6 +557,8 @@ class TorqueSpawner(BatchSpawnerRegexStates):
 {prologue}
 {epilogue}
 ''').tag(config=True)
+    job_id = traitlets.Unicode('$PBS_JOBID'
+        ).tag(config=True)
     ## outputs job id string
     batch_submit_cmd = traitlets.Unicode('qsub'
         ).tag(config=True)
@@ -573,8 +576,6 @@ class TorqueSpawner(BatchSpawnerRegexStates):
         ).tag(config=True)
     state_exechost_re = traitlets.Unicode(
             r'<exec_host>((?:[\w_-]+\.?)+)/\d+'
-        ).tag(config=True)
-    job_id = traitlets.Unicode('$PBS_JOBID'
         ).tag(config=True)
 
     def parse_job_id(self, output):
@@ -595,6 +596,8 @@ class TorqueSpawner(BatchSpawnerRegexStates):
 
 class MoabSpawner(TorqueSpawner):
 
+    job_id = traitlets.Unicode('$MOAB_JOBID'
+        ).tag(config=True)
     ## outputs job id string
     batch_submit_cmd = traitlets.Unicode('msub'
         ).tag(config=True)
@@ -612,8 +615,6 @@ class MoabSpawner(TorqueSpawner):
         ).tag(config=True)
     state_exechost_re = traitlets.Unicode(
             r'AllocNodeList="([^\r\n\t\f :"]*)'
-        ).tag(config=True)
-    job_id = traitlets.Unicode('$MOAB_JOBID'
         ).tag(config=True)
 
     def parse_job_id(self, output):
@@ -649,6 +650,7 @@ class PBSSpawner(TorqueSpawner):
 {{prologue}}
 {{epilogue}}
 ''').tag(config=True)
+
     ## outputs job data XML string
     batch_query_cmd = traitlets.Unicode('qstat -fx {job_id}'
         ).tag(config=True)
@@ -810,6 +812,8 @@ class GridengineSpawner(BatchSpawnerBase):
 {prologue}
 {epilogue}
 ''').tag(config=True)
+    job_id = traitlets.Unicode('$JOB_ID'
+        ).tag(config=True)
     ## outputs something like: "Your job 1 ("job.sh") has been submitted"
     batch_submit_cmd = traitlets.Unicode('qsub'
         ).tag(config=True)
@@ -819,8 +823,6 @@ class GridengineSpawner(BatchSpawnerBase):
     batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('qdel {job_id}'
-        ).tag(config=True)
-    job_id = traitlets.Unicode('$JOB_ID'
         ).tag(config=True)
 
     def parse_job_id(self, output):
@@ -904,6 +906,8 @@ GetEnv = True
 {options}
 Queue
 ''').tag(config=True)
+    job_id = traitlets.Unicode('$CONDOR_CLUSTER.$CONDOR_PROCESS'
+        ).tag(config=True)
     ## outputs job id string
     batch_submit_cmd = traitlets.Unicode('condor_submit'
         ).tag(config=True)
@@ -961,6 +965,8 @@ class LsfSpawner(BatchSpawnerBase):
 {prologue}
 {epilogue}
 ''').tag(config=True)
+    job_id = traitlets.Unicode('$LSB_JOBID'
+        ).tag(config=True)
     batch_submit_cmd = traitlets.Unicode('bsub'
         ).tag(config=True)
     batch_query_cmd = traitlets.Unicode(
@@ -970,8 +976,6 @@ class LsfSpawner(BatchSpawnerBase):
             'bjobs -noheader -u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('bkill {job_id}'
-        ).tag(config=True)
-    job_id = traitlets.Unicode('$LSB_JOBID'
         ).tag(config=True)
 
     def get_env(self):
