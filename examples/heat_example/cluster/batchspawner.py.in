@@ -352,15 +352,8 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         """
         Start-up method.
         Submitting batch script and monitoring the progess.
-        :return: IP and port.
         :rtype: str, int
         """
-        self.ip = self.traits()['ip'].default_value
-        self.port = self.traits()['port'].default_value
-
-        if jupyterhub.version_info >= (0,8) and self.server:
-            self.server.port = self.port
-
         await self.submit_batch_script()
 
         ## we are called with a timeout, and if the timeout expires this
@@ -384,25 +377,9 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
                            ' while pending in the queue or died immediately'
                            ' after starting.')
             await tornado.gen.sleep(self.startup_poll_interval)
-
-        self.ip = self.state_gethost()
-        # while self.port == 0:
-        #     await tornado.gen.sleep(self.startup_poll_interval)
-        #     ## test framework: For testing, mock_port is set because we
-        #     ## don't actually run the single-user server yet.
-        #     if hasattr(self, 'mock_port'):
-        #         self.port = self.mock_port
-
-        if jupyterhub.version_info < (0,7):
-            ## store on user for pre-jupyterhub-0.7:
-            self.user.server.port = self.port
-            self.user.server.ip = self.ip
-        # self.db.commit()
-        self.log.info("Notebook server job {0} started at {1}:{2}".format(
-                        self.job_id, self.ip, self.port)
+        self.log.info('Notebook server job {} started'.format(
+                        self.job_id)
             )
-
-        return self.ip, self.port
 
     async def stop(self, now=False):
         """
@@ -420,8 +397,8 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
                 return
             await tornado.gen.sleep(1.0)
         if self.job_id:
-            self.log.warning("Notebook server job {0} at {1}:{2} possibly failed to terminate".format(
-                             self.job_id, self.ip, self.port)
+            self.log.warning('Notebook server job {} possibly failed to terminate'.format(
+                             self.job_id)
                 )
 
     @async_generator.async_generator
