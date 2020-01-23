@@ -1,13 +1,13 @@
 # Virtual Cluster
 
-## Table of contents
+## Table of content
 * [Introduction](#intro)
 * [Docker Installation](#docker)
 * [Virtual Cluster Installation](#cluster)
 * [Installing Melissa](#melissa)
 * [Running the Heat Example  with OAR](#heatoar)
 * [Running the Heat Example  with Slurm](#heatslurm)
-
+* [Pitfalls](#pitfalls)
 
 
 ## Introduction <a name="intro"></a>
@@ -224,7 +224,9 @@ At the end of the study, the results are in
 ```
 
 
+## Pitfalls
 
+* Some networks block public DNS servers to encourage people to use network's own DNS server. Docker containers default to Google's 8.8.8.8 public DNS server. [This solution](https://development.robinwinslow.uk/2016/06/23/fix-docker-networking-dns/) can fix the problem of containers not updating and installing dependencies.
 
 
 

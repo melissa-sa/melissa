@@ -1,14 +1,42 @@
 # Table of content
- * [Overview](#overview)
+ * [News](#news)
  * [Getting Started](#getting-started)
  * [Running Melissa](#running-melissa)
     * [Local Execution](#local-execution)
     * [Virtual Cluster](#virtual-cluster)
-    * [Real Cluster](#real-cluster)
+    * [Supercomputer](#supercomputer)
+ * [Utility](utility/README.md)
+ * [Solver Instrumenting and Study Setup](examples/heat_example/README.md)
+ * Developer Documentation
+    * [Server](server/README.md)
+    * [Launcher](launcher/README.md)
+    * [Solver API](api/README.md)
+    * [Common](api/README.md)
  * [How to cite Melissa](#how-to-cite-melissa)
  * [Publications](#publications)
  * [Contacts](#contacts)
  * [Licence](#licence)
+
+
+
+# News
+ * **Jan 2020: GitHub continuous update**
+    * Sync our work repo with the github repo so all changes are immediatly visible to all
+    * Major code restructuration  and documentation update
+    * New tools for supporting a virtual cluster mode  and using Jupyter notebook for controlling a Melissa run
+ * **Nov 2018: Melissa release 0.5 available on GitHub**
+    * Changes in the API: remove arguments from the melissa_send function
+    * Add batch mode
+    * Improve launcher fault tolerance
+    * Improve the examples and the install tree
+    * Many fixes
+ * **Nov 2017: Melissa release 0.4 available on GitHub**
+   * Improve quantiles and threshold exceedances
+   * Add iterative skewness and kurtosis
+   * Add a restart mechanism over results of previous study
+   * Add FlowVR coupling mechanism for Sobol' groups
+   * Add Telemac2D example, including FlowVR coupling mechanism
+   * Many bug fixes
 
 
 # Getting Started
@@ -85,9 +113,26 @@ Running Melissa localy means that all processes run on your local machine, execu
 ## Virtual Cluster
 
 The virtual cluster enables to run Melissa on a local machine with a batch scheduler managing a virtual cluster build using docker containers.
-All instructions in the [utils/virtualcluster/Readme.md](utils/virtualcluster/Readme.md).
+All instructions in the [utility/virtual_cluster/Readme.md](utility/virtual_cluster/Readme.md).
 
-## Real Cluster
+## Supercomputer 
+
+ Running Melissa on a real supercomputer will  need some adaptations to the specificity of the target machine (batch scheduler, launcher that can
+ be executed or not on the front nodes, etc.).
+
+ Here are a few hints. To run Melissa on a cluster you need to adapt the code to your batch scheduling systems and system environment. Before you try to run anything on remote cluster, please familiarize yourself with batch scheduling system of your cluster and options file (short but precise enough description is in the `Creating your own study` chapter).
+
+  1. In your `study_Slurm/scripts` folder, change the shell files so they are valid with your scheduling system. Pay attention to the commands and partition names.
+  2. In the same shell files add/load appropriate modules for MPI.
+  3. Check options file. Look especially at `launch_server` and `launch_group` and check if commands sending jobs to batch scheduler are valid.
+  4. Check the shebang at `melissa_launcher`. This python interpreter have to have Numpy. If you know that some module have python with numpy, you can
+
+```bash
+module load *python module with numpy*
+which python3
+```
+
+and copy the path to the shebang.
 
 
 
