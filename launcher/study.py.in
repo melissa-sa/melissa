@@ -403,6 +403,12 @@ class Study(object):
     def get_param_distribution(self):
         return self.stdy_opt['param_distribution']
 
+    def set_disable_fault_tolerance(self, disable_fault_tolerance):
+        self.stdy_opt['disable_fault_tolerance'] = disable_fault_tolerance
+
+    def get_disable_fault_tolerance(self):
+        return self.stdy_opt['disable_fault_tolerance']
+
     # stats
     def compute_stat(self, stat_key):
         self.ml_stats[stat_key] = True
@@ -609,6 +615,9 @@ class Study(object):
 
         if (not 'verbosity' in self.stdy_opt):
             self.stdy_opt['verbosity'] = 2
+
+        if (not 'disable_fault_tolerance' in self.stdy_opt):
+            self.stdy_opt['disable_fault_tolerance'] = False
 
         if (not 'batch_size' in self.stdy_opt):
             self.stdy_opt['batch_size'] = 1
