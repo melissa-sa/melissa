@@ -208,20 +208,23 @@ class Responder(Thread):
                     simu = int(message[1])%self.batch_size
                     with self.groups[group].lock:
                         if self.groups[group].job_type == 4:
+                            params = self.groups[group].param_set[0]
                             melissa_comm4py.send_job(self.groups[group].group_id,
                                                      str(self.groups[group].job_id).encode(),
                                                      len(self.groups[group].param_set[0]),
-                                                     self.groups[group].param_set[0].ctypes.data_as(POINTER(c_double)))
+                                                     (c_double * len(params))(*params))
                         elif self.groups[group].job_type == 3:
+                            params = self.groups[group].param_set[simu]
                             melissa_comm4py.send_job(self.groups[group].simu_id[simu],
                                                      str(self.groups[group].job_id).encode(),
                                                      len(self.groups[group].param_set[0]),
-                                                     self.groups[group].param_set[simu].ctypes.data_as(POINTER(c_double)))
+                                                     (c_double * len(params))(*params))
                         elif self.groups[group].job_type == 2:
+                            params = self.groups[group].param_set
                             melissa_comm4py.send_job(self.groups[group].group_id,
                                                      str(self.groups[group].job_id).encode(),
                                                      len(self.groups[group].param_set[0]),
-                                                     self.groups[group].param_set.ctypes.data_as(POINTER(c_double)))
+                                                     (c_double * len(params))(*params))
                 if message[0] == 'test_timeout':
                     melissa_comm4py.send_alive()
                 if message[0] == 'options':
