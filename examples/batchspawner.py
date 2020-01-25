@@ -151,8 +151,17 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
     ## override if your batch system needs something more elaborate to
     ## read the job status
     batch_query_cmd = traitlets.Unicode('',
-            help='''command to run to read job status; formatted using
-                    req_xyz traits as {xyz} and self.job_id as {job_id}'''
+            help='''command to run to view information about jobs located
+                    in a Slurm scheduling queue; usually requires
+                    providing opt_query_... as well'''
+        ).tag(config=True)
+    opt_query_state = traitlets.Unicode('',
+            help='''batch_query_cmd options; formatted using self.job_id
+                    as {job_id}'''
+        ).tag(config=True)
+    opt_query_cpus = traitlets.Unicode('',
+            help='''batch_query_cmd options; formatted using self.job_id
+                    as {job_id}'''
         ).tag(config=True)
     batch_query_user_cmd = traitlets.Unicode('',
             help='''command to run to read user's jobs status; formatted
@@ -371,7 +380,8 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         :rtype: str | NoneType
         """
         if self.job_id is not None and len(self.job_id) > 0:
-            await self.read_job_state(self.batch_query_cmd)
+            await self.read_job_state('{} {}'.format(
+                self.batch_query_cmd, self.opt_query_state))
             if self.state_isrunning() or self.state_ispending():
                 return None
             else:
@@ -563,8 +573,9 @@ class TorqueSpawner(BatchSpawnerRegexStates):
     batch_submit_cmd = traitlets.Unicode('qsub'
         ).tag(config=True)
     ## outputs job data XML string
-    batch_query_cmd = traitlets.Unicode('qstat -x {job_id}'
-        ).tag(config=True)
+    batch_query_cmd = traitlets.Unicode('qstat').tag(config=True)
+    opt_query_state = traitlets.Unicode('-x {job_id}').tag(config=True)
+    opt_query_cpus = traitlets.Unicode().tag(config=True)
     batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('qdel {job_id}'
@@ -602,7 +613,8 @@ class MoabSpawner(TorqueSpawner):
     batch_submit_cmd = traitlets.Unicode('msub'
         ).tag(config=True)
     ## outputs job data XML string
-    batch_query_cmd = traitlets.Unicode('mdiag -j {job_id} --xml'
+    batch_query_cmd = traitlets.Unicode('mdiag').tag(config=True)
+    opt_query_state = traitlets.Unicode(' -j {job_id} --xml'
         ).tag(config=True)
     batch_query_user_cmd = traitlets.Unicode(
             'mdiag -j -w user={username} | wc -l'
@@ -652,8 +664,8 @@ class PBSSpawner(TorqueSpawner):
 ''').tag(config=True)
 
     ## outputs job data XML string
-    batch_query_cmd = traitlets.Unicode('qstat -fx {job_id}'
-        ).tag(config=True)
+    batch_query_cmd = traitlets.Unicode('qstat').tag(config=True)
+    opt_query_state = traitlets.Unicode('-fx {job_id}').tag(config=True)
     state_pending_re = traitlets.Unicode(r'job_state = [QH]'
         ).tag(config=True)
     state_running_re = traitlets.Unicode(r'job_state = R'
@@ -741,7 +753,8 @@ echo 'jupyterhub-singleuser ended gracefully'
     batch_submit_cmd = traitlets.Unicode('sbatch --parsable'
         ).tag(config=True)
     ## outputs status and exec node like 'RUNNING hostname'
-    batch_query_cmd = traitlets.Unicode("squeue -h -j {job_id} -o '%T %B'"
+    batch_query_cmd = traitlets.Unicode('squeue').tag(config=True)
+    opt_query_state = traitlets.Unicode("-h -j {job_id} -o '%T %B'"
         ).tag(config=True)
     batch_query_user_cmd = traitlets.Unicode(
             'squeue -h --user={username} | wc -l',
@@ -818,8 +831,8 @@ class GridengineSpawner(BatchSpawnerBase):
     batch_submit_cmd = traitlets.Unicode('qsub'
         ).tag(config=True)
     ## outputs job data XML string
-    batch_query_cmd = traitlets.Unicode('qstat -xml'
-        ).tag(config=True)
+    batch_query_cmd = traitlets.Unicode('qstat').tag(config=True)
+    opt_query_state = traitlets.Unicode('-xml').tag(config=True)
     batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('qdel {job_id}'
@@ -912,10 +925,10 @@ Queue
     batch_submit_cmd = traitlets.Unicode('condor_submit'
         ).tag(config=True)
     ## outputs job data XML string
-    batch_query_cmd = traitlets.Unicode(
-            '''condor_q {job_id} -format "%s, " JobStatus -format "%s"
-               RemoteHost -format "\n" True'''
-            ).tag(config=True)
+    batch_query_cmd = traitlets.Unicode('condor_q').tag(config=True)
+    opt_query_state = traitlets.Unicode(
+            '''{job_id} -format "%s, " JobStatus -format "%s"
+               RemoteHost -format "\n" True''')
     batch_query_user_cmd = traitlets.Unicode(
             'condor_q -submitter {username} | wc -l'
         ).tag(config=True)
@@ -969,9 +982,9 @@ class LsfSpawner(BatchSpawnerBase):
         ).tag(config=True)
     batch_submit_cmd = traitlets.Unicode('bsub'
         ).tag(config=True)
-    batch_query_cmd = traitlets.Unicode(
-            'bjobs -a -noheader -o "STAT EXEC_HOST" {job_id}'
-        ).tag(config=True)
+    batch_query_cmd = traitlets.Unicode('bjobs').tag(config=True)
+    opt_query_state = traitlets.Unicode(
+        '-a -noheader -o "STAT EXEC_HOST" {job_id}').tag(config=True)
     batch_query_user_cmd = traitlets.Unicode(
             'bjobs -noheader -u {username} | wc -l'
         ).tag(config=True)

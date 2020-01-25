@@ -23,7 +23,3 @@ configure_file(job_scheduler_config.py.in job_scheduler_config.py @ONLY)
 install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/job_scheduler_config.py DESTINATION
         ${EXAMPLES_DIR}/heat_example/study_cluster)
-configure_file(batchspawner.py.in batchspawner.py @ONLY)
-install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/batchspawner.py DESTINATION
-        ${EXAMPLES_DIR}/heat_example/study_cluster)
