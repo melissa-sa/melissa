@@ -34,5 +34,5 @@ install(FILES Melissa-monitoring-notebook.ipynb
                     GROUP_EXECUTE
                     WORLD_READ
                     WORLD_EXECUTE)
-# configure_file(batchspawner.py.in batchspawner.py @ONLY)
 install(FILES batchspawner.py DESTINATION ${EXAMPLES_DIR})
+install(FILES job_scheduler_config.py DESTINATION ${EXAMPLES_DIR})

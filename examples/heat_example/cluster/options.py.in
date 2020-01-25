@@ -20,7 +20,8 @@ User defined options module
 """
 
 
-import job_scheduler_config, numpy, os, string, asyncio, shutil
+from examples import job_scheduler_config
+import numpy, os, string, asyncio, shutil
 
 
 spawner = job_scheduler_config.spawner
