@@ -97,6 +97,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_order     = 0;
     options->learning        = 0;
     options->restart         = 0;
+    options->disable_fault_tolerance = 0;
     options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
@@ -388,30 +389,31 @@ void melissa_get_options (int                 argc,
 
     init_options (options);
 
-    struct option longopts[] = {{ "checkintervals", required_argument, NULL, 'c' },
-                                { "treshold",       required_argument, NULL, 'e' },
-                                { "tresholds",      required_argument, NULL, 'e' },
-                                { "fieldnames",     required_argument, NULL, 'f' },
-                                { "help",           no_argument,       NULL, 'h' },
-                                { "learning",       required_argument, NULL, 'l' },
-                                { "more",           required_argument, NULL, 'm' },
-                                { "launchername",   required_argument, NULL, 'n' },
-                                { "operations",     required_argument, NULL, 'o' },
-                                { "parameters",     required_argument, NULL, 'p' },
-                                { "quantile",       required_argument, NULL, 'q' },
-                                { "quantiles",      required_argument, NULL, 'q' },
-                                { "restart",        required_argument, NULL, 'r' },
-                                { "samplingsize",   required_argument, NULL, 's' },
-                                { "timesteps",      required_argument, NULL, 't' },
-                                { "verbosity",      required_argument, NULL, 'v' },
-                                { "verbose",        required_argument, NULL, 'v' },
-                                { "timeout",        required_argument, NULL, 'w' },
-                                { "txt_push_port",  required_argument, NULL, 1000 },
-                                { "txt_pull_port",  required_argument, NULL, 1001 },
-                                { "data_port",      required_argument, NULL, 1002 },
-                                { "txt_req_port",   required_argument, NULL, 1003 },
-                                { "horovod",        no_argument,       NULL, 1004 },
-                                { NULL,             0,                 NULL,  0  }};
+    struct option longopts[] = {{ "checkintervals",          required_argument, NULL, 'c' },
+                                { "treshold",                required_argument, NULL, 'e' },
+                                { "tresholds",               required_argument, NULL, 'e' },
+                                { "fieldnames",              required_argument, NULL, 'f' },
+                                { "help",                    no_argument,       NULL, 'h' },
+                                { "learning",                required_argument, NULL, 'l' },
+                                { "more",                    required_argument, NULL, 'm' },
+                                { "launchername",            required_argument, NULL, 'n' },
+                                { "operations",              required_argument, NULL, 'o' },
+                                { "parameters",              required_argument, NULL, 'p' },
+                                { "quantile",                required_argument, NULL, 'q' },
+                                { "quantiles",               required_argument, NULL, 'q' },
+                                { "restart",                 required_argument, NULL, 'r' },
+                                { "samplingsize",            required_argument, NULL, 's' },
+                                { "timesteps",               required_argument, NULL, 't' },
+                                { "verbosity",               required_argument, NULL, 'v' },
+                                { "verbose",                 required_argument, NULL, 'v' },
+                                { "timeout",                 required_argument, NULL, 'w' },
+                                { "txt_push_port",           required_argument, NULL, 1000 },
+                                { "txt_pull_port",           required_argument, NULL, 1001 },
+                                { "data_port",               required_argument, NULL, 1002 },
+                                { "txt_req_port",            required_argument, NULL, 1003 },
+                                { "horovod",                 no_argument,       NULL, 1004 },
+                                { "disable_fault_tolerance", no_argument,       NULL, 1005 },
+                                { NULL,                      0,                 NULL,  0   }};
 
     do
     {
@@ -491,6 +493,9 @@ void melissa_get_options (int                 argc,
             break;
         case 1004:
             options->learning = 2;
+            break;
+        case 1005:
+            options->disable_fault_tolerance = 1;
             break;
         case 'h':
             stats_usage ();
