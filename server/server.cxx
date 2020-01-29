@@ -729,7 +729,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //                    server_ptr->last_msg_launcher = melissa_get_time();
 //                    process_launcher_message(text, server_ptr);
             }
-            memcpy(simu_data->parameters, simu_ptr->parameters, sizeof(double)*server_ptr->melissa_options.nb_parameters);
+            if (simu_ptr->parameters != NULL && recv_vect_size > 0)
+            {
+                memcpy(simu_data->parameters, simu_ptr->parameters, sizeof(double)*server_ptr->melissa_options.nb_parameters);
+            }
 
 
             // check the simulation progress //

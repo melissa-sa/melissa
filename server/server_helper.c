@@ -236,7 +236,7 @@ int check_last_timestep(melissa_field_t *fields,
         {
             for (i=0; i<comm_data->client_comm_size; i++)
             {
-                if (fields[j].stats_data[i].vect_size > 0)
+                if (fields[j].stats_data[i].steps_init > 0)
                 {
                     if (test_bit (fields[j].stats_data[i].step_simu.items[group_id], nb_time_steps-1) == 0)
                     {
