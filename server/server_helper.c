@@ -117,7 +117,7 @@ int check_simu_state(melissa_field_t *fields,
         {
             for (i=0; i<comm_data->client_comm_size; i++)
             {
-                if (fields[j].stats_data[i].vect_size > 0)
+                if (fields[j].stats_data[i].steps_init > 0)
                 {
                     for (t=0; t<nb_time_steps; t++)
                     {
