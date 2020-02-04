@@ -33,7 +33,7 @@
 #include "melissa_utils.h"
 #include "sobol.h"
 
-static void melissa_alloc_data (melissa_data_t *data)
+static void melissa_init_steps (melissa_data_t *data)
 {
     int      i, j;
 //    int32_t* items_ptr;
@@ -52,6 +52,23 @@ static void melissa_alloc_data (melissa_data_t *data)
             vector_add (&data->step_simu, melissa_calloc((data->options->nb_time_steps+31)/32, sizeof(int32_t)));
         }
         data->steps_init = 1;
+    }
+}
+
+static void melissa_alloc_data (melissa_data_t *data)
+{
+    int      i, j;
+//    int32_t* items_ptr;
+
+    if (data->is_valid != 1)
+    {
+        melissa_print (VERBOSE_ERROR, "Data structure not valid (malloc_data)\n");
+        exit (1);
+    }
+
+    if (data->steps_init == 0)
+    {
+        melissa_init_steps (data);
     }
 
     if (data->vect_size <= 0)
@@ -182,7 +199,14 @@ void melissa_init_data (melissa_data_t    *data,
     data->quantiles       = NULL;
     data->sobol_indices   = NULL;
     melissa_check_data (data);
-    melissa_alloc_data (data);
+    if (vect_size > 0)
+    {
+        melissa_alloc_data (data);
+    }
+    else
+    {
+        melissa_init_steps (data);
+    }
 }
 
 /**

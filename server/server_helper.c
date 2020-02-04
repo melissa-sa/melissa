@@ -117,7 +117,7 @@ int check_simu_state(melissa_field_t *fields,
         {
             for (i=0; i<comm_data->client_comm_size; i++)
             {
-                if (fields[j].stats_data[i].vect_size > 0)
+                if (fields[j].stats_data[i].steps_init > 0)
                 {
                     for (t=0; t<nb_time_steps; t++)
                     {
@@ -157,6 +157,7 @@ void process_launcher_message (void*             msg_data,
     vector_t             *simulations;// = &server_ptr->simulations;
     melissa_simulation_t *simu_ptr;
     int                   simu_id, i;
+    char                  job_id[255];
     char*                 buff_ptr = (char*)msg_data;
 
     int message_type = get_message_type(buff_ptr);
@@ -191,10 +192,11 @@ void process_launcher_message (void*             msg_data,
         break;
     case DROP:
         simulations = &server_ptr->simulations;
-        memcpy (&simu_id, buff_ptr, sizeof(int));
-        buff_ptr += sizeof(int);
+        read_message_drop (buff_ptr,
+                           &simu_id,
+                           &job_id);
         simu_ptr = vector_get (simulations, simu_id);
-        strcpy (simu_ptr->job_id, buff_ptr);
+        strcpy (simu_ptr->job_id, job_id);
         simu_ptr->job_status = 1;
         simu_ptr->status = 2;
 
@@ -236,7 +238,7 @@ int check_last_timestep(melissa_field_t *fields,
         {
             for (i=0; i<comm_data->client_comm_size; i++)
             {
-                if (fields[j].stats_data[i].vect_size > 0)
+                if (fields[j].stats_data[i].steps_init > 0)
                 {
                     if (test_bit (fields[j].stats_data[i].step_simu.items[group_id], nb_time_steps-1) == 0)
                     {
