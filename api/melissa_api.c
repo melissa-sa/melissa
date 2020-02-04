@@ -35,6 +35,7 @@
 #endif // BUILD_WITH_MPI
 #include "melissa_api_no_mpi.h"
 #include "melissa_utils.h"
+#include "melissa_messages.h"
 #include <signal.h>
 
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
@@ -96,8 +97,8 @@ struct global_data_s
     int      sample_id;             /**< parameters sample id                      */
     int      nb_proc_server;        /**< number of MPI processes of the library    */
     int      nb_parameters;         /**< number of parameters of the study         */
-    char    *buffer;                /**< buffer used to send data to the library   */
-    double  *buffer_data;          /**< buffer used to store data on sobol rank 0 */
+    double  *buffer_data;           /**< buffer used to store data on sobol rank 0 */
+    double **data_ptr;              /**< ptr to the data in buffer_data            */
     int      buff_size;             /**< size of sobol buffer                      */
     int      coupling;              /**< coupling method                           */
     MPI_Comm comm_sobol;            /**< inter-groups communicator                 */
@@ -1053,30 +1054,35 @@ static void melissa_init_internal (const char *field_name,
                 }
             }
         }
+        global_data.data_ptr = melissa_malloc ((global_data.nb_parameters+2) * sizeof(double*));
     }
-    else if (global_data.learning > 0)
+    else
     {
-        if (rank == 0)
+        if (global_data.learning > 0)
         {
-            if (first_init != 0)
+            if (rank == 0)
             {
-                global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
-                global_data.buffer_data = malloc (field_data_ptr->global_vect_size * sizeof (double));
+                if (first_init != 0)
+                {
+                    global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
+                    global_data.buffer_data = malloc (field_data_ptr->global_vect_size * sizeof (double));
+                }
+                else if (field_data_ptr->global_vect_size * sizeof (double) > global_data.buff_size)
+                {
+                    global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
+                    global_data.buffer_data = realloc (global_data.buffer_data, field_data_ptr->global_vect_size * sizeof (double));
+                }
             }
-            else if (field_data_ptr->global_vect_size * sizeof (double) > global_data.buff_size)
+            else
             {
-                global_data.buff_size = field_data_ptr->global_vect_size * sizeof (double);
-                global_data.buffer_data = realloc (global_data.buffer_data, field_data_ptr->global_vect_size * sizeof (double));
+                if (first_init != 0)
+                {
+                    global_data.buff_size = 0;
+                    global_data.buffer_data = malloc (0);
+                }
             }
         }
-        else
-        {
-            if (first_init != 0)
-            {
-                global_data.buff_size = 0;
-                global_data.buffer_data = malloc (0);
-            }
-        }
+        global_data.data_ptr = melissa_malloc (sizeof(double*));
     }
     first_init = 0;
 }
@@ -1220,9 +1226,8 @@ void melissa_init (const char *field_name,
 void melissa_send (const char   *field_name,
                    const double *send_vect)
 {
-    int     i=0, j=0, k, ret, zero = 0;
+    int     i=0, j=0, k, ret;
     int     buff_size;
-    char   *buff_ptr;
     int     local_vect_size = 0;
     double *send_vect_ptr;
     field_data_t  *field_data_ptr = NULL;
@@ -1334,40 +1339,38 @@ void melissa_send (const char   *field_name,
                 if (global_data.rank == field_data_ptr->push_rank[i])
                 {
                     // create the message
-                    buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
-                    if (global_data.sobol == 1)
-                    {
-                        buff_size += field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * (global_data.nb_parameters + 1) * sizeof(double);
-                    }
-                    global_data.buffer = malloc (buff_size);
-                    buff_ptr = global_data.buffer;
-                    memcpy(buff_ptr, &field_data_ptr->timestamp, sizeof(int));
-                    buff_ptr += sizeof(int);
-                    memcpy(buff_ptr, &global_data.sobol_rank, sizeof(int));
-                    buff_ptr += sizeof(int);
-                    memcpy(buff_ptr, &global_data.sample_id, sizeof(int));
-                    buff_ptr += sizeof(int);
-                    memcpy(buff_ptr, &global_data.rank, sizeof(int));
-                    buff_ptr += sizeof(int);
-                    memcpy(buff_ptr, &field_data_ptr->send_counts[field_data_ptr->pull_rank[i]], sizeof(int));
-                    buff_ptr += sizeof(int);
-                    memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
-                    buff_ptr += MAX_FIELD_NAME * sizeof(char);
-                    memcpy (buff_ptr, &send_vect_ptr[field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]], field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
+                    global_data.data_ptr[0] = &send_vect_ptr[field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]];
                     if (global_data.sobol == 1)
                     {
                         // add the nb_param+1 data from the other simulations of the group in the message
                         for (k=1; k<global_data.nb_parameters + 2; k++)
                         {
-                            buff_ptr += field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
-                            memcpy (buff_ptr, &global_data.buffer_data[k*local_vect_size + field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]],
-                                    field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double));
+                            global_data.data_ptr[k] = &global_data.buffer_data[k*local_vect_size + field_data_ptr->sdispls[field_data_ptr->pull_rank[i]]];
                         }
+                        ret = send_message_simu_data (field_data_ptr->timestamp,
+                                                      global_data.sample_id,
+                                                      global_data.rank,
+                                                      field_data_ptr->send_counts[field_data_ptr->pull_rank[i]],
+                                                      global_data.nb_parameters + 2,
+                                                      field_name,
+                                                      global_data.data_ptr,
+                                                      field_data_ptr->data_pusher[j],
+                                                      0);
+                        buff_size = 4 * sizeof(int) + MAX_FIELD_NAME + (global_data.nb_parameters + 2) * field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
                     }
-                    // init the ZMQ message from the buffer
-                    zmq_msg_init_data (&msg, global_data.buffer, buff_size, my_free, NULL);
-                    // send the message
-                    ret = zmq_msg_send (&msg, field_data_ptr->data_pusher[j], 0);
+                    else
+                    {
+                        ret = send_message_simu_data (field_data_ptr->timestamp,
+                                                      global_data.sample_id,
+                                                      global_data.rank,
+                                                      field_data_ptr->send_counts[field_data_ptr->pull_rank[i]],
+                                                      1,
+                                                      field_name,
+                                                      global_data.data_ptr,
+                                                      field_data_ptr->data_pusher[j],
+                                                      0);
+                        buff_size = 4 * sizeof(int) + MAX_FIELD_NAME + field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
+                    }
                     melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent (proc %d)\n", buff_size, field_data_ptr->push_rank[i]);
                     if (ret == -1)
                     {
@@ -1386,55 +1389,53 @@ void melissa_send (const char   *field_name,
             j = (field_data_ptr->timestamp) % global_data.nb_proc_server;
             for (i=0; i<global_data.nb_proc_server; i++)
             {
+                global_data.data_ptr[0] = send_vect_ptr;
                 if (i != j)
                 {
-                    buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
+                    ret = send_message_simu_data (field_data_ptr->timestamp,
+                                                  global_data.sample_id,
+                                                  global_data.rank,
+                                                  0,
+                                                  1,
+                                                  field_name,
+                                                  global_data.data_ptr,
+                                                  field_data_ptr->data_pusher[j],
+                                                  0);
+                    buff_size = 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
                 }
                 else
                 {
-                    buff_size = 5 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + local_vect_size * sizeof(double);
-                    if (global_data.sobol == 1)
-                    {
-                        buff_size += local_vect_size * (global_data.nb_parameters + 1) * sizeof(double);
-                    }
-                }
-                global_data.buffer = malloc (buff_size);
-                buff_ptr = global_data.buffer;
-                memcpy(buff_ptr, &field_data_ptr->timestamp, sizeof(int));
-                buff_ptr += sizeof(int);
-                memcpy(buff_ptr, &global_data.sobol_rank, sizeof(int));
-                buff_ptr += sizeof(int);
-                memcpy(buff_ptr, &global_data.sample_id, sizeof(int));
-                buff_ptr += sizeof(int);
-                memcpy(buff_ptr, &global_data.rank, sizeof(int));
-                buff_ptr += sizeof(int);
-                if (i != j)
-                {
-                    memcpy(buff_ptr, &zero, sizeof(int));
-                }
-                else
-                {
-                    memcpy(buff_ptr, &local_vect_size, sizeof(int));
-                }
-                buff_ptr += sizeof(int);
-                memcpy (buff_ptr, field_name, MAX_FIELD_NAME * sizeof(char));
-
-                if (i == j)
-                {
-                    buff_ptr += MAX_FIELD_NAME * sizeof(char);
-                    memcpy (buff_ptr, send_vect_ptr, local_vect_size * sizeof(double));
+                    buff_size = 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + local_vect_size * sizeof(double);
                     if (global_data.sobol == 1)
                     {
                         for (k=1; k<global_data.nb_parameters + 2; k++)
                         {
-                            buff_ptr += local_vect_size * sizeof(double);
-                            memcpy (buff_ptr, &send_vect_ptr[k*local_vect_size],
-                                    buff_size);
+                            global_data.data_ptr[k] = & send_vect_ptr[k*local_vect_size];
                         }
+                        ret = send_message_simu_data (field_data_ptr->timestamp,
+                                                      global_data.sample_id,
+                                                      global_data.rank,
+                                                      field_data_ptr->send_counts[field_data_ptr->pull_rank[i]],
+                                                      global_data.nb_parameters + 2,
+                                                      field_name,
+                                                      global_data.data_ptr,
+                                                      field_data_ptr->data_pusher[j],
+                                                      0);
+                        buff_size += local_vect_size * (global_data.nb_parameters + 1) * sizeof(double);
+                    }
+                    else
+                    {
+                        ret = send_message_simu_data (field_data_ptr->timestamp,
+                                                      global_data.sample_id,
+                                                      global_data.rank,
+                                                      field_data_ptr->send_counts[field_data_ptr->pull_rank[i]],
+                                                      1,
+                                                      field_name,
+                                                      global_data.data_ptr,
+                                                      field_data_ptr->data_pusher[j],
+                                                      0);
                     }
                 }
-                zmq_msg_init_data (&msg, global_data.buffer, buff_size, my_free, NULL);
-                ret = zmq_msg_send (&msg, field_data_ptr->data_pusher[i], 0);
                 melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent to %d\n", buff_size, i);
                 if (ret == -1)
                 {
@@ -1584,6 +1585,7 @@ void melissa_finalize (void)
     {
         free(global_data.buffer_data);
     }
+    free(global_data.data_ptr);
 
 #ifdef BUILD_WITH_PROBES
     melissa_print(VERBOSE_INFO, " --- Simulation comm time: %g s\n",total_comm_time);

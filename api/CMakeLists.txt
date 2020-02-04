@@ -49,6 +49,6 @@ if(INSTALL_ZMQ)
 endif(INSTALL_ZMQ)
 
 set_target_properties(melissa_api PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} VERSION ${PROJECT_VERSION})
-target_link_libraries(melissa_api ${ZeroMQ_LIBRARY} ${EXTRA_LIBS})
+target_link_libraries(melissa_api ${ZeroMQ_LIBRARY} ${EXTRA_LIBS} melissa_messages)
 target_compile_options(melissa_api BEFORE PUBLIC -fPIC)
 install(TARGETS melissa_api LIBRARY DESTINATION lib)
