@@ -9,8 +9,9 @@ import ipywidgets as widgets
 import matplotlib
 
 from launcher.study import Study
+import job_scheduler_config
 
-        
+
 class MelissaMonitoring:
 
     def __init__(self, study_options, melissa_stats, user_functions):
@@ -29,10 +30,11 @@ class MelissaMonitoring:
         self.serverStatusWidget = None
         self.failedParametersWidget = None
         self.jobsCPUCountWidget = None
+        self.spawner = job_scheduler_config.spawner
 
     def startStudyInThread(self):
         """Starts study with options from the constructor
-        
+
         Returns:
             Thread -- Thread object used to control the study
         """
@@ -53,13 +55,13 @@ class MelissaMonitoring:
             time.sleep(0.001)
         else:
             self.state_checker = self.study.threads['state_checker']
-        
+
         while not self.state_checker.is_alive():
             time.sleep(0.001)
 
     def isStudyRunning(self):
         """Checks if study is still running
-        
+
         Returns:
             Bool -- Is study still running?
         """
@@ -68,7 +70,7 @@ class MelissaMonitoring:
 
     def getJobStatusData(self):
         """Get dictionary with current number of jobs with particular job status
-        
+
         Returns:
             Dictionary -- Mapped as jobStatus -> numberOfJobs
         """
@@ -85,7 +87,7 @@ class MelissaMonitoring:
 
         return self.jobStates[self.study.server_obj[0].status]
 
-    def getCPUCount(self):
+    def getCPUCount(self):  ## TODO: remove
         """Get the number of user's current total CPU usage. Slurm specific
 
         Returns:
@@ -192,9 +194,9 @@ class MelissaMonitoring:
     def getSobolConfidenceInterval(self):
         """Get current sobol confidence interval
         If Sobol Indicies wasn't selected in the options file, function will always return None.
-        
+
         Returns:
-            float -- real number between 1 and 2 
+            float -- real number between 1 and 2
             or
             None -- if confidence interval couldn't be calculated at the moment
         """
@@ -209,7 +211,7 @@ class MelissaMonitoring:
         """
 
         ax.clear()
-        self.coreUsageData[datetime.datetime.now() - self.timeStart] = self.getCPUCount()
+        self.coreUsageData[datetime.datetime.now() - self.timeStart] = self.spawner.getTotalCPUCount(self.getJobsIDs())
         ax.plot(list(map(lambda x: str(x), self.coreUsageData.keys())), list(self.coreUsageData.values()))
         ax.set_title('Cores usage vs time')
         ax.get_figure().autofmt_xdate()
@@ -260,7 +262,7 @@ class MelissaMonitoring:
         return self.jobsCPUCountWidget
 
     def showJobsCPUCount(self):
-        """Create widget (if not created) & show jobs cpu count of your jobs on cluster 
+        """Create widget (if not created) & show jobs cpu count of your jobs on cluster
         """
 
         if self.jobsCPUCountWidget is None:
@@ -288,7 +290,7 @@ class MelissaMonitoring:
         return self.timeWidget
 
     def showRemainingJobsTime(self):
-        """Create widget (if not created) & show remaining time of your jobs on cluster 
+        """Create widget (if not created) & show remaining time of your jobs on cluster
         """
 
         if self.timeWidget is None:
@@ -312,7 +314,7 @@ class MelissaMonitoring:
                                         description='Server status: ',
                                         style=style,
                                         )
-        
+
         return self.serverStatusWidget
 
     def showServerStatus(self):
@@ -375,9 +377,9 @@ class MelissaMonitoring:
 
     def getStudyInfo(self):
         """Get info about performed study such as time and cores used
-        
+
         Returns:
-            str -- info about study 
+            str -- info about study
         """
 
         info = """
@@ -390,4 +392,4 @@ class MelissaMonitoring:
         max(list(self.coreUsageData.values())), statistics.mean(list(self.coreUsageData.values())))
         return info
 
-    
+

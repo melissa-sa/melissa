@@ -19,7 +19,7 @@ will include notions of:
 """
 
 
-import jupyterhub.spawner, traitlets, async_generator, pwd, jinja2, asyncio, re, tornado, getpass, xml, os
+import jupyterhub.spawner, traitlets, async_generator, pwd, jinja2, asyncio, re, tornado, getpass, xml, os, subprocess
 
 
 def format_template(template, *args, **kwargs):
@@ -158,11 +158,11 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
     opt_query_state = traitlets.Unicode('',
             help='''batch_query_cmd options; formatted using self.job_id
                     as {job_id}'''
-        ).tag(config=True)
+                                        ).tag(config=True)
     opt_query_cpus = traitlets.Unicode('',
-            help='''batch_query_cmd options; formatted using self.job_id
+                                       help='''batch_query_cmd options; formatted using self.job_id
                     as {job_id}'''
-        ).tag(config=True)
+                                       ).tag(config=True)
     batch_query_user_cmd = traitlets.Unicode('',
             help='''command to run to read user's jobs status; formatted
                     using req_xyz traits as {xyz} and req_username as
@@ -392,6 +392,13 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
             self.clear_state()
             return 1
 
+    def getTotalCPUCount(self):
+        """
+        Getting the number of CPUs allocated to specified jobs.
+        :raises NotImplementedError: Must be implemented in a subclass.
+        """
+        raise NotImplementedError('Subclass must provide implementation')
+
     async def start(self):
         """
         Start-up method.
@@ -575,7 +582,6 @@ class TorqueSpawner(BatchSpawnerRegexStates):
     ## outputs job data XML string
     batch_query_cmd = traitlets.Unicode('qstat').tag(config=True)
     opt_query_state = traitlets.Unicode('-x {job_id}').tag(config=True)
-    opt_query_cpus = traitlets.Unicode().tag(config=True)
     batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('qdel {job_id}'
@@ -756,6 +762,8 @@ echo 'jupyterhub-singleuser ended gracefully'
     batch_query_cmd = traitlets.Unicode('squeue').tag(config=True)
     opt_query_state = traitlets.Unicode("-h -j {job_id} -o '%T %B'"
         ).tag(config=True)
+    opt_query_cpus = traitlets.Unicode('-h -o "%C" -j {} -t RUNNING'
+        ).tag(config=True)
     batch_query_user_cmd = traitlets.Unicode(
             'squeue -h --user={username} | wc -l',
         ).tag(config=True)
@@ -786,6 +794,23 @@ echo 'jupyterhub-singleuser ended gracefully'
             self.log.error('Spawner unable to parse job ID from text: {}'
                            .format(output))
             raise e
+
+    def getTotalCPUCount(self, job_ids):
+        """
+        Getting the number of CPUs allocated to specified jobs.
+        :param list[str] job_ids: One or more job ID.
+        :return: Total CPU count.
+        :rtype: int
+        """
+        process = subprocess.Popen(
+            self.batch_query_cmd + ' ' + self.opt_query_cpus
+            .format(','.join(job_ids)),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            universal_newlines=True)
+        out, _ = process.communicate()
+        return sum([int(x) for x in list(out.splitlines())])
 
 
 class MultiSlurmSpawner(SlurmSpawner):
