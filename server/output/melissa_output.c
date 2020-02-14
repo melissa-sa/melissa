@@ -1034,7 +1034,6 @@ void write_simu_param (vector_t *simulations,
       return;
     }
 
-    printf ("nb_param: %d \n", nb_parameters);
     for (i=0; i<simulations->size; i++)
     {
         simu_ptr = simulations->items[i];

@@ -26,7 +26,7 @@ if(${srcdir} STREQUAL ${bindir})
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
-project(Melissa VERSION 0.4.0 LANGUAGES C Fortran CXX)
+project(Melissa VERSION 0.5.0 LANGUAGES C Fortran CXX)
 
 cmake_minimum_required(VERSION 3.2.2)
 
@@ -244,23 +244,19 @@ option(CHECK_SIMU_DECONNECTION "check simulation deconnection" OFF)
 
 # Load local include directories before. This ensures that no old installed headers are
 # loaded.
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/utils")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/common")
 
-add_subdirectory(utils)
+add_subdirectory(common)
 
 include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
 
 add_subdirectory(api)
 
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/stats")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/stats")
 
-add_subdirectory(stats)
-
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/output")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/output")
 
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
-
-add_subdirectory(output)
 
 add_subdirectory(server)
 
@@ -271,7 +267,13 @@ add_subdirectory(tests)
 set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
 add_subdirectory(examples)
 
+set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
+add_subdirectory(utility)
+
 # set environement variables
+#if(INSTALL_ZMQ)
+#  set(ZeroMQ_DIR "export ZeroMQ=${CMAKE_INSTALL_PREFIX}/share/cmake/ZeroMQ")
+#endif(INSTALL_ZMQ)
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     PERMISSIONS OWNER_WRITE

@@ -7,6 +7,7 @@
 #OAR -n Simu${SIMU_ID}
 
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
+export MELISSA_COUPLING=${COUPLING}
 export MELISSA_SERVER_NODE_NAME=${SERVER_NODE_NAME}
 export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
 date +\"%d/%m/%y\ %T\"

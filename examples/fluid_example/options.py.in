@@ -76,20 +76,20 @@ def launch_server(server):
     server.job_id = subprocess.Popen(('mpirun ' +
                                       ' -n '+str(NODES_SERVER) +
                                       ' ' + server.path +
-                                      '/melissa_server.py ' +
+                                      '/melissa_server ' +
                                       server.cmd_opt ).split()).pid
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def create_simu(simulation):
     os.chdir(STUDY_OPTIONS['working_directory'])
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))):
         create_case_str = STUDY_OPTIONS['saturne_path'] + \
                 "/code_saturne create --noref -s group" + \
-                str(simulation.rank) + \
+                str(simulation.group_id) + \
                 " -c rank0"
         os.system(create_case_str)
 
-    casedir = STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0"
+    casedir = STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank0"
     #os.system("cp "+STUDY_OPTIONS['working_directory']+"/../case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
     os.chdir(casedir+"/SRC")
 
@@ -97,10 +97,10 @@ def create_simu(simulation):
     tree = etree.parse(STUDY_OPTIONS['working_directory']+'/../case1/DATA/case1.xml')
     root = tree.getroot()
     # modif parameters
-    param0 = 'temperature = '+str(simulation.param_set[0])+';'
+    param0 = 'temperature = '+str(simulation.param_set[0][0])+';'
     root.find('thermophysical_models').find('thermal_scalar').find('variable').find('formula').text = param0
-    root.find('physical_properties').find('fluid_properties').find("property/[@name='molecular_viscosity']").find('initial_value').text = str(simulation.param_set[1])
-    root.find('analysis_control').find('output').find("writer/[@label='results']").find("format/[@name='melissa']").set('options',str(simulation.rank))
+    root.find('physical_properties').find('fluid_properties').find("property/[@name='molecular_viscosity']").find('initial_value').text = str(simulation.param_set[0][1])
+    root.find('analysis_control').find('output').find("writer/[@label='results']").find("format/[@name='melissa']").set('options',str(simulation.group_id))
     # modif path to mesh file directory
     meshlist = root.find('solution_domain').find('meshes_list')
     if meshlist.find('meshdir') is None:
@@ -110,7 +110,7 @@ def create_simu(simulation):
         meshlist.find('meshdir').set('name', '../../../MESH')
 
     # we do that because Code_Saturne needs double quotes...
-    xml_str = ('<?xml version="1.0" encoding="utf-8"?>' +
+    xml_str = ('<?xml version="1.0" encoding="utf-8"?>'.encode() +
                etree.tostring(root, encoding="utf-8", pretty_print=True, xml_declaration=False))
     with open(casedir+'/DATA/case1.xml', 'wb') as xml_file:
         xml_file.write(xml_str)
@@ -120,7 +120,7 @@ def create_simu(simulation):
 
 def launch_simu(simulation):
     os.environ['MELISSA_SERVER_NODE_NAME'] = simulation.server_node_name
-    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0/DATA")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank0/DATA")
     cmd = STUDY_OPTIONS['saturne_path']+"/code_saturne run -n "+str(NODES_GROUP)+" --param case1.xml"
     simulation.job_id = subprocess.Popen(cmd.split()).pid
 
@@ -149,7 +149,7 @@ STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/fluid_example/STATS'
 STUDY_OPTIONS['nb_parameters'] = 2                 # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 300              # initial number of parameter sets
-STUDY_OPTIONS['nb_time_steps'] = 75                # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['nb_timesteps'] = 75                # number of timesteps, from Melissa point of view
 STUDY_OPTIONS['threshold_values'] = 400.0
 STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
 STUDY_OPTIONS['field_names'] = ["TempC"]           # list of field names
