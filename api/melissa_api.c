@@ -175,7 +175,6 @@ static field_data_t* get_last_field(field_data_t *data)
 
 static void free_field_data(field_data_t *data)
 {
-
     if (global_data.learning > 0)
     {
         melissa_free (data->gatherv_rcvcnt);
@@ -486,7 +485,8 @@ static void melissa_init_internal (const char *field_name,
 
     total_comm_time = 0.0;
     total_bytes_sent = 0;
-    // this function is called once per simulation field. However, some actions are required only during the first call (to contact the server for example).
+    // this function is called once per simulation field. However, some actions are
+    // required only during the first call (to contact the server for example).
     // this is the meaning of this condition.
     if (first_init != 0)
     {
@@ -1141,7 +1141,7 @@ void melissa_init_no_mpi (const char *field_name,
 {
     int rank = 0;
     int comm_size = 1;
-    MPI_Comm comm = 0;
+    MPI_Comm comm = MPI_COMM_WORLD;
     melissa_init_internal (field_name,
                            vect_size,
                            comm_size,
@@ -1233,6 +1233,7 @@ void melissa_send (const char   *field_name,
     field_data_t  *field_data_ptr = NULL;
 //    MPI_Request *request;
 //    MPI_Status *status;
+    double start_comm_time = melissa_get_time();
 
 #ifdef BUILD_WITH_PROBES
     double start_comm_time;
@@ -1256,7 +1257,9 @@ void melissa_send (const char   *field_name,
     if (global_data.learning > 0)
     {
         // in the case of machine learning, we gather everything on the rank 0
+        // void* buffer = melissa_malloc(sizeof(double) * 10);
 #ifdef BUILD_WITH_MPI
+        double start_gather = melissa_get_time();
         MPI_Gatherv(send_vect,
                     local_vect_size,
                     MPI_DOUBLE,
@@ -1266,6 +1269,8 @@ void melissa_send (const char   *field_name,
                     MPI_DOUBLE,
                     0,
                     global_data.comm);
+        double end_gather = melissa_get_time();
+        // fprintf(stdout, "Gather time: %f \n", end_gather - start_gather);
         send_vect_ptr = global_data.buffer_data;
 #endif // BUILD_WITH_MPI
         if (global_data.rank == 0)
@@ -1384,12 +1389,13 @@ void melissa_send (const char   *field_name,
         }
         else // here, learning >= 2. That means that we d'on' split the data for redistribution, bunt we send everything to one server rank in a round-robin fashion
         {
+            double start_send_time = melissa_get_time();
             // remember that when learning != 0 we gather all the data on rank 0
             // send all the data round-robin from proc 0
             j = (field_data_ptr->timestamp) % global_data.nb_proc_server;
             for (i=0; i<global_data.nb_proc_server; i++)
             {
-                global_data.data_ptr[0] = send_vect_ptr;
+                global_data.data_ptr = &send_vect_ptr;
                 if (i != j)
                 {
                     ret = send_message_simu_data (field_data_ptr->timestamp,
@@ -1399,7 +1405,7 @@ void melissa_send (const char   *field_name,
                                                   1,
                                                   field_name,
                                                   global_data.data_ptr,
-                                                  field_data_ptr->data_pusher[j],
+                                                  field_data_ptr->data_pusher[i],
                                                   0);
                     buff_size = 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
                 }
@@ -1423,7 +1429,7 @@ void melissa_send (const char   *field_name,
                                                       0);
                         buff_size += local_vect_size * (global_data.nb_parameters + 1) * sizeof(double);
                     }
-                    else
+                    else if (global_data.learning == 0)
                     {
                         ret = send_message_simu_data (field_data_ptr->timestamp,
                                                       global_data.sample_id,
@@ -1435,6 +1441,19 @@ void melissa_send (const char   *field_name,
                                                       field_data_ptr->data_pusher[j],
                                                       0);
                     }
+                    else
+                    {   
+                        // Send the whole vector when learning > 0
+                        ret = send_message_simu_data (field_data_ptr->timestamp,
+                                                      global_data.sample_id,
+                                                      global_data.rank,
+                                                      local_vect_size,
+                                                      1,
+                                                      field_name,
+                                                      global_data.data_ptr,
+                                                      field_data_ptr->data_pusher[i],
+                                                      0);
+                    }
                 }
                 melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent to %d\n", buff_size, i);
                 if (ret == -1)
@@ -1444,9 +1463,13 @@ void melissa_send (const char   *field_name,
                 }
                 total_bytes_sent += buff_size;
             }
+            double end_send_time = melissa_get_time();
+            // fprintf(stdout, "Send time: %f \n", end_send_time - start_send_time);
         }
     }
     field_data_ptr->timestamp += 1;
+    double end_comm_time = melissa_get_time();
+    // fprintf(stdout, "Total time: %f \n", end_comm_time - start_comm_time);
 
 #if BUILD_WITH_PROBES
     end_comm_time = melissa_get_time();
@@ -1580,13 +1603,13 @@ void melissa_finalize (void)
     zmq_ctx_term (global_data.context);
     melissa_print(VERBOSE_DEBUG, "Free ZMQ context OK\n");
     free (port_names);
-
     if (global_data.sobol == 1 && global_data.sobol_rank == 0)
     {
         free(global_data.buffer_data);
     }
-    free(global_data.data_ptr);
-
+    if (global_data.learning == 0){
+        free(global_data.data_ptr);
+    }
 #ifdef BUILD_WITH_PROBES
     melissa_print(VERBOSE_INFO, " --- Simulation comm time: %g s\n",total_comm_time);
 #endif

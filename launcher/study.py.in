@@ -612,7 +612,7 @@ class Study(object):
         if self.ml_stats['sobol_indices'] and self.nb_param < 2:
             logging.error('Error bad option: not enough parameters')
             errors += 1
-        if self.stdy_opt['sampling_size'] < 2:
+        if self.stdy_opt['sampling_size'] < 1:
             logging.error('Error bad option: sample_size not big enough')
             errors += 1
 
