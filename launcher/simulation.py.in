@@ -231,7 +231,7 @@ class MultiSimuGroup(Group):
             Ends and restarts the simulations (mandatory)
         """
         crashs_before_redraw = 3
-        self.cancel()
+        self.cancel()  ## TODO: async this one and alike
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.group_id) +
