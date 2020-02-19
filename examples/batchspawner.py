@@ -158,11 +158,15 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
     opt_query_state = traitlets.Unicode('',
             help='''batch_query_cmd options; formatted using self.job_id
                     as {job_id}'''
-                                        ).tag(config=True)
+        ).tag(config=True)
     opt_query_cpus = traitlets.Unicode('',
-                                       help='''batch_query_cmd options; formatted using self.job_id
+            help='''batch_query_cmd options; formatted using self.job_id
                     as {job_id}'''
-                                       ).tag(config=True)
+        ).tag(config=True)
+    opt_query_cpus_name = traitlets.Unicode('',
+            help='''batch_query_cmd options; formatted using self.job_id
+                    as {job_id}'''
+        ).tag(config=True)
     batch_query_user_cmd = traitlets.Unicode('',
             help='''command to run to read user's jobs status; formatted
                     using req_xyz traits as {xyz} and req_username as
@@ -398,6 +402,15 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         :raises NotImplementedError: Must be implemented in a subclass.
         """
         raise NotImplementedError('Subclass must provide implementation')
+
+    def getCPUCountByJob(self):
+        """
+        Getting the number of CPUs allocated to specified jobs along with
+        job names.
+        :raises NotImplementedError: Must be implemented in a subclass.
+        """
+        raise NotImplementedError('Subclass must provide implementation')
+
 
     async def start(self):
         """
@@ -764,6 +777,8 @@ echo 'jupyterhub-singleuser ended gracefully'
         ).tag(config=True)
     opt_query_cpus = traitlets.Unicode('-h -o "%C" -j {} -t RUNNING'
         ).tag(config=True)
+    opt_query_cpus_name = traitlets.Unicode(
+        '-h -o "%j %C" -j {} -t RUNNING').tag(config=True)
     batch_query_user_cmd = traitlets.Unicode(
             'squeue -h --user={username} | wc -l',
         ).tag(config=True)
@@ -804,13 +819,31 @@ echo 'jupyterhub-singleuser ended gracefully'
         """
         process = subprocess.Popen(
             self.batch_query_cmd + ' ' + self.opt_query_cpus
-            .format(','.join(job_ids)),
+                .format(','.join(job_ids)),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
             universal_newlines=True)
         out, _ = process.communicate()
         return sum([int(x) for x in list(out.splitlines())])
+
+    def getCPUCountByJob(self, job_ids):
+        """
+        Getting the number of CPUs allocated to specified jobs along with
+        job names.
+        :param list[str] job_ids: One or more job ID.
+        :return: Job names and respective CPU count.
+        :rtype: dict[str, str]
+        """
+        process = subprocess.Popen(
+            self.batch_query_cmd + ' ' + self.opt_query_cpus_name
+                .format(','.join(job_ids)),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            universal_newlines=True)
+        out, _ = process.communicate()
+        return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
 
 class MultiSlurmSpawner(SlurmSpawner):

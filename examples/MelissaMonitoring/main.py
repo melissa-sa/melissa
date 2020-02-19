@@ -104,7 +104,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return sum([int(x) for x in list(out.splitlines())])
 
-    def getJobCPUCount(self, ID):
+    def getJobCPUCount(self, ID):  ## TODO: remove
         """Get CPU usage of particular job. Slurm specific
 
         Arguments:
@@ -122,7 +122,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return str(out).strip()
 
-    def getJobsCPUCount(self):
+    def getJobsCPUCount(self):  ## TODO: remove
         """Get the current CPU usage of your jobs. Slurm specific
 
         Returns:
@@ -269,7 +269,7 @@ class MelissaMonitoring:
             self._createJobsCPUCountWidget()
             display(self.jobsCPUCountWidget)
 
-        data = self.getJobsCPUCount()
+        data = self.spawner.getCPUCountByJob(self.getJobsIDs())
         data = ['{} - {}'.format(k,v) for k,v in data.items()]
         value = '<br/>'.join(data)
         self.jobsCPUCountWidget.value = value
