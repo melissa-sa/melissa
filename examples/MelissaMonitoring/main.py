@@ -139,7 +139,7 @@ class MelissaMonitoring:
         out, _ = process.communicate()
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
-    def getRemainingJobsTime(self):
+    def getRemainingJobsTime(self):  ## TODO: remove
         """Get the current remaining time of your jobs. Slurm specific
 
         Returns:
@@ -297,7 +297,7 @@ class MelissaMonitoring:
             self._createRemainingJobsTimeWidget()
             display(self.timeWidget)
 
-        data = self.getRemainingJobsTime()
+        data = self.spawner.getRemainingJobsTime(self.getJobsIDs())
         data = ['{} - {}'.format(k,v) for k,v in data.items()]
         value = '<br/>'.join(data)
         self.timeWidget.value = value
