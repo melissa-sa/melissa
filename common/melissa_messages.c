@@ -371,9 +371,9 @@ zmq_msg_t message_simu_data (int      time_stamp,
     buff_ptr += sizeof(int);
     memcpy (buff_ptr, field_name, MAX_FIELD_NAME);
     buff_ptr += MAX_FIELD_NAME;
-    for (i=1; i<nb_vect; i++)
+    for (i=0; i<nb_vect; i++)
     {
-        memcpy (buff_ptr, data_ptr[i], MAX_FIELD_NAME);
+        memcpy (buff_ptr, data_ptr[i], vect_size * sizeof(double));
         buff_ptr += vect_size * sizeof(double);
     }
     return msg;
