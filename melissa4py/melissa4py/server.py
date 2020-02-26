@@ -46,7 +46,6 @@ class MelissaServer:
                  checkpoint_file='checkpoint.pkl',
                  data_hwm=32):
         
-        print('Initializing server..')
         # Initlialize MPI
         self.sobol_op = 0
         self.comm = MPI.COMM_WORLD
@@ -54,11 +53,11 @@ class MelissaServer:
         self.comm_size = self.comm.Get_size()
         self.fields = fields
         self.checkpoint_file = checkpoint_file
-        
         self.nb_time_steps = nb_time_steps
         self.nb_proc_server = nb_proc_server
         self.nb_parameters = nb_parameters
         self.learning = learning
+        print('Rank {} | Initializing server...'.format(self.rank))
         
         self.node_name = socket.gethostname()
         self.launcher_node_name = launcher_node_name
@@ -80,15 +79,19 @@ class MelissaServer:
         # Simulations (REQ) <-> Server (REP)
         self.connection_responder = self.context.socket(zmq.REP)
         if (self.rank == 0):
-            self.connection_responder.bind(
-                'tcp://*:{port}'.format(port=self.connection_port)
-            )
+            print('Rank {} binding..'.format(self.rank))
+            addr = 'tcp://*:{port}'.format(port=self.connection_port)
+            try:
+                self.connection_responder.bind(addr)
+            except Exception as e:
+                print('Rank {} could not bind to {}'.format(self.rank, addr))
+                raise e
         # Launcher (PUB) -> Server (SUB)
         self.text_puller = self.context.socket(zmq.SUB)
         self.text_puller.setsockopt(zmq.SUBSCRIBE, b"")
         self.text_puller.setsockopt(zmq.LINGER, self.linger)
         self.text_puller_port_name = "tcp://{}:{}".format(
-            self.node_name, self.text_pull_port
+            self.launcher_node_name, self.text_pull_port
         )
         self.text_puller.connect(self.text_puller_port_name)
         # Simulations (PUSH) -> Server (PULL)
@@ -101,7 +104,7 @@ class MelissaServer:
         self.text_pusher = self.context.socket(zmq.PUSH)
         self.text_pusher.setsockopt(zmq.LINGER, self.linger)
         addr = "tcp://{node_name}:{port}".format(
-            node_name=self.node_name, port=self.text_push_port
+            node_name=self.launcher_node_name, port=self.text_push_port
         )
         print('connected to {}'.format(addr))
         self.text_pusher.connect(addr)
@@ -122,10 +125,6 @@ class MelissaServer:
 
         # TODO: maybe this should be an MPI gather on rank 0.
         self.verbose_level = 0
-        # self.port_names = [
-        #     "tcp://{}:{}".format(self.node_name,
-        #     data_puller_port)
-        # ]
         # 2. Send node name to the launcher, get options and recover if necesary
         self._send_node_name()
         self.connection_request = None

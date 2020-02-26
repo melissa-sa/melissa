@@ -12,7 +12,7 @@ c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # This should maybe go into a constants file
 MAX_FIELD_NAME_SIZE = 128
-MPI_MAX_PROCESSOR_NAME = 256
+MPI_MAX_PROCESSOR_NAME = 128
 
 
 def get_str(buff):
@@ -105,9 +105,6 @@ class SimulationData:
     @classmethod
     def from_msg(cls, msg):
         timestep, simulation_id, client_rank, data_size = np.frombuffer(msg[:4 * 4], np.int32)
-        print('msg header: {} | {} | {} | {} '.format(
-            timestep, simulation_id, client_rank, data_size
-        ))
         field_name = get_str(msg[4 * 4: 4 * 4 + MAX_FIELD_NAME_SIZE])
         # Unpack data
         offset = 4 * 4 + MAX_FIELD_NAME_SIZE
@@ -127,7 +124,6 @@ class JobDetails:
     @classmethod
     def from_msg(cls, msg, nb_parameters):
         # TODO: validate message ?
-        print('nb_parameters: {} | msg: {}'.format(nb_parameters, msg))
         msg_type = ctypes.c_int32.from_buffer_copy(msg[:4])
         simulation_id = ctypes.c_int32.from_buffer_copy(msg[4:8])
         job_id = msg[8: (-nb_parameters * 8)].decode('utf-8')
