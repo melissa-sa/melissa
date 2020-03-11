@@ -34,10 +34,6 @@ c_int_ptr = ctypes.POINTER(ctypes.c_int)
 
 melissa_c_api.melissa_init_f.argtypes = (c_char_ptr,
                                          c_int_ptr,
-                                         c_int_ptr,
-                                         c_int_ptr,
-                                         c_int_ptr,
-                                         c_int_ptr,
                                          c_int_ptr)
 
 melissa_c_api.melissa_send.argtypes = (c_char_ptr,
@@ -47,9 +43,6 @@ melissa_c_api.melissa_finalize.argtypes = ()
 
 def melissa_init(field_name,
                  local_vect_size,
-                 comm_size,
-                 rank,
-                 simu_id,
                  comm,
                  coupling):
     comm_f = comm.py2f()
@@ -57,11 +50,7 @@ def melissa_init(field_name,
     buff.value = field_name.encode()
     melissa_c_api.melissa_init_f(buff,
                                  ctypes.byref(ctypes.c_int(local_vect_size)),
-                                 ctypes.byref(ctypes.c_int(comm_size)),
-                                 ctypes.byref(ctypes.c_int(rank)),
-                                 ctypes.byref(ctypes.c_int(simu_id)),
-                                 ctypes.byref(ctypes.c_int(comm_f)),
-                                 ctypes.byref(ctypes.c_int(coupling)))
+                                 ctypes.byref(ctypes.c_int(comm_f))))
 
 def melissa_send(field_name,
                  send_vect):

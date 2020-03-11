@@ -76,7 +76,7 @@ def launch_simu(simulation):
     """
     simulation_directory = os.path.join(
         STUDY_OPTIONS['working_directory'],
-        'simu{}'.format((simulation.rank)))
+        'simu{}'.format((simulation.group_id)))
     if not os.path.isdir(simulation_directory):
         os.mkdir(simulation_directory)
     os.chdir(simulation_directory)
@@ -91,14 +91,16 @@ def launch_simu(simulation):
         size = simulation.size
         nodes = str(spawner.req_tasks_per_node * int(spawner.req_nodes))
     for n in range(size):
-        command += '{} {} {} {} {} {} : '.format(
+        command += '{} {} {} {}{} {} {}: '.format(
             '-n',
             nodes,
+            '-x',
+            'MELISSA_SIMU_ID=',
+            str(simulation.simu_id[n]),
             os.path.join(
                 '@EXAMPLES_DIR@/heat_example/solver/install/bin',
                 EXECUTABLE),
-            str(simulation.simu_id[n]),
-            str(simulation.coupling),
+            #str(simulation.coupling),
             ' '.join(str(p) for p in simulation.param_set[n]))
     command = command[:-2]
     print(command)
@@ -110,10 +112,10 @@ export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
 date +\'%d/%m/%y %T\'
 ${SIMU_CMD}
 date +\'%d/%m/%y %T\'
-''').substitute(SIMU_ID=str(simulation.rank),
-               SIMU_CMD=str(command),
-               SERVER_NODE_NAME=simulation.server_node_name,
-               HOSTNAME=str('$(hostname)'))
+''').substitute(SIMU_ID=str(simulation.group_id),
+                SIMU_CMD=str(command),
+                SERVER_NODE_NAME=simulation.server_node_name,
+                HOSTNAME=str('$(hostname)'))
     asyncio.get_event_loop().run_until_complete(spawner.start())
     simulation.job_id = spawner.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])

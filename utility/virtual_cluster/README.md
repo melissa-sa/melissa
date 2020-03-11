@@ -1,6 +1,6 @@
 # Virtual Cluster
 
-## Table of contents
+## Table of content
 * [Introduction](#intro)
 * [Docker Installation](#docker)
 * [Virtual Cluster Installation](#cluster)
@@ -8,7 +8,7 @@
 * [Running the Heat Example with OAR](#heatoar)
 * [Running the Heat Example with Slurm](#heatslurm)
 * [Running the Heat Example on cluster](#heatcluster)
-
+* [Pitfalls](#pitfalls)
 
 
 ## Introduction <a name="intro"></a>
@@ -248,3 +248,8 @@ At the end of the study, the results are in
 ```
 /home/docker/<Your_Melissa_Folder>/install-oardocker/share/melissa/examples/heat_example/study_cluster/STATS
 ```
+
+
+## Pitfalls
+
+* Some networks block public DNS servers to encourage people to use network's own DNS server. Docker containers default to Google's 8.8.8.8 public DNS server. [This solution](https://development.robinwinslow.uk/2016/06/23/fix-docker-networking-dns/) can fix the problem of containers not updating and installing dependencies.

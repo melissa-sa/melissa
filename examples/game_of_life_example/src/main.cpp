@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     std::random_device rd;
     std::mt19937 rng(rd());
     std::uniform_int_distribution<int> randINT(0,100);
-    int nRows, nCols, nTime, simuID, coupling;
+    int nRows, nCols;
     std::string fieldName("GOL");
     bool bMelissa;
 
@@ -20,18 +20,16 @@ int main(int argc, char *argv[])
     auto mpirank = MPI::COMM_WORLD.Get_rank();
     auto mpiroot = 0;
     
-    if (argc != 6){
+    if (argc != 5){
         std::cerr << "Invalid number of parameters" << std::endl;
         MPI::COMM_WORLD.Abort(1);
     }
 
-    simuID = atoi(argv[1]);
-    nRows = atoi(argv[2]);
-    nCols = atoi(argv[3]);
-    nTime = atoi(argv[4]);
-    std::string melissa = std::string(argv[5]);
+    nRows = atoi(argv[1]);
+    nCols = atoi(argv[2]);
+    nTime = atoi(argv[3]);
+    std::string melissa = std::string(argv[4]);
     bMelissa = melissa == "melissa";
-    coupling = MELISSA_COUPLING_ZMQ;
 
     auto nRowsLocal = nRows / mpisize;
     if(mpirank == mpisize - 1){
@@ -58,7 +56,7 @@ int main(int argc, char *argv[])
     MPI_Comm_dup(MPI_COMM_WORLD, &world_comm);
     
     if(bMelissa)
-        melissa_init(fieldName.c_str(), local_vec_size, mpisize, mpirank, simuID, world_comm, coupling);
+        melissa_init(fieldName.c_str(), local_vec_size, world_comm);
 
     // Time loop
     for (auto iTime = 0; iTime < nTime; ++iTime){

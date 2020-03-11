@@ -316,7 +316,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 {
     melissa_server_t     *server_ptr;
-    int                   simu_id, i;
+    int                   i;
     int                   field_id;
     int                   old_simu_state;
 #ifdef CHECK_SIMU_DECONNECTION
@@ -522,28 +522,21 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
         }
 
         // === Data reception and statistics computation === //
-
+        // code where the data for one time step from one simulation and one field arrives
         if (items[2].revents & ZMQ_POLLIN)
         {
             server_ptr->start_comm_time = melissa_get_time();
             zmq_msg_init (&msg);
             zmq_msg_recv (&msg, server_ptr->data_puller, 0);
-            buf_ptr = (char*)zmq_msg_data (&msg);
-            server_ptr->end_comm_time = melissa_get_time();
-            server_ptr->total_comm_time += server_ptr->end_comm_time - server_ptr->start_comm_time;
 
-//            memcpy(&time_step, buf_ptr, sizeof(int));
-//          TODO: why not using apacked stuct here??
-            memcpy(&simu_data->time_stamp, buf_ptr, sizeof(int));
-            buf_ptr += sizeof(int);
-            memcpy(&simu_id, buf_ptr, sizeof(int));
-            buf_ptr += sizeof(int);
-//            memcpy(&group_id, buf_ptr, sizeof(int));
-            memcpy(&simu_data->simu_id, buf_ptr, sizeof(int));
-            buf_ptr += sizeof(int);
-            memcpy(&client_rank, buf_ptr, sizeof(int));
-            buf_ptr += sizeof(int);
-            memcpy(&recv_vect_size, buf_ptr, sizeof(int));
+            read_message_simu_data ((char*)zmq_msg_data (&msg),
+                                    &simu_data->time_stamp,
+                                    &simu_data->simu_id,
+                                    &client_rank,
+                                    &recv_vect_size,
+                                    &field_name_ptr,
+                                    (double**)&buf_ptr);
+
             if (recv_vect_size > simu_data->max_val_size && recv_vect_size > 0)
             {
                 melissa_print (VERBOSE_DEBUG, "realloc, new size: %d\n", recv_vect_size);
@@ -551,11 +544,14 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 simu_data->max_val_size = recv_vect_size;
             }
             simu_data->val_size = recv_vect_size;
-            buf_ptr += sizeof(int);
-            field_name_ptr = buf_ptr;
             new_data = 1;
 
-            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d (vect_size: %d)\n", server_ptr->comm_data.rank, simu_data->time_stamp, client_rank, simu_data->simu_id, recv_vect_size);
+            melissa_print (VERBOSE_DEBUG, "Server rank %d recieved timestep %d from rank %d of group %d (vect_size: %d, field: %s)\n", server_ptr->comm_data.rank,
+                                                                                                                           simu_data->time_stamp,
+                                                                                                                           client_rank,
+                                                                                                                           simu_data->simu_id,
+                                                                                                                           recv_vect_size,
+                                                                                                                           field_name_ptr);
 
             if (simu_data->time_stamp >= server_ptr->melissa_options.nb_time_steps || simu_data->time_stamp < 0)
             {
@@ -631,10 +627,9 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             simu_ptr->last_message = melissa_get_time();
             if (recv_vect_size > 0)
             {
-                buf_ptr += MAX_FIELD_NAME * sizeof(char);
                 memcpy(simu_data->val, buf_ptr, recv_vect_size*sizeof(double));
             }
-            server_ptr->total_mbytes_recv += zmq_msg_size (&msg) / 1000000;
+            server_ptr->total_mbytes_recv += zmq_msg_size (&msg);
             server_ptr->start_computation_time = melissa_get_time();
 
             if (simu_data->simu_id >= data_ptr[client_rank].step_simu.size)
@@ -729,7 +724,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 //                    server_ptr->last_msg_launcher = melissa_get_time();
 //                    process_launcher_message(text, server_ptr);
             }
-            memcpy(simu_data->parameters, simu_ptr->parameters, sizeof(double)*server_ptr->melissa_options.nb_parameters);
+            if (simu_ptr->parameters != NULL && recv_vect_size > 0)
+            {
+                memcpy(simu_data->parameters, simu_ptr->parameters, sizeof(double)*server_ptr->melissa_options.nb_parameters);
+            }
 
 
             // check the simulation progress //
@@ -849,6 +847,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                     melissa_print(VERBOSE_INFO, "Statistic fields saved in %s\n\n", dir);
                 }
             }
+            simu_data->status = 2;
             save_simu_states (&server_ptr->simulations, &server_ptr->comm_data);
             if (end_signal == SIGINT)
             {
@@ -959,7 +958,7 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     MPI_Reduce (&server_ptr->total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     server_ptr->total_comm_time = temp1 / server_ptr->comm_data.comm_size;
     MPI_Reduce (&server_ptr->total_mbytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-    server_ptr->total_mbytes_recv = temp2;
+    server_ptr->total_mbytes_recv = temp2 / 1000000;
 #endif // BUILD_WITH_MPI
     if (server_ptr->comm_data.rank==0)
     {
@@ -975,7 +974,7 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
         melissa_print (VERBOSE_INFO, " --- Total time:                      %g s\n", melissa_get_time() - server_ptr->start_time);
         melissa_print (VERBOSE_INFO, " --- MB received:                     %ld MB\n",server_ptr->total_mbytes_recv);
 //        melissa_print (VERBOSE_INFO, " --- Stats structures memory:         %ld MB\n", mem_conso(&melissa_options));
-        melissa_print (VERBOSE_INFO, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&server_ptr->melissa_options));
+//        melissa_print (VERBOSE_INFO, " --- Bytes written:                   %ld MB\n", count_mbytes_written(&server_ptr->melissa_options));
         if (server_ptr->melissa_options.sobol_op == 1)
         {
             melissa_print (VERBOSE_INFO, " --- Worst Sobol confidence interval: %g \n", interval1);
