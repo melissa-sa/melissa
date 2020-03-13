@@ -26,6 +26,8 @@ from mpi4py import MPI
 
 c_melissa_api_no_mpi = np.ctypeslib.load_library('libmelissa_api',os.path.join(os.path.dirname(__file__),"libmelissa_api.so"))
 
+melissa_c_api = np.ctypeslib.load_library('libmelissa_api',os.path.join(os.path.dirname(__file__),"libmelissa_api.so"))
+
 # C prototypes
 c_char_ptr = ctypes.POINTER(ctypes.c_char)
 c_void_ptr = ctypes.c_void_p
@@ -50,7 +52,7 @@ def melissa_init(field_name,
     buff.value = field_name.encode()
     melissa_c_api.melissa_init_f(buff,
                                  ctypes.byref(ctypes.c_int(local_vect_size)),
-                                 ctypes.byref(ctypes.c_int(comm_f))))
+                                 ctypes.byref(ctypes.c_int(comm_f)))
 
 def melissa_send(field_name,
                  send_vect):
