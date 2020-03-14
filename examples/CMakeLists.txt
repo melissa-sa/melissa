@@ -23,6 +23,3 @@ add_subdirectory(heat_example)
 add_subdirectory(droplet_example)
 add_subdirectory(fluid_example)
 add_subdirectory(game_of_life_example)
-
-install(FILES batchspawner.py DESTINATION ${EXAMPLES_DIR})
-install(FILES job_scheduler_config.py DESTINATION ${EXAMPLES_DIR})

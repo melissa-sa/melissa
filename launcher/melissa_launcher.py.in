@@ -45,6 +45,7 @@ def main():
     """
     cwd = os.getcwd()
     sys.path.append('@CMAKE_INSTALL_PREFIX@/share/melissa/launcher')
+    sys.path.append('@CMAKE_SOURCE_DIR@')
 
     options_path = ""
 
