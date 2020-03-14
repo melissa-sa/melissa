@@ -1,4 +1,4 @@
-from examples import batchspawner
+import batchspawner
 
 
 spawner = batchspawner.SlurmSpawner()

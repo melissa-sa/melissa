@@ -42,3 +42,6 @@ install(FILES ${CMAKE_BINARY_DIR}/launcher/melissa_launcher.py
                     WORLD_READ
                     WORLD_EXECUTE
         RENAME melissa_launcher)
+
+install(FILES batchspawner.py
+        DESTINATION share/melissa/launcher)
