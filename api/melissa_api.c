@@ -1387,7 +1387,7 @@ void melissa_send (const char   *field_name,
                 }
             }
         }
-        else // here, learning >= 2. That means that we d'on' split the data for redistribution, bunt we send everything to one server rank in a round-robin fashion
+        else if (global_data.rank == 0) // here, learning >= 2. That means that we d'on' split the data for redistribution, bunt we send everything to one server rank in a round-robin fashion
         {
             double start_send_time = melissa_get_time();
             // remember that when learning != 0 we gather all the data on rank 0
@@ -1469,7 +1469,10 @@ void melissa_send (const char   *field_name,
     }
     field_data_ptr->timestamp += 1;
     double end_comm_time = melissa_get_time();
-    // fprintf(stdout, "Total time: %f \n", end_comm_time - start_comm_time);
+    if (global_data.rank == 0)
+    {
+        fprintf(stdout, "Send time for step %d: %f \n", field_data_ptr->timestamp, end_comm_time - start_comm_time);
+    }
 
 #if BUILD_WITH_PROBES
     end_comm_time = melissa_get_time();

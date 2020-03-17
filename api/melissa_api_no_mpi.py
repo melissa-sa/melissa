@@ -16,6 +16,7 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+import time
 import ctypes
 import numpy as np
 import os
@@ -47,9 +48,9 @@ def melissa_init(field_name, vect_size):
 def melissa_send(field_name, send_vect):
     buff = ctypes.create_string_buffer(len(field_name)+1)
     buff.value = field_name.encode()
-    array = (ctypes.c_double * len(send_vect))(*send_vect)
+    data = send_vect.astype(np.float64)
+    array = data.ctypes.data_as(c_double_ptr)
     c_melissa_api_no_mpi.melissa_send(buff,array)
-    pass
 
 def melissa_finalize():
     c_melissa_api_no_mpi.melissa_finalize()
