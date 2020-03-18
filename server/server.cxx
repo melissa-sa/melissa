@@ -55,8 +55,7 @@ void sig_handler(int signo) {
 }
 
 void log_confidence_sobol_martinez(sobol_array_t *sobol_array,
-                               int            nb_parameters,
-                               int            vect_size)
+                               int            nb_parameters)
 {
     int j;
     // TODO: later we want to know the sobol from different timesteps t...
@@ -686,8 +685,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                         {
                             // REM: atm only showing for last timestep on 0 rank
 //                            log_confidence_sobol_martinez(&(data_ptr[client_rank].sobol_indices[simu_data->time_stamp]),
-//                                    server_ptr->melissa_options.nb_parameters,
-//                                    data_ptr[client_rank].vect_size);
+//                                    server_ptr->melissa_options.nb_parameters);
 
                             send_message_confidence_interval("Sobol",
                                                              field_name_ptr,

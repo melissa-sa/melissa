@@ -58,7 +58,7 @@ module heat_utils
     h = param
 
    end function
-   
+
   function num(i, j, nx)
 
     implicit none
@@ -67,7 +67,7 @@ module heat_utils
     num = i+(j-1)*nx
 
   end function
-  
+
   function invert_num_j(nx, num)
 
     implicit none
@@ -77,7 +77,7 @@ module heat_utils
     invert_num_j = floor((num-1)/real(nx))+1
 
   end function
-  
+
   function invert_num_i(nx, num)
 
     implicit none
@@ -114,7 +114,7 @@ module heat_utils
     end if
 
   end subroutine load
-  
+
   subroutine filling_A(d, dx, dy, dt, nx, ny, a) bind (c, name = 'filling_A') ! pour remplir A
 
     implicit none
@@ -122,13 +122,13 @@ module heat_utils
     real*8, intent(in) :: d, dx, dy, dt
     integer, intent(in) :: nx, ny
     real*8, dimension(3), intent(out) :: a
-    
+
     a(1) = -d*dt/(dx**2)
     a(2) = 1.D0+2.D0*d*dt*(1.D0/dx**2+1.D0/dy**2)
     a(3) = -d*dt/(dy**2)
-    
+
   end subroutine filling_A
-  
+
   subroutine filling_F(nx, ny, u, d, dx, dy, dt, t, f, i1, in, lx, ly, param) bind (c, name = 'filling_F')
 
     implicit none
@@ -156,7 +156,7 @@ module heat_utils
         f(k) = f(k)+d*dt*g(i*dx, (j+1)*dy, t, param(5))/(dy**2)
       end if
     end do
-  
+
   end subroutine filling_F
 
   subroutine rename(Me, name, simu_number)! bind (c, name = 'rename')
@@ -181,7 +181,7 @@ module heat_utils
     name = 'sol'//tn//'_'//sn//'.dat'
 
   end subroutine rename
-  
+
   subroutine init(u0, i1, iN, dx, dy, nx, lx, ly, temp) bind (c, name = 'init')
 
     implicit none
@@ -211,12 +211,12 @@ module heat_utils
 
     open(unit = 13, file = name, action = 'write')
     do j = i1, in
-      write(13, *), dx*invert_num_i(nx, j), dy*invert_num_j(nx, j), u(j-i1+1)
+      write(13, *) dx*invert_num_i(nx, j), dy*invert_num_j(nx, j), u(j-i1+1)
     end do
     close(13)
 
   end subroutine finalize
-  
+
 !------------------------- CG subroutines
 
   subroutine ConjGrad(Ah, F, U, nx, ny, epsilon, i1, in, np, me, next, previous, mpi_comm) bind (c, name = 'conjgrad')
@@ -236,7 +236,7 @@ module heat_utils
     charge = in-i1+1
     allocate(R(charge), P(charge), Q(charge))
     allocate(x1(nx), x2(nx))
-    
+
     residu = 1.
     x1 = 0.0
     x2 = 0.0
@@ -244,10 +244,10 @@ module heat_utils
        U(i) = 0.0
        R(i) = -F(i)
     end do
-    
+
     i = 1
     call mpi_allreduce(scal(r , r , charge), rho, 1, mpi_real8, mpi_sum, mpi_comm, statinfo)
-    
+
     do while(residu > epsilon)
        rho_ = rho
        call mpi_allreduce(scal(r, r, charge), rho, 1, mpi_real8, mpi_sum, mpi_comm, statinfo)
@@ -261,7 +261,7 @@ module heat_utils
              P(k) = beta*P(k)+R(k)
           end do
        end if
-       
+
           call mpi_send(p(1:nx), nx, mpi_real8, previous, 999, mpi_comm, statinfo)
           call mpi_send(p(charge-nx+1:charge), nx, mpi_real8, next, 888, mpi_comm, statinfo)
           call mpi_recv(x1, nx, mpi_real8, previous, 888, mpi_comm, status, statinfo)
@@ -279,9 +279,9 @@ module heat_utils
        call mpi_allreduce(scal(r, r, charge), residu1, 1, mpi_real8, mpi_sum, mpi_comm, statinfo)
        call mpi_allreduce(scal(f, f, charge), residu2, 1, mpi_real8, mpi_sum, mpi_comm, statinfo)
        residu = sqrt(residu1)/sqrt(residu2)
-      
+
     end do
-    
+
     deallocate(R, P, Q)
     deallocate(x1, x2)
 
@@ -302,7 +302,7 @@ module heat_utils
     end do
 
   end function scal
-  
+
   subroutine multiply(a, x, y, nx, ny, i1, in, x1, x2) ! Ax = y
 
     implicit none
@@ -312,7 +312,7 @@ module heat_utils
     integer, intent(in) :: nx, ny
     real*8, dimension(:), pointer, intent(inout) :: y
     integer :: j, i, k, l, m, i1, in
-    
+
     l = 1
     m = 1
     do k = 1, size(y)

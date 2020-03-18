@@ -65,8 +65,8 @@ SET(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT
 option(INSTALL_ZMQ OFF)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   # Set install directory to ../install
@@ -228,13 +228,16 @@ endif(BUILD_WITH_FLOWVR)
 
 # Doxygen #
 
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" ON)
-  message(STATUS "Doxygen Found")
-else(DOXYGEN_FOUND)
-  option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
-endif(DOXYGEN_FOUND)
+option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
+if (BUILD_DOCUMENTATION)
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)# TODO: this if is obsolete if using find_package(... REQUIRED) !
+        message(STATUS "Doxygen Found")
+    else(DOXYGEN_FOUND)
+        set(BUILD_DOCUMENTATION FALSE CACHE BOOL "Use Doxygen to create the documentation" FORCE)
+        message(STATUS "Doxygen Not Found. BUILD_DOCUMENTATION option turned OFF")
+    endif(DOXYGEN_FOUND)
+endif(BUILD_DOCUMENTATION)
 
 # If we run on a Omnipath cluster, we need to check simulation deconnection.
 

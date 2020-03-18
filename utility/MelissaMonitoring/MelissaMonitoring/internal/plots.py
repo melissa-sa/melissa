@@ -16,7 +16,7 @@ class DashPlot(ABC):
     @abstractmethod
     def plot(self):
         raise NotImplementedError
-        
+
 
 class JobStatusesDashPlot(DashPlot):
 
@@ -40,9 +40,10 @@ class CoreUsageDashPlot(DashPlot):
     def __init__(self, melissaMonitoring):
         super().__init__()
         self.name = 'Cores usage'
-        self.dataFunction = melissaMonitoring.getCPUCount
+        self.dataFunction = melissaMonitoring.spawner.getTotalCPUCount
         self.data = []
         self.time = []
+        self.melissaMonitoring = melissaMonitoring
 
         self.widget.add_scatter(name="Cores used")
         self.widget.layout.autosize = True
@@ -56,7 +57,7 @@ class CoreUsageDashPlot(DashPlot):
         self.widget.layout.hovermode = 'x'
 
     def plot(self):
-        self.data.append(self.dataFunction())
+        self.data.append(self.dataFunction(self.melissaMonitoring.getJobsIDs()))
         self.time.append(datetime.now())
         self.widget.data[0].x = self.time
         self.widget.data[0].y = self.data

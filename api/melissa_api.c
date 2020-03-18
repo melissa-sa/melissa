@@ -1429,7 +1429,7 @@ void melissa_send (const char   *field_name,
                                                       0);
                         buff_size += local_vect_size * (global_data.nb_parameters + 1) * sizeof(double);
                     }
-                    else if (global_data.learning == 0)
+                    else if (global_data.learning == 0) // should not exist, we already are in a condition where learning >= 2
                     {
                         ret = send_message_simu_data (field_data_ptr->timestamp,
                                                       global_data.sample_id,
@@ -1471,7 +1471,7 @@ void melissa_send (const char   *field_name,
     double end_comm_time = melissa_get_time();
     if (global_data.rank == 0)
     {
-        fprintf(stdout, "Send time for step %d: %f \n", field_data_ptr->timestamp, end_comm_time - start_comm_time);
+        melissa_print(VERBOSE_DEBUG, "Send time for step %d: %f \n", field_data_ptr->timestamp, end_comm_time - start_comm_time);
     }
 
 #if BUILD_WITH_PROBES
@@ -1610,9 +1610,7 @@ void melissa_finalize (void)
     {
         free(global_data.buffer_data);
     }
-    if (global_data.learning == 0){
-        free(global_data.data_ptr);
-    }
+    free(global_data.data_ptr);
 #ifdef BUILD_WITH_PROBES
     melissa_print(VERBOSE_INFO, " --- Simulation comm time: %g s\n",total_comm_time);
 #endif

@@ -7,7 +7,7 @@ build*/
 __pycache__/
 .ipynb_checkpoints/
 *.log
-examples/virtual_cluster/.oardocker/
-examples/virtual_cluster/oar-docker/
-examples/virtual_cluster/env*/
+utility/virtual_cluster/.oardocker/
+utility/virtual_cluster/oar-docker/
+utility/virtual_cluster/env*/
 install-oardocker/*

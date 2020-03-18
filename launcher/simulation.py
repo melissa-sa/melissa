@@ -27,9 +27,13 @@ import logging
 #import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
+
+melissa_install_prefix = os.getenv('MELISSA_INSTALL_PREFIX')
+assert(melissa_install_prefix)
+
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
-melissa_comm4py = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_comm4py.so')
+melissa_comm4py = cdll.LoadLibrary(melissa_install_prefix + '/lib/libmelissa_comm4py.so')
 melissa_comm4py.send_message.argtypes = [c_char_p]
 melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
 melissa_comm4py.send_drop.argtypes = [c_int, c_char_p]
@@ -231,7 +235,7 @@ class MultiSimuGroup(Group):
             Ends and restarts the simulations (mandatory)
         """
         crashs_before_redraw = 3
-        self.cancel()
+        self.cancel()  ## TODO: async this one and alike
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.group_id) +
@@ -371,7 +375,7 @@ class Server(Job):
         self.directory = "./"
 #        self.create_options()
         self.lock = RLock()
-        self.path = '@CMAKE_INSTALL_PREFIX@/bin'
+        self.path = melissa_install_prefix+'/bin'
         self.job_type = 1
         self.options = ''
 
@@ -514,7 +518,7 @@ class Server(Job):
         """
         if "cancel_server_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_server_job']:
-            return Job.usr_func['cancel_server_job'](self)
+            return Job.usr_func['cancel_server_job']#(self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
            return Job.usr_func['cancel_job'](self)
