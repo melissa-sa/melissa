@@ -57,7 +57,7 @@ module heat_utils_no_mpi
     h = param
 
    end function
-   
+
   function num(i, j, nx)
 
     implicit none
@@ -66,7 +66,7 @@ module heat_utils_no_mpi
     num = i+(j-1)*nx
 
   end function
-  
+
   function invert_num_j(nx, num)
 
     integer :: num, nx
@@ -74,7 +74,7 @@ module heat_utils_no_mpi
     invert_num_j = floor((num-1)/real(nx))+1
 
   end function
-  
+
   function invert_num_i(nx, num)
 
     implicit none
@@ -103,20 +103,20 @@ module heat_utils_no_mpi
     u0(1:nb_op) = temp
 
   end subroutine init
-  
+
   subroutine filling_A(d, dx, dy, dt, a) bind (c, name = 'filling_A') ! pour remplir A
 
     implicit none
 
     real*8, intent(in) :: d, dx, dy, dt
     real*8, dimension(3), intent(out) :: a
-    
+
     a(1) = -d*dt/(dx**2)
     a(2) = 1.D0+2.D0*d*dt*(1.D0/dx**2+1.D0/dy**2)
     a(3) = -d*dt/(dy**2)
-    
+
   end subroutine filling_A
-  
+
   subroutine filling_F(nx, ny, u, d, dx, dy, dt, t, f, nb_op, lx, ly, param) bind (c, name = 'filling_F')
 
     implicit none
@@ -144,7 +144,7 @@ module heat_utils_no_mpi
         f(k) = f(k)+d*dt*g(i*dx, (j+1)*dy, t, param(5))/(dy**2)
       end if
     end do
-  
+
   end subroutine filling_F
 
   subroutine rename(name, simu_number)! bind (c, name = 'rename')
@@ -180,12 +180,12 @@ module heat_utils_no_mpi
 
     open(unit = 13, file = name, action = 'write')
     do j = 1, nb_op
-      write(13, *), dx*invert_num_i(nx, j), dy*invert_num_j(nx, j), u(j)
+      write(13, *) dx*invert_num_i(nx, j), dy*invert_num_j(nx, j), u(j)
     end do
     close(13)
 
   end subroutine finalize
-  
+
 !------------------------- CG subroutines
 
   subroutine ConjGrad(Ah, F, U, nx, ny, epsilon) bind (c, name = 'conjgrad')

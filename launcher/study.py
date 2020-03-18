@@ -24,7 +24,6 @@ from sys import exit
 import os
 import time
 import copy
-import imp
 import numpy as np
 import logging
 import traceback
@@ -32,15 +31,15 @@ import asyncio
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
-imp.load_source('simulation', '@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/simulation.py')
-from simulation import Server
+from launcher.simulation import Server
 #from simulation import SingleSimuGroup
-from simulation import MultiSimuGroup
-from simulation import Group
-from simulation import SobolGroup
-from simulation import Job
+from launcher.simulation import MultiSimuGroup
+from launcher.simulation import Group
+from launcher.simulation import SobolGroup
+from launcher.simulation import Job
+from launcher.simulation import melissa_install_prefix
 
-melissa_comm4py = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_comm4py.so')
+melissa_comm4py = cdll.LoadLibrary(melissa_install_prefix + '/lib/libmelissa_comm4py.so')
 melissa_comm4py.bind_message_rcv.argtypes = [c_char_p]
 melissa_comm4py.bind_message_resp.argtypes = [c_char_p]
 melissa_comm4py.bind_message_snd.argtypes = [c_char_p]
@@ -50,12 +49,12 @@ melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
 
 
 # Jobs and executions status
-from simulation import NOT_SUBMITTED
-from simulation import WAITING
-from simulation import PENDING
-from simulation import RUNNING
-from simulation import FINISHED
-from simulation import TIMEOUT
+from launcher.simulation import NOT_SUBMITTED
+from launcher.simulation import WAITING
+from launcher.simulation import PENDING
+from launcher.simulation import RUNNING
+from launcher.simulation import FINISHED
+from launcher.simulation import TIMEOUT
 
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -643,7 +642,7 @@ class Study(object):
             self.stdy_opt['learning'] = False
         else:
             if (not 'nn_path' in self.stdy_opt):
-                self.stdy_opt['nn_path']="@CMAKE_INSTALL_PREFIX@/lib"
+                self.stdy_opt['nn_path'] = melissa_install_prefix + "/lib"
 
 
         if (self.ml_stats['sobol_indices']):
@@ -765,18 +764,21 @@ class Study(object):
         if not self.threads['messenger'].isAlive():
             logging.error('Messenger thread crashed')
             self.threads['messenger'].join()
-            self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
-            self.threads['messenger'].start()
+            if self.server_obj[0].status != FINISHED:
+                self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
+                self.threads['messenger'].start()
         if not self.threads['state_checker'].isAlive():
             logging.error('State checker thread crashed')
             self.threads['state_checker'].join()
-            self.threads['state_checker'] = StateChecker()
-            self.threads['state_checker'].start()
+            if self.server_obj[0].status != FINISHED:
+                self.threads['state_checker'] = StateChecker()
+                self.threads['state_checker'].start()
         if not self.threads['responder'].isAlive():
             logging.error('Responder thread crashed')
             self.threads['responder'].join()
-            self.threads['responder'] = Responder()
-            self.threads['responder'].start()
+            if self.server_obj[0].status != FINISHED:
+                self.threads['responder'] = Responder()
+                self.threads['responder'].start()
 
         sleep = False
         with self.server_obj[0].lock:
