@@ -9,6 +9,9 @@ import ipywidgets as widgets
 import matplotlib
 
 from launcher.study import Study
+import sys
+sys.path.append('/home/docker/melissa/melissa')
+sys.path.append('/home/docker/melissa/melissa/install-oardocker/share/melissa/launcher')
 import job_scheduler_config
 
 
