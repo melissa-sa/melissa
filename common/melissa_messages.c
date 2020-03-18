@@ -48,7 +48,6 @@ zmq_msg_t message_hello ()
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
     *((int*)buff_ptr) = HELLO;
-    printf("Hello msg. %d\n", *buff_ptr);
     return msg;
 }
 
