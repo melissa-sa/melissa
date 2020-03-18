@@ -176,7 +176,7 @@ void bind_message_resp(char* port_number)
 //    }
 //}
 
-void wait_message(char* buff)
+void wait_message(char* buff)  // TODO: why parsing it like this! this is ugly! than later I  have to redo stirng parsing....
 {
 //    char text[MELISSA_MESSAGE_LEN];
     char* buff_ptr = NULL;
@@ -221,8 +221,9 @@ void wait_message(char* buff)
             break;
 
         default:
-            printf ("message : %s\n", buff);
             sprintf (buff, "%s", buff_ptr);
+            printf("ERROR! Unknown Message type with id: %d\n", get_message_type(buff_ptr));
+            exit(1);
             break;
         }
     }

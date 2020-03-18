@@ -44,8 +44,6 @@ def main():
         Import options from command line, and launch Melissa study
     """
     cwd = os.getcwd()
-    sys.path.append('@CMAKE_INSTALL_PREFIX@/share/melissa/launcher')
-    sys.path.append('@CMAKE_SOURCE_DIR@')
 
     options_path = ""
 
@@ -86,7 +84,7 @@ def main():
     from options import STUDY_OPTIONS as stdy_opt
     from options import MELISSA_STATS as ml_stats
     from options import USER_FUNCTIONS as usr_func
-    from study import Study
+    from launcher.study import Study
     melissa_study = Study(stdy_opt, ml_stats, usr_func)
     melissa_study.run()
 

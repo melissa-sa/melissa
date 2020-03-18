@@ -27,9 +27,13 @@ import logging
 #import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
+
+melissa_install_prefix = os.getenv('MELISSA_INSTALL_PREFIX')
+assert(melissa_install_prefix)
+
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
-melissa_comm4py = cdll.LoadLibrary('@CMAKE_INSTALL_PREFIX@/lib/libmelissa_comm4py.so')
+melissa_comm4py = cdll.LoadLibrary(melissa_install_prefix + '/lib/libmelissa_comm4py.so')
 melissa_comm4py.send_message.argtypes = [c_char_p]
 melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
 melissa_comm4py.send_drop.argtypes = [c_int, c_char_p]
@@ -371,7 +375,7 @@ class Server(Job):
         self.directory = "./"
 #        self.create_options()
         self.lock = RLock()
-        self.path = '@CMAKE_INSTALL_PREFIX@/bin'
+        self.path = melissa_install_prefix+'/bin'
         self.job_type = 1
         self.options = ''
 
