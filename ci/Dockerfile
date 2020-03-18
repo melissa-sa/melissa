@@ -8,4 +8,4 @@ RUN apt-get install -y \
  autoconf \
  openmpi-bin libopenmpi-dev openmpi-common \
  build-essential gcc g++ make cmake \
- python3 python3-numpy
+ python3 python3-numpy libzmq5-dev

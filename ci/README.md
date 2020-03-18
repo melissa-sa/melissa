@@ -69,3 +69,15 @@ gitlab-runner register
 gitlab-runner run
 ```
 *Starting as a service does not work with udocker as there is no detached mode!*
+
+*As an alternative you can use the following script to run in background:*
+```sh
+#!/bin/bash
+
+rm nohup.out
+
+cmd="$HOME/udocker run --rm -t -i -v $HOME/gitlab-runner/config:/etc/gitlab-runner localhost/melissa/melissa-gitlab-runner:latest run"
+
+echo starting gitlab_runner in background!
+nohup $cmd &
+```
