@@ -117,13 +117,13 @@ void read_message_server_name (char* msg_buffer,
                                char* node_name,
                                int*  rank);
 
-zmq_msg_t message_confidence_interval (char*  stat_name,
-                                       char*  field_name,
-                                       double value);
+zmq_msg_t message_confidence_interval (const char*  stat_name,
+                                       const char*  field_name,
+                                       const double value);
 
-int send_message_confidence_interval (char*  stat_name,
-                                      char*  field_name,
-                                      double value,
+int send_message_confidence_interval (const char*  stat_name,
+                                      const char*  field_name,
+                                      const double value,
                                       void*  socket,
                                       int    flags);
 

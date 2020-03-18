@@ -290,9 +290,9 @@ void read_message_server_name (char* msg_buffer,
     strcpy (node_name, msg_ptr);
 }
 
-zmq_msg_t message_confidence_interval (char*  stat_name,
-                                       char*  field_name,
-                                       double value)
+zmq_msg_t message_confidence_interval (const char*  stat_name,
+                                       const char*  field_name,
+                                       const double value)
 {
     zmq_msg_t msg;
     char*     buff_ptr = NULL;
@@ -308,9 +308,9 @@ zmq_msg_t message_confidence_interval (char*  stat_name,
     return msg;
 }
 
-int send_message_confidence_interval (char*  stat_name,
-                                      char*  field_name,
-                                      double value,
+int send_message_confidence_interval (const char*  stat_name,
+                                      const char*  field_name,
+                                      const double value,
                                       void*  socket,
                                       int    flags)
 {
