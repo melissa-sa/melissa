@@ -415,6 +415,19 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         """
         raise NotImplementedError('Subclass must provide implementation')
 
+    def queryScheduler(self, query):
+        """
+        Generic query scheme.
+        :param str query: Query specific to job scheduler.
+        :return: Raw scheduler response.
+        :rtype: str
+        """
+        process = subprocess.Popen(self.batch_query_cmd + ' ' + query,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   shell=True,
+                                   universal_newlines=True)
+        return process.communicate()[0]
 
     async def start(self):
         """
@@ -823,14 +836,8 @@ echo 'jupyterhub-singleuser ended gracefully'
         :return: Total CPU count.
         :rtype: int
         """
-        process = subprocess.Popen(
-            self.batch_query_cmd + ' ' + self.opt_query_cpus
-                .format(','.join(job_ids)),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=True,
-            universal_newlines=True)
-        out, _ = process.communicate()
+        out = self.queryScheduler(
+            self.opt_query_cpus.format(','.join(job_ids)))
         return sum([int(x) for x in list(out.splitlines())])
 
     def getCPUCountByJob(self, job_ids):
@@ -841,14 +848,8 @@ echo 'jupyterhub-singleuser ended gracefully'
         :return: Job names and respective CPU count.
         :rtype: dict[str, str]
         """
-        process = subprocess.Popen(
-            self.batch_query_cmd + ' ' + self.opt_query_cpus_name
-                .format(','.join(job_ids)),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=True,
-            universal_newlines=True)
-        out, _ = process.communicate()
+        out = self.queryScheduler(
+            self.opt_query_cpus_name.format(','.join(job_ids)))
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
     def getRemainingJobsTime(self, job_ids):
@@ -859,14 +860,8 @@ echo 'jupyterhub-singleuser ended gracefully'
         :return: Job names and respective time left.
         :rtype: dict[str, str]
         """
-        process = subprocess.Popen(
-            self.batch_query_cmd + ' ' + self.opt_query_time_name
-                .format(",".join(job_ids)),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=True,
-            universal_newlines=True)
-        out, _ = process.communicate()
+        out = self.queryScheduler(
+            self.opt_query_time_name.format(','.join(job_ids)))
         return dict(map(lambda x: tuple(x.split(' ')), out.splitlines()))
 
 
