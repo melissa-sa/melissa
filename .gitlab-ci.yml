@@ -7,7 +7,7 @@ build_local:
   tags:
     - linux
   script:
-    - "mkdir build && cd build && cmake -DINSTALL_ZMQ=OFF -DBUILD_DOCUMENTATION=OFF ../ && make install"
+    - "mkdir build && cd build && cmake .. && make install"
   artifacts:
     paths:
       - build/

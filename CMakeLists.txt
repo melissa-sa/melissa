@@ -129,7 +129,26 @@ if(INSTALL_ZMQ)
 #  include_directories(${ZeroMQ_INCLUDE_DIR})
   MESSAGE(STATUS "ZeroMQ will be installed")
 else(INSTALL_ZMQ)
-  find_package(ZeroMQ NO_MODULE REQUIRED)
+  #find_package(ZeroMQ NO_MODULE REQUIRED)
+
+  ## credit to https://stackoverflow.com/questions/41251474/how-to-import-zeromq-libraries-in-cmake
+  ## load in pkg-config support
+  find_package(PkgConfig)
+  ## use pkg-config to get hints for 0mq locations
+  pkg_check_modules(PC_ZeroMQ QUIET zmq)
+
+  ## use the hint from above to find where 'zmq.hpp' is located
+  find_path(ZeroMQ_INCLUDE_DIR
+          NAMES zmq.h
+          PATHS ${PC_ZeroMQ_INCLUDE_DIRS}
+          )
+
+  ## use the hint from about to find the location of libzmq
+  find_library(ZeroMQ_LIBRARY
+          NAMES zmq
+          PATHS ${PC_ZeroMQ_LIBRARY_DIRS}
+          )
+  # TODO: ensure that zmq is the correct version!
 endif(INSTALL_ZMQ)
 
 include_directories(${ZeroMQ_INCLUDE_DIR})
