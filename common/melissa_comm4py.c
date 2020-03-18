@@ -209,6 +209,10 @@ void wait_message(char* buff)
             sprintf (buff, "%s %d", "timeout", *((int*)buff_ptr + 1));
             break;
 
+        case ALIVE:
+            sprintf (buff, "%s", "alive");
+            break;
+
         case CONFIDENCE_INTERVAL:
             sprintf (buff, "%s %s %s %g", "interval"
                      , buff_ptr + sizeof(int)

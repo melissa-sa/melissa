@@ -765,18 +765,21 @@ class Study(object):
         if not self.threads['messenger'].isAlive():
             logging.error('Messenger thread crashed')
             self.threads['messenger'].join()
-            self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
-            self.threads['messenger'].start()
+            if self.server_obj[0].status != FINISHED:
+                self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
+                self.threads['messenger'].start()
         if not self.threads['state_checker'].isAlive():
             logging.error('State checker thread crashed')
             self.threads['state_checker'].join()
-            self.threads['state_checker'] = StateChecker()
-            self.threads['state_checker'].start()
+            if self.server_obj[0].status != FINISHED:
+                self.threads['state_checker'] = StateChecker()
+                self.threads['state_checker'].start()
         if not self.threads['responder'].isAlive():
             logging.error('Responder thread crashed')
             self.threads['responder'].join()
-            self.threads['responder'] = Responder()
-            self.threads['responder'].start()
+            if self.server_obj[0].status != FINISHED:
+                self.threads['responder'] = Responder()
+                self.threads['responder'].start()
 
         sleep = False
         with self.server_obj[0].lock:
