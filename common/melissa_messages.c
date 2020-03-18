@@ -26,6 +26,15 @@
 #include <string.h>
 #include "melissa_messages.h"
 
+#ifdef DEBUG_MELISSA_MESSAGES
+int msend(zmq_msg_t *msg, void *b, void *c, int line, char* file, char* func) {
+    printf("sending message from line %d, file %s, function %s\n", line, file, func);
+    printf("message_id: %d\n", *((int*)zmq_msg_data(msg)));
+    return zmq_msg_send(msg,b,c);
+}
+#define zmq_msg_send(a,b,c) msend(a,b,c, __LINE__, __FILE__, __func__)
+#endif
+
 int get_message_type(char* buff)
 {
     int* buff_ptr = buff;
@@ -38,7 +47,8 @@ zmq_msg_t message_hello ()
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *buff_ptr = HELLO;
+    *((int*)buff_ptr) = HELLO;
+    printf("Hello msg. %d\n", *buff_ptr);
     return msg;
 }
 
@@ -56,7 +66,7 @@ zmq_msg_t message_alive ()
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *buff_ptr = ALIVE;
+    *((int*) buff_ptr) = ALIVE;
     return msg;
 }
 
@@ -168,7 +178,7 @@ zmq_msg_t message_stop ()
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *buff_ptr = STOP;
+    *((int*)buff_ptr) = STOP;
     return msg;
 }
 
