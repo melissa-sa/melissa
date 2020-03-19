@@ -81,3 +81,10 @@ cmd="$HOME/udocker run --rm -t -i -v $HOME/gitlab-runner/config:/etc/gitlab-runn
 echo starting gitlab_runner in background!
 nohup $cmd &
 ```
+
+
+## Troubleshooting
+- Very dirty but does the job if the gitlab runner in the contianer has not enough permissions:
+```sh
+chmod a+wr -R $HOME/gitlab-runner/config
+```
