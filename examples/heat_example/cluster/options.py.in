@@ -192,6 +192,6 @@ USER_FUNCTIONS['check_group_job'] = check_job
 USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
-USER_FUNCTIONS['cancel_job'] = spawner.stop()  ## magically, it works TODO: shaky logic?
+USER_FUNCTIONS['cancel_job'] = kill_job
 USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None

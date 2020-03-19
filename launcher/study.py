@@ -27,7 +27,6 @@ import copy
 import numpy as np
 import logging
 import traceback
-import asyncio
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
@@ -559,8 +558,7 @@ class Study(object):
                 with group.lock:
                     group.cancel()
         if self.server_obj[0].job_status < FINISHED:
-            asyncio.get_event_loop().run_until_complete(
-                self.server_obj[0].cancel())
+            self.server_obj[0].cancel()
         self.threads['messenger'].running_study = False
         self.threads['responder'].running_study = False
         self.threads['state_checker'].running_study = False
