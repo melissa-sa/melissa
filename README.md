@@ -53,7 +53,7 @@ Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 * MPI, OpenMP: for melissa parallel server. A sequential server will be built if not available
 * ZeroMQ: version 4.1.5 or above. CMake can download and install it if option turned on (-DINSTALL_ZMQ=ON)
 * Python 3
-* PythonLibs, Numpy 
+* Python libraries: NumPy, JupyterHub, Traitlets, async_generator, Jinja, asyncio, Tornado
 
 ## CMake Options
 
@@ -93,29 +93,29 @@ To compile the solver from the `install/share/melissa/examples/heat_example/solv
     make
     make install
     cd ..
-```    
-To start  the study (from `heat_example` dir): 
+```
+To start  the study (from `heat_example` dir):
 
 ```bash
     melissa_launcher  -o ./study_local/options.py
-```    
+```
 The results of this sensitivity analysis are stored in:
 ```bash
    ./study_local/STATS
-```   
+```
 
 # Running Melissa
 ## Local Execution
 
-Running Melissa localy means that all processes run on your local machine, executed directly by the launcher without goign through a  batch scheduler. This is a mode usefull for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution. 
-    
-    
+Running Melissa localy means that all processes run on your local machine, executed directly by the launcher without goign through a  batch scheduler. This is a mode usefull for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution.
+
+
 ## Virtual Cluster
 
 The virtual cluster enables to run Melissa on a local machine with a batch scheduler managing a virtual cluster build using docker containers.
 All instructions in the [utility/virtual_cluster/Readme.md](utility/virtual_cluster/Readme.md).
 
-## Supercomputer 
+## Supercomputer
 
  Running Melissa on a real supercomputer will  need some adaptations to the specificity of the target machine (batch scheduler, launcher that can
  be executed or not on the front nodes, etc.).
@@ -139,7 +139,7 @@ and copy the path to the shebang.
 # How to cite Melissa
 
 Melissa: Large Scale In Transit Sensitivity Analysis Avoiding Intermediate Files. Théophile Terraz, Alejandro Ribes, Yvan Fournier, Bertrand Iooss, Bruno Raffin. The International Conference for High Performance Computing, Networking, Storage and Analysis (Supercomputing), Nov 2017, Denver, United States. pp.1 - 14.
-    
+
 
 ```
 inproceedings{terraz:hal-01607479,
@@ -160,7 +160,7 @@ inproceedings{terraz:hal-01607479,
 
 # Publications
    * Melissa: Large Scale In Transit Sensitivity Analysis Avoiding Intermediate Files. Théophile Terraz, Alejandro Ribes, Yvan Fournier, Bertrand Iooss, Bruno Raffin. The International Conference for High Performance Computing, Networking, Storage and Analysis (Supercomputing), Nov 2017, Denver, United States. pp.1 - 14. [PDF](https://hal.inria.fr/hal-01607479/file/main-Sobol-SC-2017-HALVERSION.pdf)
-  
+
 
 # Contacts
 
@@ -169,9 +169,9 @@ inproceedings{terraz:hal-01607479,
  * Alejandro RIBES CORTES - alejandro.ribes@edf.fr
  * Bertrand IOOSS - bertrand.iooss@edf.fr
  * Sebastian FRIEDEMANN - sebastian.friedemann@inria.fr
- 
 
-# Licence 
+
+# Licence
      Melissa is open source under the [BSD 3-Clause License](LICENSE)
 
 
