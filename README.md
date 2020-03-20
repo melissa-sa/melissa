@@ -5,6 +5,9 @@
     * [Local Execution](#local-execution)
     * [Virtual Cluster](#virtual-cluster)
     * [Supercomputer](#supercomputer)
+       * [Configuring](#configuring)
+       * [Schedulers](#schedulers)
+       * [Options](#options)
  * [Utility](utility/README.md)
  * [Solver Instrumenting and Study Setup](examples/heat_example/README.md)
  * Developer Documentation
@@ -117,23 +120,58 @@ All instructions in the [utility/virtual_cluster/Readme.md](utility/virtual_clus
 
 ## Supercomputer
 
- Running Melissa on a real supercomputer will  need some adaptations to the specificity of the target machine (batch scheduler, launcher that can
- be executed or not on the front nodes, etc.).
+Mellisa will run on any cluster with one of the following job schedulers:
+* Torque
+* Moab
+* PBS
+* Slurm
+* Grid Engine
+* Condor
+* LSF
+* OAR is to be implemented soon
 
- Here are a few hints. To run Melissa on a cluster you need to adapt the code to your batch scheduling systems and system environment. Before you try to run anything on remote cluster, please familiarize yourself with batch scheduling system of your cluster and options file (short but precise enough description is in the `Creating your own study` chapter).
+`job_scheduler_config.py` is a fully customisable module for managing your scheduler of choice. It is an interface to how Melissa interacts with job schedulers. It does not require programming skills and requires only basic understaing of job scheduler features.
 
-  1. In your `study_Slurm/scripts` folder, change the shell files so they are valid with your scheduling system. Pay attention to the commands and partition names.
-  2. In the same shell files add/load appropriate modules for MPI.
-  3. Check options file. Look especially at `launch_server` and `launch_group` and check if commands sending jobs to batch scheduler are valid.
-  4. Check the shebang at `melissa_launcher`. This python interpreter have to have Numpy. If you know that some module have python with numpy, you can
+### Configuring
 
-```bash
-module load *python module with numpy*
-which python3
+Start by defining a job scheduler in the `spawner` field. Next, assign values to job scheduler options: `scheduler.req_...`, `scheduler.server_script`, `scheduler.simu_script`. Only job template scripts `scheduler.server_script` and `scheduler.simu_script` are required. Job template scripts must contain selected `req_...` options without `req_` prefix.
+
+There is an example Slurm configuration in `job_scheduler_config.py`.
+
+### Schedulers
+
+Job scheduler should be defined as one of these:
+```python
+batchspawner.TorqueSpawner()
+batchspawner.MoabSpawner()
+batchspawner.PBSSpawner()
+batchspawner.SlurmSpawner()
+batchspawner.GridengineSpawner()
+batchspawner.CondorSpawner()
+batchspawner.LsfSpawner()
 ```
 
-and copy the path to the shebang.
+### Options
 
+* `req_queue` - queue name to submit job to resource manager
+* `req_host` - host name of batch server to submit job to resource manager
+* `req_memory` - memory to request from resource manager
+* `req_nodes` - number of nodes allocated to a job
+* `req_tasks_per_node` - number of tasks invoked on each node
+* `req_nprocs` - number of processors to request from resource manager
+* `req_ngpus` - number of GPUs to request from resource manager
+* `req_runtime` - length of time for submitted job to run
+* `req_partition` - partition name to submit job to resource manager
+* `req_account` - account name string to pass to the resource manager
+* `req_server_output_log` - server batch script standard output file
+* `req_server_error_log` - server batch script standard error file
+* `req_simu_output_log` - simulation batch script standard output file
+* `req_simu_error_log` - simulation batch script standard error file
+* `req_username` - name of a user running a job
+* `req_homedir` - home directory of a user running a job
+* `req_prologue` - script to run before batch script commands are invoked
+* `req_epilogue` - script to run after batch script commands are invoked
+* `req_options` - other job scheduler options to include into job submission script
 
 
 # How to cite Melissa
