@@ -33,7 +33,7 @@ class MelissaMonitoring:
         self.serverStatusWidget = None
         self.failedParametersWidget = None
         self.jobsCPUCountWidget = None
-        self.spawner = job_scheduler_config.spawner
+        self.scheduler = job_scheduler_config.scheduler
 
     def startStudyInThread(self):
         """Starts study with options from the constructor
@@ -214,7 +214,7 @@ class MelissaMonitoring:
         """
 
         ax.clear()
-        self.coreUsageData[datetime.datetime.now() - self.timeStart] = self.spawner.getTotalCPUCount(self.getJobsIDs())
+        self.coreUsageData[datetime.datetime.now() - self.timeStart] = self.scheduler.getTotalCPUCount(self.getJobsIDs())
         ax.plot(list(map(lambda x: str(x), self.coreUsageData.keys())), list(self.coreUsageData.values()))
         ax.set_title('Cores usage vs time')
         ax.get_figure().autofmt_xdate()
@@ -272,7 +272,7 @@ class MelissaMonitoring:
             self._createJobsCPUCountWidget()
             display(self.jobsCPUCountWidget)
 
-        data = self.spawner.getCPUCountByJob(self.getJobsIDs())
+        data = self.scheduler.getCPUCountByJob(self.getJobsIDs())
         data = ['{} - {}'.format(k,v) for k,v in data.items()]
         value = '<br/>'.join(data)
         self.jobsCPUCountWidget.value = value
@@ -300,7 +300,7 @@ class MelissaMonitoring:
             self._createRemainingJobsTimeWidget()
             display(self.timeWidget)
 
-        data = self.spawner.getRemainingJobsTime(self.getJobsIDs())
+        data = self.scheduler.getRemainingJobsTime(self.getJobsIDs())
         data = ['{} - {}'.format(k,v) for k,v in data.items()]
         value = '<br/>'.join(data)
         self.timeWidget.value = value
