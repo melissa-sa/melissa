@@ -23,7 +23,7 @@ User defined options module
 import job_scheduler_config, numpy, os, string, asyncio, shutil
 
 
-spawner = job_scheduler_config.spawner
+scheduler = job_scheduler_config.scheduler
 
 BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 EXECUTABLE = 'heatc'
@@ -49,11 +49,11 @@ def launch_server(server):
         os.mkdir(STUDY_OPTIONS['working_directory'])
     os.chdir(STUDY_OPTIONS['working_directory'])
     server_cmd = 'mpirun -n {} {}/melissa_server {}'.format(
-        str(spawner.req_tasks_per_node * int(spawner.req_nodes)),
+        str(scheduler.req_tasks_per_node * int(scheduler.req_nodes)),
         server.path,
         server.cmd_opt)
-    spawner.batch_script = spawner.server_script
-    spawner.batch_script += string.Template('''date +\'%d/%m/%y %T\'
+    scheduler.batch_script = scheduler.server_script
+    scheduler.batch_script += string.Template('''date +\'%d/%m/%y %T\'
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 # run Melissa
 echo  '### Launch Melissa'
@@ -63,9 +63,9 @@ ${SERVER_CMD}
 # wait %1
 date +\'%d/%m/%y %T\'
 cd ..
-''').substitute(JOB_ID=spawner.job_id, SERVER_CMD=str(server_cmd))  ## TODO: jinja?
-    asyncio.get_event_loop().run_until_complete(spawner.start())
-    server.job_id = spawner.job_id
+''').substitute(JOB_ID=scheduler.job_id, SERVER_CMD=str(server_cmd))  ## TODO: jinja?
+    asyncio.get_event_loop().run_until_complete(scheduler.start())
+    server.job_id = scheduler.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 
@@ -85,10 +85,10 @@ def launch_simu(simulation):
     command = 'mpirun '
     if MELISSA_STATS['sobol_indices']:
         size = STUDY_OPTIONS['nb_parameters'] + 2
-        nodes = spawner.req_nodes
+        nodes = scheduler.req_nodes
     else:
         size = simulation.size
-        nodes = str(spawner.req_tasks_per_node * int(spawner.req_nodes))
+        nodes = str(scheduler.req_tasks_per_node * int(scheduler.req_nodes))
     for n in range(size):
         command += '{} {} {} {}{} {} {}: '.format(
             '-n',
@@ -103,8 +103,8 @@ def launch_simu(simulation):
             ' '.join(str(p) for p in simulation.param_set[n]))
     command = command[:-2]
     print(command)
-    spawner.batch_script = spawner.simu_script
-    spawner.batch_script += string.Template('''#SBATCH --job-name=Simu${SIMU_ID}
+    scheduler.batch_script = scheduler.simu_script
+    scheduler.batch_script += string.Template('''#SBATCH --job-name=Simu${SIMU_ID}
 source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
 export MELISSA_SERVER_NODE_NAME=${SERVER_NODE_NAME}
 export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
@@ -115,8 +115,8 @@ date +\'%d/%m/%y %T\'
                 SIMU_CMD=str(command),
                 SERVER_NODE_NAME=simulation.server_node_name,
                 HOSTNAME=str('$(hostname)'))
-    asyncio.get_event_loop().run_until_complete(spawner.start())
-    simulation.job_id = spawner.job_id
+    asyncio.get_event_loop().run_until_complete(scheduler.start())
+    simulation.job_id = scheduler.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 
@@ -126,9 +126,9 @@ def check_job(job):
     :param simulation.Server | simulation.MultiSimuGroup job:
     """
     state = 0
-    if not spawner.state_ispending():  ## not pending...
+    if not scheduler.state_ispending():  ## not pending...
         state = 1
-        if not spawner.state_isrunning():  ## ...and not running either
+        if not scheduler.state_isrunning():  ## ...and not running either
             state = 2
     job.job_status = state
 
@@ -138,17 +138,17 @@ def check_load():
     :rtype: bool
     """
     asyncio.get_event_loop().run_until_complete(
-        spawner.read_job_state(spawner.batch_query_user_cmd))
-    return int(spawner.job_status) < 250  ## running jobs count
+        scheduler.read_job_state(scheduler.batch_query_user_cmd))
+    return int(scheduler.job_status) < 250  ## running jobs count
 
 
 def kill_job(job):
     print('killing job ...')
-    os.system(spawner.batch_cancel_cmd + str(job.job_id))
+    os.system(scheduler.batch_cancel_cmd + str(job.job_id))
 
 
 STUDY_OPTIONS = {}
-STUDY_OPTIONS['user_name'] = spawner.req_username
+STUDY_OPTIONS['user_name'] = scheduler.req_username
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_cluster/STATS'
 ## number of varying parameters of the study:
 STUDY_OPTIONS['nb_parameters'] = 5
@@ -192,6 +192,6 @@ USER_FUNCTIONS['check_group_job'] = check_job
 USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
-USER_FUNCTIONS['cancel_job'] = spawner.stop()  ## magically, it works TODO: shaky logic?
+USER_FUNCTIONS['cancel_job'] = scheduler.stop()  ## magically, it works TODO: shaky logic?
 USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None
