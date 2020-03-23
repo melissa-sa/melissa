@@ -77,7 +77,7 @@ Compilation, installation and environnent variable setting from the Melissa root
 ```bash
     mkdir build
     cd build
-    cmake ../source -DINSTALL_ZMQ=OFF
+    cmake .. -DINSTALL_ZMQ=OFF
     make
     make install
     source ../install/bin/melissa_set_env.sh
