@@ -7,7 +7,9 @@ build_local:
   tags:
     - linux
   script:
-    - "mkdir build && cd build && cmake .. && make install"
+    # Do not build zmq if it is already installed by the system to speed up run
+    # We depend on zmq version 4.
+    - "mkdir build && cd build && grep 'ZMQ_VERSION_MAJOR 4' /usr/include/zmq.h &>/dev/null && cmake .. || cmake -DINSTALL_ZMQ=ON .. && make install"
   artifacts:
     paths:
       - build/
