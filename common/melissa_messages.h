@@ -25,7 +25,7 @@
 #include "melissa_utils.h"
 #include "zmq.h"
 
-#define HELLO 0
+#define HELLO 10
 #define JOB 1
 #define DROP 2
 #define STOP 3
@@ -38,20 +38,21 @@
 
 int get_message_type(char* buff);
 
-zmq_msg_t message_hello ();
+void message_hello(zmq_msg_t *msg);
 
 int send_message_hello (void* socket,
                         int   flags);
 
-zmq_msg_t message_alive ();
+void message_alive (zmq_msg_t *msg);
 
 int send_message_alive(void* socket,
                        int   flags);
 
-zmq_msg_t message_job (int    simu_id,
-                       char*  job_id,
-                       int    nb_param,
-                       double *param_set);
+void message_job (zmq_msg_t *msg,
+                  int    simu_id,
+                  char*  job_id,
+                  int    nb_param,
+                  double *param_set);
 
 int send_message_job (int     simu_id,
                       char*   job_id,
@@ -66,8 +67,9 @@ void read_message_job (char*    msg_buffer,
                        int      nb_param,
                        double **param_set);
 
-zmq_msg_t message_drop (int   simu_id,
-                        char* job_id);
+void message_drop(zmq_msg_t *msg,
+                  int   simu_id,
+                  char* job_id);
 
 int send_message_drop(int   simu_id,
                       char* job_id,
@@ -78,12 +80,13 @@ void read_message_drop (char* msg_buffer,
                         int*  simu_id,
                         char* job_id[]);
 
-zmq_msg_t message_stop ();
+void message_stop (zmq_msg_t *msg);
 
 int send_message_stop (void* socket,
                        int flags);
 
-zmq_msg_t message_timeout (int simu_id);
+void message_timeout (zmq_msg_t *msg,
+                      int simu_id);
 
 int send_message_timeout (int   simu_id,
                           void* socket,
@@ -92,8 +95,9 @@ int send_message_timeout (int   simu_id,
 void read_message_timeout (char* msg_buffer,
                            int*   simu_id);
 
-zmq_msg_t message_simu_status (int simu_id,
-                               int status);
+void message_simu_status (zmq_msg_t *msg,
+                          int simu_id,
+                          int status);
 
 int send_message_simu_status (int   simu_id,
                               int   status,
@@ -104,8 +108,9 @@ void read_message_simu_status (char* msg_buffer,
                                int*  simu_id,
                                int*  status);
 
-zmq_msg_t message_server_name (char* node_name,
-                               int   rank);
+void message_server_name(zmq_msg_t *msg,
+                         char* node_name,
+                         int   rank);
 
 int send_message_server_name (char* node_name,
                               int   rank,
@@ -116,9 +121,10 @@ void read_message_server_name (char* msg_buffer,
                                char* node_name,
                                int*  rank);
 
-zmq_msg_t message_confidence_interval (const char*  stat_name,
-                                       const char*  field_name,
-                                       const double value);
+void message_confidence_interval (zmq_msg_t *msg,
+                                  const char*  stat_name,
+                                  const char*  field_name,
+                                  const double value);
 
 int send_message_confidence_interval (const char*  stat_name,
                                       const char*  field_name,
@@ -131,21 +137,23 @@ void read_message_confidence_interval (char*   msg_buffer,
                                        char*   field_name,
                                        double* value);
 
-zmq_msg_t message_options (char   buff[],
-                           size_t buff_size);
+void message_options (zmq_msg_t *msg,
+                      char   buff[],
+                      size_t buff_size);
 
 int send_message_options(char   buff[],
                            size_t buff_size,
                            void*  socket,
                            int    flags);
 
-zmq_msg_t message_simu_data (int      time_stamp,
-                             int      simu_id,
-                             int      client_rank,
-                             int      vect_size,
-                             int      nb_vect,
-                             char*    field_name,
-                             double** data_ptr);
+void message_simu_data (zmq_msg_t *msg,
+                        int      time_stamp,
+                        int      simu_id,
+                        int      client_rank,
+                        int      vect_size,
+                        int      nb_vect,
+                        char*    field_name,
+                        double** data_ptr);
 
 int send_message_simu_data(int      time_stamp,
                              int      simu_id,
