@@ -25,17 +25,16 @@
 #include "melissa_utils.h"
 #include "zmq.h"
 
-enum message_type {HELLO = 0,
-                   JOB = 1,
-                   DROP = 2,
-                   STOP = 3,
-                   TIMEOUT = 4,
-                   SIMU_STATUS = 5,
-                   SERVER = 6,
-                   ALIVE = 7,
-                   CONFIDENCE_INTERVAL = 8,
-                   OPTIONS = 9
-                  };
+#define HELLO 0
+#define JOB 1
+#define DROP 2
+#define STOP 3
+#define TIMEOUT 4
+#define SIMU_STATUS 5
+#define SERVER 6
+#define ALIVE 7
+#define CONFIDENCE_INTERVAL 8
+#define OPTIONS 9
 
 int get_message_type(char* buff);
 

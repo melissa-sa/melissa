@@ -209,6 +209,7 @@ void wait_message(char* buff)  // TODO: why parsing it like this! this is ugly! 
             sprintf (buff, "%s %d", "timeout", *((int*)buff_ptr + 1));
             break;
 
+        case HELLO:
         case ALIVE:
             sprintf (buff, "%s", "alive");
             break;

@@ -37,8 +37,10 @@ int msend(zmq_msg_t *msg, void *b, void *c, int line, char* file, char* func) {
 
 int get_message_type(char* buff)
 {
-    int* buff_ptr = buff;
-    return *buff_ptr;
+//    int* buff_ptr = buff;
+    int msg_type = *(int*)buff;
+//    return *buff_ptr;
+    return msg_type;
 }
 
 zmq_msg_t message_hello ()
@@ -47,7 +49,7 @@ zmq_msg_t message_hello ()
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *((int*)buff_ptr) = HELLO;
+    *((int*)buff_ptr) = (int)HELLO;
     return msg;
 }
 
@@ -65,7 +67,7 @@ zmq_msg_t message_alive ()
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *((int*) buff_ptr) = ALIVE;
+    *((int*) buff_ptr) = (int)ALIVE;
     return msg;
 }
 
@@ -86,7 +88,7 @@ zmq_msg_t message_job (int    simu_id,
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, 2 * sizeof(int) + nb_param * sizeof(double) + strlen(job_id)+1);
     buff_ptr = (char*)zmq_msg_data (&msg);
-    *((int*)buff_ptr) = JOB;
+    *((int*)buff_ptr) = (int)JOB;
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = simu_id;
     buff_ptr += sizeof(int);
@@ -142,7 +144,7 @@ zmq_msg_t message_drop (int   simu_id,
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, 2 * sizeof(int) + strlen(job_id) +1);
     buff_ptr = (char*)zmq_msg_data (&msg);
-    *((int*)buff_ptr) = DROP;
+    *((int*)buff_ptr) = (int)DROP;
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = simu_id;
     buff_ptr += sizeof(int);
@@ -177,7 +179,7 @@ zmq_msg_t message_stop ()
     char* buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *((int*)buff_ptr) = STOP;
+    *((int*)buff_ptr) = (int)STOP;
     return msg;
 }
 
@@ -195,7 +197,7 @@ zmq_msg_t message_timeout (int simu_id)
     int*      buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *buff_ptr = TIMEOUT;
+    *buff_ptr = (int)TIMEOUT;
     buff_ptr += sizeof(int);
     *buff_ptr = simu_id;
     return msg;
@@ -224,7 +226,7 @@ zmq_msg_t message_simu_status (int simu_id,
     int*      buff_ptr = NULL;
     zmq_msg_init_size (&msg, 3 * sizeof(int));
     buff_ptr = (int*)zmq_msg_data (&msg);
-    *buff_ptr = SIMU_STATUS;
+    *buff_ptr = (int)SIMU_STATUS;
     buff_ptr ++;
     *buff_ptr = simu_id;
     buff_ptr ++;
@@ -260,7 +262,7 @@ zmq_msg_t message_server_name (char* node_name,
     char*     buff_ptr = NULL;
     zmq_msg_init_size (&msg, 2 * sizeof(int) + strlen(node_name) +1);
     buff_ptr = zmq_msg_data (&msg);
-    *((int*)buff_ptr) = SERVER;
+    *((int*)buff_ptr) = (int)SERVER;
     buff_ptr += sizeof(int);
     *((int*)buff_ptr) = rank;
     buff_ptr += sizeof(int);
@@ -297,7 +299,7 @@ zmq_msg_t message_confidence_interval (const char*  stat_name,
     char*     buff_ptr = NULL;
     zmq_msg_init_size (&msg, sizeof(int) + sizeof(double) + strlen(stat_name) + strlen(field_name) +2);
     buff_ptr = zmq_msg_data (&msg);
-    *((int*)buff_ptr) = CONFIDENCE_INTERVAL;
+    *((int*)buff_ptr) = (int)CONFIDENCE_INTERVAL;
     buff_ptr += sizeof(int);
     strcpy (buff_ptr, stat_name);
     buff_ptr += strlen(stat_name) +1;
@@ -340,7 +342,7 @@ zmq_msg_t message_options (char   buff[],
     char*     buff_ptr = NULL;
     zmq_msg_init_size (&msg, buff_size + sizeof(int));
     buff_ptr = zmq_msg_data(&msg);
-    *((int*)buff_ptr) = OPTIONS;
+    *((int*)buff_ptr) = (int)OPTIONS;
     buff_ptr += sizeof(int);
     memcpy (buff_ptr, buff, buff_size);
     return msg;
