@@ -439,7 +439,7 @@ class Study(object):
 
     def compute_quantiles(self, quantile_values):
         self.stdy_opt['quantile_values'] = quantile_values
-        self.ml_stats['quantile'] = True
+        self.ml_stats['quantiles'] = True
 
     def compute_sobol_indices(self, coupling = "MELISSA_COUPLING_DEFAULT"):
         self.stdy_opt['coupling'] = coupling
@@ -599,8 +599,8 @@ class Study(object):
         if (not 'threshold_exceedance' in self.ml_stats.keys()):
             self.ml_stats['threshold_exceedance'] = False
 
-        if (not 'quantile' in self.ml_stats.keys()):
-            self.ml_stats['quantile'] = False
+        if (not 'quantiles' in self.ml_stats.keys()):
+            self.ml_stats['quantiles'] = False
 
         test_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
         self.nb_param = len(test_parameters)
