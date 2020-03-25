@@ -166,13 +166,14 @@ class Messenger(Thread):
                     self.confidence_interval[message[1]] = float(message[3])
                     logging.info(message[1] + ' confidence interval: ' + message[3])
 
-                if server.status != RUNNING:
-                    last_server = 0
                 if last_server > 0:
-                    if (time.time() - last_server) > 100:
-                        logging.info('server timeout\n')
-                        with self.server[0].lock:
-                            self.server[0].status = TIMEOUT
+                    if self.server[0].status != RUNNING:
+                        last_server = 0
+                    else:
+                        if (time.time() - last_server) > 100:
+                            logging.info('server timeout\n')
+                            with self.server[0].lock:
+                                self.server[0].status = TIMEOUT
                 if (time.time() - last_msg_to_server) > 10 and self.server[0].status == RUNNING:
                     melissa_comm4py.send_hello()
                     last_msg_to_server = time.time()
