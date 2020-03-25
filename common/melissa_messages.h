@@ -22,7 +22,6 @@
  *
  **/
 
-#include "melissa_utils.h"
 #include "zmq.h"
 
 #define HELLO 10
