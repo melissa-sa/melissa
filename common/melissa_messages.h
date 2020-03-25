@@ -22,7 +22,14 @@
  *
  **/
 
+#ifndef MELISSA_MESSAGES_H_
+#define MELISSA_MESSAGES_H_
+
 #include "zmq.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define HELLO 10
 #define JOB 1
@@ -171,3 +178,9 @@ void read_message_simu_data (char*    msg_buffer,
                              int*     recv_vect_size,
                              char**   field_name_ptr,
                              double** data_ptr);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* MELISSA_MESSAGES_H_ */

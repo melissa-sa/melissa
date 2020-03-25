@@ -80,7 +80,7 @@ void melissa_connect (void *socket,
 
 double melissa_get_time ();
 
-void melissa_get_node_name (char *node_name);
+void melissa_get_node_name (char *node_name, size_t buf_len);
 
 void init_verbose_lvl(int verbose_level);
 

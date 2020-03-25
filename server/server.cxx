@@ -145,7 +145,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     // === Get the node adress === //
 
-    melissa_get_node_name (server_ptr->node_name);
+    melissa_get_node_name (server_ptr->node_name, MPI_MAX_PROCESSOR_NAME);
 
     server_ptr->start_time = melissa_get_time();
 
