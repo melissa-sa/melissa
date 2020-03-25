@@ -229,19 +229,16 @@ class MelissaServer:
         # 2 Handle simulation connection message
         if (self.connection_responder in sockets
             and sockets[self.connection_responder] == zmq.POLLIN):
-            print('Recieved connection request')
             msg = self.connection_responder.recv()
             rv = self.handle_simulation_connection(msg)
         # 2. Handle launcher message
         if (self.text_puller in sockets
             and sockets[self.text_puller] == zmq.POLLIN):
             msg = self.text_puller.recv()
-            print('Recieved msg from the launcher')
             rv = self.handle_launcher_message(msg)
         # 3. Handle simulation data message
         if (self.data_puller in sockets
             and sockets[self.data_puller] == zmq.POLLIN):
-            print('Recieved simulation data')
             msg = self.data_puller.recv()
             rv = self.handle_simulation_data(msg)
         # 4. Check progress

@@ -5,6 +5,10 @@ import numpy as np
 import tensorflow as tf
 import horovod.keras as hvd
 
+from collections import defaultdict
+from random import choice, sample
+from melissa4py.buffer import ReplayBuffer
+
 
 def build_lr_shedule(decrease_every=200, factor=0.5, min_lr=1e-6):
     def lr_schedule(epoch, lr):
@@ -18,26 +22,15 @@ class BaseLearner:
 
     def __init__(self, batch_size=32, lr_start=0.001, lr_decrease_every=1,
                  lr_decrease_factor=1, lr_min_lr=1e-6, checkpoint_path='.',
-                 checkpoint_every=20, lr_schedule=None, *args, **kwargs):
+                 checkpoint_every=20, lr_schedule=None, learn_every=None,
+                 replay_buffer=None, *args, **kwargs):
         self.checkpoint_every = checkpoint_every
         self.checkpoint_path = checkpoint_path
         self.batch_size = batch_size
         self.samples_seen = 0
-        self.xs, self.ys = [], []
-        self.history = {
-            'training_time': [],
-            'score': [],
-            'learning_rate': []
-        }
-        self.params = {
-            'batch_size': batch_size,
-            'lr_start': lr_start,
-            'lr_decrease_every': lr_decrease_every,
-            'lr_decrease_factor': lr_decrease_factor,
-            'lr_min_lr': lr_min_lr,
-            'args': list(args),
-            'kwargs': dict(**kwargs)
-        }
+        self.learn_every = learn_every or self.batch_size
+        self._buffer = replay_buffer if replay_buffer is not None else ReplayBuffer()
+        self.history = defaultdict(list)
         print('Initialize horovod..')
         hvd.init()
         self.rank = hvd.rank()
@@ -78,11 +71,15 @@ class BaseLearner:
 
     def learn(self, x, y):
         self.samples_seen += 1
-        self.xs.append(x); self.ys.append(y)
-        if len(self.xs) >= self.batch_size:
+        # Add sample to buffer
+        self._buffer.put((x, y), partition=x[-1])
+        if self._buffer.safe_to_sample and ((self.samples_seen % self.learn_every) == 0):
             batch = self.samples_seen // self.batch_size
             # 1. Build batch.
-            X, Y = np.array(self.xs), np.array(self.ys)
+            samples = self._buffer.get_batch(self.batch_size)
+            xs, ys = [e[0] for e in samples], [e[1] for e in samples]
+            X, Y = np.array(xs), np.array(ys)
+            print('Batch timesteps: ', X[:, -1])
             # 2. Fit model
             start = time.time()
             for callback in self.callbacks:
@@ -91,24 +88,31 @@ class BaseLearner:
             for callback in self.callbacks:
                 callback.on_epoch_end(batch, logs={'score': score})
             end = time.time()
-            # Update history
+            self.on_batch_end(batch, score, samples)
+            # 3. Update history
+            self.history['batch_mean'].append(np.mean(X[:, -1]))
+            self.history['batch_variance'].append(np.var(X[:, -1]))
             self.history['training_time'].append((start, end))
             self.history['score'].append(score)
             self.history['learning_rate'].append(
                 tf.keras.backend.get_value(self.hvd_optimizer.lr)
             )
-            # 3. Clear
-            self.xs, self.ys = [], []
             # 4. Checkpoint model if necesary
-            if batch % self.checkpoint_every == 0:
-                model_path = '{}/batch_{}'.format(self.checkpoint_path, batch)
-                model_name = 'model_weights'
-                try:
-                    os.mkdir(model_path)
-                except OSError as e:
-                    print("Creation of the directory {} failed with error {}".format(model_path, e))
-                self.save(model_path, model_name)
+            # if batch % self.checkpoint_every == 0:
+            #     self.checkpoint(batch)
             return score
+
+    def on_batch_end(self, batch, score, samples):
+        pass
+
+    def checkpoint(self, checkpoint_id):
+        model_path = '{}/batch_{}'.format(self.checkpoint_path, batch)
+        model_name = 'model_weights'
+        try:
+            os.mkdir(model_path)
+        except OSError as e:
+            print("Creation of the directory {} failed with error {}".format(model_path, e))
+        self.save(model_path, model_name)
 
     def save(self, model_path, model_name):
         if self.rank == 0:
