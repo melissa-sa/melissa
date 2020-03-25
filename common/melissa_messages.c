@@ -173,7 +173,7 @@ void message_stop (zmq_msg_t *msg)
 {
     char* buff_ptr = NULL;
     zmq_msg_init_size (msg, sizeof(int));
-    buff_ptr = (int*)zmq_msg_data (msg);
+    buff_ptr = zmq_msg_data (msg);
     *((int*)buff_ptr) = (int)STOP;
 }
 
@@ -188,12 +188,12 @@ int send_message_stop(void* socket,
 void message_timeout (zmq_msg_t *msg,
                       int simu_id)
 {
-    int*      buff_ptr = NULL;
+    char*      buff_ptr = NULL;
     zmq_msg_init_size (msg, sizeof(int));
-    buff_ptr = (int*)zmq_msg_data (msg);
-    *buff_ptr = (int)TIMEOUT;
+    buff_ptr = zmq_msg_data (msg);
+    *((int*)buff_ptr) = (int)TIMEOUT;
     buff_ptr += sizeof(int);
-    *buff_ptr = simu_id;
+    *((int*)buff_ptr) = simu_id;
 }
 
 int send_message_timeout (int   simu_id,

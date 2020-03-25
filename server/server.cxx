@@ -354,12 +354,9 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 server_ptr->detected_timeouts = check_timeouts(&server_ptr->simulations,
                                                    server_ptr->melissa_options.timeout_simu);
                 server_ptr->last_timeout_check = melissa_get_time();
-                if (server_ptr->detected_timeouts > 0)
-                {
-                    send_timeouts (server_ptr->detected_timeouts,
-                                   &server_ptr->simulations,
-                                   server_ptr->text_pusher);
-                }
+                send_timeouts (server_ptr->detected_timeouts,
+                               &server_ptr->simulations,
+                               server_ptr->text_pusher);
             }
         }
         // === check launcher timeouts === //

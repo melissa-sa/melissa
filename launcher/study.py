@@ -166,6 +166,8 @@ class Messenger(Thread):
                     self.confidence_interval[message[1]] = float(message[3])
                     logging.info(message[1] + ' confidence interval: ' + message[3])
 
+                if server.status != RUNNING:
+                    last_server = 0
                 if last_server > 0:
                     if (time.time() - last_server) > 100:
                         logging.info('server timeout\n')
