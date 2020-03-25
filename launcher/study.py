@@ -27,7 +27,6 @@ import copy
 import numpy as np
 import logging
 import traceback
-import asyncio
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
@@ -168,10 +167,13 @@ class Messenger(Thread):
                     logging.info(message[1] + ' confidence interval: ' + message[3])
 
                 if last_server > 0:
-                    if (time.time() - last_server) > 100:
-                        logging.info('server timeout\n')
-                        with self.server[0].lock:
-                            self.server[0].status = TIMEOUT
+                    if self.server[0].status != RUNNING:
+                        last_server = 0
+                    else:
+                        if (time.time() - last_server) > 100:
+                            logging.info('server timeout\n')
+                            with self.server[0].lock:
+                                self.server[0].status = TIMEOUT
                 if (time.time() - last_msg_to_server) > 10 and self.server[0].status == RUNNING:
                     melissa_comm4py.send_hello()
                     last_msg_to_server = time.time()
@@ -440,7 +442,7 @@ class Study(object):
 
     def compute_quantiles(self, quantile_values):
         self.stdy_opt['quantile_values'] = quantile_values
-        self.ml_stats['quantile'] = True
+        self.ml_stats['quantiles'] = True
 
     def compute_sobol_indices(self, coupling = "MELISSA_COUPLING_DEFAULT"):
         self.stdy_opt['coupling'] = coupling
@@ -559,8 +561,7 @@ class Study(object):
                 with group.lock:
                     group.cancel()
         if self.server_obj[0].job_status < FINISHED:
-            asyncio.get_event_loop().run_until_complete(
-                self.server_obj[0].cancel())
+            self.server_obj[0].cancel()
         self.threads['messenger'].running_study = False
         self.threads['responder'].running_study = False
         self.threads['state_checker'].running_study = False
@@ -601,8 +602,8 @@ class Study(object):
         if (not 'threshold_exceedance' in self.ml_stats.keys()):
             self.ml_stats['threshold_exceedance'] = False
 
-        if (not 'quantile' in self.ml_stats.keys()):
-            self.ml_stats['quantile'] = False
+        if (not 'quantiles' in self.ml_stats.keys()):
+            self.ml_stats['quantiles'] = False
 
         test_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
         self.nb_param = len(test_parameters)
@@ -613,7 +614,7 @@ class Study(object):
         if self.ml_stats['sobol_indices'] and self.nb_param < 2:
             logging.error('Error bad option: not enough parameters')
             errors += 1
-        if self.stdy_opt['sampling_size'] < 2:
+        if self.stdy_opt['sampling_size'] < 1:
             logging.error('Error bad option: sample_size not big enough')
             errors += 1
 

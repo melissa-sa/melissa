@@ -1395,7 +1395,7 @@ void melissa_send (const char   *field_name,
             j = (field_data_ptr->timestamp) % global_data.nb_proc_server;
             for (i=0; i<global_data.nb_proc_server; i++)
             {
-                global_data.data_ptr[0] = send_vect_ptr;
+                global_data.data_ptr = &send_vect_ptr;
                 if (i != j)
                 {
                     ret = send_message_simu_data (field_data_ptr->timestamp,
@@ -1469,7 +1469,10 @@ void melissa_send (const char   *field_name,
     }
     field_data_ptr->timestamp += 1;
     double end_comm_time = melissa_get_time();
-    // fprintf(stdout, "Total time: %f \n", end_comm_time - start_comm_time);
+    if (global_data.rank == 0)
+    {
+        melissa_print(VERBOSE_DEBUG, "Send time for step %d: %f \n", field_data_ptr->timestamp, end_comm_time - start_comm_time);
+    }
 
 #if BUILD_WITH_PROBES
     end_comm_time = melissa_get_time();

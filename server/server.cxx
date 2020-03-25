@@ -360,6 +360,10 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                                    &server_ptr->simulations,
                                    server_ptr->text_pusher);
                 }
+                else
+                {
+                    send_message_alive(server_ptr->text_pusher, 0);
+                }
             }
         }
         // === check launcher timeouts === //
