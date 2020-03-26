@@ -378,6 +378,7 @@ class Server(Job):
         self.path = melissa_install_prefix+'/bin'
         self.job_type = 1
         self.options = ''
+        self.want_stop = False
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir

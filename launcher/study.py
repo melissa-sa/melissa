@@ -103,7 +103,7 @@ class Messenger(Thread):
         Thread.__init__(self)
         self.running_study = True
         self.batch_size = batch_size
-        self.server = server
+        self.server = server  # refactor:  sometimes is a server, sometimes a server object! thats confusing!
         self.groups = groups
         self.confidence_interval = dict()
 
@@ -120,7 +120,8 @@ class Messenger(Thread):
                     logging.debug('message: '+buff.value.decode())
                 if message[0] == 'stop':
                     with self.server[0].lock:
-                        self.server[0].status = FINISHED # finished
+                        self.server[0].status = FINISHED  # finished
+                        self.server[0].want_stop = True
                         logging.info('end study')
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
@@ -399,6 +400,9 @@ class Study(object):
     def set_batch_size(self, batch_size):
         self.stdy_opt['batch_size'] = batch_size
 
+    def set_assimilation(self, assimilation):
+        self.stdy_opt['assimilation'] = assimilation
+
     def get_batch_size(self):
         return self.stdy_opt['batch_size']
 
@@ -502,7 +506,10 @@ class Study(object):
 
         self.server_obj[0].set_nb_param(self.nb_param)
         self.server_obj[0].set_path(self.stdy_opt['working_directory'])
-        self.server_obj[0].create_options()
+
+        if not self.stdy_opt['assimilation']:
+            self.server_obj[0].create_options()
+
         try:
             self.server_obj[0].launch()
         except:
@@ -535,6 +542,11 @@ class Study(object):
             while check_scheduler_load(self.usr_func) == False:
                 time.sleep(1)
                 if self.fault_tolerance() != 0: return
+
+            with self.server_obj[0].lock:
+                if self.server_obj[0].want_stop:  # nice! already finished, break out!
+                    break
+
             logging.info('submit group '+str(group.group_id))
             try:
                 group.server_node_name = str(self.server_obj[0].node_name[0])
@@ -546,7 +558,7 @@ class Study(object):
                 self.stop()
                 return
         time.sleep(1)
-        while (self.server_obj[0].status != FINISHED
+        while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
                or any([i.status != FINISHED for i in self.groups])):
             if self.fault_tolerance() != 0: return
             time.sleep(1)
@@ -605,18 +617,26 @@ class Study(object):
         if (not 'quantiles' in self.ml_stats.keys()):
             self.ml_stats['quantiles'] = False
 
+        if (not 'assimilation' in self.stdy_opt):
+            self.stdy_opt.assimilation = False
+
+        if self.stdy_opt['assimilation']:
+            self.usr_func['draw_parameter_set'] = lambda : []
+
         test_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
         self.nb_param = len(test_parameters)
 
-        if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
-            logging.error('Error bad option: not enough parameters')
-            errors += 1
-        if self.ml_stats['sobol_indices'] and self.nb_param < 2:
-            logging.error('Error bad option: not enough parameters')
-            errors += 1
-        if self.stdy_opt['sampling_size'] < 1:
-            logging.error('Error bad option: sample_size not big enough')
-            errors += 1
+        # refactor option error checking?
+        if not self.stdy_opt['assimilation']:
+            if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
+                logging.error('Error bad option: not enough parameters')
+                errors += 1
+            if self.ml_stats['sobol_indices'] and self.nb_param < 2:
+                logging.error('Error bad option: not enough parameters')
+                errors += 1
+            if self.stdy_opt['sampling_size'] < 1:
+                logging.error('Error bad option: sample_size not big enough')
+                errors += 1
 
         if (not 'verbosity' in self.stdy_opt):
             self.stdy_opt['verbosity'] = 2
@@ -627,6 +647,7 @@ class Study(object):
         if (not 'batch_size' in self.stdy_opt):
             self.stdy_opt['batch_size'] = 1
 
+        # Refactor: omg these port names are bullshit!
         if (not 'send_port' in self.stdy_opt):
             self.stdy_opt['send_port'] = 5556
 
@@ -638,6 +659,7 @@ class Study(object):
 
         if (not 'data_port' in self.stdy_opt):
             self.stdy_opt['data_port'] = 2006
+
 
         if (not 'learning' in self.stdy_opt):
             self.stdy_opt['learning'] = False
@@ -667,8 +689,9 @@ class Study(object):
             self.stdy_opt['threshold_values'] = self.ml_stats['threshold_values']
             self.ml_stats['threshold_values'] = False
 
-        if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
-            self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+        if 'threshold_values' in self.stdy_opt:
+            if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
+                self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
 
         if 'quantile' in self.ml_stats:
             self.ml_stats['quantiles'] = self.ml_stats['quantile']
@@ -683,8 +706,9 @@ class Study(object):
             self.stdy_opt['quantile_values'] = self.ml_stats['quantile_values']
             self.ml_stats['quantile_values'] = False
 
-        if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
-            self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+        if 'quantile_values' in self.stdy_opt:
+            if type(self.stdy_opt['quantile_values']) not in (list, tuple, set):
+                self.stdy_opt['quantile_values'] = [self.stdy_opt['quantile_values']]
 
         if not 'check_server_job' in self.usr_func.keys():
             if 'check_job' in self.usr_func.keys():
@@ -692,7 +716,7 @@ class Study(object):
 
         if not 'check_group_job' in self.usr_func.keys():
             if 'check_job' in self.usr_func.keys():
-                self.usr_func['check_group_job'] = self.usr_func['check_job']
+                self.usr_func['check_group_job'] = self.usr_func['check_job']  # TODO: refactor how these functions work! it's dirty that they change their parameter!
 
         if not 'cancel_server_job' in self.usr_func.keys():
             if 'cancel_job' in self.usr_func.keys():
@@ -760,6 +784,10 @@ class Study(object):
         """
             Compares job status and study status, restart crashed groups
         """
+
+        # with self.server_obj[0].lock:
+            # if self.server_obj[0].status == FINISHED:
+                # return 0
 
         # check if threads are still alive
         if not self.threads['messenger'].isAlive():
