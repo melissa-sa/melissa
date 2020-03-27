@@ -160,7 +160,7 @@ class BucketLearner(BaseLearner):
         self.buckets = buckets
         self.bucket_callback = Bucket_LR_Scheduler(0.01, 10**-5, buckets)
         self.bucket_buffer = BucketizedReplayBuffer(buckets, ReplayBuffer())
-
+        #@juan is a prefetch of 100 alright?
         super(lr_start=0.01,
               replay_buffer=self.bucket_buffer,
               callbacks=[self.bucket_callback]
@@ -273,13 +273,24 @@ class Bucket_LR_Scheduler(Callback):
 
         self.epochs_in_bucket = 0
         
+        self.going = 1
+
         def get_bucket(self, lr):
             return self.reverse_lrs(lr)
 
         def get_lr(self, lr):
             self.buckets_travelled += 1
             self.epochs_in_bucket = 0
-            return self.lrs[(self.get_bucket(lr) + 1)%self.buckets]
+
+            current_bucket = self.get_bucket(lr)
+            if current_bucket == 0:
+                self.going = 1
+            
+            if current_bucket == self.buckets - 1:
+                self.going = -1
+
+            new_bucket = current_bucket+self.going
+            return self.lrs[new_bucket]
 
         def schedule(self, epoch):
             
@@ -302,6 +313,8 @@ class Bucket_LR_Scheduler(Callback):
 
         def on_cycle_end(self, epoch, logs):
             
+
+
             self.cycles_waited += 1
             if self.cycles_waited > self.global_patience:
                 # set learning rate to max minimum as ReduceLROnPla.. doesnt have bestweights concept
@@ -332,6 +345,7 @@ class Bucket_LR_Scheduler(Callback):
             # so we need to keep track of the number of buckets traversed
             # calculation epochs would be an incorrect measure because of earlyUpdate
             
+
             if self.buckets_travelled % (2*self.buckets -1) == 0:
                 self.on_cycle_end(epoch, logs)
             

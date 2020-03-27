@@ -96,12 +96,13 @@ from queue import Queue
 # do we need a parameter shuffle which can be toggled if training samples should be shuffled in the queue?
 class BucketizedReplayBuffer():
 
-    def __init__(self, number_of_buckets, data_source, max_bucket_size=0, start_state=0):
+    def __init__(self, number_of_buckets, data_source, max_bucket_size=0, start_state=0, prefetch=100):
         
         self.queues = [Queue(max_bucket_size) for _ in range(number_of_buckets)]
         self.number_of_buckets = number_of_buckets
         self._source = data_source
         self.lr_bucket = start_state
+        self.prefetch_k = prefetch
         # some python magic
         # self._add_lambdas = [(lambda batch, b=i: self.add_batch(batch, b)) for i in range(number_of_buckets)]
 
@@ -142,10 +143,10 @@ class BucketizedReplayBuffer():
     def put(self, item):
         self._source.put(item)
 
-    def get_batch(self, batch_size, prefetch_k=5):
+    def get_batch(self, batch_size, ):
 
         if self.buckets[self.lr_bucket].qsize()==0:
-            new_batches = [self.main.get(batch_size) for _ in range(prefetch_k)]
+            new_batches = [self.main.get(batch_size) for _ in range(self.prefetch_k)]
 
             [self.buckets[self.buckets -1 - self.lr_bucket].put_nowait(batch) for batch in new_batches]
             [self.buckets[self.lr_bucket].put_nowait(batch) for batch in new_batches[1:]]
