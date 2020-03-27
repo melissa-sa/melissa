@@ -538,7 +538,7 @@ class Study(object):
         self.threads['responder'].start()
         for group in self.groups:
             if self.fault_tolerance() != 0: return
-            while check_scheduler_load(self.usr_func) == False:
+            while check_scheduler_load(self.usr_func) == False:  #TODO: need to check this als during the simulation, not only on the beginnint!
                 time.sleep(1)
                 if self.fault_tolerance() != 0: return
 
@@ -774,6 +774,8 @@ class Study(object):
                 for j in range(self.stdy_opt['batch_size']):
                     param_sets.append(draw_parameter_set(self.usr_func, self.stdy_opt))
                 self.groups.append(MultiSimuGroup(param_sets))
+
+        logging.debug('created %d groups' % len(self.groups))
 
         for group in self.groups:
             group.create()
