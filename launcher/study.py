@@ -507,8 +507,7 @@ class Study(object):
         self.server_obj[0].set_nb_param(self.nb_param)
         self.server_obj[0].set_path(self.stdy_opt['working_directory'])
 
-        if not self.stdy_opt['assimilation']:
-            self.server_obj[0].create_options()
+        self.server_obj[0].create_options()
 
         try:
             self.server_obj[0].launch()
