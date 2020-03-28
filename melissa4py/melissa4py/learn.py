@@ -313,6 +313,10 @@ class Bucket_LR_Scheduler(Callback):
                 # maybe it is a good idea to implement RLRoP here separately
                 hvd.K.set_value(self.model.optimizer.lr, self.lrs[0])
                 self.is_final_descent = True
+                if self.restore_best_weights:
+                    print('Restoring model weights from ' + str(self.wait) + ' epochs before')
+                    self.model.set_weights(self.best_weights)
+
 
             return None
         def on_epoch_end(self, epoch, logs=None):
