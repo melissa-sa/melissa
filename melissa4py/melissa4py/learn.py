@@ -23,7 +23,7 @@ class BaseLearner:
     def __init__(self, batch_size=32, lr_start=0.001, lr_decrease_every=1,
                  lr_decrease_factor=1, lr_min_lr=1e-6, checkpoint_path='.',
                  checkpoint_every=20, lr_schedule=None, learn_every=None,
-                 replay_buffer=None, callbacks=[], *args, **kwargs):
+                 replay_buffer=None, callbacks=None, *args, **kwargs):
         self.checkpoint_every = checkpoint_every
         self.checkpoint_path = checkpoint_path
         self.batch_size = batch_size
@@ -110,18 +110,6 @@ class BaseLearner:
             # if batch % self.checkpoint_every == 0:
             #     self.checkpoint(batch)
             return score
-    
-    def get_batch_for_queue(self):
-
-        bucket = self.schedule.get_bucket(self.hvd_optimizer.lr)
-        self.buffer.get_batch()
-        # get learning rate
-
-        # get bucket
-        # from learning rate scheduler
-        # self.lr_scheduler
-        #
-        self.source.get_batch(bucket)
 
     def on_batch_end(self, batch, score, samples):
         
@@ -160,7 +148,7 @@ class BucketLearner(BaseLearner):
         self.buckets = buckets
         self.bucket_callback = Bucket_LR_Scheduler(0.01, 10**-5, buckets)
         self.bucket_buffer = BucketizedReplayBuffer(buckets, ReplayBuffer())
-        #@juan is a prefetch of 100 alright?
+        # @juan is a prefetch of 100 alright?
         super(lr_start=0.01,
               replay_buffer=self.bucket_buffer,
               callbacks=[self.bucket_callback]
@@ -188,10 +176,13 @@ class BucketLearner(BaseLearner):
         # from learning rate scheduler
         # self.lr_scheduler
         #
-        self.source.get_batch(bucket)
+        self.bucket.get_batch(bucket)
 
+    # def get_batch
     def on_batch_end(self, batch, score, samples):
         
+        bucket = self.bucket_callback.update_bucket(self.bucket_callback.current_bucket)
+        self.buffer.set_bucket(bucket)
         # get learning rate
         # 
 
@@ -270,7 +261,7 @@ class Bucket_LR_Scheduler(Callback):
         # counts how many buckets have been iterated till now
         self.buckets_travelled = 0
         self.cycles_waited = -1
-
+        self.current_bucket = self.init_bucket
         self.epochs_in_bucket = 0
         
         self.going = 1
@@ -290,6 +281,7 @@ class Bucket_LR_Scheduler(Callback):
                 self.going = -1
 
             new_bucket = current_bucket+self.going
+            self.current_bucket = new_bucket
             return self.lrs[new_bucket]
 
         def schedule(self, epoch):
