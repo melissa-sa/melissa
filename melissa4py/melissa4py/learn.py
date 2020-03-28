@@ -190,7 +190,7 @@ class BucketLearner(BaseLearner):
 
 # custom callback
 
-class Bucket_LR_Scheduler(Callback):
+class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
 
     def __init__(self,
                  maxlr,
