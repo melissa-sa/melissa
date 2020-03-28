@@ -143,7 +143,12 @@ class BaseLearner:
 # I think its something only in your submodule and you might have to push your latest changes, don't know
 class BucketLearner(BaseLearner):
 
-    def __init__(self, buckets):
+    def __init__(self,
+                 buckets,
+                 batch_size,
+                 nb_parameteres,
+                 nb_fields,
+                 grid_dims):
         
         self.buckets = buckets
         self.bucket_callback = Bucket_LR_Scheduler(0.01, 10**-5, buckets)
@@ -151,7 +156,11 @@ class BucketLearner(BaseLearner):
         # @juan is a prefetch of 100 alright?
         super(lr_start=0.01,
               replay_buffer=self.bucket_buffer,
-              callbacks=[self.bucket_callback]
+              callbacks=[self.bucket_callback],
+              batch_size = batch_size,
+              nb_fields = nb_fields,
+              nb_parameteres = nb_parameteres,
+              grid_dims = grid_dims
         )
         
     def build_model(self, *args, **kwargs):
@@ -166,17 +175,6 @@ class BucketLearner(BaseLearner):
         model = MyModel(nb_parameters, np.prod(grid_dims) * nb_fields,
                         **melissa_options.HYPERPARAMETERS)
         return model
-
-    def get_batch_for_queue(self):
-        bucket = self.bucket_callback.get_bucket(self.hvd_optimizer.lr)
-        self.buffer.get_batch()
-        # get learning rate
-
-        # get bucket
-        # from learning rate scheduler
-        # self.lr_scheduler
-        #
-        self.bucket.get_batch(bucket)
 
     # def get_batch
     def on_batch_end(self, batch, score, samples):
