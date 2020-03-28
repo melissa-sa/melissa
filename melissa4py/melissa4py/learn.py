@@ -138,55 +138,6 @@ class BaseLearner:
         self.model.load_weights(path)
 
 
-# @Juan I couldn't find the learner.py in this repo, there is something messed up about
-# submodules
-# I think its something only in your submodule and you might have to push your latest changes, don't know
-class BucketLearner(BaseLearner):
-
-    def __init__(self,
-                 buckets,
-                 batch_size,
-                 nb_parameteres,
-                 nb_fields,
-                 grid_dims):
-        
-        self.buckets = buckets
-        self.bucket_callback = Bucket_LR_Scheduler(0.01, 10**-5, buckets)
-        self.bucket_buffer = BucketizedReplayBuffer(buckets, ReplayBuffer())
-        # @juan is a prefetch of 100 alright?
-        super(lr_start=0.01,
-              replay_buffer=self.bucket_buffer,
-              callbacks=[self.bucket_callback],
-              batch_size = batch_size,
-              nb_fields = nb_fields,
-              nb_parameteres = nb_parameteres,
-              grid_dims = grid_dims
-        )
-        
-    def build_model(self, *args, **kwargs):
-        # Compute neighborhood for a regular grid
-        nb_parameters = len(melissa_options.PARAMETERS) + 1
-        nb_fields = melissa_options.NB_FIELDS
-        grid_dims = melissa_options.GRID_DIMS
-        order = melissa_options.HYPERPARAMETERS['pixel_connectivity_order']
-        neighborhoods = regular_grid_neighbourhood(grid_dims, order=order)
-        neighborhoods = extend_neighbourhood(neighborhoods, nb_fields)
-        Neighboors.set_neighbours(neighborhoods)
-        model = MyModel(nb_parameters, np.prod(grid_dims) * nb_fields,
-                        **melissa_options.HYPERPARAMETERS)
-        return model
-
-    # def get_batch
-    def on_batch_end(self, batch, score, samples):
-        
-        bucket = self.bucket_callback.update_bucket(self.bucket_callback.current_bucket)
-        self.buffer.set_bucket(bucket)
-        # get learning rate
-        # 
-
-        pass
-
-
 
 # custom callback
 
@@ -387,3 +338,4 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             return None
             # if self.stopped_epoch > 0 and self.verbose > 0:
             #     print('Epoch %05d: early stopping' % (self.stopped_epoch + 1))
+

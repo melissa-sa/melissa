@@ -114,7 +114,7 @@ class BucketizedReplayBuffer():
 
     @property
     def safe_to_sample(self):
-        return self.main.safe_to_sample
+        return self._source.safe_to_sample
 
     # def analytics(self, bucket):
     #     # uncomment return to disable analytics
@@ -140,7 +140,7 @@ class BucketizedReplayBuffer():
     #     self.queues[bucket].put_nowait(batch)
     #     # add to mirror bucket
     #     self.queues[self.number_of_buckets - bucket - 1].put_nowait(batch)
-    def put(self, item):
+    def put(self, item, *args, **kwargs):
         self._source.put(item)
 
     def update_bucket(self, new_bucket):
@@ -158,4 +158,4 @@ class BucketizedReplayBuffer():
         else:
             return self.buckets[self.lr_bucket].get()
 
-    
+
