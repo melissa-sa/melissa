@@ -116,7 +116,7 @@ Running Melissa localy means that all processes run on your local machine, execu
 ## Virtual Cluster
 
 The virtual cluster enables to run Melissa on a local machine with a batch scheduler managing a virtual cluster build using docker containers.
-All instructions in the [utility/virtual_cluster/Readme.md](utility/virtual_cluster/Readme.md).
+All instructions in the [utility/virtual_cluster/README.md](utility/virtual_cluster/README.md).
 
 ## Supercomputer
 
