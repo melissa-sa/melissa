@@ -112,9 +112,6 @@ class BucketizedReplayBuffer():
         # self._min_queue_size = (max_bucket_size+1, None)
         # self._biggest_difference = 0
 
-    @property
-    def safe_to_sample(self):
-        return self._source.safe_to_sample
 
     # def analytics(self, bucket):
     #     # uncomment return to disable analytics
@@ -149,6 +146,9 @@ class BucketizedReplayBuffer():
 
     def get_batch(self, batch_size, ):
 
+        if not self.safe_to_sample:
+            return 
+            
         if self.buckets[self.lr_bucket].qsize()==0:
             new_batches = [self.main.get(batch_size) for _ in range(self.prefetch_k)]
 
@@ -159,3 +159,6 @@ class BucketizedReplayBuffer():
             return self.buckets[self.lr_bucket].get()
 
 
+    @property
+    def safe_to_sample(self):
+        return self._source.safe_to_sample

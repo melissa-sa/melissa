@@ -4,7 +4,6 @@ import time
 import numpy as np
 import tensorflow as tf
 import horovod.keras as hvd
-
 from collections import defaultdict
 from random import choice, sample
 from melissa4py.buffer import ReplayBuffer, BucketizedReplayBuffer
@@ -142,7 +141,6 @@ class BaseLearner:
 # custom callback
 
 class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
-
     def __init__(self,
                  maxlr,
                  minlr,
@@ -194,7 +192,7 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             mode='auto',
             min_delta=0.0001, 
             cooldown=0, 
-            min_lr=10**-7
+            min_lr=10**-7,
         )
         # what should global patience help us with?
         # when to start search for the local optima
@@ -215,127 +213,127 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         
         self.going = 1
 
-        def get_bucket(self, lr):
-            return self.reverse_lrs(lr)
+    def get_bucket(self, lr):
+        return self.reverse_lrs(lr)
 
-        def get_lr(self, lr):
-            self.buckets_travelled += 1
-            self.epochs_in_bucket = 0
+    def get_lr(self, lr):
+        self.buckets_travelled += 1
+        self.epochs_in_bucket = 0
 
-            current_bucket = self.get_bucket(lr)
-            if current_bucket == 0:
-                self.going = 1
-            
-            if current_bucket == self.buckets - 1:
-                self.going = -1
-
-            new_bucket = current_bucket+self.going
-            self.current_bucket = new_bucket
-            return self.lrs[new_bucket]
-
-        def schedule(self, epoch):
-            
-            # which bucket am I on?
-
-            # this logic needs to be tied to current_bucket 
-            # bucket = (self.init_bucket + epoch)%self.buckets
-            # the above line of code will not work as buckets are not tied to epochs
-            bucket = self.init_bucket + self.buckets_travelled
-            return self.lrs[bucket]
+        current_bucket = self.get_bucket(lr)
+        if current_bucket == 0:
+            self.going = 1
         
-        def on_train_begin(self, logs=None):
-            # if we need to allow instances to be re-used
-            # use arguments to update members here
-            return None
+        if current_bucket == self.buckets - 1:
+            self.going = -1
 
-            # self.wait = 0
-            # self.stopped_epoch = 0
-            # self.best = np.Inf if self.monitor_op == np.less else -np.Inf
+        new_bucket = current_bucket+self.going
+        self.current_bucket = new_bucket
+        return self.lrs[new_bucket]
 
-        def on_cycle_end(self, epoch, logs):
+    def schedule(self, epoch):
+        
+        # which bucket am I on?
+
+        # this logic needs to be tied to current_bucket 
+        # bucket = (self.init_bucket + epoch)%self.buckets
+        # the above line of code will not work as buckets are not tied to epochs
+        bucket = self.init_bucket + self.buckets_travelled
+        return self.lrs[bucket]
+    
+    def on_train_begin(self, logs=None):
+        # if we need to allow instances to be re-used
+        # use arguments to update members here
+        return None
+
+        # self.wait = 0
+        # self.stopped_epoch = 0
+        # self.best = np.Inf if self.monitor_op == np.less else -np.Inf
+
+    def on_cycle_end(self, epoch, logs):
+        
+
+
+        self.cycles_waited += 1
+        if self.cycles_waited > self.global_patience:
+            # set learning rate to max minimum as ReduceLROnPla.. doesnt have bestweights concept
+            # maybe it is a good idea to implement RLRoP here separately
+            hvd.K.set_value(self.model.optimizer.lr, self.lrs[0])
+            self.is_final_descent = True
+            if self.restore_best_weights:
+                print('Restoring model weights from ' + str(self.wait) + ' epochs before')
+                self.model.set_weights(self.best_weights)
+
+
+        return None
+    def on_epoch_end(self, epoch, logs=None):
+        
+        # if we have switched our learning rate scheduler mechanism
+        # from cyclic to final descent which is extreme decay to squeeze out best local minima
+
+        if self.is_final_descent:
+            # I don't know if this callback will be able to access the model
+            # will this work? :thinks:
+            self.final_descend.set_model(self.model)
+            # if it doesnt work we basically have to implement reduceLRonPlateau here
+            return self.final_descend.on_epoch_end(epoch, logs)
+        
+        # current mae loss
+        current = logs.get(self.monitor)
+        # print(current)
+        # How do we measure cycles?
+        # how many epochs make a cycle?
+        # it depends on the number of buckets iterated
+        # 2*buckets -1
+        # so we need to keep track of the number of buckets traversed
+        # calculation epochs would be an incorrect measure because of earlyUpdate
+        
+
+        if self.buckets_travelled % (2*self.buckets -1) == 0:
+            self.on_cycle_end(epoch, logs)
+        
+        # this condition will only be true if we forget to measure mae or changed our loss function
+        if current is None:
+            print("Monitoring Mean Absolute Error but mae not found in logs")
+            return
+
+        # if current mae is better than the previous best
+        if self.monitor_op(current - self.min_delta, self.best):
+            # update previous best
+            self.best = current
+            # reset wait counters
+            self.cycles_waited = 0
+            self.wait = 0
+            # update best weights
+            if self.restore_best_weights:
+                self.best_weights = self.model.get_weights()
             
+            if self.epochs_in_bucket == self.epochs_per_bucket:
+                hvd.K.set_value(self.model.optimizer.lr, self.get_lr(self.model.optimizer.lr))
+        else:
+            # increment wait counter (for epoch here, for cycle is done in the on_cycle_end method)
+            self.wait += 1
 
+            # if we run out of patience (same logic for cycle patience in on_cycle_end)
+            if self.wait >= self.patience:
+                
+                # get the next cyclic learning rate
+                hvd.K.set_value(self.model.optimizer.lr, self.get_lr(self.model.optimizer.lr))
+                
+                # restore best weights achieved in the previous cycle
+                # I don't know how this works in horovod, will it involve
+                # a lot of communication
+                # does each server contain a reference to the best_weights?
 
-            self.cycles_waited += 1
-            if self.cycles_waited > self.global_patience:
-                # set learning rate to max minimum as ReduceLROnPla.. doesnt have bestweights concept
-                # maybe it is a good idea to implement RLRoP here separately
-                hvd.K.set_value(self.model.optimizer.lr, self.lrs[0])
-                self.is_final_descent = True
                 if self.restore_best_weights:
                     print('Restoring model weights from ' + str(self.wait) + ' epochs before')
                     self.model.set_weights(self.best_weights)
 
-
-            return None
-        def on_epoch_end(self, epoch, logs=None):
-            
-            # if we have switched our learning rate scheduler mechanism
-            # from cyclic to final descent which is extreme decay to squeeze out best local minima
-
-            if self.is_final_descent:
-                # I don't know if this callback will be able to access the model
-                # will this work? :thinks:
-                self.final_descend.set_model(self.model)
-                # if it doesnt work we basically have to implement reduceLRonPlateau here
-                return self.final_descend.on_epoch_end(epoch, logs)
-            
-            # current mae loss
-            current = logs.get(self.monitor)
-
-            # How do we measure cycles?
-            # how many epochs make a cycle?
-            # it depends on the number of buckets iterated
-            # 2*buckets -1
-            # so we need to keep track of the number of buckets traversed
-            # calculation epochs would be an incorrect measure because of earlyUpdate
-            
-
-            if self.buckets_travelled % (2*self.buckets -1) == 0:
-                self.on_cycle_end(epoch, logs)
-            
-            # this condition will only be true if we forget to measure mae or changed our loss function
-            if current is None:
-                print("Monitoring Mean Absolute Error but mae not found in logs")
-                return
-
-            # if current mae is better than the previous best
-            if self.monitor_op(current - self.min_delta, self.best):
-                # update previous best
-                self.best = current
-                # reset wait counters
-                self.cycles_waited = 0
+                # reset wait counter
                 self.wait = 0
-                # update best weights
-                if self.restore_best_weights:
-                    self.best_weights = self.model.get_weights()
-                
-                if self.epochs_in_bucket == self.epochs_per_bucket:
-                    hvd.K.set_value(self.model.optimizer.lr, self.get_lr(self.model.optimizer.lr))
-            else:
-                # increment wait counter (for epoch here, for cycle is done in the on_cycle_end method)
-                self.wait += 1
 
-                # if we run out of patience (same logic for cycle patience in on_cycle_end)
-                if self.wait >= self.patience:
-                    
-                    # get the next cyclic learning rate
-                    hvd.K.set_value(self.model.optimizer.lr, self.get_lr(self.model.optimizer.lr))
-                    
-                    # restore best weights achieved in the previous cycle
-                    # I don't know how this works in horovod, will it involve
-                    # a lot of communication
-                    # does each server contain a reference to the best_weights?
-
-                    if self.restore_best_weights:
-                        print('Restoring model weights from ' + str(self.wait) + ' epochs before')
-                        self.model.set_weights(self.best_weights)
-
-                    # reset wait counter
-                    self.wait = 0
-
-        def on_train_end(self, logs=None):
-            return None
-            # if self.stopped_epoch > 0 and self.verbose > 0:
-            #     print('Epoch %05d: early stopping' % (self.stopped_epoch + 1))
+    def on_train_end(self, logs=None):
+        return None
+        # if self.stopped_epoch > 0 and self.verbose > 0:
+        #     print('Epoch %05d: early stopping' % (self.stopped_epoch + 1))
 
