@@ -26,6 +26,7 @@ install(FILES simulation.py
 
 install(FILES study.py
         DESTINATION share/melissa/launcher)
+
 install(FILES study.py
         DESTINATION share/melissa/launcher
         RENAME melissa.py)
