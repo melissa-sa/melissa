@@ -617,7 +617,19 @@ class Study(object):
             self.ml_stats['quantiles'] = False
 
         if (not 'assimilation' in self.stdy_opt):
-            self.stdy_opt.assimilation = False
+            self.stdy_opt['assimilation'] = False
+
+        if (not 'server_cores' in self.stdy_opt):
+            self.stdy_opt['server_cores'] = -1
+
+        if (not 'server_nodes' in self.stdy_opt):
+            self.stdy_opt['server_nodes'] = -1
+
+        if (not 'simulation_cores' in self.stdy_opt):
+            self.stdy_opt['simulation_cores'] = -1
+
+        if (not 'simulation_nodes' in self.stdy_opt):
+            self.stdy_opt['simulation_nodes'] = -1
 
         if self.stdy_opt['assimilation']:
             self.usr_func['draw_parameter_set'] = lambda : []
