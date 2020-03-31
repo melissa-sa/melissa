@@ -539,12 +539,16 @@ class Study(object):
         for group in self.groups:
             if self.fault_tolerance() != 0: return
             while check_scheduler_load(self.usr_func) == False:  #TODO: need to check this als during the simulation, not only on the beginnint!
-                time.sleep(1)
+                if self.stdy_opt['assimilation']:
+                    if self.server_obj[0].want_stop:
+                        break  # Refactor all those breaks!
+                else:
+                    # don't start to quick after each other... achtually that should not be a problem!
+                    time.sleep(1)
                 if self.fault_tolerance() != 0: return
 
-            with self.server_obj[0].lock:
-                if self.server_obj[0].want_stop:  # nice! already finished, break out!
-                    break
+            if self.server_obj[0].want_stop:  # nice! already finished, break out!
+                break
 
             logging.info('submit group '+str(group.group_id))
             try:
@@ -556,17 +560,19 @@ class Study(object):
                 logging.error(traceback.print_exc())
                 self.stop()
                 return
-        time.sleep(1)
+        # time.sleep(1)
         while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
                or any([i.status != FINISHED for i in self.groups])):
             if self.fault_tolerance() != 0: return
-            time.sleep(1)
-        time.sleep(1)
+            time.sleep(0.05)
+        # time.sleep(1)
         self.server_obj[0].finalize()
         self.stop()
         return
 
     def stop(self):
+
+        logging.info('Stopping study')
         for group in self.groups:
             if group.status < FINISHED and group.status > NOT_SUBMITTED:
                 with group.lock:
@@ -583,6 +589,8 @@ class Study(object):
         finalize(self.usr_func)
         # finalize zmq context
         melissa_comm4py.close_message()
+
+        logging.info('Study stopped')
 
     def check_options(self):
         """

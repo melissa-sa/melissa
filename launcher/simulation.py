@@ -15,6 +15,7 @@
 ###################################################################
 
 # TODO: check python linter warnings...
+# TODO: Refactor: see if we can remove some of the time.sleeps at some points to run even faster
 """
     Simulations and server jobs module
 """
@@ -494,7 +495,8 @@ class Server(Job):
         with self.lock:
             status = self.status
         while status < RUNNING:
-            time.sleep(1)
+            # time.sleep(1)  # if such a sleep is needed it should be done by the user who knows that the server job will not be launched directly!
+            time.sleep(0.05)  # so sleep less... seems we wait for an answer from the other thread...
             with self.lock:
                 status = self.status
         if status > RUNNING:
