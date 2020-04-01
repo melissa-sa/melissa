@@ -122,6 +122,11 @@ class Messenger(Thread):
                     with self.server[0].lock:
                         self.server[0].status = FINISHED  # finished
                         self.server[0].want_stop = True
+                    for group in self.groups:
+                        with group.lock:
+                            if group.job_status < FINISHED and group.job_status > NOT_SUBMITTED:
+                                group.cancel()
+                            group.status = FINISHED  # do not restart groups!
                         logging.info('end study')
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
