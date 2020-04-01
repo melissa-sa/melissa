@@ -131,11 +131,8 @@ class Messenger(Thread):
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
                         group_id = int(message[1])//self.batch_size
-                        logging.info('restarting group ' + str(group_id)
-                                     + ' (timeout detected by server)')
                         with self.groups[group_id].lock:
-                            self.groups[group_id].restart()
-                            self.groups[group_id].job_status = PENDING
+                            self.groups[group_id].status = TIMEOUT
                 elif message[0] == 'group_state':
                     group_id = int(message[1])//self.batch_size
                     simu_id = int(message[1])%self.batch_size
@@ -929,6 +926,17 @@ class Study(object):
                                 logging.error(traceback.print_exc())
                                 self.stop()
                                 return 1
+                if group.status == TIMEOUT:
+                    logging.info("resubmit group " + str(group.group_id)
+                                 + " (timeout detected by server)")
+                    try:
+                        group.restart()
+                    except:
+                        logging.error('Error while restarting group '+group.group_id)
+                        print('=== Error while restarting group '+group.group_id+' ===')
+                        logging.error(traceback.print_exc())
+                        self.stop()
+                        return 1
 #    time.sleep(1)
         return 0
 
