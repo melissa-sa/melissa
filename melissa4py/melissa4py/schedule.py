@@ -8,6 +8,7 @@ from collections import defaultdict
 from random import choice, sample
 
 from melissa4py.buffer import ReplayBuffer, BucketizedReplayBuffer
+from melissa4py.stats import Statistic
 
 
 def build_lr_shedule(decrease_every=200, factor=0.5, min_lr=1e-6):
@@ -29,9 +30,10 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         self.lrs = np.linspace(minlr, maxlr, buckets)
         self.lr = self.lrs[init_bucket]
         self.buckets = buckets
-        self.reverse_lrs = {(self.lrs[i],i) for i in range(buckets)}
+        self.reverse_lrs = {self.lrs[i]: i for i in range(buckets)}
+        print(f'Learning rates: {self.lrs} | reverse: {self.reverse_lrs}')
         # TODO use this
-        self.epochs_per_bucket = 100
+        self.epochs_per_bucket = 10
         self.monitor = monitor
         self.baseline = None 
         self.best = np.Inf
@@ -72,9 +74,10 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         self.current_bucket = self.init_bucket
         self.epochs_in_bucket = 0
         self.going = 1
+        self.current_score = Statistic(memory=0.9)
 
     def get_bucket(self, lr):
-        return self.reverse_lrs(lr)
+        return self.reverse_lrs[lr]
 
     def get_lr(self, lr):
         self.buckets_travelled += 1
@@ -82,9 +85,10 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         current_bucket = self.get_bucket(lr)
         if current_bucket == 0:
             self.going = 1
-        if current_bucket == self.buckets - 1:
+        if current_bucket == (self.buckets - 1):
             self.going = -1
-        new_bucket = current_bucket+self.going
+        new_bucket = current_bucket + self.going
+        print('Bucket -> current_bucket: {current_bucket} | going {self.going} | new: {new_bucket}')
         self.current_bucket = new_bucket
         return self.lrs[new_bucket]
 
@@ -114,6 +118,7 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             return self.final_descend.on_epoch_end(epoch, logs)
         # current mae loss
         current = logs.get(self.monitor)
+        self.current_score.add(current)
         if self.buckets_travelled % (2*self.buckets -1) == 0:
             self.on_cycle_end(epoch, logs)
         # this condition will only be true if we forget to measure mae or changed our loss function
@@ -128,6 +133,10 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             self.epochs_in_bucket += 1
 
         # if current mae is better than the previous best
+        if self.current_score.n < 10:
+            return
+
+        print(f'Bucket -> current score: {current} | best: {self.best}')
         if self.monitor_op(current - self.min_delta, self.best):
             print(f'Bucket -> imporovement {self.best} -> {current}')
             # update previous best
@@ -138,12 +147,8 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             # update best weights
             if self.restore_best_weights:
                 self.best_weights = self.model.get_weights()
-            #if self.epochs_in_bucket == self.epochs_per_bucket:
-            #    lr = self.get_lr(tf.keras.backend.get_value(self.model.optimizer.lr))
-            #    tf.keras.backend.set_value(self.model.optimizer.lr, lr)
-
         else:
-            print('Bucket -> no imporovement')
+            print(f'Bucket -> no imporovement | current {self.best}')
             # increment wait counter (for epoch here, for cycle is done in the on_cycle_end method)
             self.wait += 1
             # if we run out of patience (same logic for cycle patience in on_cycle_end)

@@ -4,6 +4,8 @@ from collections import defaultdict
 from queue import Queue
 from random import choice, choices, sample
 
+from melissa4py.stats import Statistic
+
 
 def fifo_policy(sids):
     """FIFO eviction policy"""
@@ -13,26 +15,6 @@ def fifo_policy(sids):
 def random_uniform_policy(sids):
     """Random eviction policy"""
     return choice(sids)
-
-
-class Statistic:
-
-    def __init__(self):
-        self.n = 0
-        self.sum = 0
-
-    def add(self, x):
-        self.n += 1
-        self.sum += x
-
-    @property
-    def mean(self):
-        return self.sum / self.n if self.n > 0 else float('nan')
-
-    @property
-    def var(self):
-        # TODO: add online estimator for the variance
-        return 0
 
 
 class ReplayBuffer:
