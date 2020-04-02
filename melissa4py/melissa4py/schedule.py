@@ -69,7 +69,7 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         self.best_weights = None
         self.monitor_op = np.less
         # counts how many buckets have been iterated till now
-        self.buckets_travelled = 0
+        self.buckets_travelled = 1
         self.cycles_waited = -1
         self.current_bucket = self.init_bucket
         self.epochs_in_bucket = 0
@@ -120,6 +120,8 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         current = logs.get(self.monitor)
         self.current_score.add(current)
         if self.buckets_travelled % (2*self.buckets -1) == 0:
+            # if buckets travelled is not incremented, this branch is always taken
+            self.buckets_travelled += 1
             self.on_cycle_end(epoch, logs)
         # this condition will only be true if we forget to measure mae or changed our loss function
         if current is None:
