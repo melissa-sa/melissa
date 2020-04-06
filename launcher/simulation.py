@@ -521,9 +521,11 @@ class Server(Job):
             logging.warning('Warning: no \'restart_server\' function provided'
                             +' using launch_server instead')
             self.launch()
-        with self.lock:
-            self.status = WAITING
-            self.job_status = PENDING
+        if not self.want_stop:
+            # Restart wants to cancel the study! Refactor how its done. maybe check return value of restart function?
+            with self.lock:
+                self.status = WAITING
+                self.job_status = PENDING
         self.start_time = 0.0
 
     def check_job(self):
