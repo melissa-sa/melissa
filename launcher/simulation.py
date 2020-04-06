@@ -366,6 +366,8 @@ class SobolGroup(Group):
                                       len(self.param_set[0]),
                                       self.param_set[0].ctypes.data_as(POINTER(c_double)))
 
+# Refactor: it's a bit unlogic that this file is named simulation.py and then there is a
+# server in it...
 class Server(Job):
     """
         Server class
@@ -511,8 +513,9 @@ class Server(Job):
         """
             Restarts the server
         """
-        if not "-r" in self.cmd_opt:
-            self.cmd_opt += ' -r . '
+        if not Job.stdy_opt['assimilation']:
+            if not "-r" in self.cmd_opt:
+                self.cmd_opt += ' -r . '
         os.chdir(self.directory)
         if "restart_server" in Job.usr_func.keys() \
         and Job.usr_func['restart_server']:
