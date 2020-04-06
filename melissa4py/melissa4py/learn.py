@@ -214,7 +214,10 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         self.going = 1
 
     def get_bucket(self, lr):
-        return self.reverse_lrs(lr)
+        return np.argmin(np.abs(self.lrs - lr))
+        # for _lr in self.lrs:
+            
+        # return self.reverse_lrs(lr)
 
     def get_lr(self, lr):
         self.buckets_travelled += 1
