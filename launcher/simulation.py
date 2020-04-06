@@ -415,12 +415,12 @@ class Server(Job):
                 return Job.stdy_opt[op_name]
 
             options_to_mget = ["total_steps", "ensemble_size", "assimilator_type",
-                               "max_runner_timeout"]
+                               "max_runner_timeout", "server_slowdown_factor"]
             filling = [mget(x) for x in options_to_mget]
             filling.append(node_name)
 
             print('filling:', filling)
-            self.cmd_opt = '%d %d %d %d %s' % tuple(filling)
+            self.cmd_opt = '%d %d %d %d %d %s' % tuple(filling)
 
 
         else:
