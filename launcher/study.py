@@ -122,6 +122,7 @@ class Messenger(Thread):
                     with self.server[0].lock:
                         self.server[0].status = FINISHED  # finished
                         self.server[0].want_stop = True
+                        logging.info('Received stop message from server')
                     for group in self.groups:
                         with group.lock:
                             if group.job_status < FINISHED and group.job_status > NOT_SUBMITTED:
@@ -808,6 +809,9 @@ class Study(object):
             Compares job status and study status, restart crashed groups
         """
 
+        if self.stdy_opt['disable_fault_tolerance']:
+            return 0
+
         # with self.server_obj[0].lock:
             # if self.server_obj[0].status == FINISHED:
                 # return 0
@@ -840,7 +844,11 @@ class Study(object):
             time.sleep(3)
             sleep = False
 
-        if (((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
+        want_stop = False
+        with self.server_obj[0].lock:  # did we get a want stop in the meantime? ... Refactor race conditions!
+            want_stop = self.server_obj[0].want_stop
+
+        if (not want_stop and ((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
                 and self.server_obj[0].status != FINISHED)
                 and not all([i.status == FINISHED for i in self.groups])):
             print('server status: '+str(self.server_obj[0].status)+' job_status: '+str(self.server_obj[0].job_status))
