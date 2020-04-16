@@ -77,7 +77,7 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         self.current_score = Statistic(memory=0.9)
 
     def get_bucket(self, lr):
-        return self.reverse_lrs[lr]
+        return np.argmin(np.abs(self.lrs - lr))
 
     def get_lr(self, lr):
         self.buckets_travelled += 1
