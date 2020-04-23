@@ -6,6 +6,7 @@ import tensorflow as tf
 import horovod.keras as hvd
 from collections import defaultdict
 from random import choice, sample
+<<<<<<< HEAD
 from melissa4py.buffer import ReplayBuffer, BucketizedReplayBuffer
 
 
@@ -15,6 +16,10 @@ def build_lr_shedule(decrease_every=200, factor=0.5, min_lr=1e-6):
             lr =  max(lr * factor, min_lr)
         return lr
     return lr_schedule
+=======
+from melissa4py.buffer import ReplayBuffer, PartitionedReplayBuffer
+from melissa4py.schedule import build_lr_shedule
+>>>>>>> juan
 
 
 class BaseLearner:
@@ -55,12 +60,20 @@ class BaseLearner:
         )
         # Setup callbacks
         self.callbacks = callbacks
+<<<<<<< HEAD
         # self.callbacks = [
         #     # tf.keras.callbacks.LearningRateScheduler(lr_schedule),
         # ]
         # if kwargs.get('ReduceLROnPlateau', None):
         #     self.callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(**kwargs.get('ReduceLROnPlateau', None)))
+=======
+        if not self.callbacks:
+            self.callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule)]
+        if kwargs.get('ReduceLROnPlateau', False):
+            self.callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(**kwargs.get('ReduceLROnPlateau', None)))
+>>>>>>> juan
         # Set model
+        print('callbacks: ', self.callbacks)
         for callback in self.callbacks:
             callback.set_model(self.model)
     
@@ -83,13 +96,14 @@ class BaseLearner:
             xs, ys = [e[0] for e in samples], [e[1] for e in samples]
             X, Y = np.array(xs), np.array(ys)
             print('Batch timesteps: ', X[:, -1])
+            # print('Batch appearances: ', self._buffer.stats['batch_appearances'].mean)
             # 2. Fit model
             start = time.time()
             for callback in self.callbacks:
                 callback.on_epoch_begin(batch)
             score = self.model.train_on_batch(X, Y)
             for callback in self.callbacks:
-                callback.on_epoch_end(batch, logs={'score': score})
+                callback.on_epoch_end(batch, logs={'score': score, 'mae': score})
             end = time.time()
             self.on_batch_end(batch, score, samples)
             # 3. Update history
@@ -106,8 +120,8 @@ class BaseLearner:
                 # however I am using hvd.K instead of tf.keras.backend
             )
             # 4. Checkpoint model if necesary
-            # if batch % self.checkpoint_every == 0:
-            #     self.checkpoint(batch)
+            if (batch + 1) % self.checkpoint_every == 0:
+                self.checkpoint(batch)
             return score
 
     def on_batch_end(self, batch, score, samples):
@@ -118,7 +132,7 @@ class BaseLearner:
         pass
 
     def checkpoint(self, checkpoint_id):
-        model_path = '{}/batch_{}'.format(self.checkpoint_path, batch)
+        model_path = '{}/batch_{}'.format(self.checkpoint_path, checkpoint_id)
         model_name = 'model_weights'
         try:
             os.mkdir(model_path)

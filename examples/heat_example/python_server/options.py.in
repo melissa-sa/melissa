@@ -1,0 +1,69 @@
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+
+"""
+    User defined options module
+"""
+
+import getpass
+import imp
+imp.load_source("functions", "@EXAMPLES_DIR@/heat_example/study_python_server/functions.py")
+from functions import *
+
+STUDY_OPTIONS = {}
+STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_python_server'
+STUDY_OPTIONS['nb_parameters'] = 5                 # number of varying parameters of the study
+STUDY_OPTIONS['sampling_size'] = 6                # initial number of parameter sets
+STUDY_OPTIONS['nb_timesteps'] = 100                # number of timesteps, from Melissa point of view
+STUDY_OPTIONS['threshold_values'] = [0.7, 0.8]
+STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
+STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
+STUDY_OPTIONS['simulation_timeout'] = 400          # simulations are restarted if no life sign for 400 seconds
+STUDY_OPTIONS['checkpoint_interval'] = 300         # server checkpoints every 300 seconds
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug infos
+STUDY_OPTIONS['batch_size'] = 2
+STUDY_OPTIONS['resp_port'] = 5546
+STUDY_OPTIONS['recv_port'] = 5547
+STUDY_OPTIONS['send_port'] = 5548
+STUDY_OPTIONS['learning'] = True
+
+MELISSA_STATS = {}
+MELISSA_STATS['mean'] = True
+MELISSA_STATS['variance'] = False
+MELISSA_STATS['skewness'] = False
+MELISSA_STATS['kurtosis'] = False
+MELISSA_STATS['min'] = False
+MELISSA_STATS['max'] = False
+MELISSA_STATS['threshold_exceedance'] = False
+MELISSA_STATS['quantiles'] = False
+MELISSA_STATS['sobol_indices'] = False
+
+USER_FUNCTIONS = {}
+USER_FUNCTIONS['create_study'] = None
+USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
+USER_FUNCTIONS['create_group'] = None
+USER_FUNCTIONS['launch_group'] = launch_group
+USER_FUNCTIONS['launch_server'] = launch_server
+USER_FUNCTIONS['check_server_job'] = check_job
+USER_FUNCTIONS['check_group_job'] = check_job
+USER_FUNCTIONS['restart_server'] = launch_server
+USER_FUNCTIONS['restart_group'] = None
+USER_FUNCTIONS['check_scheduler_load'] = check_load
+USER_FUNCTIONS['cancel_job'] = kill_job
+USER_FUNCTIONS['postprocessing'] = None
+USER_FUNCTIONS['finalize'] = None

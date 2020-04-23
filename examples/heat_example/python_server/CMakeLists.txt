@@ -14,10 +14,14 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-set (SCHED_VERSIONS "local" "OAR" "cluster" "Slurm" "python_server")  ## TODO: remove Slurm
+add_subdirectory(scripts)
 
-foreach(sched_version ${SCHED_VERSIONS})
-    add_subdirectory(${sched_version})
-endforeach(sched_version in ${SCHED_VERSIONS})
+configure_file(options.py.in options.py @ONLY)
+configure_file(script.py.in script.py @ONLY)
+configure_file(functions.py.in functions.py @ONLY)
+configure_file(server.py.in server.py @ONLY)
 
-add_subdirectory(src)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/options.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_python_server)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/script.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_python_server)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/functions.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_python_server)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/server.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_python_server)
