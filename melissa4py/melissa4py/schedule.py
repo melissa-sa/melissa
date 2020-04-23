@@ -78,7 +78,13 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
 
     def get_bucket(self, lr):
         return np.argmin(np.abs(self.lrs - lr))
-
+    
+    def reduce_bucket():
+        # should it be implemented
+        # future batches will be trained on a lower learning rate therefore biased against
+        
+        pass
+    
     def get_lr(self, lr):
         self.buckets_travelled += 1
         self.epochs_in_bucket = 0
@@ -102,6 +108,7 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
     def on_cycle_end(self, epoch, logs):
         self.cycles_waited += 1
         if self.cycles_waited > self.global_patience:
+            return None
             # set learning rate to max minimum as ReduceLROnPla.. doesnt have bestweights concept
             # maybe it is a good idea to implement RLRoP here separately
             tf.keras.backend.set_value(self.model.optimizer.lr, self.lrs[0])
@@ -114,6 +121,7 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         if self.is_final_descent:
+            # condition never met now
             self.final_descend.set_model(self.model)
             return self.final_descend.on_epoch_end(epoch, logs)
         # current mae loss
@@ -133,16 +141,19 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             tf.keras.backend.set_value(self.model.optimizer.lr, lr)
         else:
             self.epochs_in_bucket += 1
-
+        
+        
         # if current mae is better than the previous best
-        if self.current_score.n < 10:
-            return
+        # if self.current_score.n < 10:
+        #     return
 
         print(f'Bucket -> current score: {current} | best: {self.best}')
         if self.monitor_op(current - self.min_delta, self.best):
             print(f'Bucket -> imporovement {self.best} -> {current}')
             # update previous best
             self.best = current
+            return
+            # disabling patience
             # reset wait counters
             self.cycles_waited = 0
             self.wait = 0
@@ -151,6 +162,8 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
                 self.best_weights = self.model.get_weights()
         else:
             print(f'Bucket -> no imporovement | current {self.best}')
+            return
+            # no restoration of weights
             # increment wait counter (for epoch here, for cycle is done in the on_cycle_end method)
             self.wait += 1
             # if we run out of patience (same logic for cycle patience in on_cycle_end)
