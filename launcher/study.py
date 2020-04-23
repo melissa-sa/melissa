@@ -309,7 +309,7 @@ class Study(object):
                 self.stdy_opt = dict(stdy_opt)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         if ml_stats is None:
             self.ml_stats = dict()
@@ -318,7 +318,7 @@ class Study(object):
                 self.ml_stats = dict(ml_stats)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         if usr_func is None:
             self.usr_func = dict()
@@ -327,7 +327,7 @@ class Study(object):
                 self.usr_func = dict(usr_func)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         self.threads = dict()
         self.server = Server_user_functions(self)
@@ -485,7 +485,7 @@ class Study(object):
         nb_errors = self.check_options()
         if nb_errors > 0:
             logging.error(str(nb_errors) + ' errors in options')
-            exit()
+            exit(1)
 
         Job.set_usr_func(self.usr_func)
         Job.set_stdy_opt(self.stdy_opt)
@@ -519,7 +519,7 @@ class Study(object):
             print('=== Error while launching server ===')
             logging.error(traceback.print_exc())
             self.stop()
-            return
+            exit(1)
         logging.debug('start messenger thread')
         self.threads['messenger'].start()
         logging.debug('wait server start')
@@ -530,7 +530,7 @@ class Study(object):
             print('=== Error while waiting server ===')
             logging.error(traceback.print_exc())
             self.stop()
-            return
+            exit(1)
         self.server_obj[0].write_node_name()
         # connect to server
         logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
@@ -562,7 +562,7 @@ class Study(object):
                 print('=== Error while launching group ===')
                 logging.error(traceback.print_exc())
                 self.stop()
-                return
+                exit(1)
         # time.sleep(1)
         while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
                or any([i.status != FINISHED for i in self.groups])):

@@ -1,27 +1,45 @@
 stages:
-  - build
-  - test
+  - Build
+  - Test
+  - Test Virtual Cluster
 
-build_local:
-  type: build
-  tags:
-    - linux
+Build melissa:
+  stage: Build
+  tags: [Melissa]
   script:
-    # Do not build zmq if it is already installed by the system to speed up run
-    # We depend on zmq version 4.
-    - "mkdir build && cd build && grep 'ZMQ_VERSION_MAJOR 4' /usr/include/zmq.h &>/dev/null && cmake .. || cmake -DINSTALL_ZMQ=ON .. && make install"
+    - cd $HOME/CI-scripts && ./install_melissa.sh
   artifacts:
     paths:
       - build/
       - install/
 
-test_local:
-  type: test
-  tags:
-    - linux
+
+Test melissa ctest:
+  stage: Test
+  tags: [Melissa]
   script:
-    - "cd build && source ../install/bin/melissa_set_env.sh && env && ctest --verbose"
+    - cd $HOME/CI-scripts && ./test_melissa.sh
   dependencies:
-    - build_local
+    - Build melissa
 
+Test Slurm:
+  stage: Test Virtual Cluster
+  tags: [Melissa]
+  script:
+  - export DOCKER_CLIENT_TIMEOUT=120
+  - export COMPOSE_HTTP_TIMEOUT=120
+  - cd $HOME/CI-scripts && ./test_slurm.sh
+  after_script:
+  - cd $HOME && oardocker stop
+  dependencies: []
 
+Test OAR:
+  stage: Test Virtual Cluster
+  tags: [Melissa]
+  script:
+  - export DOCKER_CLIENT_TIMEOUT=120
+  - export COMPOSE_HTTP_TIMEOUT=120
+  - cd $HOME/CI-scripts && ./test_OAR.sh
+  after_script:
+  - cd $HOME && oardocker stop
+  dependencies: []
