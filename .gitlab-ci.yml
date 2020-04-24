@@ -5,7 +5,7 @@ stages:
 
 Build melissa:
   stage: Build
-  tags: [Melissa]
+  tags: [melissa]
   script:
     - cd $HOME/CI-scripts && ./install_melissa.sh
   artifacts:
@@ -16,7 +16,7 @@ Build melissa:
 
 Test melissa ctest:
   stage: Test
-  tags: [Melissa]
+  tags: [melissa]
   script:
     - cd $HOME/CI-scripts && ./test_melissa.sh
   dependencies:
@@ -24,7 +24,7 @@ Test melissa ctest:
 
 Test Slurm:
   stage: Test Virtual Cluster
-  tags: [Melissa]
+  tags: [melissa]
   script:
   - export DOCKER_CLIENT_TIMEOUT=120
   - export COMPOSE_HTTP_TIMEOUT=120
@@ -35,7 +35,7 @@ Test Slurm:
 
 Test OAR:
   stage: Test Virtual Cluster
-  tags: [Melissa]
+  tags: [melissa]
   script:
   - export DOCKER_CLIENT_TIMEOUT=120
   - export COMPOSE_HTTP_TIMEOUT=120
