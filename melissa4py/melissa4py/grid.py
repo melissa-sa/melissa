@@ -91,12 +91,15 @@ def regular_grid_neighbourhood(grid_dims, order=3):
     return neighbours
 
 
-def extend_neighbourhood(edge_list, number_of_parameters):
+def extend_neighbourhood(edge_list, number_of_parameters, number_of_cells=7361):
+    # we need to extend it as feature1 (all cells), feature2 (all cells) ... 
+    # currently its in the format: cell1, cell2
+    # we need the number of cells: 7361 hardcoded
     extended_t = []
     for i, j in edge_list:
         for k1 in range(number_of_parameters):
             for k2 in range(number_of_parameters):
-                d = [i * number_of_parameters + k1, j * number_of_parameters + k2]
+                d = [k1*number_of_cells + i, k2*number_of_cells + j]
                 extended_t.append(d)
     return extended_t
 
