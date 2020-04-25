@@ -6,21 +6,11 @@ import tensorflow as tf
 import horovod.keras as hvd
 from collections import defaultdict
 from random import choice, sample
-<<<<<<< HEAD
-from melissa4py.buffer import ReplayBuffer, BucketizedReplayBuffer
-
-
-def build_lr_shedule(decrease_every=200, factor=0.5, min_lr=1e-6):
-    def lr_schedule(epoch, lr):
-        if epoch % decrease_every == 0:
-            lr =  max(lr * factor, min_lr)
-        return lr
-    return lr_schedule
-=======
 from melissa4py.buffer import ReplayBuffer, PartitionedReplayBuffer
 from melissa4py.schedule import build_lr_shedule
->>>>>>> juan
+from mpi4py import MPI
 
+comm = MPI.COMM_WORLD
 
 class BaseLearner:
 
@@ -60,18 +50,10 @@ class BaseLearner:
         )
         # Setup callbacks
         self.callbacks = callbacks
-<<<<<<< HEAD
-        # self.callbacks = [
-        #     # tf.keras.callbacks.LearningRateScheduler(lr_schedule),
-        # ]
-        # if kwargs.get('ReduceLROnPlateau', None):
-        #     self.callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(**kwargs.get('ReduceLROnPlateau', None)))
-=======
         if not self.callbacks:
             self.callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule)]
         if kwargs.get('ReduceLROnPlateau', False):
             self.callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(**kwargs.get('ReduceLROnPlateau', None)))
->>>>>>> juan
         # Set model
         print('callbacks: ', self.callbacks)
         for callback in self.callbacks:
@@ -297,6 +279,27 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         
         # current mae loss
         current = logs.get(self.monitor)
+        # np_loss = np.float64(current)
+        np_loss = np.ones(current, dtype=np.float64)
+        np_sum_loss = np.zeros(1, dtype=np.float64)
+        comm.Allreduce([np_loss, MPI.DOUBLE],[np_sum_loss, MPI.DOUBLE],op=MPI.SUM)
+        MPI.barrier()
+        # hvd reduce has an issue as we work with tensors
+        # mpi reduce will only work for two nodes?
+        # they are probably all separate mpi ranks?
+        # verify that they are same in all ranks
+        print(np_sum_loss[0])
+        # log summed score in rank 0
+        
+        # we shouldn't be using tensors as they require a sess to get the values
+        # loss_tensor = tf.constant(current)
+        # # average=False results in summation
+        # # the op used internally is reduce_ops.Sum
+        # summed_loss = hvd.allreduce(loss_tensor, average=False)
+        # if(hvd.rank() == 0):
+        #     print(summed_loss.)
+
+
         # print(current)
         # How do we measure cycles?
         # how many epochs make a cycle?
