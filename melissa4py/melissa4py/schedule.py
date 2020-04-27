@@ -9,6 +9,9 @@ from random import choice, sample
 
 from melissa4py.buffer import ReplayBuffer, BucketizedReplayBuffer
 from melissa4py.stats import Statistic
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
 
 
 def build_lr_shedule(decrease_every=200, factor=0.5, min_lr=1e-6):
@@ -126,6 +129,11 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             return self.final_descend.on_epoch_end(epoch, logs)
         # current mae loss
         current = logs.get(self.monitor)
+        np_loss = np.ones(current, dtype=np.float64)
+        np_sum_loss = np.zeros(1, dtype=np.float64)
+        comm.Allreduce([np_loss, MPI.DOUBLE],[np_sum_loss, MPI.DOUBLE],op=MPI.SUM)
+        MPI.barrier()
+
         self.current_score.add(current)
         if self.buckets_travelled % (2*self.buckets -1) == 0:
             # if buckets travelled is not incremented, this branch is always taken
