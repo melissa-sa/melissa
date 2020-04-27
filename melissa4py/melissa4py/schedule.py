@@ -129,11 +129,12 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
             return self.final_descend.on_epoch_end(epoch, logs)
         # current mae loss
         current = logs.get(self.monitor)
-        np_loss = np.ones(current, dtype=np.float64)
-        np_sum_loss = np.zeros(1, dtype=np.float64)
-        comm.Allreduce([np_loss, MPI.DOUBLE],[np_sum_loss, MPI.DOUBLE],op=MPI.SUM)
-        MPI.barrier()
-
+        np_loss = np.array(current, dtype=np.float32)
+        np_sum_loss = np.zeros(1, dtype=np.float32)
+        comm.Allreduce([np_loss, MPI.FLOAT],[np_sum_loss, MPI.FLOAT],op=MPI.SUM)
+        print("the value for sum, printed before barrier is " + str(np_sum_loss))
+        # Comm.Barrier()
+        print("printed after barrier")
         self.current_score.add(current)
         if self.buckets_travelled % (2*self.buckets -1) == 0:
             # if buckets travelled is not incremented, this branch is always taken

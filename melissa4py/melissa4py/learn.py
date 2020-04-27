@@ -74,7 +74,7 @@ class BaseLearner:
             # batch = get_batch_from_queue
             batch = self.samples_seen // self.batch_size
             # 1. Build batch.
-            samples = self._buffer.get_batch(self.batch_size, batch)
+            samples = self._buffer.get_batch(self.batch_size)
             xs, ys = [e[0] for e in samples], [e[1] for e in samples]
             X, Y = np.array(xs), np.array(ys)
             print('Batch timesteps: ', X[:, -1])
@@ -283,12 +283,13 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         np_loss = np.ones(current, dtype=np.float64)
         np_sum_loss = np.zeros(1, dtype=np.float64)
         comm.Allreduce([np_loss, MPI.DOUBLE],[np_sum_loss, MPI.DOUBLE],op=MPI.SUM)
+        print("Just before the barrier", flush=True)
         MPI.barrier()
         # hvd reduce has an issue as we work with tensors
         # mpi reduce will only work for two nodes?
         # they are probably all separate mpi ranks?
         # verify that they are same in all ranks
-        print(np_sum_loss[0])
+        print("score is summed" + str(np_sum_loss[0]))
         # log summed score in rank 0
         
         # we shouldn't be using tensors as they require a sess to get the values
