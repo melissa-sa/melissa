@@ -98,6 +98,8 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         # discuss with Bruno and Juan
         if loss > 500*self.best:
             return True
+        else:
+            return False
 
     def final_descent_init():
         tf.keras.backend.set_value(self.model.optimizer.lr, self.lrs[0])
