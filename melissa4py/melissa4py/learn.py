@@ -7,16 +7,28 @@ import horovod.keras as hvd
 
 from collections import defaultdict
 from random import choice, sample
+
+from tensorflow.contrib.keras import backend as K
+
 from melissa4py.buffer import ReplayBuffer, PartitionedReplayBuffer
 from melissa4py.schedule import build_lr_shedule
 
 
+def new_loss(y_true, y_pred):
+    loss1 = tf.reduce_mean(tf.abs(y_true - y_pred))
+    loss2 = tf.reduce_mean(y_pred)
+    y = tf.cond(tf.equal(tf.constant(1), tf.size(y_pred)), lambda: loss2, lambda: loss1)
+    return y
+
+
 class BaseLearner:
 
-    def __init__(self, batch_size=32, lr_start=0.001, lr_decrease_every=1,
+    def __init__(self, batch_size=32, lr_start=0.01, lr_decrease_every=1,
                  lr_decrease_factor=1, lr_min_lr=1e-6, checkpoint_path='.',
                  checkpoint_every=20, lr_schedule=None, learn_every=None,
-                 replay_buffer=None, callbacks=None, *args, **kwargs):
+                 replay_buffer=None, callbacks=None, loss='mae', feed_y=False, 
+                 *args, **kwargs):
+        self.feed_y = feed_y
         self.checkpoint_every = checkpoint_every
         self.checkpoint_path = checkpoint_path
         self.batch_size = batch_size
@@ -36,12 +48,12 @@ class BaseLearner:
 
         print('Initializing model..')
         self.model = self.build_model(*args, **kwargs)
-        self.optimizer = tf.keras.optimizers.Adam(lr_start * hvd.size())
+        self.optimizer = tf.keras.optimizers.Adam(lr_start)
         self.hvd_optimizer = hvd.DistributedOptimizer(self.optimizer)
         print('Broadcasting global variables..')
         hvd.callbacks.BroadcastGlobalVariablesCallback(0)
         print('Compiling model..')
-        self.model.compile(optimizer=self.hvd_optimizer, loss='mae')
+        self.model.compile(optimizer=self.hvd_optimizer, loss=loss)
         lr_schedule = lr_schedule or build_lr_shedule(
             decrease_every=lr_decrease_every,
             factor=lr_decrease_factor,
@@ -51,8 +63,6 @@ class BaseLearner:
         self.callbacks = callbacks
         if not self.callbacks:
             self.callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule)]
-        if kwargs.get('ReduceLROnPlateau', False):
-            self.callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(**kwargs.get('ReduceLROnPlateau', None)))
         # Set model
         print('callbacks: ', self.callbacks)
         for callback in self.callbacks:
@@ -63,23 +73,32 @@ class BaseLearner:
         outputs = tf.keras.layers.Dense(vect_size, activation='sigmoid')(inputs)
         return tf.keras.Model(inputs, outputs)
 
-    def learn(self, x, y):
+    def learn(self, x, y, comm=None, disable_learning=False):
         self.samples_seen += 1
         # Add sample to buffer
         self._buffer.put((x, y), partition=x[-1])
         if self._buffer.safe_to_sample and ((self.samples_seen % self.learn_every) == 0):
+            if comm is not None and not disable_learning:
+                comm.Barrier()
             batch = self.samples_seen // self.batch_size
             # 1. Build batch.
             samples = self._buffer.get_batch(self.batch_size)
             xs, ys = [e[0] for e in samples], [e[1] for e in samples]
             X, Y = np.array(xs), np.array(ys)
             print('Batch timesteps: ', X[:, -1])
-            # print('Batch appearances: ', self._buffer.stats['batch_appearances'].mean)
             # 2. Fit model
             start = time.time()
             for callback in self.callbacks:
                 callback.on_epoch_begin(batch)
-            score = self.model.train_on_batch(X, Y)
+            if self.feed_y:
+                # NOTE: for second-order loss
+                score = self.model.train_on_batch((X,Y), (Y, [1 for _ in range(len(Y))]))
+            else:
+                if not disable_learning:
+                    score = self.model.train_on_batch(X, Y)
+                else:
+                    # TODO: remove this after debugging
+                    score = 0
             for callback in self.callbacks:
                 callback.on_epoch_end(batch, logs={'score': score, 'mae': score})
             end = time.time()
@@ -95,7 +114,43 @@ class BaseLearner:
             # 4. Checkpoint model if necesary
             if (batch + 1) % self.checkpoint_every == 0:
                 self.checkpoint(batch)
+            print(f'Rank: {self.rank} | [Learner] Training done.')
             return score
+        print(f'Rank: {self.rank} | [Learner] done.')
+    
+    # TODO: remove repeated code
+    def replay(self):
+        self.samples_seen += self.batch_size
+        batch = self.samples_seen // self.batch_size
+        # 1. Sample from buffer
+        samples = self._buffer.get_batch(self.batch_size)
+        xs, ys = [e[0] for e in samples], [e[1] for e in samples]
+        X, Y = np.array(xs), np.array(ys)
+        start = time.time()
+        # 2. Train model
+        for callback in self.callbacks:
+            callback.on_epoch_begin(batch)
+        if self.feed_y:
+            # NOTE: for second-order loss
+            score = self.model.train_on_batch((X,Y), (Y, [1 for _ in range(len(Y))]))
+        else:
+            score = self.model.train_on_batch(X, Y)
+        for callback in self.callbacks:
+            callback.on_epoch_end(batch, logs={'score': score, 'mae': score})
+        end = time.time()
+        self.on_batch_end(batch, score, samples)
+        # 3. Update history
+        self.history['batch_mean'].append(np.mean(X[:, -1]))
+        self.history['batch_variance'].append(np.var(X[:, -1]))
+        self.history['training_time'].append((start, end))
+        self.history['score'].append(score)
+        self.history['learning_rate'].append(
+            tf.keras.backend.get_value(self.hvd_optimizer.lr)
+        )
+        # 4. Checkpoint model if necesary
+        if (batch + 1) % self.checkpoint_every == 0:
+            self.checkpoint(batch)
+        return score
 
     def on_batch_end(self, batch, score, samples):
         pass
@@ -111,8 +166,10 @@ class BaseLearner:
 
     def save(self, model_path, model_name):
         if self.rank == 0:
+            print(f'Rank: {self.rank} | Checkpointing..')
             outfile = '{}/{}'.format(model_path, model_name)
             self.model.save_weights(outfile)
+            print(f'Rank: {self.rank} | Checkpoint done.')
 
     def read(self, dirname, filename):
         self.model.build((1, self.nb_parameters))
