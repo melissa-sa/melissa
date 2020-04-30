@@ -1395,8 +1395,7 @@ void melissa_send (const char   *field_name,
             j = (field_data_ptr->timestamp) % global_data.nb_proc_server;
             for (i=0; i<global_data.nb_proc_server; i++)
             {
-                // global_data.data_ptr = &send_vect_ptr;
-                global_data.data_ptr[0] = &send_vect_ptr[0];
+		global_data.data_ptr[0] = &send_vect_ptr[0];
                 if (i != j)
                 {
                     ret = send_message_simu_data (field_data_ptr->timestamp,
@@ -1574,6 +1573,7 @@ void melissa_finalize (void)
     }
     zmq_close (global_data.deconnexion_requester);
 
+
 #ifdef BUILD_WITH_MPI
     if (global_data.comm_size > 1)
     {
@@ -1600,7 +1600,6 @@ void melissa_finalize (void)
         }
         zmq_close (global_data.sobol_requester[0]);
     }
-
     // free everything !!!
     free_field_data(field_data);
     melissa_print(VERBOSE_DEBUG, "Free ZMQ context...\n");
