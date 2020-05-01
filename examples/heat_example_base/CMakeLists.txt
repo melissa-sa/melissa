@@ -26,15 +26,8 @@ install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_utils.f90 DEST
 configure_file(heat_utils_no_mpi.f90 heat_utils_no_mpi.f90 COPYONLY)
 install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_utils_no_mpi.f90 DESTINATION ${EXAMPLES_DIR}/heat_example_base/src)
 configure_file(heat_base.py heat_base.py @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_base.py
-        DESTINATION ${EXAMPLES_DIR}/heat_example_base/src
-        PERMISSIONS OWNER_WRITE
-                    OWNER_READ
-                    OWNER_EXECUTE
-                    GROUP_READ
-                    GROUP_EXECUTE
-                    WORLD_READ
-                    WORLD_EXECUTE)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_base.py
+        DESTINATION ${EXAMPLES_DIR}/heat_example_base/src)
 
 if(BUILD_WITH_MPI)
 

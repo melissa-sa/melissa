@@ -14,7 +14,8 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-
+# TODO: check python linter warnings...
+# TODO: Refactor: see if we can remove some of the time.sleeps at some points to run even faster
 """
     Simulations and server jobs module
 """
@@ -95,6 +96,7 @@ class Job(object):
         """
         if "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
+            self.job_status = FINISHED
             return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
@@ -144,6 +146,9 @@ class Group(Job):
         """
             Launches the group (mandatory)
         """
+        self.cores = Job.stdy_opt['simulation_cores']
+        self.nodes = Job.stdy_opt['simulation_nodes']
+
         if "launch_group" in Job.usr_func.keys() \
         and Job.usr_func['launch_group']:
             Job.usr_func['launch_group'](self)
@@ -177,7 +182,8 @@ class Group(Job):
             return Job.usr_func['cancel_group_job'](self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
-           return Job.usr_func['cancel_job'](self)
+            self.job_status = FINISHED
+            return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
@@ -360,6 +366,8 @@ class SobolGroup(Group):
                                       len(self.param_set[0]),
                                       self.param_set[0].ctypes.data_as(POINTER(c_double)))
 
+# Refactor: it's a bit unlogic that this file is named simulation.py and then there is a
+# server in it...
 class Server(Job):
     """
         Server class
@@ -378,6 +386,7 @@ class Server(Job):
         self.path = melissa_install_prefix+'/bin'
         self.job_type = 1
         self.options = ''
+        self.want_stop = False
 
     def set_path(self, work_dir="./"):
         self.directory = work_dir
@@ -396,67 +405,87 @@ class Server(Job):
         """
             Melissa Server command line options
         """
-        op_str = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
-        self.options = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
-        field_str = ':'.join([x for x in Job.stdy_opt['field_names']])
-        self.options += ' '
-        self.options += ':'.join([x for x in Job.stdy_opt['field_names']])
-        if field_str == '':
-            logging.error('error bad option: no field name given')
-            return
-        quantile_str = '0'
-        if Job.ml_stats['quantiles']:
-            quantile_str = ':'.join([str(x) for x in Job.stdy_opt['quantile_values']])
-            if quantile_str == '':
-                logging.error('error bad option: no quantile value given')
-                return
-        self.options += ' '
-        self.options += quantile_str
-        threshold_str = '0'
-        if Job.ml_stats['threshold_exceedances']:
-            threshold_str = ':'.join([str(x) for x in Job.stdy_opt['threshold_values']])
-            if threshold_str == '':
-                logging.error('error bad option: no threshold value given')
-                return
-        self.options += ' '
-        self.options += threshold_str
         buff = create_string_buffer(256)
         melissa_comm4py.get_node_name(buff)
-        self.cmd_opt = ' '.join(('-o', op_str,
-                                 '-p', str(self.nb_param),
-                                 '-s', str(Job.stdy_opt['sampling_size']),
-                                 '-t', str(Job.stdy_opt['nb_timesteps']),
-                                 '-q', quantile_str,
-                                 '-e', threshold_str,
-                                 '-c', str(Job.stdy_opt['checkpoint_interval']),
-                                 '-w', str(Job.stdy_opt['simulation_timeout']),
-                                 '-f', field_str,
-                                 '-v', str(Job.stdy_opt['verbosity']),
-                                 '--txt_push_port', str(Job.stdy_opt['recv_port']),
-                                 '--txt_pull_port', str(Job.stdy_opt['send_port']),
-                                 '--txt_req_port', str(Job.stdy_opt['resp_port']),
-                                 '--data_port', str(Job.stdy_opt['data_port']),
-                                 '-n', buff.value.decode()))
-        if Job.stdy_opt['learning']:
-            self.cmd_opt += " -l "+str(Job.stdy_opt['nn_path'])
+        node_name = buff.value.decode()
+
+        if Job.stdy_opt['assimilation']:
+            def mget(what):
+                op_name = 'assimilation_%s' % what
+                return Job.stdy_opt[op_name]
+
+            options_to_mget = ["total_steps", "ensemble_size", "assimilator_type",
+                               "max_runner_timeout", "server_slowdown_factor"]
+            filling = [mget(x) for x in options_to_mget]
+            filling.append(node_name)
+
+            print('filling:', filling)
+            self.cmd_opt = '%d %d %d %d %d %s' % tuple(filling)
+
+
         else:
-            if op_str == '':
-                logging.error('error bad option: no operation given')
+            op_str = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
+            self.options = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])
+            field_str = ':'.join([x for x in Job.stdy_opt['field_names']])
+            self.options += ' '
+            self.options += ':'.join([x for x in Job.stdy_opt['field_names']])
+            if field_str == '':
+                logging.error('error bad option: no field name given')
                 return
-        if Job.stdy_opt['disable_fault_tolerance'] == True:
-            self.cmd_opt += " --disable_fault_tolerancel"
+            quantile_str = '0'
+            if Job.ml_stats['quantiles']:
+                quantile_str = ':'.join([str(x) for x in Job.stdy_opt['quantile_values']])
+                if quantile_str == '':
+                    logging.error('error bad option: no quantile value given')
+                    return
+            self.options += ' '
+            self.options += quantile_str
+            threshold_str = '0'
+            if Job.ml_stats['threshold_exceedances']:
+                threshold_str = ':'.join([str(x) for x in Job.stdy_opt['threshold_values']])
+                if threshold_str == '':
+                    logging.error('error bad option: no threshold value given')
+                    return
+            self.options += ' '
+            self.options += threshold_str
+            self.cmd_opt = ' '.join(('-o', op_str,
+                                     '-p', str(self.nb_param),
+                                     '-s', str(Job.stdy_opt['sampling_size']),
+                                     '-t', str(Job.stdy_opt['nb_timesteps']),
+                                     '-q', quantile_str,
+                                     '-e', threshold_str,
+                                     '-c', str(Job.stdy_opt['checkpoint_interval']),
+                                     '-w', str(Job.stdy_opt['simulation_timeout']),
+                                     '-f', field_str,
+                                     '-v', str(Job.stdy_opt['verbosity']),
+                                     '--txt_push_port', str(Job.stdy_opt['recv_port']),
+                                     '--txt_pull_port', str(Job.stdy_opt['send_port']),
+                                     '--txt_req_port', str(Job.stdy_opt['resp_port']),
+                                     '--data_port', str(Job.stdy_opt['data_port']),
+                                     '-n', node_name))
+            if Job.stdy_opt['learning']:
+                self.cmd_opt += " -l "+str(Job.stdy_opt['nn_path'])
+            else:
+                if op_str == '':
+                    logging.error('error bad option: no operation given')
+                    return
+            if Job.stdy_opt['disable_fault_tolerance'] == True:
+                self.cmd_opt += " --disable_fault_tolerancel"
 
 
     def launch(self):
         """
             Launches server job
         """
+        self.cores = Job.stdy_opt['server_cores']
+        self.nodes = Job.stdy_opt['server_nodes']
+
         os.chdir(self.directory)
         logging.info('launch server')
         logging.info('server options: '+self.cmd_opt)
         if "launch_server" in Job.usr_func.keys() \
         and Job.usr_func['launch_server']:
-            Job.usr_func['launch_server'](self)
+            Job.usr_func['launch_server'](self)  # Refactor: here it woulld be better to not give self but only a directory of important properties to not break things and to clearly describe the interface..., same for simulation...
         else:
             logging.error('Error: no \'launch_server\' function provided')
             exit()
@@ -470,7 +499,8 @@ class Server(Job):
         with self.lock:
             status = self.status
         while status < RUNNING:
-            time.sleep(1)
+            # time.sleep(1)  # if such a sleep is needed it should be done by the user who knows that the server job will not be launched directly!
+            time.sleep(0.05)  # so sleep less... seems we wait for an answer from the other thread...
             with self.lock:
                 status = self.status
         if status > RUNNING:
@@ -483,8 +513,9 @@ class Server(Job):
         """
             Restarts the server
         """
-        if not "-r" in self.cmd_opt:
-            self.cmd_opt += ' -r . '
+        if not Job.stdy_opt['assimilation']:
+            if not "-r" in self.cmd_opt:
+                self.cmd_opt += ' -r . '
         os.chdir(self.directory)
         if "restart_server" in Job.usr_func.keys() \
         and Job.usr_func['restart_server']:
@@ -493,9 +524,11 @@ class Server(Job):
             logging.warning('Warning: no \'restart_server\' function provided'
                             +' using launch_server instead')
             self.launch()
-        with self.lock:
-            self.status = WAITING
-            self.job_status = PENDING
+        if not self.want_stop:
+            # Restart wants to cancel the study! Refactor how its done. maybe check return value of restart function?
+            with self.lock:
+                self.status = WAITING
+                self.job_status = PENDING
         self.start_time = 0.0
 
     def check_job(self):
@@ -518,10 +551,12 @@ class Server(Job):
         """
         if "cancel_server_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_server_job']:
+            self.job_status = FINISHED
             return Job.usr_func['cancel_server_job'](self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
-           return Job.usr_func['cancel_job'](self)
+            self.job_status = FINISHED
+            return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()

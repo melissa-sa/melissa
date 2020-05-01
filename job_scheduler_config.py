@@ -1,19 +1,18 @@
 import batchspawner
 
 
-spawner = batchspawner.SlurmSpawner()
-spawner.batch_cancel_cmd = 'scancel '
-spawner.req_nodes = '1'  ## NODES_SERVER / SIMU TODO: make separate?
-spawner.req_tasks_per_node = '1'  ## PROC_PER_NODE
-spawner.req_memory = '0'
-spawner.req_runtime = '0:10:00'  # WALLTIME_SERVER / SIMU TODO: make separate?
-spawner.req_server_output_log = 'melissa.%j.log'
-spawner.req_server_error_log = 'melissa.%j.err'
-spawner.req_simu_output_log = 'simu.%j.log'
-spawner.req_simu_error_log = 'simu.%j.err'
+scheduler = batchspawner.SlurmSpawner()
+scheduler.req_nodes = '1'
+scheduler.req_tasks_per_node = '1'
+scheduler.req_memory = '0'
+scheduler.req_runtime = '0:10:00'
+scheduler.req_server_output_log = 'melissa.%j.log'
+scheduler.req_server_error_log = 'melissa.%j.err'
+scheduler.req_simu_output_log = 'simu.%j.log'
+scheduler.req_simu_error_log = 'simu.%j.err'
 
 
-spawner.server_script = '''#!/bin/bash
+scheduler.server_script = '''#!/bin/bash
 #SBATCH -N {nodes}
 #SBATCH --ntasks-per-node={tasks_per_node}
 #SBATCH --mem={memory}
@@ -24,7 +23,7 @@ spawner.server_script = '''#!/bin/bash
 #{options}
 '''
 
-spawner.simu_script = '''#!/bin/bash
+scheduler.simu_script = '''#!/bin/bash
 #SBATCH -N {nodes}
 #SBATCH --ntasks-per-node={tasks_per_node}
 #SBATCH --time={runtime}
