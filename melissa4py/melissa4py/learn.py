@@ -52,8 +52,6 @@ class BaseLearner:
         self.callbacks = callbacks
         if not self.callbacks:
             self.callbacks = [tf.keras.callbacks.LearningRateScheduler(lr_schedule)]
-        if kwargs.get('ReduceLROnPlateau', False):
-            self.callbacks.append(tf.keras.callbacks.ReduceLROnPlateau(**kwargs.get('ReduceLROnPlateau', None)))
         # Set model
         print('callbacks: ', self.callbacks)
         for callback in self.callbacks:
