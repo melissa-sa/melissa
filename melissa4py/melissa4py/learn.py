@@ -80,13 +80,8 @@ class BaseLearner:
         # partition here is the timestep (last index of x)
         self._buffer.put((x, y), partition=x[-1])
         if self._buffer.safe_to_sample and ((self.samples_seen % self.learn_every) == 0):
-<<<<<<< HEAD
-            # interface level buffer here
-            # batch = get_batch_from_queue
-=======
             if comm is not None and not disable_learning:
                 comm.Barrier()
->>>>>>> juan
             batch = self.samples_seen // self.batch_size
             # 1. Build batch.
             samples = self._buffer.get_batch(self.batch_size)
