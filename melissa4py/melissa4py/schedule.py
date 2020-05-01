@@ -215,9 +215,9 @@ class Bucket_LR_Scheduler(tf.keras.callbacks.Callback):
         # turning on divergence control
         if self.detect_divergence(current):
              print_once('Bucket -> divergence detected')
-                if self.restore_best_weights:
-                    print_once('Restoring model weights from when loss was: ', current)
-                    self.model.set_weights(self.best_weights)
+             if self.restore_best_weights:
+                 print_once('Restoring model weights from when loss was: ', current)
+                 self.model.set_weights(self.best_weights)
         # else:
         #     # print(f'Bucket -> no improvement | current {self.best}')
         #     # return
