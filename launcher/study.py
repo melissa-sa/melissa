@@ -923,7 +923,7 @@ class Study(object):
             with group.lock:
                 if group.status == WAITING:
                     if group.job_status == RUNNING:
-                        if time.time() - group.start_time > self.stdy_opt['simulation_timeout']:
+                        if (self.stdy_opt['simulation_timeout'] > 0) and (time.time() - group.start_time > self.stdy_opt['simulation_timeout']):
                             logging.info("resubmit group " + str(group.group_id)
                                          + " (timeout detected by launcher)")
                             try:
