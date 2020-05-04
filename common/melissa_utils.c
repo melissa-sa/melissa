@@ -117,7 +117,7 @@ static void print_zmq_error(int         ret,
     {
         fprintf(stdout, "  Unknown error.\n");
     }
-    exit(0);
+    exit(1);
 }
 
 /**

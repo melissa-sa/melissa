@@ -122,6 +122,7 @@ class Messenger(Thread):
                     with self.server[0].lock:
                         self.server[0].status = FINISHED  # finished
                         self.server[0].want_stop = True
+                        logging.info('Received stop message from server')
                     for group in self.groups:
                         with group.lock:
                             if group.job_status < FINISHED and group.job_status > NOT_SUBMITTED:
@@ -308,7 +309,7 @@ class Study(object):
                 self.stdy_opt = dict(stdy_opt)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         if ml_stats is None:
             self.ml_stats = dict()
@@ -317,7 +318,7 @@ class Study(object):
                 self.ml_stats = dict(ml_stats)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         if usr_func is None:
             self.usr_func = dict()
@@ -326,7 +327,7 @@ class Study(object):
                 self.usr_func = dict(usr_func)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         self.threads = dict()
         self.server = Server_user_functions(self)
@@ -484,7 +485,7 @@ class Study(object):
         nb_errors = self.check_options()
         if nb_errors > 0:
             logging.error(str(nb_errors) + ' errors in options')
-            exit()
+            exit(1)
 
         Job.set_usr_func(self.usr_func)
         Job.set_stdy_opt(self.stdy_opt)
@@ -518,7 +519,7 @@ class Study(object):
             print('=== Error while launching server ===')
             logging.error(traceback.print_exc())
             self.stop()
-            return
+            exit(1)
         logging.debug('start messenger thread')
         self.threads['messenger'].start()
         logging.debug('wait server start')
@@ -529,7 +530,7 @@ class Study(object):
             print('=== Error while waiting server ===')
             logging.error(traceback.print_exc())
             self.stop()
-            return
+            exit(1)
         self.server_obj[0].write_node_name()
         # connect to server
         logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
@@ -561,7 +562,7 @@ class Study(object):
                 print('=== Error while launching group ===')
                 logging.error(traceback.print_exc())
                 self.stop()
-                return
+                exit(1)
         # time.sleep(1)
         while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
                or any([i.status != FINISHED for i in self.groups])):
@@ -808,6 +809,9 @@ class Study(object):
             Compares job status and study status, restart crashed groups
         """
 
+        if self.stdy_opt['disable_fault_tolerance']:
+            return 0
+
         # with self.server_obj[0].lock:
             # if self.server_obj[0].status == FINISHED:
                 # return 0
@@ -840,7 +844,11 @@ class Study(object):
             time.sleep(3)
             sleep = False
 
-        if (((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
+        want_stop = False
+        with self.server_obj[0].lock:  # did we get a want stop in the meantime? ... Refactor race conditions!
+            want_stop = self.server_obj[0].want_stop
+
+        if (not want_stop and ((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
                 and self.server_obj[0].status != FINISHED)
                 and not all([i.status == FINISHED for i in self.groups])):
             print('server status: '+str(self.server_obj[0].status)+' job_status: '+str(self.server_obj[0].job_status))
@@ -915,7 +923,7 @@ class Study(object):
             with group.lock:
                 if group.status == WAITING:
                     if group.job_status == RUNNING:
-                        if time.time() - group.start_time > self.stdy_opt['simulation_timeout']:
+                        if (self.stdy_opt['simulation_timeout'] > 0) and (time.time() - group.start_time > self.stdy_opt['simulation_timeout']):
                             logging.info("resubmit group " + str(group.group_id)
                                          + " (timeout detected by launcher)")
                             try:

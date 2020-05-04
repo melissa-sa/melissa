@@ -366,6 +366,8 @@ class SobolGroup(Group):
                                       len(self.param_set[0]),
                                       self.param_set[0].ctypes.data_as(POINTER(c_double)))
 
+# Refactor: it's a bit unlogic that this file is named simulation.py and then there is a
+# server in it...
 class Server(Job):
     """
         Server class
@@ -413,12 +415,12 @@ class Server(Job):
                 return Job.stdy_opt[op_name]
 
             options_to_mget = ["total_steps", "ensemble_size", "assimilator_type",
-                               "max_runner_timeout"]
+                               "max_runner_timeout", "server_slowdown_factor"]
             filling = [mget(x) for x in options_to_mget]
             filling.append(node_name)
 
             print('filling:', filling)
-            self.cmd_opt = '%d %d %d %d %s' % tuple(filling)
+            self.cmd_opt = '%d %d %d %d %d %s' % tuple(filling)
 
 
         else:
@@ -511,8 +513,9 @@ class Server(Job):
         """
             Restarts the server
         """
-        if not "-r" in self.cmd_opt:
-            self.cmd_opt += ' -r . '
+        if not Job.stdy_opt['assimilation']:
+            if not "-r" in self.cmd_opt:
+                self.cmd_opt += ' -r . '
         os.chdir(self.directory)
         if "restart_server" in Job.usr_func.keys() \
         and Job.usr_func['restart_server']:
@@ -521,9 +524,11 @@ class Server(Job):
             logging.warning('Warning: no \'restart_server\' function provided'
                             +' using launch_server instead')
             self.launch()
-        with self.lock:
-            self.status = WAITING
-            self.job_status = PENDING
+        if not self.want_stop:
+            # Restart wants to cancel the study! Refactor how its done. maybe check return value of restart function?
+            with self.lock:
+                self.status = WAITING
+                self.job_status = PENDING
         self.start_time = 0.0
 
     def check_job(self):
