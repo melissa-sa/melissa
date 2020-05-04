@@ -1474,7 +1474,7 @@ void melissa_send (const char   *field_name,
         melissa_print(VERBOSE_DEBUG, "Send time for step %d: %f \n", field_data_ptr->timestamp, end_comm_time - start_comm_time);
     }
 
-    if (global_data.sobol == 1)
+    if (global_data.sobol)
     {
         for (k=1; k<global_data.nb_parameters + 2; k++)
         {

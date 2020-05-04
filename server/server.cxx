@@ -718,7 +718,6 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 printf (" Waiting launcher message\n");
                 zmq_msg_init (&msg2);
                 zmq_msg_recv (&msg2, server_ptr->text_requester, 0);
-                printf (" -- > message: %s\n", (char*)zmq_msg_data (&msg2));
                 server_ptr->last_msg_launcher = melissa_get_time();
                 process_launcher_message(zmq_msg_data (&msg2), server_ptr);
                 zmq_msg_close (&msg2);
