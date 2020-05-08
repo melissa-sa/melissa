@@ -157,7 +157,7 @@ class MelissaServer:
                 print(f'Rank: {self.rank} [Connection Listener Thread] Stopping.')
                 break
             # 1. Poll sockets
-            print(f'Rank: {self.rank} | Listening for connections..')
+#            print(f'Rank: {self.rank} | Listening for connections..')
             pr = poller.poll(timeout=100)
             sockets = dict(pr)
             # 2 Handle simulation connection message
@@ -273,33 +273,33 @@ class MelissaServer:
         """
         if (self.rank == 0):
             self.stopping = True
-            print('Rank: {self.rank} | [Stop] Stopping listener thread..')
+            print(f'Rank: {self.rank} | [Stop] Stopping listener thread..')
             self.connection_listener_thread.join()
-            print('Rank: {self.rank} | [Stop] Listener stoped.')
+            print(f'Rank: {self.rank} | [Stop] Listener stoped.')
         # 1. Syn server threads
         self.comm.Barrier()
-        print('Rank: {self.rank} | [Stop] Sending termination message..')
+        print(f'Rank: {self.rank} | [Stop] Sending termination message..')
         # 2. Send msg to the launcher
         if (self.rank == 0):
             self.text_pusher.send(Stop().encode())
-        print('Rank: {self.rank} | [Stop] Done')
+        print(f'Rank: {self.rank} | [Stop] Done')
 
     def handle_simulation_connection(self, msg):
-        print('Rank: {self.rank} | [Connection] Recieved connection message.')
         # 1. Deserialize connection message.
         request = ConnectionRequest.recv(msg)
+        print(f'Rank: {self.rank} | [Connection] Recieved connection message from simulation {request.simulation_id}.')
         # 2. Broadcast if first connection.
         if not self.first_connection_recieved:
-            print('Rank: {self.rank} | [Connection] Broadcasting first connection metadata...')
+            print(f'Rank: {self.rank} | [Connection] Broadcasting first connection metadata...')
             self.comm.bcast(request, root=0)
             self.first_connection_recieved = True
         # 3. Send response with server metadata.
-        print('Rank: {self.rank} | [Connection] Sending response to server')
+        print(f'Rank: {self.rank} | [Connection] Sending response to simulation {request.simulation_id}.')
         response = ConnectionResponse(self.comm_size, self.sobol_op,
                                       self.learning, self.nb_parameters,
                                       self.verbose_level, self.port_names)
         self.connection_responder.send(response.encode())
-        print('Rank: {self.rank} | [Connection] Connection established.')
+        print(f'Rank: {self.rank} | [Connection] Connection established with simulation {request.simulation_id}')
         return 'Connection'
 
     def handle_launcher_message(self, msg):
