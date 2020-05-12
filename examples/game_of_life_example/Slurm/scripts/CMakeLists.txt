@@ -14,21 +14,8 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-install(FILES run_server.sh
-    DESTINATION ${EXAMPLES_DIR}/game_of_life_example/study_Slurm/scripts
-    PERMISSIONS OWNER_WRITE
-                OWNER_READ
-                OWNER_EXECUTE
-                GROUP_READ
-                GROUP_EXECUTE
-                WORLD_READ
-                WORLD_EXECUTE)
-install(FILES run_simu.sh
-    DESTINATION ${EXAMPLES_DIR}/game_of_life_example/study_Slurm/scripts
-    PERMISSIONS OWNER_WRITE
-                OWNER_READ
-                OWNER_EXECUTE
-                GROUP_READ
-                GROUP_EXECUTE
-                WORLD_READ
-                WORLD_EXECUTE)
+install(PROGRAMS run_server.sh
+    DESTINATION ${EXAMPLES_DIR}/game_of_life_example/study_Slurm/scripts)
+
+install(PROGRAMS run_simu.sh
+    DESTINATION ${EXAMPLES_DIR}/game_of_life_example/study_Slurm/scripts)

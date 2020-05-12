@@ -145,7 +145,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     // === Get the node adress === //
 
-    melissa_get_node_name (server_ptr->node_name);
+    melissa_get_node_name (server_ptr->node_name, MPI_MAX_PROCESSOR_NAME);
 
     server_ptr->start_time = melissa_get_time();
 
@@ -718,7 +718,6 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
                 printf (" Waiting launcher message\n");
                 zmq_msg_init (&msg2);
                 zmq_msg_recv (&msg2, server_ptr->text_requester, 0);
-                printf (" -- > message: %s\n", (char*)zmq_msg_data (&msg2));
                 server_ptr->last_msg_launcher = melissa_get_time();
                 process_launcher_message(zmq_msg_data (&msg2), server_ptr);
                 zmq_msg_close (&msg2);

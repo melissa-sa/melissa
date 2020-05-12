@@ -693,7 +693,7 @@ static void melissa_init_internal (const char *field_name,
             // write master node name node name if not found in env. Always prefer to use the environment variable.
             if (rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && ret < 1)
             {
-                melissa_get_node_name (master_node_name);
+                melissa_get_node_name (master_node_name, MPI_MAX_PROCESSOR_NAME);
                 sprintf (port_name, "master_name%d.txt", global_data.sample_id);
                 file = fopen(port_name, "w");
                 fputs(master_node_name, file);
@@ -1443,7 +1443,7 @@ void melissa_send (const char   *field_name,
                                                       0);
                     }
                     else
-                    {   
+                    {
                         // Send the whole vector when learning > 0
                         ret = send_message_simu_data (field_data_ptr->timestamp,
                                                       global_data.sample_id,
@@ -1475,6 +1475,14 @@ void melissa_send (const char   *field_name,
         melissa_print(VERBOSE_DEBUG, "Send time for step %d: %f \n", field_data_ptr->timestamp, end_comm_time - start_comm_time);
     }
 
+    if (global_data.sobol)
+    {
+        for (k=1; k<global_data.nb_parameters + 2; k++)
+        {
+            global_data.data_ptr[k] = NULL;
+        }
+    }
+    global_data.data_ptr[0] = NULL;
 #if BUILD_WITH_PROBES
     end_comm_time = melissa_get_time();
     total_comm_time += end_comm_time - start_comm_time;

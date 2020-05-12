@@ -117,7 +117,7 @@ static void print_zmq_error(int         ret,
     {
         fprintf(stdout, "  Unknown error.\n");
     }
-    exit(0);
+    exit(1);
 }
 
 /**
@@ -365,7 +365,7 @@ double melissa_get_time ()
  *
  *******************************************************************************/
 
-void melissa_get_node_name (char *node_name)
+void melissa_get_node_name (char *node_name, size_t buf_len)
 {
     struct ifaddrs *ifap, *ifa;
     struct sockaddr_in *sa;
@@ -393,7 +393,7 @@ void melissa_get_node_name (char *node_name)
 //        int resultlen;
 //        MPI_Get_processor_name(node_name, &resultlen);
 //#else
-        gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
+        gethostname(node_name, buf_len);
 //#endif // BUILD_WITH_MPI
     }
 }

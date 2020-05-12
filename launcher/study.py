@@ -103,7 +103,7 @@ class Messenger(Thread):
         Thread.__init__(self)
         self.running_study = True
         self.batch_size = batch_size
-        self.server = server
+        self.server = server  # refactor:  sometimes is a server, sometimes a server object! thats confusing!
         self.groups = groups
         self.confidence_interval = dict()
 
@@ -120,16 +120,20 @@ class Messenger(Thread):
                     logging.debug('message: '+buff.value.decode())
                 if message[0] == 'stop':
                     with self.server[0].lock:
-                        self.server[0].status = FINISHED # finished
+                        self.server[0].status = FINISHED  # finished
+                        self.server[0].want_stop = True
+                        logging.info('Received stop message from server')
+                    for group in self.groups:
+                        with group.lock:
+                            if group.job_status < FINISHED and group.job_status > NOT_SUBMITTED:
+                                group.cancel()
+                            group.status = FINISHED  # do not restart groups!
                         logging.info('end study')
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
                         group_id = int(message[1])//self.batch_size
-                        logging.info('restarting group ' + str(group_id)
-                                     + ' (timeout detected by server)')
                         with self.groups[group_id].lock:
-                            self.groups[group_id].restart()
-                            self.groups[group_id].job_status = PENDING
+                            self.groups[group_id].status = TIMEOUT
                 elif message[0] == 'group_state':
                     group_id = int(message[1])//self.batch_size
                     simu_id = int(message[1])%self.batch_size
@@ -305,7 +309,7 @@ class Study(object):
                 self.stdy_opt = dict(stdy_opt)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         if ml_stats is None:
             self.ml_stats = dict()
@@ -314,7 +318,7 @@ class Study(object):
                 self.ml_stats = dict(ml_stats)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         if usr_func is None:
             self.usr_func = dict()
@@ -323,7 +327,7 @@ class Study(object):
                 self.usr_func = dict(usr_func)
             except:
                 logging.error(traceback.print_exc())
-                return 1
+                exit(1)
 
         self.threads = dict()
         self.server = Server_user_functions(self)
@@ -398,6 +402,9 @@ class Study(object):
 
     def set_batch_size(self, batch_size):
         self.stdy_opt['batch_size'] = batch_size
+
+    def set_assimilation(self, assimilation):
+        self.stdy_opt['assimilation'] = assimilation
 
     def get_batch_size(self):
         return self.stdy_opt['batch_size']
@@ -478,7 +485,7 @@ class Study(object):
         nb_errors = self.check_options()
         if nb_errors > 0:
             logging.error(str(nb_errors) + ' errors in options')
-            exit()
+            exit(1)
 
         Job.set_usr_func(self.usr_func)
         Job.set_stdy_opt(self.stdy_opt)
@@ -502,7 +509,9 @@ class Study(object):
 
         self.server_obj[0].set_nb_param(self.nb_param)
         self.server_obj[0].set_path(self.stdy_opt['working_directory'])
+
         self.server_obj[0].create_options()
+
         try:
             self.server_obj[0].launch()
         except:
@@ -510,7 +519,7 @@ class Study(object):
             print('=== Error while launching server ===')
             logging.error(traceback.print_exc())
             self.stop()
-            return
+            exit(1)
         logging.debug('start messenger thread')
         self.threads['messenger'].start()
         logging.debug('wait server start')
@@ -521,7 +530,7 @@ class Study(object):
             print('=== Error while waiting server ===')
             logging.error(traceback.print_exc())
             self.stop()
-            return
+            exit(1)
         self.server_obj[0].write_node_name()
         # connect to server
         logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
@@ -532,9 +541,18 @@ class Study(object):
         self.threads['responder'].start()
         for group in self.groups:
             if self.fault_tolerance() != 0: return
-            while check_scheduler_load(self.usr_func) == False:
-                time.sleep(1)
+            while check_scheduler_load(self.usr_func) == False:  #TODO: need to check this als during the simulation, not only on the beginnint!
+                if self.stdy_opt['assimilation']:
+                    if self.server_obj[0].want_stop:
+                        break  # Refactor all those breaks!
+                else:
+                    # don't start to quick after each other... achtually that should not be a problem!
+                    time.sleep(1)
                 if self.fault_tolerance() != 0: return
+
+            if self.server_obj[0].want_stop:  # nice! already finished, break out!
+                break
+
             logging.info('submit group '+str(group.group_id))
             try:
                 group.server_node_name = str(self.server_obj[0].node_name[0])
@@ -544,18 +562,20 @@ class Study(object):
                 print('=== Error while launching group ===')
                 logging.error(traceback.print_exc())
                 self.stop()
-                return
-        time.sleep(1)
-        while (self.server_obj[0].status != FINISHED
+                exit(1)
+        # time.sleep(1)
+        while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
                or any([i.status != FINISHED for i in self.groups])):
             if self.fault_tolerance() != 0: return
-            time.sleep(1)
-        time.sleep(1)
+            time.sleep(0.05)
+        # time.sleep(1)
         self.server_obj[0].finalize()
         self.stop()
         return
 
     def stop(self):
+
+        logging.info('Stopping study')
         for group in self.groups:
             if group.status < FINISHED and group.status > NOT_SUBMITTED:
                 with group.lock:
@@ -572,6 +592,8 @@ class Study(object):
         finalize(self.usr_func)
         # finalize zmq context
         melissa_comm4py.close_message()
+
+        logging.info('Study stopped')
 
     def check_options(self):
         """
@@ -605,18 +627,38 @@ class Study(object):
         if (not 'quantiles' in self.ml_stats.keys()):
             self.ml_stats['quantiles'] = False
 
+        if (not 'assimilation' in self.stdy_opt):
+            self.stdy_opt['assimilation'] = False
+
+        if (not 'server_cores' in self.stdy_opt):
+            self.stdy_opt['server_cores'] = -1
+
+        if (not 'server_nodes' in self.stdy_opt):
+            self.stdy_opt['server_nodes'] = -1
+
+        if (not 'simulation_cores' in self.stdy_opt):
+            self.stdy_opt['simulation_cores'] = -1
+
+        if (not 'simulation_nodes' in self.stdy_opt):
+            self.stdy_opt['simulation_nodes'] = -1
+
+        if self.stdy_opt['assimilation']:
+            self.usr_func['draw_parameter_set'] = lambda : []
+
         test_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
         self.nb_param = len(test_parameters)
 
-        if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
-            logging.error('Error bad option: not enough parameters')
-            errors += 1
-        if self.ml_stats['sobol_indices'] and self.nb_param < 2:
-            logging.error('Error bad option: not enough parameters')
-            errors += 1
-        if self.stdy_opt['sampling_size'] < 1:
-            logging.error('Error bad option: sample_size not big enough')
-            errors += 1
+        # refactor option error checking?
+        if not self.stdy_opt['assimilation']:
+            if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
+                logging.error('Error bad option: not enough parameters')
+                errors += 1
+            if self.ml_stats['sobol_indices'] and self.nb_param < 2:
+                logging.error('Error bad option: not enough parameters')
+                errors += 1
+            if self.stdy_opt['sampling_size'] < 1:
+                logging.error('Error bad option: sample_size not big enough')
+                errors += 1
 
         if (not 'verbosity' in self.stdy_opt):
             self.stdy_opt['verbosity'] = 2
@@ -627,6 +669,7 @@ class Study(object):
         if (not 'batch_size' in self.stdy_opt):
             self.stdy_opt['batch_size'] = 1
 
+        # Refactor: omg these port names are bullshit!
         if (not 'send_port' in self.stdy_opt):
             self.stdy_opt['send_port'] = 5556
 
@@ -638,6 +681,7 @@ class Study(object):
 
         if (not 'data_port' in self.stdy_opt):
             self.stdy_opt['data_port'] = 2006
+
 
         if (not 'learning' in self.stdy_opt):
             self.stdy_opt['learning'] = False
@@ -667,8 +711,9 @@ class Study(object):
             self.stdy_opt['threshold_values'] = self.ml_stats['threshold_values']
             self.ml_stats['threshold_values'] = False
 
-        if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
-            self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+        if 'threshold_values' in self.stdy_opt:
+            if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
+                self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
 
         if 'quantile' in self.ml_stats:
             self.ml_stats['quantiles'] = self.ml_stats['quantile']
@@ -683,8 +728,9 @@ class Study(object):
             self.stdy_opt['quantile_values'] = self.ml_stats['quantile_values']
             self.ml_stats['quantile_values'] = False
 
-        if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
-            self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+        if 'quantile_values' in self.stdy_opt:
+            if type(self.stdy_opt['quantile_values']) not in (list, tuple, set):
+                self.stdy_opt['quantile_values'] = [self.stdy_opt['quantile_values']]
 
         if not 'check_server_job' in self.usr_func.keys():
             if 'check_job' in self.usr_func.keys():
@@ -692,7 +738,7 @@ class Study(object):
 
         if not 'check_group_job' in self.usr_func.keys():
             if 'check_job' in self.usr_func.keys():
-                self.usr_func['check_group_job'] = self.usr_func['check_job']
+                self.usr_func['check_group_job'] = self.usr_func['check_job']  # TODO: refactor how these functions work! it's dirty that they change their parameter!
 
         if not 'cancel_server_job' in self.usr_func.keys():
             if 'cancel_job' in self.usr_func.keys():
@@ -752,6 +798,8 @@ class Study(object):
                     param_sets.append(draw_parameter_set(self.usr_func, self.stdy_opt))
                 self.groups.append(MultiSimuGroup(param_sets))
 
+        logging.debug('created %d groups' % len(self.groups))
+
         for group in self.groups:
             group.create()
         # groups = self.groups
@@ -760,6 +808,13 @@ class Study(object):
         """
             Compares job status and study status, restart crashed groups
         """
+
+        if self.stdy_opt['disable_fault_tolerance']:
+            return 0
+
+        # with self.server_obj[0].lock:
+            # if self.server_obj[0].status == FINISHED:
+                # return 0
 
         # check if threads are still alive
         if not self.threads['messenger'].isAlive():
@@ -789,7 +844,11 @@ class Study(object):
             time.sleep(3)
             sleep = False
 
-        if (((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
+        want_stop = False
+        with self.server_obj[0].lock:  # did we get a want stop in the meantime? ... Refactor race conditions!
+            want_stop = self.server_obj[0].want_stop
+
+        if (not want_stop and ((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
                 and self.server_obj[0].status != FINISHED)
                 and not all([i.status == FINISHED for i in self.groups])):
             print('server status: '+str(self.server_obj[0].status)+' job_status: '+str(self.server_obj[0].job_status))
@@ -864,7 +923,7 @@ class Study(object):
             with group.lock:
                 if group.status == WAITING:
                     if group.job_status == RUNNING:
-                        if time.time() - group.start_time > self.stdy_opt['simulation_timeout']:
+                        if (self.stdy_opt['simulation_timeout'] > 0) and (time.time() - group.start_time > self.stdy_opt['simulation_timeout']):
                             logging.info("resubmit group " + str(group.group_id)
                                          + " (timeout detected by launcher)")
                             try:
@@ -875,6 +934,17 @@ class Study(object):
                                 logging.error(traceback.print_exc())
                                 self.stop()
                                 return 1
+                if group.status == TIMEOUT:
+                    logging.info("resubmit group " + str(group.group_id)
+                                 + " (timeout detected by server)")
+                    try:
+                        group.restart()
+                    except:
+                        logging.error('Error while restarting group '+group.group_id)
+                        print('=== Error while restarting group '+group.group_id+' ===')
+                        logging.error(traceback.print_exc())
+                        self.stop()
+                        return 1
 #    time.sleep(1)
         return 0
 

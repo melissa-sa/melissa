@@ -86,7 +86,11 @@ def main():
     from options import USER_FUNCTIONS as usr_func
     from launcher.study import Study
     melissa_study = Study(stdy_opt, ml_stats, usr_func)
-    melissa_study.run()
+    try:
+        melissa_study.run()
+    except Exception as e:
+        print(e)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
