@@ -30,6 +30,7 @@ import sys
 import signal
 import imp
 import getopt
+import logging
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 def usage():
@@ -89,10 +90,10 @@ def main():
     
     # init log for launcher
     # TODO should align the verbosity option (1,2,...) with the logging level (à, 10, 20 ....)
-    os.makedirs(STUDY_OPTIONS['working_directory'],exist_ok=True)
+    os.makedirs(stdy_opt['working_directory'],exist_ok=True)
     logging.basicConfig(format='%(asctime)s %(message)s',
                             datefmt='%m/%d/%Y %I:%M:%S %p',
-                            filename= std_opt('working_directory')+'/melissa_launcher.log',
+                            filename= stdy_opt['working_directory']+'/melissa_launcher.log',
                             filemode='w',
                             level=logging.DEBUG)
     
