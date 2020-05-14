@@ -1,5 +1,2 @@
 pyzmq
 mpi4py
-tensorflow-gpu==1.13.2
-keras
-horovod
