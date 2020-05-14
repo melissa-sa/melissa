@@ -50,7 +50,6 @@ def main(args):
                            text_push_port=args.txt_push_port,
                            text_request_port=args.txt_req_port,
     			           launcher_node_name=args.launcher_node_name,
-                           learning=2,
                            fields=['heat1'])
     samples = 0
     while True:
@@ -60,7 +59,7 @@ def main(args):
             # 3. Handle/process simulation data messages
             do_stuff(status.data, status.parameters, status.timestep)
             samples += 1
-            if samples >= int(args.sample_size * args.timesteps / args.nb_proc_server):
+            if samples >= int(args.sample_size * args.timesteps):
                 print('Recieved all samples. Stopping..')
                 break
     # 4. Stop server
