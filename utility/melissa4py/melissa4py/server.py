@@ -46,7 +46,7 @@ class MelissaServer:
                  launcher_node_name='localhost',
                  checkpoint_file='checkpoint.pkl',
                  data_hwm=32,
-                 nsimulations=None):
+                 sample_size=None):
         
         # Initlialize MPI
         self.sobol_op = 0
@@ -59,7 +59,7 @@ class MelissaServer:
         self.nb_proc_server = nb_proc_server
         self.nb_parameters = nb_parameters
         self.learning = learning
-        self.nsimulations = nsimulations
+        self.sample_size = sample_size
         print('Rank {} | Initializing server...'.format(self.rank))
         self.node_name = socket.gethostname()
         self.launcher_node_name = launcher_node_name
@@ -381,7 +381,7 @@ class MelissaServer:
 
     def all_done(self):
         # All simulations run
-        if len(self.simulations) < self.nsimulations:
+        if len(self.simulations) < self.sample_size:
             return False
         # All simulations finished or timedout
         for simulation in self.simulations.values():
@@ -406,9 +406,9 @@ class MelissaServer:
             'connected': len(connected),
             'finished': len(finished),
             'crashed': len(crashed),
-            'messages_recieved': msgs,
+            'messages_recieved': msgs_recieved,
             'messages_missing': missing_messages,
-            'total_messages': msgs + missing_messages,
+            'total_messages': msgs_recieved + missing_messages,
         }
 
 
