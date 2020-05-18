@@ -157,7 +157,6 @@ class MelissaServer:
                 print(f'Rank: {self.rank} [Connection Listener Thread] Stopping.')
                 break
             # 1. Poll sockets
-#            print(f'Rank: {self.rank} | Listening for connections..')
             pr = poller.poll(timeout=100)
             sockets = dict(pr)
             # 2 Handle simulation connection message
@@ -303,23 +302,28 @@ class MelissaServer:
         return 'Connection'
 
     def handle_launcher_message(self, msg):
-        msg_type = ctypes.c_int32.from_buffer_copy(msg[:4])
+        msg_type = ctypes.c_int32.from_buffer_copy(msg[:4]).value
         print(f'Rank: {self.rank} | [Launcher] Recieved launcher message.')
         if msg_type == MessageType.JOB.value:
-            simulation_id = ctypes.c_int32.from_buffer_copy(msg[4:8])
-            simulation = self.simulations.get(simulation_id)
-            simulation.job_id = msg[8: (-self.nb_parameters * 8)].decode('utf-8')
-            # Get parameters
-            params = msg[(-self.nb_parameters * 8):]
-            simulation.parameters = np.array(params, np.float64)
+            job_details = JobDetails.from_msg(msg, self.nb_parameters)
+            simulation = self.simulations.get(job_details.simulation_id)
+            if not simulation:
+                simulation = Simulation(job_details.simulation_id, self.fields,
+                                        self.nb_time_steps)
+                self.simulations[job_details.simulation_id] = simulation
+            simulation.job_id = job_details.job_id
+            simulation.parameters = job_details.parameters
+            print(f'Rank: {self.rank} | [Launcher] New simulation '
+                  f'{job_details.simulation_id} with '
+                  f'parameters {job_details.parameters}')
         elif msg_type == MessageType.DROP.value:
-            simulation_id = ctypes.c_int32.from_buffer_copy(msg[4:8])
+            simulation_id = ctypes.c_int32.from_buffer_copy(msg[4:8]).value
+            print(f'Rank: {self.rank} | [Launcher] Drop simulation {simulation_id}')
             job_id = msg[8:].decode()
             simulation = self.simulations.get(simulation_id)
-            simulation.job_status = 1
-            simulation.status = SimulationStatus.FINISHED.value
-            if (self.rank == 0):
-                print('Droped simulation: {}'.format(simulation_id))
+            if simulation:
+                del self.simulations[simulation_id]
+            self.sample_size -= 1
 
     def handle_simulation_data(self, msg):
         """
@@ -399,7 +403,7 @@ class MelissaServer:
         msgs_recieved = np.sum([simulation.timesteps[field]
                                 for simulation in connected
                                 for field in self.fields])
-        missing_messages = np.sum([not (simulation.timesteps[field])
+        missing_messages = np.sum([(1 - simulation.timesteps[field])
                                    for simulation in crashed
                                    for field in self.fields])
         return {

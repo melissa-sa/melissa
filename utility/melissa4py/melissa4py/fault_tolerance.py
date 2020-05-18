@@ -14,7 +14,7 @@ class Simulation:
 
     def __init__(self, simulation_id, fields, ntimesteps,
                  status=SimulationStatus.CONNECTED.value,
-                 last_timestep=0, timeout=0, last_message=0.0,
+                 last_timestep=0, timeout=0, last_message=None,
                  job_id='0', job_status=-1, parameters=None,
                  max_delay=60 * 10):
 
@@ -22,7 +22,7 @@ class Simulation:
         self.status = status
         self.last_timestep = last_timestep
         self.timeout = timeout
-        self.last_message = last_message
+        self.last_message = last_message or time.time()
         self.job_id = job_id
         self.job_status = job_status
         self.parameters = parameters
