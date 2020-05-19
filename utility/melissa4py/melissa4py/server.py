@@ -27,7 +27,12 @@ from melissa4py.fault_tolerance import Simulation, SimulationStatus
 
 class ServerStatus(Enum):
     CHECKPOINT = 1
-    DATA_RECIEVED = 2
+    TIMEOUT = 2
+#    RECEIVED_SIM_DATA = 3
+#    RECEIVED_LAUNCHER_REQST = 4
+
+
+
 
 
 class Verbose(Enum):
@@ -251,6 +256,8 @@ class MelissaServer:
         rv = None
         # 1. Poll sockets
         pr = self.poller.poll(timeout=timeout)
+        if pr == 0:
+            return Status.TIMEOUT
         sockets = dict(pr)
         # 2. Handle launcher message
         if (self.text_puller in sockets
@@ -280,6 +287,7 @@ class MelissaServer:
         print(f'Rank: {self.rank} | [Stop] Sending termination message..')
         # 2. Send msg to the launcher
         if (self.rank == 0):
+            # TODO  blocking if launcher is dead. Server will be stopped once reaching the batch scheduler walltime 
             self.text_pusher.send(Stop().encode())
         print(f'Rank: {self.rank} | [Stop] Done')
 
