@@ -97,7 +97,7 @@ class Job(object):
         if "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job'](self)
+            return Job.usr_func['cancel_job']#(self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
@@ -179,11 +179,11 @@ class Group(Job):
         """
         if "cancel_group_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_group_job']:
-            return Job.usr_func['cancel_group_job'](self)
+            return Job.usr_func['cancel_group_job']#(self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job'](self)
+            return Job.usr_func['cancel_job']#(self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
@@ -552,11 +552,11 @@ class Server(Job):
         if "cancel_server_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_server_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_server_job'](self)
+            return Job.usr_func['cancel_server_job']#(self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job'](self)
+            return Job.usr_func['cancel_job']#(self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
