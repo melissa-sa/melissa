@@ -55,7 +55,7 @@ Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 * C++ and Fortran Compiler
 * MPI, OpenMP: for melissa parallel server. A sequential server will be built if not available
 * ZeroMQ: version 4.1.5 or above. CMake can download and install it if option turned on (-DINSTALL_ZMQ=ON)
-* Python 3
+* Python >= 3.5.3
 * Python libraries: NumPy, JupyterHub, Traitlets, async_generator, Jinja, asyncio, Tornado
 
 ## CMake Options
