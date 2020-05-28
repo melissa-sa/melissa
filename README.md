@@ -1,5 +1,4 @@
 # Table of content
-<<<<<<< HEAD
  * [Overview](# Overview)
  * [Getting Started](# Getting Started)
  * [Running Melissa](# Getting Started)
@@ -46,7 +45,6 @@ Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 
 ## CMake Options
 
-=======
  * [News](#news)
  * [Getting Started](#getting-started)
  * [Running Melissa](#running-melissa)
