@@ -27,6 +27,7 @@ import copy
 import numpy as np
 import logging
 import traceback
+import asyncio
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
@@ -294,13 +295,13 @@ class Study(object):
     """
     def __init__(self, stdy_opt = None, ml_stats = None, usr_func = None):
 
-               
+
         self.nb_param = 0
         self.groups = list()
         self.server_obj = [Server()]
         self.sobol = False
 
-     
+
         if stdy_opt is None:
             self.stdy_opt = dict()
         else:
@@ -854,11 +855,11 @@ class Study(object):
             for group in self.groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
-                        group.cancel()
+                        asyncio.get_event_loop().run_until_complete(group.cancel())
             logging.info('resubmit server job')
             time.sleep(1)
             try:
-                self.server_obj[0].cancel()
+                asyncio.get_event_loop().run_until_complete(self.server_obj[0].cancel())
                 self.server_obj[0].restart()
             except:
                 logging.error('Error while restarting server')

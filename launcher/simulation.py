@@ -25,6 +25,7 @@ import os
 import time
 import subprocess
 import logging
+import asyncio
 #import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
@@ -242,7 +243,7 @@ class MultiSimuGroup(Group):
             Ends and restarts the simulations (mandatory)
         """
         crashs_before_redraw = 3
-        self.cancel()  ## TODO: async this one and alike
+        asyncio.get_event_loop().run_until_complete(self.cancel())
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.group_id) +
