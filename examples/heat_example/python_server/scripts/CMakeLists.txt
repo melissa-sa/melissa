@@ -14,10 +14,5 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-set (SCHED_VERSIONS "local" "OAR" "cluster" "Slurm" "python_server")  ## TODO: remove Slurm
-
-foreach(sched_version ${SCHED_VERSIONS})
-    add_subdirectory(${sched_version})
-endforeach(sched_version in ${SCHED_VERSIONS})
-
-add_subdirectory(src)
+configure_file(flowvr_group.py.in flowvr_group.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example/local/scripts/flowvr_group.py DESTINATION ${EXAMPLES_DIR}/heat_example/study_local/scripts)

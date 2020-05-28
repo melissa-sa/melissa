@@ -8,6 +8,7 @@ import numpy as np
 
 from enum import Enum
 from collections import namedtuple
+from threading import Thread
 
 from mpi4py import MPI
 from melissa4py.message import MessageType
@@ -26,7 +27,12 @@ from melissa4py.fault_tolerance import Simulation, SimulationStatus
 
 class ServerStatus(Enum):
     CHECKPOINT = 1
-    DATA_RECIEVED = 2
+    TIMEOUT = 2
+#    RECEIVED_SIM_DATA = 3
+#    RECEIVED_LAUNCHER_REQST = 4
+
+
+
 
 
 class Verbose(Enum):
@@ -44,7 +50,8 @@ class MelissaServer:
                  node_name='localhost',
                  launcher_node_name='localhost',
                  checkpoint_file='checkpoint.pkl',
-                 data_hwm=32):
+                 data_hwm=32,
+                 sample_size=None):
         
         # Initlialize MPI
         self.sobol_op = 0
@@ -57,8 +64,8 @@ class MelissaServer:
         self.nb_proc_server = nb_proc_server
         self.nb_parameters = nb_parameters
         self.learning = learning
+        self.sample_size = sample_size
         print('Rank {} | Initializing server...'.format(self.rank))
-        
         self.node_name = socket.gethostname()
         self.launcher_node_name = launcher_node_name
         self.connection_port = connection_port
@@ -116,13 +123,11 @@ class MelissaServer:
         )
         # 2. Setup poller
         self.poller = zmq.Poller()
-        self.poller.register(self.connection_responder, zmq.POLLIN)
         self.poller.register(self.text_puller, zmq.POLLIN)
         self.poller.register(self.data_puller, zmq.POLLIN)
         
         # Keep track of simulations
         self.simulations = {}
-
         # TODO: maybe this should be an MPI gather on rank 0.
         self.verbose_level = 0
         # 2. Send node name to the launcher, get options and recover if necesary
@@ -139,6 +144,32 @@ class MelissaServer:
                 print('rank: ', self.rank)
                 self._wait_for_first_init()
                 # self._get_options()
+
+        if (self.rank == 0):
+            self.stopping = False
+            self.connection_listener_thread = Thread(
+                target=self._listen_for_connections,
+            )
+            self.connection_listener_thread.start()
+
+
+    def _listen_for_connections(self):
+        poller = zmq.Poller()
+        poller.register(self.connection_responder, zmq.POLLIN)
+        print(f'Rank: {self.rank} | Listening for connections..')
+        while True:
+            if self.stopping == True:
+                print(f'Rank: {self.rank} [Connection Listener Thread] Stopping.')
+                break
+            # 1. Poll sockets
+            pr = poller.poll(timeout=100)
+            sockets = dict(pr)
+            # 2 Handle simulation connection message
+            if (self.connection_responder in sockets
+                and sockets[self.connection_responder] == zmq.POLLIN):
+                msg = self.connection_responder.recv()
+                print('Got connection request')
+                rv = self.handle_simulation_connection(msg)
     
     def _send_node_name(self):
         """
@@ -174,13 +205,13 @@ class MelissaServer:
 
     def _request_simulation_metadata(self, simulation_id):
         # 1. Send request with simulation id to the launcher.
-        print('Requesting simulation metadata..')
+        print(f'Rank: {self.rank} | [Launcher] Requesting simulation metadata')
         request = 'simu_info {}'.format(simulation_id).encode('utf-8')
         self.text_requester.send(request)
         # 2. Recv response with simulation parameters.
-        print('Waiting for launcher response')
+        print(f'Rank: {self.rank} | [Launcher] Waiting launcher response')
         response = self.text_requester.recv()
-        # TODO: find a better name?
+        print(f'Rank: {self.rank} | [Launcher] Recieved metadata from launcher')
         job_details = JobDetails.from_msg(response, self.nb_parameters)
         # 3. Update simulation record.
         simulation = self.simulations.get(job_details.simulation_id)
@@ -225,23 +256,17 @@ class MelissaServer:
         rv = None
         # 1. Poll sockets
         pr = self.poller.poll(timeout=timeout)
+        if pr == 0:
+            return Status.TIMEOUT
         sockets = dict(pr)
-        # 2 Handle simulation connection message
-        if (self.connection_responder in sockets
-            and sockets[self.connection_responder] == zmq.POLLIN):
-            print('Recieved connection request')
-            msg = self.connection_responder.recv()
-            rv = self.handle_simulation_connection(msg)
         # 2. Handle launcher message
         if (self.text_puller in sockets
             and sockets[self.text_puller] == zmq.POLLIN):
             msg = self.text_puller.recv()
-            print('Recieved msg from the launcher')
             rv = self.handle_launcher_message(msg)
         # 3. Handle simulation data message
         if (self.data_puller in sockets
             and sockets[self.data_puller] == zmq.POLLIN):
-            print('Recieved simulation data')
             msg = self.data_puller.recv()
             rv = self.handle_simulation_data(msg)
         # 4. Check progress
@@ -252,44 +277,61 @@ class MelissaServer:
         """
         Signal to the launcher that the study has ended.
         """
+        if (self.rank == 0):
+            self.stopping = True
+            print(f'Rank: {self.rank} | [Stop] Stopping listener thread..')
+            self.connection_listener_thread.join()
+            print(f'Rank: {self.rank} | [Stop] Listener stoped.')
         # 1. Syn server threads
         self.comm.Barrier()
+        print(f'Rank: {self.rank} | [Stop] Sending termination message..')
         # 2. Send msg to the launcher
-        self.text_pusher.send(Stop().encode())
+        if (self.rank == 0):
+            # TODO  blocking if launcher is dead. Server will be stopped once reaching the batch scheduler walltime 
+            self.text_pusher.send(Stop().encode())
+        print(f'Rank: {self.rank} | [Stop] Done')
 
     def handle_simulation_connection(self, msg):
         # 1. Deserialize connection message.
         request = ConnectionRequest.recv(msg)
-        print('request: ', type(request), request.__dict__)
+        print(f'Rank: {self.rank} | [Connection] Recieved connection message from simulation {request.simulation_id}.')
         # 2. Broadcast if first connection.
         if not self.first_connection_recieved:
-            print('Broadcasting simulation metadata..')
+            print(f'Rank: {self.rank} | [Connection] Broadcasting first connection metadata...')
             self.comm.bcast(request, root=0)
             self.first_connection_recieved = True
         # 3. Send response with server metadata.
+        print(f'Rank: {self.rank} | [Connection] Sending response to simulation {request.simulation_id}.')
         response = ConnectionResponse(self.comm_size, self.sobol_op,
                                       self.learning, self.nb_parameters,
                                       self.verbose_level, self.port_names)
         self.connection_responder.send(response.encode())
+        print(f'Rank: {self.rank} | [Connection] Connection established with simulation {request.simulation_id}')
         return 'Connection'
 
     def handle_launcher_message(self, msg):
-        msg_type = ctypes.c_int32.from_buffer_copy(msg[:4])
+        msg_type = ctypes.c_int32.from_buffer_copy(msg[:4]).value
+        print(f'Rank: {self.rank} | [Launcher] Recieved launcher message.')
         if msg_type == MessageType.JOB.value:
-            simulation_id = ctypes.c_int32.from_buffer_copy(msg[4:8])
-            simulation = self.simulations.get(simulation_id)
-            simulation.job_id = msg[8: (-self.nb_parameters * 8)].decode('utf-8')
-            # Get parameters
-            params = msg[(-self.nb_parameters * 8):]
-            simulation.parameters = np.array(params, np.float64)
+            job_details = JobDetails.from_msg(msg, self.nb_parameters)
+            simulation = self.simulations.get(job_details.simulation_id)
+            if not simulation:
+                simulation = Simulation(job_details.simulation_id, self.fields,
+                                        self.nb_time_steps)
+                self.simulations[job_details.simulation_id] = simulation
+            simulation.job_id = job_details.job_id
+            simulation.parameters = job_details.parameters
+            print(f'Rank: {self.rank} | [Launcher] New simulation '
+                  f'{job_details.simulation_id} with '
+                  f'parameters {job_details.parameters}')
         elif msg_type == MessageType.DROP.value:
-            simulation_id = ctypes.c_int32.from_buffer_copy(msg[4:8])
+            simulation_id = ctypes.c_int32.from_buffer_copy(msg[4:8]).value
+            print(f'Rank: {self.rank} | [Launcher] Drop simulation {simulation_id}')
             job_id = msg[8:].decode()
             simulation = self.simulations.get(simulation_id)
-            simulation.job_status = 1
-            simulation.status = SimulationStatus.FINISHED.value
-            if (self.rank == 0):
-                print('Droped simulation: {}'.format(simulation_id))
+            if simulation:
+                del self.simulations[simulation_id]
+            self.sample_size -= 1
 
     def handle_simulation_data(self, msg):
         """
@@ -299,8 +341,8 @@ class MelissaServer:
         simulation_data = SimulationData.from_msg(msg)
         simulation_id = simulation_data.simulation_id
         field = simulation_data.field_name
-        print(("Server rank {} recieved timestep {} from rank {} of group {} "
-              "(vect_size: {}, field: {})\n").format(
+        print(("Rank: {} | Recieved timestep {} from rank {} of group {} "
+              "(vect_size: {}, field: {})").format(
                   self.rank,
                   simulation_data.timestep,
                   simulation_data.client_rank,
@@ -309,10 +351,10 @@ class MelissaServer:
                   field))
         # 2. Apply filters
         if not (0 <= simulation_data.timestep < self.nb_time_steps):
-            print(f'Bad timestamp: {simulation_data.timestamp}')
+            print(f'Rank: {self.rank} | Bad timestamp: {simulation_data.timestep}')
             return None
         if field not in self.fields:
-            print(f'Bad field: {field}')
+            print(f'Rank: {self.rank} | Bad field: {field}')
             return None
         # 3. Add simulation to the record if we don't have it yet.
         simulation = self.simulations.get(simulation_id)
@@ -322,24 +364,24 @@ class MelissaServer:
             # Notify the launcher of the connection
             msg = SimulationStatusMessage(simulation_id,
                                           SimulationStatus.RUNNING)
+            print(f'Rank: {self.rank} | [Simulation Data] Notifying launcher of connection...')
             self.text_pusher.send(msg.encode())
         # 4. Validate timestep (ignore repeated messages)
         if simulation.timesteps[field][simulation_data.timestep] == 1:
-            print('Duplicate timestep: {} | field {} | simulationID: {}'.format(
-                simulation_data.timestep, field, simulation_id,
+            print('Rank: {} | Duplicate timestep: {} | field {} | simulationID: {}'.format(
+                self.rank, simulation_data.timestep, field, simulation_id,
             ))
             return None
         else:
-            simulation.timesteps[field][simulation_data.timestep] = 1
+            simulation.mark_message_recieved(field, simulation_data.timestep)
         # 5. Request simulation parameters to the launcher.
         if simulation.parameters is None:
+            print(f'Rank: {self.rank} | [Simulation Data] Requesting simulation metadata...')
             self._request_simulation_metadata(simulation_id)
         simulation_data.parameters = simulation.parameters
         # 6. Check if the simulation finished
         if simulation.finished():
-            print(
-                'Simulation {} finished. Notifying launcher..'.format(simulation_id)
-            )
+            print(f'Rank: {self.rank} | Simulation {simulation_id} finished. Notifying launcher..')
             msg = SimulationStatusMessage(simulation_id,
                                           SimulationStatus.FINISHED)
             self.text_pusher.send(msg.encode())
@@ -348,6 +390,38 @@ class MelissaServer:
             return simulation_data
         else:
             return None
+
+    def all_done(self):
+        # All simulations run
+        if len(self.simulations) < self.sample_size:
+            return False
+        # All simulations finished or timedout
+        for simulation in self.simulations.values():
+            if not (simulation.finished() or simulation.crashed()):
+                return False
+        return True
+
+    @property
+    def status(self):
+        connected = self.simulations.values()
+        finished = [simulation for simulation in connected
+                    if simulation.finished()]
+        crashed = [simulation for simulation in connected
+                   if simulation.crashed()]
+        msgs_recieved = np.sum([simulation.timesteps[field]
+                                for simulation in connected
+                                for field in self.fields])
+        missing_messages = np.sum([(1 - simulation.timesteps[field])
+                                   for simulation in crashed
+                                   for field in self.fields])
+        return {
+            'connected': len(connected),
+            'finished': len(finished),
+            'crashed': len(crashed),
+            'messages_recieved': msgs_recieved,
+            'messages_missing': missing_messages,
+            'total_messages': msgs_recieved + missing_messages,
+        }
 
 
 if __name__ == '__main__':

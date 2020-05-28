@@ -20,7 +20,8 @@ def get_str(buff):
 
 
 def encode(msg_parts):
-    map(bytes, msg_parts)
+    return map(bytes, msg_parts)
+
 
 class MessageType(Enum):
     HELLO = 0
@@ -108,9 +109,7 @@ class SimulationData:
         field_name = get_str(msg[4 * 4: 4 * 4 + MAX_FIELD_NAME_SIZE])
         # Unpack data
         offset = 4 * 4 + MAX_FIELD_NAME_SIZE
-        # print('data msg: ', msg[offset: offset + data_size * 8])
         data = np.frombuffer(msg[offset: offset + data_size * 8], np.double)
-        # print('data: ', data)
         return cls(timestep, simulation_id, client_rank, data_size, field_name, data)
 
 
