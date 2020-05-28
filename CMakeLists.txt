@@ -26,7 +26,7 @@ if(${srcdir} STREQUAL ${bindir})
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
-project(Melissa VERSION 0.5.0 LANGUAGES C Fortran CXX)
+project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
 
 cmake_minimum_required(VERSION 3.2.2)
 
@@ -62,11 +62,10 @@ endfunction(find_python_module)
 # The project version number.
 SET(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
-option(INSTALL_ZMQ OFF)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   # Set install directory to ../install
@@ -112,25 +111,7 @@ find_python_module(numpy REQUIRED)
 #  endif(NOT CMAKE_Fortran_COMPILER)
 #endif(BUILD_EXAMPLES)
 
-# ZeroMQ #
-
-if(INSTALL_ZMQ)
-  include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
-  ExternalProject_Add(ZeroMQ
-#  URL https://github.com/zeromq/zeromq4-1/releases/download/v4.1.6/zeromq-4.1.6.tar.gz
-#  URL https://github.com/zeromq/libzmq/archive/v4.2.2.tar.gz
-  URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
-  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-             -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_PREFIX}/lib)
-  set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_PREFIX}/include")
-  set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_PREFIX}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}" )
-#  include_directories(${ZeroMQ_INCLUDE_DIR})
-  MESSAGE(STATUS "ZeroMQ will be installed")
-else(INSTALL_ZMQ)
-  find_package(ZeroMQ NO_MODULE REQUIRED)
-endif(INSTALL_ZMQ)
-
+include(melissa-zmq.cmake)
 include_directories(${ZeroMQ_INCLUDE_DIR})
 
 # MPI #
@@ -228,13 +209,16 @@ endif(BUILD_WITH_FLOWVR)
 
 # Doxygen #
 
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" ON)
-  message(STATUS "Doxygen Found")
-else(DOXYGEN_FOUND)
-  option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
-endif(DOXYGEN_FOUND)
+option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
+if (BUILD_DOCUMENTATION)
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)# TODO: this if is obsolete if using find_package(... REQUIRED) !
+        message(STATUS "Doxygen Found")
+    else(DOXYGEN_FOUND)
+        set(BUILD_DOCUMENTATION FALSE CACHE BOOL "Use Doxygen to create the documentation" FORCE)
+        message(STATUS "Doxygen Not Found. BUILD_DOCUMENTATION option turned OFF")
+    endif(DOXYGEN_FOUND)
+endif(BUILD_DOCUMENTATION)
 
 # If we run on a Omnipath cluster, we need to check simulation deconnection.
 
@@ -244,23 +228,19 @@ option(CHECK_SIMU_DECONNECTION "check simulation deconnection" OFF)
 
 # Load local include directories before. This ensures that no old installed headers are
 # loaded.
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/utils")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/common")
 
-add_subdirectory(utils)
+add_subdirectory(common)
 
 include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
 
 add_subdirectory(api)
 
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/stats")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/stats")
 
-add_subdirectory(stats)
-
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/output")
+include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/output")
 
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
-
-add_subdirectory(output)
 
 add_subdirectory(server)
 
@@ -271,19 +251,15 @@ add_subdirectory(tests)
 set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
 add_subdirectory(examples)
 
+set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
+add_subdirectory(utility)
+
 # set environement variables
 #if(INSTALL_ZMQ)
 #  set(ZeroMQ_DIR "export ZeroMQ=${CMAKE_INSTALL_PREFIX}/share/cmake/ZeroMQ")
 #endif(INSTALL_ZMQ)
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/melissa_set_env.sh DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-    PERMISSIONS OWNER_WRITE
-                OWNER_READ
-                OWNER_EXECUTE
-                GROUP_READ
-                GROUP_EXECUTE
-                WORLD_READ
-                WORLD_EXECUTE)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_set_env.sh DESTINATION bin)
 
 if(BUILD_DOCUMENTATION)
   if(NOT DOXYGEN_FOUND)
@@ -314,3 +290,13 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Conf
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
               DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
+
+
+# Melissa4py #
+
+option(MELISSA4PY_INSTALL "Build with Melissa4py (Python server)" OFF)
+
+if(MELISSA4PY_INSTALL)
+  message("Installing melissa4py")
+  add_subdirectory(${CMAKE_MODULE_PATH}/utility/melissa4py)
+endif(MELISSA4PY_INSTALL)

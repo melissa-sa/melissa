@@ -1,0 +1,45 @@
+stages:
+  - Build
+  - Test
+  - Test Virtual Cluster
+
+Build melissa:
+  stage: Build
+  tags: [Melissa]
+  script:
+    - cd $HOME/CI-scripts && ./install_melissa.sh
+  artifacts:
+    paths:
+      - build/
+      - install/
+
+
+Test melissa ctest:
+  stage: Test
+  tags: [Melissa]
+  script:
+    - cd $HOME/CI-scripts && ./test_melissa.sh
+  dependencies:
+    - Build melissa
+
+Test Slurm:
+  stage: Test Virtual Cluster
+  tags: [Melissa]
+  script:
+  - export DOCKER_CLIENT_TIMEOUT=120
+  - export COMPOSE_HTTP_TIMEOUT=120
+  - cd $HOME/CI-scripts && ./test_slurm.sh
+  after_script:
+  - cd $HOME && oardocker stop
+  dependencies: []
+
+Test OAR:
+  stage: Test Virtual Cluster
+  tags: [Melissa]
+  script:
+  - export DOCKER_CLIENT_TIMEOUT=120
+  - export COMPOSE_HTTP_TIMEOUT=120
+  - cd $HOME/CI-scripts && ./test_OAR.sh
+  after_script:
+  - cd $HOME && oardocker stop
+  dependencies: []

@@ -16,6 +16,7 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+import time
 import ctypes
 import numpy as np
 import os
@@ -35,7 +36,7 @@ c_melissa_api_no_mpi.melissa_send_no_mpi.argtypes = (c_char_ptr,   #field_name
 
 c_melissa_api_no_mpi.melissa_finalize.argtypes = ()
 
-def melissa_init(field_name, vect_size, simu_id, coupling):
+def melissa_init(field_name, vect_size):
     buff = ctypes.create_string_buffer(len(field_name)+1)
     buff.value = field_name.encode()
     c_melissa_api_no_mpi.melissa_init_no_mpi(
@@ -44,13 +45,19 @@ def melissa_init(field_name, vect_size, simu_id, coupling):
     )
     pass
 
-def melissa_send(field_name,
-                 send_vect):
+def melissa_send(field_name, send_vect):
     buff = ctypes.create_string_buffer(len(field_name)+1)
     buff.value = field_name.encode()
-    array = (ctypes.c_double * len(send_vect))(*send_vect)
+    data = send_vect.astype(np.float64)
+    array = data.ctypes.data_as(c_double_ptr)
     c_melissa_api_no_mpi.melissa_send(buff,array)
-    pass
 
 def melissa_finalize():
     c_melissa_api_no_mpi.melissa_finalize()
+
+def melissa_send_horovod(field_name, send_vect):
+    buff = ctypes.create_string_buffer(len(field_name)+1)
+    buff.value = field_name.encode()
+    array = (ctypes.c_double * len(send_vect))(*send_vect)
+    c_melissa_api_no_mpi.melissa_send_horovod(buff, array)
+    pass

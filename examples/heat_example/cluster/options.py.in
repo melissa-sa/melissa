@@ -1,0 +1,198 @@
+###################################################################
+#                            Melissa                              #
+#-----------------------------------------------------------------#
+#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
+#                                                                 #
+# This source is covered by the BSD 3-Clause License.             #
+# Refer to the  LICENCE file for further information.             #
+#                                                                 #
+#-----------------------------------------------------------------#
+#  Original Contributors:                                         #
+#    Theophile Terraz,                                            #
+#    Bruno Raffin,                                                #
+#    Alejandro Ribes,                                             #
+#    Bertrand Iooss,                                              #
+###################################################################
+
+
+"""
+User defined options module
+"""
+
+
+import job_scheduler_config, numpy, os, string, asyncio, shutil
+
+
+scheduler = job_scheduler_config.scheduler
+
+BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
+EXECUTABLE = 'heatc'
+WALLTIME_SERVER = '0:10:00'
+WALLTIME_SIMU = '0:05:00'
+
+
+def draw_param_set():
+    """
+    :rtype: numpy.ndarray
+    """
+    param_set = numpy.zeros(STUDY_OPTIONS['nb_parameters'])
+    for i in range(STUDY_OPTIONS['nb_parameters']):
+        param_set[i] = numpy.random.uniform(0, 1)
+    return param_set
+
+
+def launch_server(server):
+    """
+    :param simulation.Server server:
+    """
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
+        os.mkdir(STUDY_OPTIONS['working_directory'])
+    os.chdir(STUDY_OPTIONS['working_directory'])
+    server_cmd = 'mpirun -n {} {}/melissa_server {}'.format(
+        str(scheduler.req_tasks_per_node * int(scheduler.req_nodes)),
+        server.path,
+        server.cmd_opt)
+    scheduler.batch_script = scheduler.server_script
+    scheduler.batch_script += string.Template('''date +\'%d/%m/%y %T\'
+source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
+# run Melissa
+echo  '### Launch Melissa'
+mkdir stats${JOB_ID}.resu
+cd stats${JOB_ID}.resu
+${SERVER_CMD}
+# wait %1
+date +\'%d/%m/%y %T\'
+cd ..
+''').substitute(JOB_ID=scheduler.job_id, SERVER_CMD=str(server_cmd))  ## TODO: jinja?
+    asyncio.get_event_loop().run_until_complete(scheduler.start())
+    server.job_id = scheduler.job_id
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+
+def launch_simu(simulation):
+    """
+    :param simulation.MultiSimuGroup simulation:
+    """
+    simulation_directory = os.path.join(
+        STUDY_OPTIONS['working_directory'],
+        'simu{}'.format((simulation.group_id)))
+    if not os.path.isdir(simulation_directory):
+        os.mkdir(simulation_directory)
+    os.chdir(simulation_directory)
+    shutil.copyfile(os.path.join(STUDY_OPTIONS['working_directory'],
+                                 'server_name.txt'),
+                    './server_name.txt')
+    command = 'mpirun '
+    if MELISSA_STATS['sobol_indices']:
+        size = STUDY_OPTIONS['nb_parameters'] + 2
+        nodes = scheduler.req_nodes
+    else:
+        size = simulation.size
+        nodes = str(scheduler.req_tasks_per_node * int(scheduler.req_nodes))
+    for n in range(size):
+        command += '{} {} {} {}{} {} {}: '.format(
+            '-n',
+            nodes,
+            '-x',
+            'MELISSA_SIMU_ID=',
+            str(simulation.simu_id[n]),
+            os.path.join(
+                '@EXAMPLES_DIR@/heat_example/solver/install/bin',
+                EXECUTABLE),
+            #str(simulation.coupling),
+            ' '.join(str(p) for p in simulation.param_set[n]))
+    command = command[:-2]
+    print(command)
+    scheduler.batch_script = scheduler.simu_script
+    scheduler.batch_script += string.Template('''#SBATCH --job-name=Simu${SIMU_ID}
+source @CMAKE_INSTALL_PREFIX@/bin/melissa_set_env.sh
+export MELISSA_SERVER_NODE_NAME=${SERVER_NODE_NAME}
+export MELISSA_MASTER_NODE_NAME=${HOSTNAME}
+date +\'%d/%m/%y %T\'
+${SIMU_CMD}
+date +\'%d/%m/%y %T\'
+''').substitute(SIMU_ID=str(simulation.group_id),
+                SIMU_CMD=str(command),
+                SERVER_NODE_NAME=simulation.server_node_name,
+                HOSTNAME=str('$(hostname)'))
+    ## TODO: why can server be run with start() and simu cannot?
+    asyncio.get_event_loop().run_until_complete(
+        scheduler.submit_batch_script())
+    simulation.job_id = scheduler.job_id
+    os.chdir(STUDY_OPTIONS['working_directory'])
+
+
+def check_job(job):
+    """
+    0 - pending, 1 - running, 2 - not in queue
+    :param simulation.Server | simulation.MultiSimuGroup job:
+    """
+    state = 0
+    if not scheduler.state_ispending():  ## not pending...
+        state = 1
+        if not scheduler.state_isrunning():  ## ...and not running either
+            state = 2
+    job.job_status = state
+
+
+def check_load():
+    """
+    :rtype: bool
+    """
+    ## running jobs count
+    return int(scheduler.queryScheduler(scheduler.opt_query_user)) < 250
+
+
+def kill_job(job):
+    print('killing job ...')
+    os.system(scheduler.batch_cancel_cmd + str(job.job_id))
+
+
+STUDY_OPTIONS = {}
+STUDY_OPTIONS['user_name'] = scheduler.req_username
+STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_cluster/STATS'
+## number of varying parameters of the study:
+STUDY_OPTIONS['nb_parameters'] = 5
+## initial number of parameter sets:
+STUDY_OPTIONS['sampling_size'] = 6
+## number of timesteps, from Melissa point of view:
+STUDY_OPTIONS['nb_timesteps'] = 100
+STUDY_OPTIONS['threshold_values'] = 0.7
+STUDY_OPTIONS['quantile_values'] = [0.05,0.25,0.5,0.75,0.95]
+## list of field names:
+STUDY_OPTIONS['field_names'] = ['heat1']
+## simulations are restarted if no life sign for 40 seconds:
+STUDY_OPTIONS['simulation_timeout'] = 40
+## server checkpoints every 30 seconds:
+STUDY_OPTIONS['checkpoint_interval'] = 20
+## option for Sobol' simulation groups coupling:
+STUDY_OPTIONS['coupling'] = 'MELISSA_COUPLING_MPI'
+
+MELISSA_STATS = {}
+MELISSA_STATS['mean'] = True
+MELISSA_STATS['variance'] = True
+MELISSA_STATS['skewness'] = True
+MELISSA_STATS['kurtosis'] = True
+MELISSA_STATS['min'] = True
+MELISSA_STATS['max'] = True
+MELISSA_STATS['threshold_exceedance'] = False
+MELISSA_STATS['quantiles'] = False
+MELISSA_STATS['sobol_indices'] = False
+
+USER_FUNCTIONS = {}
+USER_FUNCTIONS['create_study'] = None
+USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
+USER_FUNCTIONS['create_group'] = None
+#if MELISSA_STATS['sobol_indices']:
+#    USER_FUNCTIONS['launch_group'] = launch_group
+#else:
+USER_FUNCTIONS['launch_group'] = launch_simu
+USER_FUNCTIONS['launch_server'] = launch_server
+USER_FUNCTIONS['check_server_job'] = check_job
+USER_FUNCTIONS['check_group_job'] = check_job
+USER_FUNCTIONS['restart_server'] = launch_server
+USER_FUNCTIONS['restart_group'] = None
+USER_FUNCTIONS['check_scheduler_load'] = check_load
+USER_FUNCTIONS['cancel_job'] = scheduler.stop#()
+USER_FUNCTIONS['postprocessing'] = None
+USER_FUNCTIONS['finalize'] = None

@@ -65,9 +65,9 @@ def launch_server(server):
     os.chdir(STUDY_OPTIONS['working_directory'])
 
 def launch_simu(simulation):
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))):
-        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
-    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.rank))
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.group_id))):
+        os.mkdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.group_id))
+    os.chdir(STUDY_OPTIONS['working_directory']+"/simu"+str(simulation.group_id))
 
     command = 'mpirun '
     for i, simu_id in enumerate(simulation.simu_id):

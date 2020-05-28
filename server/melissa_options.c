@@ -97,6 +97,7 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_order     = 0;
     options->learning        = 0;
     options->restart         = 0;
+    options->disable_fault_tolerance = 0;
     options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
@@ -237,8 +238,7 @@ static inline void get_operations (char              *name,
 
     if (name == NULL || strcmp(&name[0],"-") == 0 || strcmp(&name[0],":") == 0)
     {
-        stats_usage ();
-        exit (1);
+        return;
     }
 
     /* just to be sure */
@@ -389,30 +389,31 @@ void melissa_get_options (int                 argc,
 
     init_options (options);
 
-    struct option longopts[] = {{ "checkintervals", required_argument, NULL, 'c' },
-                                { "treshold",       required_argument, NULL, 'e' },
-                                { "tresholds",      required_argument, NULL, 'e' },
-                                { "fieldnames",     required_argument, NULL, 'f' },
-                                { "help",           no_argument,       NULL, 'h' },
-                                { "learning",       required_argument, NULL, 'l' },
-                                { "more",           required_argument, NULL, 'm' },
-                                { "launchername",   required_argument, NULL, 'n' },
-                                { "operations",     required_argument, NULL, 'o' },
-                                { "parameters",     required_argument, NULL, 'p' },
-                                { "quantile",       required_argument, NULL, 'q' },
-                                { "quantiles",      required_argument, NULL, 'q' },
-                                { "restart",        required_argument, NULL, 'r' },
-                                { "samplingsize",   required_argument, NULL, 's' },
-                                { "timesteps",      required_argument, NULL, 't' },
-                                { "verbosity",      required_argument, NULL, 'v' },
-                                { "verbose",        required_argument, NULL, 'v' },
-                                { "timeout",        required_argument, NULL, 'w' },
-                                { "txt_push_port",  required_argument, NULL, 1000 },
-                                { "txt_pull_port",  required_argument, NULL, 1001 },
-                                { "data_port",      required_argument, NULL, 1002 },
-                                { "txt_req_port",   required_argument, NULL, 1003 },
-                                { "horovod",        no_argument,       NULL, 1004 },
-                                { NULL,             0,                 NULL,  0  }};
+    struct option longopts[] = {{ "checkintervals",          required_argument, NULL, 'c' },
+                                { "treshold",                required_argument, NULL, 'e' },
+                                { "tresholds",               required_argument, NULL, 'e' },
+                                { "fieldnames",              required_argument, NULL, 'f' },
+                                { "help",                    no_argument,       NULL, 'h' },
+                                { "learning",                required_argument, NULL, 'l' },
+                                { "more",                    required_argument, NULL, 'm' },
+                                { "launchername",            required_argument, NULL, 'n' },
+                                { "operations",              required_argument, NULL, 'o' },
+                                { "parameters",              required_argument, NULL, 'p' },
+                                { "quantile",                required_argument, NULL, 'q' },
+                                { "quantiles",               required_argument, NULL, 'q' },
+                                { "restart",                 required_argument, NULL, 'r' },
+                                { "samplingsize",            required_argument, NULL, 's' },
+                                { "timesteps",               required_argument, NULL, 't' },
+                                { "verbosity",               required_argument, NULL, 'v' },
+                                { "verbose",                 required_argument, NULL, 'v' },
+                                { "timeout",                 required_argument, NULL, 'w' },
+                                { "txt_push_port",           required_argument, NULL, 1000 },
+                                { "txt_pull_port",           required_argument, NULL, 1001 },
+                                { "data_port",               required_argument, NULL, 1002 },
+                                { "txt_req_port",            required_argument, NULL, 1003 },
+                                { "horovod",                 no_argument,       NULL, 1004 },
+                                { "disable_fault_tolerance", no_argument,       NULL, 1005 },
+                                { NULL,                      0,                 NULL,  0   }};
 
     do
     {
@@ -493,6 +494,9 @@ void melissa_get_options (int                 argc,
         case 1004:
             options->learning = 2;
             break;
+        case 1005:
+            options->disable_fault_tolerance = 1;
+            break;
         case 'h':
             stats_usage ();
             exit (0);
@@ -542,37 +546,44 @@ void melissa_check_options (melissa_options_t  *options)
         options->learning == 0)
     {
         // default values
-        fprintf (stderr, "WARNING: no operation given, set to mean and variance\n");
+        melissa_print (VERBOSE_WARNING, "no operation given, set to mean and variance\n");
         options->mean_op = 1;
         options->variance_op = 1;
     }
 
     if (options->threshold_op != 0 && options->nb_thresholds < 1)
     {
-        fprintf (stderr, "ERROR: you must provide at least 1 threshold value\n");
+        melissa_print (VERBOSE_ERROR, "you must provide at least 1 threshold value\n");
         stats_usage ();
         exit (1);
     }
 
     if (options->quantile_op != 0 && options->nb_quantiles < 1)
     {
-        fprintf (stderr, "ERROR: you must provide at least 1 quantile value\n");
+        melissa_print (VERBOSE_ERROR, "you must provide at least 1 quantile value\n");
         stats_usage ();
         exit (1);
     }
 
     if (options->sampling_size < 2)
     {
-        fprintf (stderr, "ERROR: study sampling size must be greater than 1\n");
-        stats_usage ();
-        exit (1);
+        if (options->sampling_size < 1)
+        {
+            melissa_print (VERBOSE_ERROR, "study sampling size must be greater than 0\n");
+            stats_usage ();
+            exit (1);
+        }
+        else
+        {
+            melissa_print (VERBOSE_WARNING, "study sampling size must be greater than 1\n");
+        }
     }
 
     if (options->sobol_op != 0)
     {
         if (options->nb_parameters < 2)
         {
-            fprintf (stderr, "ERROR: simulations must have at least 2 variable parameter\n");
+            melissa_print (VERBOSE_ERROR, "simulations must have at least 2 variable parameter\n");
             stats_usage ();
             exit (1);
         }
@@ -584,13 +595,13 @@ void melissa_check_options (melissa_options_t  *options)
         options->nb_simu = options->sampling_size;
         if (options->sampling_size < 2)
         {
-            fprintf (stderr, "ERROR: sampling size must be > 1\n");
+            melissa_print (VERBOSE_ERROR, "sampling size must be > 1\n");
             stats_usage ();
             exit (1);
         }
         if (options->nb_parameters < 1)
         {
-            fprintf (stderr, "ERROR: simulations must have at least 1 variable parameter\n");
+            melissa_print (VERBOSE_ERROR, "simulations must have at least 1 variable parameter\n");
             stats_usage ();
             exit (1);
         }
@@ -598,32 +609,32 @@ void melissa_check_options (melissa_options_t  *options)
 
     if (options->nb_time_steps < 1)
     {
-        fprintf (stderr, "ERROR: simulations must have at least 1 time step\n");
+        melissa_print (VERBOSE_ERROR, "simulations must have at least 1 time step\n");
         stats_usage ();
         exit (1);
     }
 
     if (options->launcher_name == NULL)
     {
-        fprintf (stderr, "Warning: Melissa Launcher node name set to \"localhost\"\n");
+        melissa_print (VERBOSE_WARNING, "Melissa Launcher node name set to \"localhost\"\n");
         sprintf (options->launcher_name, "localhost");
     }
 
     if (strlen(options->restart_dir) < 1)
     {
-        fprintf (stderr, "options->restart_dir= %s changing to .\n", options->restart_dir);
+        melissa_print (VERBOSE_WARNING, "options->restart_dir= %s changing to .\n", options->restart_dir);
         sprintf (options->restart_dir, ".");
     }
 
     if (options->check_interval < 5.0)
     {
-        fprintf (stderr, "checkpoint interval too small, changing to 5.0\n");
+        melissa_print (VERBOSE_WARNING, "checkpoint interval too small, changing to 5.0\n");
         options->check_interval = 5.0;
     }
 
     if (options->timeout_simu < 5.0)
     {
-        fprintf (stderr, "time before simulation timeout too small, changing to 5.0\n");
+        melissa_print (VERBOSE_WARNING, "time before simulation timeout too small, changing to 5.0\n");
         options->timeout_simu = 5.0;
     }
 }

@@ -12,4 +12,8 @@ set(PN Melissa)
 set_and_check(${PN}_INCLUDE_DIR "@CMAKE_INSTALL_PREFIX@/include")
 set_and_check(${PN}_LIBRARY "@CMAKE_INSTALL_PREFIX@/lib/libmelissa_api.so")
 set_and_check(${PN}_STAS_LIBRARY "@CMAKE_INSTALL_PREFIX@/lib/libmelissa_stats.a")
+
+# needed so other projects find the set env scripts and so on:
+set_and_check(${PN}_PATH "@CMAKE_INSTALL_PREFIX@")
+
 check_required_components(${PN})

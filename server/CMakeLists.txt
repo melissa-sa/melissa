@@ -14,6 +14,10 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
+add_subdirectory(stats)
+
+add_subdirectory(output)
+
 add_definitions(-DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
 set(MELISSA_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
@@ -54,3 +58,7 @@ else (BUILD_WITH_MPI)
     target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} ${OPENTURNS_LIBRARIES} melissa_stats_no_mpi melissa_output melissa_messages dl)
 endif (BUILD_WITH_MPI)
 INSTALL(TARGETS melissa_server4py DESTINATION lib)
+
+configure_file(melissa_server.py.in melissa_server.py @ONLY)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_server.py
+        DESTINATION bin)

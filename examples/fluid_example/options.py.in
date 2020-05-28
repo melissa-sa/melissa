@@ -82,14 +82,14 @@ def launch_server(server):
 
 def create_simu(simulation):
     os.chdir(STUDY_OPTIONS['working_directory'])
-    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank))):
+    if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id))):
         create_case_str = STUDY_OPTIONS['saturne_path'] + \
                 "/code_saturne create --noref -s group" + \
-                str(simulation.rank) + \
+                str(simulation.group_id) + \
                 " -c rank0"
         os.system(create_case_str)
 
-    casedir = STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0"
+    casedir = STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank0"
     #os.system("cp "+STUDY_OPTIONS['working_directory']+"/../case1/SCRIPTS/run_saturne.sh "+casedir+"/SCRIPTS/runcase")
     os.chdir(casedir+"/SRC")
 
@@ -100,7 +100,7 @@ def create_simu(simulation):
     param0 = 'temperature = '+str(simulation.param_set[0][0])+';'
     root.find('thermophysical_models').find('thermal_scalar').find('variable').find('formula').text = param0
     root.find('physical_properties').find('fluid_properties').find("property/[@name='molecular_viscosity']").find('initial_value').text = str(simulation.param_set[0][1])
-    root.find('analysis_control').find('output').find("writer/[@label='results']").find("format/[@name='melissa']").set('options',str(simulation.rank))
+    root.find('analysis_control').find('output').find("writer/[@label='results']").find("format/[@name='melissa']").set('options',str(simulation.group_id))
     # modif path to mesh file directory
     meshlist = root.find('solution_domain').find('meshes_list')
     if meshlist.find('meshdir') is None:
@@ -120,7 +120,7 @@ def create_simu(simulation):
 
 def launch_simu(simulation):
     os.environ['MELISSA_SERVER_NODE_NAME'] = simulation.server_node_name
-    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.rank)+"/rank0/DATA")
+    os.chdir(STUDY_OPTIONS['working_directory']+"/group"+str(simulation.group_id)+"/rank0/DATA")
     cmd = STUDY_OPTIONS['saturne_path']+"/code_saturne run -n "+str(NODES_GROUP)+" --param case1.xml"
     simulation.job_id = subprocess.Popen(cmd.split()).pid
 
