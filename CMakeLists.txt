@@ -290,3 +290,13 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Conf
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
               ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
               DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
+
+
+# Melissa4py #
+
+option(MELISSA4PY_INSTALL "Build with Melissa4py (Python server)" OFF)
+
+if(MELISSA4PY_INSTALL)
+  message("Installing melissa4py")
+  add_subdirectory(${CMAKE_MODULE_PATH}/utility/melissa4py)
+endif(MELISSA4PY_INSTALL)

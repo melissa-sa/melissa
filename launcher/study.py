@@ -55,11 +55,6 @@ from launcher.simulation import RUNNING
 from launcher.simulation import FINISHED
 from launcher.simulation import TIMEOUT
 
-logging.basicConfig(format='%(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p',
-                    filename='melissa_launcher.log',
-                    filemode='w',
-                    level=logging.DEBUG)
 
 class StateChecker(Thread):
     """
@@ -298,10 +293,14 @@ class Study(object):
         Study class, containing instances of the threads
     """
     def __init__(self, stdy_opt = None, ml_stats = None, usr_func = None):
+
+               
         self.nb_param = 0
         self.groups = list()
         self.server_obj = [Server()]
         self.sobol = False
+
+     
         if stdy_opt is None:
             self.stdy_opt = dict()
         else:
@@ -479,7 +478,7 @@ class Study(object):
             Main study method
         """
         if not os.path.isdir(self.stdy_opt['working_directory']):
-            os.mkdir(self.stdy_opt['working_directory'])
+            os.makedirs(self.stdy_opt['working_directory'], exist_ok=True)
         os.chdir(self.stdy_opt['working_directory'])
 
         nb_errors = self.check_options()

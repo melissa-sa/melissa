@@ -171,7 +171,7 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
             help='''batch_query_cmd options; formatted using self.job_id
                     as {job_id}'''
         ).tag(config=True)
-    batch_query_user_cmd = traitlets.Unicode('',
+    opt_query_user = traitlets.Unicode('',
             help='''command to run to read user's jobs status; formatted
                     using req_xyz traits as {xyz} and req_username as
                     {username}; returns lines count excluding header'''
@@ -422,11 +422,13 @@ class BatchSpawnerBase(jupyterhub.spawner.Spawner):
         :return: Raw scheduler response.
         :rtype: str
         """
-        process = subprocess.Popen(self.batch_query_cmd + ' ' + query,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   shell=True,
-                                   universal_newlines=True)
+        process = subprocess.Popen(
+            self.batch_query_cmd + ' ' + format_template(
+                query, **self.get_req_subvars()),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            universal_newlines=True)
         return process.communicate()[0]
 
     async def start(self):
@@ -612,7 +614,7 @@ class TorqueSpawner(BatchSpawnerRegexStates):
     ## outputs job data XML string
     batch_query_cmd = traitlets.Unicode('qstat').tag(config=True)
     opt_query_state = traitlets.Unicode('-x {job_id}').tag(config=True)
-    batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
+    opt_query_user = traitlets.Unicode('-u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('qdel {job_id}'
         ).tag(config=True)
@@ -652,8 +654,7 @@ class MoabSpawner(TorqueSpawner):
     batch_query_cmd = traitlets.Unicode('mdiag').tag(config=True)
     opt_query_state = traitlets.Unicode(' -j {job_id} --xml'
         ).tag(config=True)
-    batch_query_user_cmd = traitlets.Unicode(
-            'mdiag -j -w user={username} | wc -l'
+    opt_query_user = traitlets.Unicode('-j -w user={username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('mjobctl -c {job_id}'
         ).tag(config=True)
@@ -798,8 +799,7 @@ echo 'jupyterhub-singleuser ended gracefully'
         '-h -o "%j %C" -j {} -t RUNNING').tag(config=True)
     opt_query_time_name = traitlets.Unicode(
         '-h -o "%j %L" -j {} -t RUNNING').tag(config=True)
-    batch_query_user_cmd = traitlets.Unicode(
-            'squeue -h --user={username} | wc -l',
+    opt_query_user = traitlets.Unicode('-h --user={username} | wc -l',
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('scancel {job_id}'
         ).tag(config=True)
@@ -910,7 +910,7 @@ class GridengineSpawner(BatchSpawnerBase):
     ## outputs job data XML string
     batch_query_cmd = traitlets.Unicode('qstat').tag(config=True)
     opt_query_state = traitlets.Unicode('-xml').tag(config=True)
-    batch_query_user_cmd = traitlets.Unicode('qstat -u {username} | wc -l'
+    opt_query_user = traitlets.Unicode('-u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('qdel {job_id}'
         ).tag(config=True)
@@ -1006,8 +1006,7 @@ Queue
     opt_query_state = traitlets.Unicode(
             '''{job_id} -format "%s, " JobStatus -format "%s"
                RemoteHost -format "\n" True''')
-    batch_query_user_cmd = traitlets.Unicode(
-            'condor_q -submitter {username} | wc -l'
+    opt_query_user = traitlets.Unicode('-submitter {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('condor_rm {job_id}'
         ).tag(config=True)
@@ -1062,8 +1061,7 @@ class LsfSpawner(BatchSpawnerBase):
     batch_query_cmd = traitlets.Unicode('bjobs').tag(config=True)
     opt_query_state = traitlets.Unicode(
         '-a -noheader -o "STAT EXEC_HOST" {job_id}').tag(config=True)
-    batch_query_user_cmd = traitlets.Unicode(
-            'bjobs -noheader -u {username} | wc -l'
+    opt_query_user = traitlets.Unicode('-noheader -u {username} | wc -l'
         ).tag(config=True)
     batch_cancel_cmd = traitlets.Unicode('bkill {job_id}'
         ).tag(config=True)

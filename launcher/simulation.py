@@ -97,7 +97,7 @@ class Job(object):
         if "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job'](self)
+            return Job.usr_func['cancel_job']#(self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
@@ -179,11 +179,11 @@ class Group(Job):
         """
         if "cancel_group_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_group_job']:
-            return Job.usr_func['cancel_group_job'](self)
+            return Job.usr_func['cancel_group_job']#(self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job'](self)
+            return Job.usr_func['cancel_job']#(self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
@@ -231,10 +231,11 @@ class MultiSimuGroup(Group):
     def launch(self):
         Group.launch(self)
         for i in range(self.size):
+            params = self.param_set[i]
             melissa_comm4py.send_job_init(self.simu_id[i],
                                           str(self.job_id).encode(),
-                                          len(self.param_set[i]),
-                                          self.param_set[i].ctypes.data_as(POINTER(c_double)))
+                                          len(params),
+                                          (c_double * len(params))(*params))
 
     def restart(self):
         """
@@ -272,10 +273,11 @@ class MultiSimuGroup(Group):
         self.status = WAITING
         ParamArray = c_double * len(self.param_set[0])
         for i in range(self.size):
+            params = self.param_set[i]
             melissa_comm4py.send_job_init(self.simu_id[i],
                                           str(self.job_id).encode(),
-                                          len(self.param_set[i]),
-                                          self.param_set[i].ctypes.data_as(POINTER(c_double)))
+                                          len(params),
+                                          (c_double * len(params))(*params))
 
 
 class SobolGroup(Group):
@@ -552,11 +554,11 @@ class Server(Job):
         if "cancel_server_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_server_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_server_job'](self)
+            return Job.usr_func['cancel_server_job']#(self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job'](self)
+            return Job.usr_func['cancel_job']#(self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()

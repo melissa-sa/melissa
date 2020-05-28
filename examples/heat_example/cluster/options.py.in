@@ -115,7 +115,9 @@ date +\'%d/%m/%y %T\'
                 SIMU_CMD=str(command),
                 SERVER_NODE_NAME=simulation.server_node_name,
                 HOSTNAME=str('$(hostname)'))
-    asyncio.get_event_loop().run_until_complete(scheduler.start())
+    ## TODO: why can server be run with start() and simu cannot?
+    asyncio.get_event_loop().run_until_complete(
+        scheduler.submit_batch_script())
     simulation.job_id = scheduler.job_id
     os.chdir(STUDY_OPTIONS['working_directory'])
 
@@ -137,9 +139,8 @@ def check_load():
     """
     :rtype: bool
     """
-    asyncio.get_event_loop().run_until_complete(
-        scheduler.read_job_state(scheduler.batch_query_user_cmd))
-    return int(scheduler.job_status) < 250  ## running jobs count
+    ## running jobs count
+    return int(scheduler.queryScheduler(scheduler.opt_query_user)) < 250
 
 
 def kill_job(job):
@@ -192,6 +193,6 @@ USER_FUNCTIONS['check_group_job'] = check_job
 USER_FUNCTIONS['restart_server'] = launch_server
 USER_FUNCTIONS['restart_group'] = None
 USER_FUNCTIONS['check_scheduler_load'] = check_load
-USER_FUNCTIONS['cancel_job'] = kill_job
+USER_FUNCTIONS['cancel_job'] = scheduler.cancel_batch_job
 USER_FUNCTIONS['postprocessing'] = None
 USER_FUNCTIONS['finalize'] = None
