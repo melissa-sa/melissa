@@ -211,7 +211,7 @@ class MelissaServer:
         # 2. Recv response with simulation parameters.
         print(f'Rank: {self.rank} | [Launcher] Waiting launcher response')
         response = self.text_requester.recv()
-        print(f'Rank: {self.rank} | [Launcher] Recieved metadata from launcher')
+        print(f'Rank: {self.rank} | [Launcher] Received metadata from launcher')
         job_details = JobDetails.from_msg(response, self.nb_parameters)
         # 3. Update simulation record.
         simulation = self.simulations.get(job_details.simulation_id)
@@ -252,13 +252,12 @@ class MelissaServer:
         # Checkpoint
         if self._should_checkpoint():
             self._checkpoint()
-            return Status.CHECKPOINT
+            return ServerStatus.CHECKPOINT
         rv = None
         # 1. Poll sockets
-        pr = self.poller.poll(timeout=timeout)
-        if pr == 0:
-            return Status.TIMEOUT
-        sockets = dict(pr)
+        sockets = dict(self.poller.poll(timeout=timeout))
+        if not sockets:
+            return ServerStatus.TIMEOUT
         # 2. Handle launcher message
         if (self.text_puller in sockets
             and sockets[self.text_puller] == zmq.POLLIN):
@@ -294,7 +293,7 @@ class MelissaServer:
     def handle_simulation_connection(self, msg):
         # 1. Deserialize connection message.
         request = ConnectionRequest.recv(msg)
-        print(f'Rank: {self.rank} | [Connection] Recieved connection message from simulation {request.simulation_id}.')
+        print(f'Rank: {self.rank} | [Connection] Received connection message from simulation {request.simulation_id}.')
         # 2. Broadcast if first connection.
         if not self.first_connection_recieved:
             print(f'Rank: {self.rank} | [Connection] Broadcasting first connection metadata...')
@@ -311,7 +310,7 @@ class MelissaServer:
 
     def handle_launcher_message(self, msg):
         msg_type = ctypes.c_int32.from_buffer_copy(msg[:4]).value
-        print(f'Rank: {self.rank} | [Launcher] Recieved launcher message.')
+        print(f'Rank: {self.rank} | [Launcher] Received launcher message.')
         if msg_type == MessageType.JOB.value:
             job_details = JobDetails.from_msg(msg, self.nb_parameters)
             simulation = self.simulations.get(job_details.simulation_id)
@@ -341,7 +340,7 @@ class MelissaServer:
         simulation_data = SimulationData.from_msg(msg)
         simulation_id = simulation_data.simulation_id
         field = simulation_data.field_name
-        print(("Rank: {} | Recieved timestep {} from rank {} of group {} "
+        print(("Rank: {} | Received timestep {} from rank {} of group {} "
               "(vect_size: {}, field: {})").format(
                   self.rank,
                   simulation_data.timestep,
@@ -418,7 +417,7 @@ class MelissaServer:
             'connected': len(connected),
             'finished': len(finished),
             'crashed': len(crashed),
-            'messages_recieved': msgs_recieved,
+            'messages_received': msgs_recieved,
             'messages_missing': missing_messages,
             'total_messages': msgs_recieved + missing_messages,
         }
