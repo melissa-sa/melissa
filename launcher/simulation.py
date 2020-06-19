@@ -243,7 +243,10 @@ class MultiSimuGroup(Group):
             Ends and restarts the simulations (mandatory)
         """
         crashs_before_redraw = 3
-        asyncio.get_event_loop().run_until_complete(self.cancel())
+        try:
+            asyncio.get_event_loop().run_until_complete(self.cancel())
+        except TypeError:  ## local execution
+            self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.group_id) +
