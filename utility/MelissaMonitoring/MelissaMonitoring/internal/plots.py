@@ -40,7 +40,7 @@ class CoreUsageDashPlot(DashPlot):
     def __init__(self, melissaMonitoring):
         super().__init__()
         self.name = 'Cores usage'
-        self.dataFunction = melissaMonitoring.spawner.getTotalCPUCount
+        self.dataFunction = melissaMonitoring.scheduler.getTotalCPUCount
         self.data = []
         self.time = []
         self.melissaMonitoring = melissaMonitoring
