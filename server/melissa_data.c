@@ -35,7 +35,7 @@
 
 static void melissa_init_steps (melissa_data_t *data)
 {
-    int      i, j;
+    int      i;
 //    int32_t* items_ptr;
 
     if (data->is_valid != 1)

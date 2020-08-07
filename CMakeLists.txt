@@ -62,9 +62,8 @@ endfunction(find_python_module)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_EXTENSIONS OFF)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -pedantic -Wno-format-truncation")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wall -pedantic -Wno-format-truncation")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     # Set install directory to ../install
@@ -124,6 +123,8 @@ if(BUILD_WITH_OpenMP)
     set(BUILD_WITH_OpenMP FALSE CACHE BOOL "Build with OpenMP" FORCE)
     message(STATUS "OpenMP missing. BUILD_WITH_OpenMP option turned OFF")
   endif(OPENMP_FOUND)
+else(BUILD_WITH_OpenMP)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unknown-pragmas")
 endif(BUILD_WITH_OpenMP)
 
 

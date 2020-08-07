@@ -692,7 +692,7 @@ int melissa_read_options (melissa_options_t *options)
     int ret;
     char file_name[256];
 
-    sprintf (file_name, "%s/options.save", options->restart_dir);
+    snprintf (file_name, sizeof(file_name), "%s/options.save", options->restart_dir);
     f = fopen(file_name, "rb");
 
     if (f != NULL)

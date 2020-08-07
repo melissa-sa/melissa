@@ -60,12 +60,12 @@ int send_message_hello (void* socket,
     return zmq_msg_send (&msg, socket, flags);
 }
 
-message_alive (zmq_msg_t *msg)
+void message_alive (zmq_msg_t *msg)
 {
-    char* buff_ptr = NULL;
+    int* buff_ptr = NULL;
     zmq_msg_init_size (msg, sizeof(int));
-    buff_ptr = (int*)zmq_msg_data (msg);
-    *((int*) buff_ptr) = (int)ALIVE;
+    buff_ptr = zmq_msg_data (msg);
+    *buff_ptr = (int)ALIVE;
 }
 
 int send_message_alive (void *socket,

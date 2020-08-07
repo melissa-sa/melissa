@@ -222,7 +222,7 @@ int check_last_timestep(melissa_field_t *fields,
                         int              nb_time_steps,
                         comm_data_t     *comm_data)
 {
-    int i, j, t;
+    int i, j;
 
     if (fields == NULL)
     {
