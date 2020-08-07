@@ -14,9 +14,10 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-if (POLICY CMP0048)
-  cmake_policy(SET CMP0048 NEW)
-endif (POLICY CMP0048)
+cmake_minimum_required(VERSION 3.2.2)
+
+project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
+
 
 # disable in-source builds
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
@@ -25,10 +26,6 @@ if(${srcdir} STREQUAL ${bindir})
     message("You are attempting to build in your source Directory.")
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
-
-project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
-
-cmake_minimum_required(VERSION 3.2.2)
 
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
@@ -58,9 +55,6 @@ function(find_python_module module)
         endif(NOT PY_${module_upper})
         find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
-
-# The project version number.
-SET(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 
 set(CMAKE_C_STANDARD 99)
