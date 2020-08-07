@@ -330,7 +330,7 @@ USER_FUNCTIONS['launch_server'] = launch_server
             
 You can also have a ready-to-use job script. Simply parse it to add the server command line, and submit it in the function.
 
-In our "option.py" file, we see that we can use the PID of the main process of the server as an identifier. It will be usefull later for the fault tolerance mechanism.
+In our "option.py" file, we see that we can use the PID of the main process of the server as an identifier. It will be useful later for the fault tolerance mechanism.
 
 ***
 

@@ -49,11 +49,11 @@ extern "C" {
 
 #define MELISSA_ERROR 0                           /**< display only errors  */
 #define MELISSA_WARNING 1                         /**< display errors and warnings  */
-#define MELISSA_INFO 2                            /**< display usefull messages */
+#define MELISSA_INFO 2                            /**< display useful messages */
 #define MELISSA_DEBUG 3                           /**< display all messages */
 #define VERBOSE_ERROR MELISSA_ERROR, __func__     /**< display only errors  */
 #define VERBOSE_WARNING MELISSA_WARNING, __func__ /**< display errors and warnings  */
-#define VERBOSE_INFO MELISSA_INFO, __func__       /**< display usefull messages */
+#define VERBOSE_INFO MELISSA_INFO, __func__       /**< display useful messages */
 #define VERBOSE_DEBUG MELISSA_DEBUG, __func__     /**< display all messages */
 
 extern int MELISSA_MESSAGE_LEN;

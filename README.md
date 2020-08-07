@@ -25,10 +25,10 @@
 # News
  * **Jan 2020: GitHub continuous update**
     * Sync our work repo with the github repo so all changes are immediatly visible to all
-    * Major code restructuration  and documentation update
+    * Major code restructuring  and documentation update
     * New tools for supporting a virtual cluster mode  and using Jupyter notebook for controlling a Melissa run
  * **Nov 2018: Melissa release 0.5 available on GitHub**
-    * Changes in the API: remove arguments from the melissa_send function
+    * Changes in the API: remove arguments from the `melissa_send` function
     * Add batch mode
     * Improve launcher fault tolerance
     * Improve the examples and the install tree
@@ -54,13 +54,13 @@ Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 * CMake
 * C++ and Fortran Compiler
 * MPI, OpenMP: for melissa parallel server. A sequential server will be built if not available
-* ZeroMQ: version 4.1.5 or above. CMake can download and install it if option turned on (-DINSTALL_ZMQ=ON)
+* ZeroMQ: version 4.1.5 or above. CMake can download and install it if option turned on (`-DINSTALL_ZMQ=ON`)
 * Python >= 3.5.3
 * Python libraries: NumPy, JupyterHub, Traitlets, async_generator, Jinja, asyncio, Tornado
 
 ## CMake Options
 
-Most usefull CMake options:
+Most useful CMake options:
 ```cmake
 -DCMAKE_INSTALL_PREFIX (default: '../install')    ->  Melissa install directory.
 -DBUILD_WITH_MPI (default: ON)                    ->  Enable MPI.
@@ -110,7 +110,7 @@ The results of this sensitivity analysis are stored in:
 # Running Melissa
 ## Local Execution
 
-Running Melissa localy means that all processes run on your local machine, executed directly by the launcher without goign through a  batch scheduler. This is a mode usefull for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution.
+Running Melissa locally means that all processes run on your local machine, executed directly by the launcher without going through a  batch scheduler. This is a mode useful for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution.
 
 
 ## Virtual Cluster
@@ -128,7 +128,7 @@ Mellisa will run on any cluster with one of the following job schedulers:
 * Grid Engine
 * Condor
 * LSF
-* OAR is to be implemented soon
+* OAR supported is to be implemented soon
 
 `job_scheduler_config.py` is a fully customisable module for managing your scheduler of choice. It is an interface to how Melissa interacts with job schedulers. It does not require programming skills and requires only basic understaing of job scheduler features.
 
