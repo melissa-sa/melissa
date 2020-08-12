@@ -1,6 +1,6 @@
 # Virtual Cluster
 
-## Table of content
+## Table of Contents
 * [Introduction](#intro)
 * [Docker Installation](#docker)
 * [Virtual Cluster Installation](#cluster)

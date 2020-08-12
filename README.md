@@ -1,4 +1,4 @@
-# Table of content
+# Table of Contents
  * [News](#news)
  * [Getting Started](#getting-started)
  * [Running Melissa](#running-melissa)
