@@ -51,7 +51,7 @@ Melissa propose a three tier architecture, and is based on this client/server mo
 * **Melissa API**: a shared library to be linked within the numerical simulation solver. It forwards simulation data to Melissa Server.
 * **Melissa Launcher**: A manager in charge of generating and overseeing the whole global sensitivity study.
 
-Melissa can be used within a C or Fortran code, with or without MPI. In this tutorial, we will focus on C with MPI. Basic knowledge of C, Python and MPI is expected, as well as the usage of a cluster with a batch scheduler.
+Melissa can be used within a C or Fortran code. In this tutorial, we will focus on C with MPI. Basic knowledge of C, Python and MPI is expected, as well as the usage of a cluster with a batch scheduler.
 
 We will learn below how to use Melissa, from the instrumentation of the numerical solver to the management of a sensitivity analysis.
 To illustrate this documentation, we provide a simple example: a global sensitivity analysis with Melissa and a simple heat equation solver. To follow this example step-by-step alongside the documentation, unfold the example bloc after each paragraph.
@@ -60,7 +60,7 @@ To illustrate this documentation, we provide a simple example: a global sensitiv
 <summary><em> Click here to fold/unfold example </em></summary>
 
 ***
-In these foldable paragraphs, we will go through the prosessus of instrumenting a heat equation solver to run a global sensitivity analysis. This solver is available in the "examples" folder of Melissa installation in `share/melissa/examples/heat_example/solver`. The solver comes in four flavours: c+MPI, Fortran+MPI, C without MPI and Fortran without MPI, respectively in `solver/src/heat.c`, `solver/src/heat.f90`, `solver/src/heat_no_mpi.c` and `solver/src/heat_no_mpi.f90`. In this tutorial, we will focus on the c+mpi example, but they are all equivalent. If you did the "testing" part of the Getting Started, you already ran it on your machine.
+In these foldable paragraphs, we will go through the process of instrumenting a heat equation solver to run a global sensitivity analysis. This solver is available in the "examples" folder of Melissa installation in `share/melissa/examples/heat_example/solver`. The solver comes in two flavors: C+MPI, Fortran+MPI in `solver/src/heat.c`, `solver/src/heat.f90`, `solver/src/heat_no_mpi.c`. In this tutorial, we will focus on the C+MPI example, but they are all equivalent. If you did the "testing" part of the Getting Started, you already ran it on your machine.
 ***
 
 </details>
@@ -164,10 +164,10 @@ The solver can take from one to five input parameters, stored in five doubles. T
 ```
         
 
-In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the "MELISSA_COUPLING_MPI" coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on MPI_COMM_WORLD for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called "MELISSA_COUPLING_ZMQ".
-A third coupling mechanism is also available if you have the FlowVR software installed in your environment. It is called "MELISSA_COUPLING_FLOWVR", and we will not use it in this example.
+In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the `MELISSA_COUPLING_MPI` coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on `MPI_COMM_WORL`D for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called `MELISSA_COUPLING_ZMQ`.
+A third coupling mechanism is also available if you have the FlowVR software installed in your environment. It is called `MELISSA_COUPLING_FLOWVR`, and we will not use it in this example.
 All these coupling mechanisms are transparent to the user.
-In the heat solver, we can easily split MPI communicator, so we will use "MELISSA_COUPLING_MPI". We split MPI_COMM_WORLD by simulation in the simulation group:
+In the heat solver, we can easily split MPI communicator, so we will use `MELISSA_COUPLING_MPI`. We split `MPI_COMM_WORLD` by simulation in the simulation group:
 
 
 ```c
@@ -232,9 +232,9 @@ Melissa Launcher can supervise the whole sensitivity analysis, as long as it kno
 That's why each user have to provide Melissa the tools to launch the simulations, to check their behavior, and other useful operations, described in more details later in this page.
 This is done by giving the launcher some functions and variables through a python file. The file is usually called options.py. An empty template of this file is provided in `share/melissa/launcher/options.py`. This is not only a configuration file: it contains functions that will be loaded and executed by the launcher. The options supported by Melissa are predefined in this file. You must copy this file and modify it to meet your needs. There are three sets of variables to define, as dictionaries.
 
-* STUDY_OPTIONS: sets the parameters of the sensitivity study. They will be used by the launcher to generate its internal structures for the study management.
-* MELISSA_STATS: contains booleans used to activate (or not) the iterative statistics.
-* USER_FUNCTIONS: contains pointers to user defined functions, used by the launcher. Some of them are optional, others are mandatory. We will describe these functions in this section.
+* `STUDY_OPTIONS`: sets the parameters of the sensitivity study. They will be used by the launcher to generate its internal structures for the study management.
+* `MELISSA_STATS`: contains booleans used to activate (or not) the iterative statistics.
+* `USER_FUNCTIONS`: contains pointers to user defined functions, used by the launcher. Some of them are optional, others are mandatory. We will describe these functions in this section.
 
 Note: you can add fields to the option dictionaries, and they can be used in the user defined functions.
 
@@ -356,7 +356,7 @@ The parameter `STUDY_OPTIONS['sampling_size']` must be a multiple of `STUDY_OPTI
 
 * Sobol group: In the case of Sobol' indices computation, all the simulations of a Sobol' group run in the same job. `simu_id` is a list of the simulation IDs inside the Sobol' group (the ones you will pass to `melissa_init`), and `rank` is the ID of the group. `param_set` is a list of size `STUDY_OPTIONS['nb_parameters'] + 2` of numpy arrays of size `STUDY_OPTIONS['nb_parameters']`, corresponding to the sets of n parameters of the n+2 simulations in the Sobol' group.
 
-In each cases, all simulations from the same group must run in the same job. The simulation ID must be passed to the simulations using the MELISSA_SIMU_ID environment variable. The server node nam must be passed to the simulations using the MELISSA_SERVER_NODE_NAME environment variable.
+In each cases, all simulations from the same group must run in the same job. The simulation ID must be passed to the simulations using the `MELISSA_SIMU_ID` environment variable. The server node nam must be passed to the simulations using the `MELISSA_SERVER_NODE_NAME` environment variable.
 The function needs to set the group job ID in the job_id attribute.
 On a cluster the job ID is given by the batch scheduler. In your local machine, you can use the process ID.
 

@@ -54,17 +54,6 @@ This Fortran wrapper converts a Fortran MPI communicator to a C MPI communicator
 
 This function is hidden from the user by the interface files `melissa_api.f90` and `melissa_api.f`
 
-## `melissa_init_no_mpi`
-
-This no-MPI wrapper provides a function without MPI, it call `melissa_init_internal` with fake MPI informations.
-
-
-## `melissa_init_no_mpi_f`
-
-The Fortran wrapper of `melissa_init_no_mpi`. We need this function to pass the arguments by reference.
-
-This function is hidden from the user by the interface files `melissa_api.f90` and `melissa_api.f`.
-
 
 ## `melissa_finalize`
 
@@ -75,10 +64,6 @@ This function closes the connections and releases all memory. It can also wait f
 
 The header file for the Melissa API for C with MPI
 
-
-# `melissa_api_no_mpi.h`
-
-The header file for the Melissa API for C without MPI
 
 # `melissa_api.f`
 
@@ -93,9 +78,4 @@ An unformatted Fortran interface file for the Melissa API for Fortran
 
 The Python wrapper for the Melissa API with MPI
 
-This package required `mpi4py`.
-
-
-# `melissa_api_no_mpi.py`
-
-The Python wrapper for the Melissa API without MPI
+This package requires `mpi4py`.

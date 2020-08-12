@@ -51,21 +51,24 @@ Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 
 ## Dependencies
 
-* CMake
-* C++ and Fortran Compiler
-* MPI, OpenMP: for melissa parallel server. A sequential server will be built if not available
-* ZeroMQ: version 4.1.5 or above. CMake can download and install it if option turned on (`-DINSTALL_ZMQ=ON`)
-* Python >= 3.5.3
-* Python libraries: NumPy, JupyterHub, Traitlets, async_generator, Jinja, asyncio, Tornado
+* CMake 3.2 or newer
+* C, C++, and Fortran90 compilers
+* MPI
+* ZeroMQ 4.1.5 or newer
+* OpenMP (for a parallel Melissa server, optional)
+* Python 3.5.3 or newer
+* Python libraries: NumPy, JupyterHub, Traitlets, async\_generator, Jinja, asyncio, Tornado
+
+CMake can download and install ZeroMQ if the flag `-DINSTALL_ZMQ=ON` is passed to CMake.
+
 
 ## CMake Options
 
 Most useful CMake options:
 ```cmake
 -DCMAKE_INSTALL_PREFIX (default: '../install')    ->  Melissa install directory.
--DBUILD_WITH_MPI (default: ON)                    ->  Enable MPI.
 -DBUILD_WITH_OpenMP (default: OFF)                ->  Enable OpenMP for Melissa Server.
--DINSTALL_ZMQ (default: OFF)                      ->  Allows CMake to install ZeroMQ.
+-DINSTALL_ZMQ (default: OFF)                      ->  Allows CMake to download, build, and install ZeroMQ.
 -DBUILD_DOCUMENTATION (default: OFF)              ->  If Doxygen is found, build the Doxygen documentation.
 -DBUILD_TESTING (default: ON)                     ->  Build Melissa tests. They can be run with "make test" or "ctest".
 ```
@@ -77,7 +80,7 @@ Compilation, installation and environnent variable setting from the Melissa root
 ```bash
     mkdir build
     cd build
-    cmake .. -DINSTALL_ZMQ=OFF
+    cmake ..
     make
     make install
     source ../install/bin/melissa_set_env.sh
@@ -85,7 +88,7 @@ Compilation, installation and environnent variable setting from the Melissa root
 
 ## Testing
 
-The examples are built if CMake finds a Fortran compiler and if you enabled the BUILD_EXAMPLES option. The examples are installed in `install/share/melissa/examples`. We use a heat equation solver example to test the installation.
+The examples are built if CMake finds a Fortran compiler and if you enabled the `BUILD_EXAMPLES` option. The examples are installed in `install/share/melissa/examples`. We use a heat equation solver example to test the installation.
 To compile the solver from the `install/share/melissa/examples/heat_example/solver` directory, run:
 
 ```bash
@@ -207,6 +210,7 @@ inproceedings{terraz:hal-01607479,
  * Alejandro RIBES CORTES - alejandro.ribes@edf.fr
  * Bertrand IOOSS - bertrand.iooss@edf.fr
  * Sebastian FRIEDEMANN - sebastian.friedemann@inria.fr
+ * Christoph CONRADS - christoph.conrads@inria.fr
 
 
 # Licence
