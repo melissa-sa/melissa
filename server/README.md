@@ -2,72 +2,58 @@
 
 * [overview](#overview)
 
-# overview
+# Overview
 
-This file is about "what" the code does and "why", to know "how" read the comments in the code.
+This file is about _what_ the code does, _why_, and to know _how_ read the comments in the code.
 
-Melissa_server is a parallel and independant component that gathers the data from the simulations. The data can arrive in any order, and at any time, from any simulation.
-It starts before the first simulation, and stops after the end of the last simulation.
-Melissa_server computes the iteratives statistics in parallel from the in-transit data. The MPI processes of the server are mostly independant and not syncronized, except at the begining and at the end of the study.
-It checkpoints regularly, and communicates with the launcher about the status of the simulations.
-All the available iterative statistics are implemented in the stats folder.
-Melissa_server keeps the iteratives statistics in memory until the end of the study.
+The Melissa server is a parallel and independant component that gathers the data from the simulations. The data can arrive in any order, and at any time, from any simulation. It starts before the first simulation, and stops after the end of the last simulation. The server computes the iteratives statistics in parallel from the in-transit data. The MPI processes of the server are mostly independent and not synchronized except at the beginning and at the end of the study. The Melissa server checkpoints regularly and communicates with the launcher about the status of the simulations. All the available iterative statistics are implemented in the `server/stats` folder. The server keeps the iterative statistics in memory until the end of the study.
 
-# server.cxx
+# `server.cxx`
 
-## overview
+## Overview
 
-Melissa_server can be decomposed in tree parts:
-- melissa_server_init
-- melissa_server_run
-- melissa_server_finalize
+The Melissa server can be decomposed in tree parts:
+* `melissa_server_init`
+* `melissa_server_run`
+* `melissa_server_finalize`
 
-## melissa_server_t
+## `melissa_server_t`
 
-melissa_server_t is a data structure used to carry informations between the calls to the server functions. It contains everything the server needs all along its run time.
-
-## melissa_server_init
-
-This function is called once when the server starts.
-It firts allocate the server_handle that will contain every variable that the server needs to run, and initialize some variables.
-This data structure will be passed as a pointer to the other functions.
-
-Then the server creates 5 or 6 zetroMQ sockets.
-The first one is the connexion_responder, and is a req/rep comunication chanel with the simulations.
-The optional deconnexion_responder is an other req/rep comunication chanel with the simulations.
- It should be enabled in the cmake command by -DCHECK_SIMU_DECONNECTION. This option enable the simulation to ask the server befor deconecting.
-The data_puller is a pull port for receiving simulation data.
-The text_puller and text_puller are one way comunication chanels to and from the launcher.
-The text_requester is a req/rep comunication chanel with the launcher.
-
-Melissa_server inits MPI and get the options given by the launcher through the comand line, open the comunication ports.
-
-Each MPI process sends its node names to the launcher, and initialize all the fields and fault tolerance structures.
-
-## melissa_server_run
-This is the main loop of Melissa_server.
-In this loop, melissa server checks the heartbeats of the simulations and the launcher.
-The launcher sends a regular heartbeat, but for the simulations, Melissa Server uses the data messages. That's why one have to estimate the diration of a simulation timestep to define the right timeout.
-Melissa Server then checkpoints if it didn't do it for the last check_interval time interval.
-
-Then, it enters the poll on the messages ports.
-
-Melissa server try to get messages on the three or four ports.
-If no message is detected after 100 ms, then the loop cycle.
-Else, melissa first checks the launcher messages, then the simulation connexion messages, and finaly the data messages.
-
-Only rank 0 can receive simulation connexion messages. It then replies with the server informations.
-Before the firs connexion, all the other ranks are blocked in the mpi_bcast. When the rank 0 recieve its first message, it enters the mpi_bcast and unlock the other processes.
-At this point, Melissa Server creates the right number of field data structures, but doesn't allocate the memory for the statistics, as it doesn't know the size of the fields yet.
-
-When melissa server receive a data message, it get the corresponding field data structure and allocate it it is the first message from this field.
-Then it updates the simulation vector to keep track of which simulations sent which timesteps. It it is the first data message and the server is in a "restart" state, it will try to read the checkpointed statistics from the checkpoint files.
-If the message corresponds to a timestep and a simulation that has already be computed, then Melissa Server drops it and continue.
-otherwhise, it updates all the statistics required by the user on that field.
-
-After that, the server counts the number of finished simulations and cycle the main loop until all the simulations sent all their messages.
+This data structure carries information between the calls to the server functions. It contains everything the server to be managed at run-time.
 
 
-## melissa_server_finalize
+## `melissa_server_init`
 
-Release all the ports and deallocate memory.
+This function is called once when the server starts. First it allocates the server handle that will contain every variable that the server needs to run and initialize some variables. This data structure will be passed by reference to the other functions in this README.
+
+*TODO* 2020-08-12 Is the `connexion_responder` still present in the code?
+
+Then the server creates five or six ZeroMQ sockets:
+1. `connexion_responder`: This is a req/rep communication channel with the individual simulations
+2. `deconnexion_responder` (optional): This is another req/rep communication channel with the individual simulations
+3. `data_puller`: A pull port for receiving simulation data
+4. `text_puller`: A one-way communication channel receiving from the launcher
+5. `text_pusher`: A one-way communication channel send to the launcher
+6. `text_requester`: This is a req/rep communication channel with the launcher
+
+The `deconnexion_responder` allows simulations to notify the server before deconnecting. This socket has to be enabled at build time by passing `-DCHECK_SIMU_DECONNECTION=ON` to CMake.
+
+`melissa_server_init` initializes MPI, gets the options given by the launcher through the command line and opens all communication channels. Each MPI process sends its node name to the launcher and initialize all the fields and fault-tolerance structures.
+
+
+## `melissa_server_run`
+
+This is the main loop of the Melissa server. In this loop, the Melissa server checks the heartbeats of the simulations and the launcher. The launcher sends a regular heartbeat but for the simulations, the Melissa server uses data messages. To select an appropriate time-out, it is necessary to have a good estimate of the duration of one simulation timestep. The Melissa server checkpoints whenever the last checkpoint is older than the amount of time given in `check_interval`.
+
+In its main event loop, the Melissa server waits for messages on the first three ZeroMQ sockets (four, respectively with if `CHECK_SIMU_DECONNECTION` is on). ~~If no message is detected after 100 ms, then the loop cycle. Else, melissa first checks the launcher messages, then the simulation connexion messages, and finaly the data messages.~~
+
+Only the MPI rank 0 process can receive simulation connection messages. It then replies with the server information. Before the first connection is accepted, all the other MPI ranks are blocked in `mpi_bcast`. When the rank 0 process receives its first message, it enters `mpi_bcast` and unblocks the other processes. At this point, the Melissa server creates the right number of field data structures but does not allocate memory for the iterative statistics as it does not know the size of the fields yet.
+
+When the Melissa server receives a data message, it gets the corresponding field data structure and allocate it as the first message from this field. Then it updates the simulation vector to keep track of which simulations sent which timesteps. It it is the first data message and the server is in a `restart` state, it will try to read the checkpointed statistics from the checkpoint files. If the message corresponds to a timestep and a simulation that has already be computed, then the Melissa server drops the message and continues. Otherwise it updates all the statistics required by the user on that field.
+
+After that, the server counts the number of finished simulations and loops until all the simulations sent all their messages.
+
+
+## `melissa_server_finalize`
+
+This function closes all sockets and frees the allocated memory.
