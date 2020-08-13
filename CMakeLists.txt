@@ -69,43 +69,12 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-#find_package(PkgConfig REQUIRED)
 
-#find_package(PythonLibs)
 find_package(PythonInterp 3 REQUIRED)
 
 message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} found")
-#if(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
-#    message(ERROR "Melissa needs Python 3")
-#endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
 find_python_module(numpy REQUIRED)
-#find_python_module(openturns REQUIRED)
 
-# OpenTURNS #
-
-#find_package(OpenTURNS REQUIRED)
-#message(STATUS "OpenTURNS includes: " ${OPENTURNS_INCLUDE_DIR})
-#include_directories(${OPENTURNS_INCLUDE_DIR} ${OPENTURNS_INCLUDE_DIRS})
-#add_definitions(${OPENTURNS_DEFINITIONS})
-#link_directories(${OPENTURNS_LIBRARY})
-
-# BLAS #
-
-#find_package(BLAS REQUIRED)
-#find_path(BLAS_INCLUDE_DIRS cblas.h
-#  $ENV{BLAS_HOME}/include)
-#message(STATUS "Blas ${BLAS_FOUND} in ${BLAS_INCLUDE_DIRS} ${BLAS_LIBRARIES}")
-#include_directories( ${BLAS_INCLUDE_DIR} )
-#set(EXTRA_LIBS ${EXTRA_LIBS}
-#                 ${BLAS_LIBRARIES} )
-
-#option(BUILD_EXAMPLES "Build examples" ON)
-#if(BUILD_EXAMPLES)
-#  if(NOT CMAKE_Fortran_COMPILER)
-#    set(BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
-#    message(STATUS "Fortran compiler not found. BUILD_EXAMPLES option turned OFF")
-#  endif(NOT CMAKE_Fortran_COMPILER)
-#endif(BUILD_EXAMPLES)
 
 include(melissa-zmq.cmake)
 include_directories(${ZeroMQ_INCLUDE_DIR})
@@ -163,21 +132,6 @@ if(BUILD_WITH_OpenMP)
   endif(OPENMP_FOUND)
 endif(BUILD_WITH_OpenMP)
 
-## HDF5 #
-
-#include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
-#ExternalProject_Add(HDF5
-#  URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
-#  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/HDF5
-#  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF
-#)
-#set(HDF5_DIR ${CMAKE_CURRENT_BINARY_DIR}/HDF5 CACHE FORCE " ")
-#set(HDF5_LIBRARY ${HDF5_DIR}/lib/libhdf5-shared.so CACHE INTERNAL " ")
-#set(HDF5_INCLUDE_DIR ${HDF5_DIR}/include CACHE INTERNAL " ")
-#include_directories( ${HDF5_INCLUDE_DIR} )
-#set(EXTRA_LIBS ${EXTRA_LIBS}
-#              ${HDF5_LIBRARY} )
-#set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HDF5_DIR}/lib/pkgconfig" )
 
 # FlowVR #
 
@@ -251,9 +205,6 @@ set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
 add_subdirectory(utility)
 
 # set environement variables
-#if(INSTALL_ZMQ)
-#  set(ZeroMQ_DIR "export ZeroMQ=${CMAKE_INSTALL_PREFIX}/share/cmake/ZeroMQ")
-#endif(INSTALL_ZMQ)
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_set_env.sh DESTINATION bin)
 
