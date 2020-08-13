@@ -358,9 +358,7 @@ void read_simu_states (vector_t          *simu,
     FILE*                 f = NULL;
     int                   i, size, max_size;
     melissa_simulation_t *simu_ptr;
-#ifdef BUILD_WITH_MPI
     MPI_Request          *request;
-#endif // BUILD_WITH_MPI
 
     sprintf(file_name, "%s/simu_%d.data", options->restart_dir, comm_data->rank);
     f = fopen(file_name, "rb");
@@ -373,13 +371,9 @@ void read_simu_states (vector_t          *simu,
     fread(&size, sizeof(int), 1, f);
     melissa_print (VERBOSE_DEBUG, "Read file %s (read_simu_states)\n", file_name);
     melissa_print (VERBOSE_WARNING, "Size : %d (process %d)\n", size, comm_data->rank);
-#ifdef BUILD_WITH_MPI
     MPI_Allreduce (&size, &max_size, 1, MPI_INT, MPI_MAX, comm_data->comm);
     melissa_print (VERBOSE_DEBUG, "Max size : %d\n", max_size);
     request = melissa_malloc(max_size * sizeof(MPI_Request));
-#else // BUILD_WITH_MPI
-    max_size = size;
-#endif // BUILD_WITH_MPI
     alloc_vector (simu, max_size);
     for (i=0; i<max_size; i++)
     {
@@ -389,18 +383,14 @@ void read_simu_states (vector_t          *simu,
     {
         simu_ptr = vector_get(simu, i);
         fread(&simu_ptr->status, sizeof(int), 1, f);
-#ifdef BUILD_WITH_MPI
         MPI_Allreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm);
     }
     for (i=size; i<max_size; i++)
     {
         simu_ptr = vector_get(simu, i);
         MPI_Allreduce (MPI_IN_PLACE, &simu_ptr->status, 1, MPI_INT, MPI_MIN, comm_data->comm);
-#endif // BUILD_WITH_MPI
     }
-#ifdef BUILD_WITH_MPI
     melissa_free (request);
-#endif // BUILD_WITH_MPI
 
     fclose(f);
 }

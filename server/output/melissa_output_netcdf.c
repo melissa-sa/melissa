@@ -185,9 +185,6 @@ CacheEntry * CreateFile(const char* file_name, const char* variable_name, size_t
     {
         // TODO parallel file opening if sequential is too slow?
         // TODO: race condition? who opens it first?
-        //#ifdef BUILD_WITH_MPI
-        //int status = nc_create_par(file_name, NC_NETCDF4 | NC_MPIIO, comm_data->comm, MPI_INFO_NULL, &ncID);
-        //#else
         //int status = nc_create(file_name, NC_NETCDF4, &ncID);
         int status = nc_create(file_name, 0, &c->ncID);
         //#endif
@@ -202,9 +199,6 @@ CacheEntry * CreateFile(const char* file_name, const char* variable_name, size_t
         // open it
         // should never get here...
         D("file exists already. Opening it!");
-        //#ifdef BUILD_WITH_MPI
-        //if (nc_open_par(file_name, NC_MPIIO | NC_WRITE, comm_data->comm, MPI_INFO_NULL, &ncID) != NC_NOERR)
-        //#else
         int status = nc_open(file_name, NC_WRITE, &c->ncID);
         if (status!= NC_NOERR)
             //#endif

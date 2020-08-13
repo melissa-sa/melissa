@@ -30,74 +30,43 @@ message(STATUS "libraries ${Melissa_LIBRARY}")
 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix." FORCE)
 
-option(BUILD_WITH_MPI "Build with MPI" ON)
-
-if(BUILD_WITH_MPI)
-  find_package(MPI QUIET)
-  if(MPI_C_FOUND AND MPI_Fortran_FOUND)
-      set(MPI_LIBS ${MPI_LIBS}
-                     ${MPI_LIBRARIES})
-      add_definitions( -DBUILD_WITH_MPI )
-      include_directories( ${MPI_INCLUDE_PATH} )
-      add_definitions(${MPI_Fortran_COMPILE_FLAGS})
-      include_directories(${MPI_Fortran_INCLUDE_PATH})
-      link_directories(${MPI_Fortran_LIBRARIES})
-      set(MPI_LIBS ${MPI_LIBS}
-                     ${MPI_Fortran_LIBRARIES} )
-      message(STATUS "MPI Found")
-  else(MPI_C_FOUND AND MPI_Fortran_FOUND)
-      # Disable  Option if missing dependencies
-      set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-      if(NOT MPI_Fortran_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI Fortran missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_Fortran_FOUND)
-      if(NOT MPI_C_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI C missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_C_FOUND)
-  endif(MPI_C_FOUND AND MPI_Fortran_FOUND)
-endif(BUILD_WITH_MPI)
+find_package(MPI QUIET)
+if(MPI_C_FOUND AND MPI_Fortran_FOUND)
+    set(MPI_LIBS ${MPI_LIBS}
+                   ${MPI_LIBRARIES})
+    include_directories( ${MPI_INCLUDE_PATH} )
+    add_definitions(${MPI_Fortran_COMPILE_FLAGS})
+    include_directories(${MPI_Fortran_INCLUDE_PATH})
+    link_directories(${MPI_Fortran_LIBRARIES})
+    set(MPI_LIBS ${MPI_LIBS}
+                   ${MPI_Fortran_LIBRARIES} )
+    message(STATUS "MPI Found")
+endif(MPI_C_FOUND AND MPI_Fortran_FOUND)
 
 find_package(PythonInterp REQUIRED)
 
-if(BUILD_WITH_MPI)
-    add_library(heat_utils STATIC src/heat_utils.f90)
-    target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
-    target_link_libraries(heat_utils ${MPI_LIBS})
-    install(TARGETS heat_utils ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+add_library(heat_utils STATIC src/heat_utils.f90)
+target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
+target_link_libraries(heat_utils ${MPI_LIBS})
+install(TARGETS heat_utils ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-    add_executable(heatf src/heat.f90 src/heat_utils.f90)
-    target_link_libraries(heatf  ${Melissa_LIBRARY} ${MPI_LIBS})
-    install(TARGETS heatf RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+add_executable(heatf src/heat.f90 src/heat_utils.f90)
+target_link_libraries(heatf  ${Melissa_LIBRARY} ${MPI_LIBS})
+install(TARGETS heatf RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
-    add_executable(heatc src/heat.c)
-    target_link_libraries(heatc ${Melissa_LIBRARY} ${MPI_LIBS} heat_utils)
-    install(TARGETS heatc RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+add_executable(heatc src/heat.c)
+target_link_libraries(heatc ${Melissa_LIBRARY} ${MPI_LIBS} heat_utils)
+install(TARGETS heatc RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
-    configure_file(src/heat.py src/heat.py @ONLY)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/heat.py
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-            PERMISSIONS OWNER_WRITE
-                        OWNER_READ
-                        OWNER_EXECUTE
-                        GROUP_READ
-                        GROUP_EXECUTE
-                        WORLD_READ
+configure_file(src/heat.py src/heat.py @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/heat.py
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+        PERMISSIONS OWNER_WRITE
+                    OWNER_READ
+                    OWNER_EXECUTE
+                    GROUP_READ
+                    GROUP_EXECUTE
+                    WORLD_READ
                         WORLD_EXECUTE)
-endif(BUILD_WITH_MPI)
-
-add_library(heat_utils_no_mpi src/heat_utils_no_mpi.f90)
-target_compile_options(heat_utils_no_mpi BEFORE PUBLIC -fPIC)
-#target_link_libraries(heat_utils_no_mpi)
-install(TARGETS heat_utils_no_mpi ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
-add_executable(heatf_no_mpi src/heat_no_mpi.f90 src/heat_utils_no_mpi.f90)
-target_link_libraries(heatf_no_mpi ${Melissa_LIBRARY})
-install(TARGETS heatf_no_mpi RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-
-add_executable(heatc_no_mpi src/heat_no_mpi.c)
-target_link_libraries(heatc_no_mpi ${Melissa_LIBRARY} heat_utils_no_mpi)
-install(TARGETS heatc_no_mpi RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 add_test(TestHeat melissa_launcher ${CMAKE_SOURCE_DIR}/../study_local)

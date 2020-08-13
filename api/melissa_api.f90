@@ -26,26 +26,12 @@ subroutine melissa_init(field_name,&
     integer(kind=C_INT) :: comm
 end subroutine melissa_init
 
-subroutine melissa_init_no_mpi(field_name,&
-                               vect_size) bind(c, name = 'melissa_init_no_mpi_f')
-    use ISO_C_BINDING, only: C_INT, C_CHAR
-    character(kind=C_CHAR),dimension(*) :: field_name
-    integer(kind=C_INT) :: vect_size
-end subroutine melissa_init_no_mpi
-
 subroutine melissa_send(field_name,&
                         send_vect) bind(c, name = 'melissa_send')
     use ISO_C_BINDING, only: C_INT, C_DOUBLE, C_CHAR
     character(kind=C_CHAR),dimension(*) :: field_name
     real(kind=C_DOUBLE),dimension(*)    :: send_vect
 end subroutine melissa_send
-
-subroutine melissa_send_no_mpi(field_name,&
-                               send_vect) bind(c, name = 'melissa_send_no_mpi')
-    use ISO_C_BINDING, only: C_INT, C_DOUBLE, C_CHAR
-    character(kind=C_CHAR),dimension(*) :: field_name
-    real(kind=C_DOUBLE),dimension(*)    :: send_vect
-    end subroutine melissa_send_no_mpi
 
 subroutine melissa_finalize() bind(c, name = 'melissa_finalize')
 end subroutine melissa_finalize

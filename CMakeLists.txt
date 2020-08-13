@@ -22,13 +22,17 @@ project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
 # disable in-source builds
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+
 if(${srcdir} STREQUAL ${bindir})
     message("You are attempting to build in your source Directory.")
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
+# CMAKE_SOURCE_DIR, CMAKE_BINARY_DIR cannot be reliably compared directly
+# because there might be symbolic links in the path
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
+
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
@@ -79,40 +83,25 @@ find_python_module(numpy REQUIRED)
 include(melissa-zmq.cmake)
 include_directories(${ZeroMQ_INCLUDE_DIR})
 
+
 # MPI #
 
-option(BUILD_WITH_MPI "Build with MPI" ON)
+find_package(MPI QUIET)
 
-if(BUILD_WITH_MPI)
-  find_package(MPI QUIET)
-  if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
-      set(EXTRA_LIBS ${EXTRA_LIBS}
-                     ${MPI_C_LIBRARIES})
-      add_definitions( -DBUILD_WITH_MPI )
-      include_directories( ${MPI_INCLUDE_PATH} )
-      add_definitions(${MPI_Fortran_COMPILE_FLAGS})
-      include_directories(${MPI_Fortran_INCLUDE_PATH})
-      link_directories(${MPI_Fortran_LIBRARIES})
-      set(EXTRA_LIBS ${EXTRA_LIBS}
-                     ${MPI_Fortran_LIBRARIES} )
-      message(STATUS "MPI Found")
-  else(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
-      # Disable  Option if missing dependencies
-      set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-      if(NOT MPI_Fortran_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI Fortran missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_Fortran_FOUND)
-      if(NOT MPI_C_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI C missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_C_FOUND)
-      if(NOT MPI_CXX_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI C++ missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_CXX_FOUND)
-  endif(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
-endif(BUILD_WITH_MPI)
+if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
+  set(EXTRA_LIBS ${EXTRA_LIBS}
+				 ${MPI_C_LIBRARIES})
+  include_directories( ${MPI_INCLUDE_PATH} )
+  add_definitions(${MPI_Fortran_COMPILE_FLAGS})
+  include_directories(${MPI_Fortran_INCLUDE_PATH})
+  link_directories(${MPI_Fortran_LIBRARIES})
+  set(EXTRA_LIBS ${EXTRA_LIBS}
+				 ${MPI_Fortran_LIBRARIES} )
+  message(STATUS "MPI Found")
+else(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
+  message("MPI NOT found")
+endif(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
+
 
 # OpenMP #
 

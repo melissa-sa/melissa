@@ -60,7 +60,7 @@ To illustrate this documentation, we provide a simple example: a global sensitiv
 <summary><em> Click here to fold/unfold example </em></summary>
 
 ***
-In these foldable paragraphs, we will go through the process of instrumenting a heat equation solver to run a global sensitivity analysis. This solver is available in the "examples" folder of Melissa installation in `share/melissa/examples/heat_example/solver`. The solver comes in two flavors: C+MPI, Fortran+MPI in `solver/src/heat.c`, `solver/src/heat.f90`, `solver/src/heat_no_mpi.c`. In this tutorial, we will focus on the C+MPI example, but they are all equivalent. If you did the "testing" part of the Getting Started, you already ran it on your machine.
+In these foldable paragraphs, we will go through the process of instrumenting a heat equation solver to run a global sensitivity analysis. This solver is available in the "examples" folder of Melissa installation in `share/melissa/examples/heat_example/solver`. The solver comes in two flavors: C+MPI, Fortran+MPI in `solver/src/heat.c`, `solver/src/heat.f90`. In this tutorial, we will focus on the C+MPI example, but they are all equivalent. If you did the "testing" part of the Getting Started, you already ran it on your machine.
 ***
 
 </details>

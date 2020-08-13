@@ -56,11 +56,7 @@ struct comm_data_s
     int       rank;             /**< rank of the MPI process (0 if sequential)      */
     int       comm_size;        /**< size of the MPI communicator (1 if sequential) */
     int       client_comm_size; /**< size of the clients communicators              */
-//    int      *rcounts;          /**< counts for receiving datas                     */
-//    int      *rdispls;          /**< displacements for receiving datas              */
-#ifdef BUILD_WITH_MPI
     MPI_Comm  comm;             /**< MPI communicator                               */
-#endif // BUILD_WITH_MPI
 };
 
 typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s */

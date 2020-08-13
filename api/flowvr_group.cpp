@@ -69,9 +69,7 @@ flowvr::OutputPort OutPort("MelissaOut");
 
 void FlowVRInit(int *comm_size, int *rank)
 {
-#ifdef BUILD_WITH_MPI
     flowvr::Parallel::init(*rank, *comm_size);
-#endif // BUILD_WITH_MPI
     ports.push_back(&OutPort);
     ports.push_back(&InPort);
     module = flowvr::initModule(ports);

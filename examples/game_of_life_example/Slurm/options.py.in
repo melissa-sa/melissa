@@ -33,7 +33,6 @@ import examples.game_of_life_example.BaseOptions as BaseOptions
 
 # Standard options
 USERNAME = BaseOptions.USERNAME
-BUILD_WITH_MPI = BaseOptions.BUILD_WITH_MPI
 EXECUTABLE= BaseOptions.EXECUTABLE
 NODES_SERVER = 2
 NODES_GROUP = 10

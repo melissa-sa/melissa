@@ -29,9 +29,7 @@
 extern "C" {
 #endif
 
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
 
 /**
  *******************************************************************************
@@ -68,8 +66,6 @@ void update_variance (variance_t *variance1,
                       variance_t *updated_variance,
                       const int   vect_size);
 
-#ifdef BUILD_WITH_MPI
-
 void update_global_variance (variance_t *variance,
                              const int   vect_size,
                              const int   rank,
@@ -81,8 +77,6 @@ void update_global_mean_and_variance (variance_t *variance,
                                       const int   rank,
                                       const int   comm_size,
                                       MPI_Comm    comm);
-
-#endif // BUILD_WITH_MPI
 
 void save_variance(variance_t *vars,
                    int         vect_size,

@@ -33,7 +33,6 @@ set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "CMAKE_INSTALL
 find_package(MPI REQUIRED)
 set(MPI_LIBS ${MPI_LIBS}
   ${MPI_LIBRARIES})
-add_definitions( -DBUILD_WITH_MPI )
 include_directories( ${MPI_INCLUDE_PATH} )
 set(MPI_LIBS ${MPI_LIBS})
 message(STATUS "MPI Found")

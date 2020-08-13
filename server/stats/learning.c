@@ -23,10 +23,6 @@
  *
  **/
 
-#if BUILD_WITH_MPI == 0
-#undef BUILD_WITH_MPI
-#endif // BUILD_WITH_MPI
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

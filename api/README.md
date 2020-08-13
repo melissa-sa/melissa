@@ -3,11 +3,9 @@
 * [overview](#overview)
 * [melissa_api.c](#melissa_api.c)
 * [melissa_api.h]
-* [melissa_api_no_mpi.h]
 * [melissa_api.f]
 * [melissa_api.f90]
 * [melissa_api.py]
-* [melissa_api_no_mpi.py]
 
 # Overview
 

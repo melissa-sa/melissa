@@ -22,10 +22,6 @@
  *
  **/
 
-#if BUILD_WITH_MPI == 0
-#undef BUILD_WITH_MPI
-#endif // BUILD_WITH_MPI
-
 #ifndef LEARNING_H
 #define LEARNING_H
 
@@ -33,11 +29,8 @@
 extern "C" {
 #endif
 
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
 #include <stdio.h>
-//#include <tensorflow/c/c_api.h>
 
 /**
  *******************************************************************************

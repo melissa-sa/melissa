@@ -18,9 +18,7 @@
 #include <flowvr/module.h>
 #include <iostream>
 #include <unistd.h>
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
 extern "C" {
 #include "stats.h"
 }
@@ -97,18 +95,9 @@ int main(int argc, char** argv)
     int              i, opt;
     int              iteration, nb_iterations = 1;
 
-#ifndef BUILD_WITH_MPI
-
-    rank = 0;
-    comm_size = 1;
-
-#else // BUILD_WITH_MPI
-
     MPI_Init (&argc, &argv);
     MPI_Comm_size (MPI_COMM_WORLD, &comm_size);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-
-#endif // BUILD_WITH_MPI
 
     if (getenv("FLOWVR_NBPROC") == 0)
         flowvr::Parallel::init(rank, comm_size);
@@ -207,9 +196,7 @@ int main(int argc, char** argv)
     free (out_vect);
     free (parameters);
 
-#ifdef BUILD_WITH_MPI
     MPI_Finalize ();
-#endif // BUILD_WITH_MPI
 
     return 0;
 }

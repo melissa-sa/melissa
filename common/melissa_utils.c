@@ -27,7 +27,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <stdint.h>
@@ -37,9 +36,7 @@
 #include <sys/socket.h>
 #include <ifaddrs.h>
 #include<stdarg.h>
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
 #include <zmq.h>
 #include "melissa_utils.h"
 
@@ -342,13 +339,9 @@ void melissa_connect (void *socket,
 
 double melissa_get_time ()
 {
-//#ifdef BUILD_WITH_MPI
-//    return (double)MPI_Wtime();
-//#else // BUILD_WITH_MPI
     struct timeb tp;
     ftime(&tp);
     return (double)tp.time + (double)tp.millitm / 1000;
-//#endif // BUILD_WITH_MPI
 }
 
 /**
@@ -389,12 +382,7 @@ void melissa_get_node_name (char *node_name, size_t buf_len)
     }
     if (ok == 0)
     {
-//#ifdef BUILD_WITH_MPI
-//        int resultlen;
-//        MPI_Get_processor_name(node_name, &resultlen);
-//#else
         gethostname(node_name, buf_len);
-//#endif // BUILD_WITH_MPI
     }
 }
 

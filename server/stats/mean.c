@@ -23,10 +23,6 @@
  *
  **/
 
-#if BUILD_WITH_MPI == 0
-#undef BUILD_WITH_MPI
-#endif // BUILD_WITH_MPI
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -140,8 +136,6 @@ void update_mean (mean_t    *mean1,
     }
 }
 
-#ifdef BUILD_WITH_MPI
-
 /**
  *******************************************************************************
  *
@@ -206,13 +200,12 @@ void update_global_mean (mean_t    *mean,
         memcpy (mean->mean, global_mean, vect_size * sizeof(double));
         melissa_free (global_mean);
     }
-    else // rank == 0
+    else
     {
         MPI_Send (&(mean->increment), 1, MPI_INT, 0, rank, comm);
         MPI_Send (mean->mean, vect_size, MPI_DOUBLE, 0, comm_size+rank, comm);
     }
 }
-#endif // BUILD_WITH_MPI
 
 /**
  *******************************************************************************

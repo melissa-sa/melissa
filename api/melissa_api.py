@@ -24,8 +24,6 @@ import numpy as np
 import ctypes
 from mpi4py import MPI
 
-c_melissa_api_no_mpi = np.ctypeslib.load_library('libmelissa_api',os.path.join(os.path.dirname(__file__),"libmelissa_api.so"))
-
 melissa_c_api = np.ctypeslib.load_library('libmelissa_api',os.path.join(os.path.dirname(__file__),"libmelissa_api.so"))
 
 # C prototypes

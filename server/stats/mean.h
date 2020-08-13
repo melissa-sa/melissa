@@ -22,10 +22,6 @@
  *
  **/
 
-#if BUILD_WITH_MPI == 0
-#undef BUILD_WITH_MPI
-#endif // BUILD_WITH_MPI
-
 #ifndef MEAN_H
 #define MEAN_H
 
@@ -33,9 +29,7 @@
 extern "C" {
 #endif
 
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
 #include <stdio.h>
 
 /**
@@ -69,13 +63,11 @@ void update_mean (mean_t    *mean1,
                   mean_t    *updated_mean,
                   const int  vect_size);
 
-#ifdef BUILD_WITH_MPI
 void update_global_mean (mean_t    *mean,
                          const int  vect_size,
                          const int  rank,
                          const int  comm_size,
                          MPI_Comm   comm);
-#endif // BUILD_WITH_MPI
 
 void save_mean(mean_t *means,
                int     vect_size,

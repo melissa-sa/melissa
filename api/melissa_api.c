@@ -23,17 +23,15 @@
  *
  **/
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <zmq.h>
 #include <assert.h>
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #include "melissa_api.h"
-#endif // BUILD_WITH_MPI
-#include "melissa_api_no_mpi.h"
 #include "melissa_utils.h"
 #include "melissa_messages.h"
 #include <signal.h>
@@ -51,11 +49,6 @@
 #ifndef MAX_FIELD_NAME
 #define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
-
-#ifndef BUILD_WITH_MPI
-typedef int MPI_Comm; /**< Convert MPI_Comm to int when built without MPI */
-typedef int MPI_Fint; /**< Convert MPI_Fint to int when built without MPI */
-#endif // BUILD_WITH_MPI
 
 #ifdef BUILD_WITH_FLOWVR
 void flowvr_init(int *comm_size, int *rank);
@@ -498,12 +491,8 @@ static void melissa_init_internal (const char *field_name,
 #endif // CHECK_SIMU_DECONNECTION
         global_data.sobol_requester = NULL;
         global_data.comm_size = comm_size;
-#ifdef BUILD_WITH_MPI
-        if(comm) // comm may be null in case of a call of melissa_init_no_mpi with a libmelissa_api.so compiled with MPI support with a non MPI client. This if is here to avoid a useless MPI call outside MPI context.
-          MPI_Comm_dup(comm, &global_data.comm);
-#else // BUILD_WITH_MPI
-        global_data.comm = comm;
-#endif // BUILD_WITH_MPI
+        assert(comm);
+        MPI_Comm_dup(comm, &global_data.comm);
         char* simu_id_a = getenv("MELISSA_SIMU_ID"); // get the simu ID from the environment variable
         if (simu_id_a == 0)
         {
@@ -622,7 +611,6 @@ static void melissa_init_internal (const char *field_name,
     field_data_ptr->data_pusher = NULL;
     field_data_ptr->timestamp = 0;
 
-#ifdef BUILD_WITH_MPI
     if (comm_size > 1)
     {
         // bcast server infos from 0 to all
@@ -642,7 +630,6 @@ static void melissa_init_internal (const char *field_name,
         }
     }
     else
-#endif // BUILD_WITH_MPI
     {
         field_data_ptr->local_vect_sizes[0]  = local_vect_size;
         field_data_ptr->global_vect_size = local_vect_size;
@@ -720,13 +707,11 @@ static void melissa_init_internal (const char *field_name,
             buf_ptr = NULL;
             zmq_msg_close (&msg);
         }
-#ifdef BUILD_WITH_MPI
         // then we broadcast these node names to all the MPI ranks.
         if (comm_size > 1)
         {
             MPI_Bcast (port_names, global_data.nb_proc_server * MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, comm);
         }
-#endif // BUILD_WITH_MPI
     }
 
 
@@ -773,16 +758,11 @@ static void melissa_init_internal (const char *field_name,
         switch (global_data.coupling)
         {
         case MELISSA_COUPLING_MPI:
-#ifdef BUILD_WITH_MPI
             // split MPI_COMM_WORLD for coupled simulations.
             // only works if all the simulations of the Sobol' group are launched in asingle  MPI MPMD command.
             // all the simulation's comm communicator of the group must form a partition of the MPI_COMM_WORLD communicator.
             // here we create a communicator that connects all the simulations processes with the same rank in the comm communicator.
             MPI_Comm_split(MPI_COMM_WORLD, rank, global_data.sobol_rank, &global_data.comm_sobol);
-#else // BUILD_WITH_MPI
-            fprintf (stderr, "ERROR: Build with MPI to use MPI coupling");
-            exit;
-#endif // BUILD_WITH_MPI
             break;
 
         case MELISSA_COUPLING_FLOWVR:
@@ -803,7 +783,6 @@ static void melissa_init_internal (const char *field_name,
                 if (rank == 0)
                 {
                     master_node_names = malloc (MPI_MAX_PROCESSOR_NAME * comm_size * sizeof(char));
-#ifdef BUILD_WITH_MPI
                 }
                 if (comm_size > 1)
                 {
@@ -812,7 +791,6 @@ static void melissa_init_internal (const char *field_name,
                 }
                 else
                 {
-#endif // BUILD_WITH_MPI
                     memcpy (master_node_names, master_node_name, MPI_MAX_PROCESSOR_NAME);
                 }
             }
@@ -1111,55 +1089,8 @@ void melissa_init_f (const char *field_name,
                      int        *local_vect_size,
                      MPI_Fint   *comm_fortran)
 {
-#ifdef BUILD_WITH_MPI
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
-#else // BUILD_WITH_MPI
-    int comm = *comm_fortran;
-#endif // BUILD_WITH_MPI
     melissa_init(field_name, *local_vect_size, comm);
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
- * This function initialise connexion with Melissa Server for sequential simulations
- *
- *******************************************************************************
- *
- * @param[in] *field_name
- * name of the field to initialize
- *
- * @param[in] *vect_size
- * size of the data vector to send to the library
- *
- *******************************************************************************/
-
-void melissa_init_no_mpi (const char *field_name,
-                          const int  vect_size)
-{
-    int rank = 0;
-    int comm_size = 1;
-    MPI_Comm comm = MPI_COMM_WORLD;
-    melissa_init_internal (field_name,
-                           vect_size,
-                           comm_size,
-                           rank,
-                           comm);
-}
-
-void melissa_init_no_mpi_f (const char *field_name,
-                            const int  *vect_size)
-{
-    int rank = 0;
-    int comm_size = 1;
-    MPI_Comm comm = 0;
-    melissa_init_internal (field_name,
-                           *vect_size,
-                           comm_size,
-                           rank,
-                           comm);
 }
 
 /**
@@ -1189,7 +1120,6 @@ void melissa_init (const char *field_name,
                    const int  vect_size,
                    MPI_Comm   comm)
 {
-#ifdef BUILD_WITH_MPI
     int rank;
     int comm_size;
     MPI_Comm_rank(comm, &rank);
@@ -1200,10 +1130,6 @@ void melissa_init (const char *field_name,
                            comm_size,
                            rank,
                            comm);
-#else
-    printf("melissa_init was called but melissa was compiled without MPI!");
-    exit(1);
-#endif
 }
 
 /**
@@ -1231,8 +1157,6 @@ void melissa_send (const char   *field_name,
     int     local_vect_size = 0;
     double *send_vect_ptr;
     field_data_t  *field_data_ptr = NULL;
-//    MPI_Request *request;
-//    MPI_Status *status;
     double start_comm_time = melissa_get_time();
 
 #ifdef BUILD_WITH_PROBES
@@ -1258,7 +1182,6 @@ void melissa_send (const char   *field_name,
     {
         // in the case of machine learning, we gather everything on the rank 0
         // void* buffer = melissa_malloc(sizeof(double) * 10);
-#ifdef BUILD_WITH_MPI
         double start_gather = melissa_get_time();
         MPI_Gatherv(send_vect,
                     local_vect_size,
@@ -1270,9 +1193,7 @@ void melissa_send (const char   *field_name,
                     0,
                     global_data.comm);
         double end_gather = melissa_get_time();
-        // fprintf(stdout, "Gather time: %f \n", end_gather - start_gather);
         send_vect_ptr = global_data.buffer_data;
-#endif // BUILD_WITH_MPI
         if (global_data.rank == 0)
         {
             local_vect_size = field_data_ptr->global_vect_size; //l ocal_vect_size is global_vect_size on rank 0
@@ -1319,11 +1240,9 @@ void melissa_send (const char   *field_name,
             }
             break;
 
-#ifdef BUILD_WITH_MPI
         case MELISSA_COUPLING_MPI:
             MPI_Gather(send_vect_ptr, local_vect_size, MPI_DOUBLE, global_data.buffer_data, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
             break;
-#endif // BUILD_WITH_MPI
         }
         total_bytes_sent += local_vect_size * sizeof(double);
     }
@@ -1494,31 +1413,6 @@ void melissa_send (const char   *field_name,
  *
  * @ingroup melissa_api
  *
- * This function sends data to the stats library
- *
- *******************************************************************************
- *
- * @param[in] *field_name
- * name of the field to send to Melissa Server
- *
- * @param[in] *send_vect
- * local data array to send to the statistic library
- *
- *******************************************************************************/
-
-void melissa_send_no_mpi (const char *field_name,
-                          const double *send_vect)
-{
-    // wrapper around melissa_send (not used anymore)
-    melissa_send (field_name,
-                  send_vect);
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
  * This function disconects the simulation from the statistic library
  *
  *******************************************************************************/
@@ -1527,13 +1421,11 @@ void melissa_finalize (void)
 {
     int i, ret;
 
-#ifdef BUILD_WITH_MPI
     if (global_data.comm_size > 1)
     {
         // wait every processes here
         MPI_Barrier(global_data.comm);
     }
-#endif // BUILD_WITH_MPI
 
     field_data_t* field_data_ptr;
     for (field_data_ptr = field_data; field_data_ptr != NULL; field_data_ptr = field_data_ptr->next) {
@@ -1583,13 +1475,11 @@ void melissa_finalize (void)
     zmq_close (global_data.deconnexion_requester);
 
 
-#ifdef BUILD_WITH_MPI
     if (global_data.comm_size > 1)
     {
         // wait every processes here again
         MPI_Barrier(global_data.comm);
     }
-#endif // BUILD_WITH_MPI
 #endif // CHECK_SIMU_DECONNECTION
 
 #ifdef BUILD_WITH_FLOWVR

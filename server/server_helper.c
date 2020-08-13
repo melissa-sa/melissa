@@ -46,11 +46,7 @@ int create_port_number (comm_data_t *comm_data,
 
     node_names = melissa_malloc(MPI_MAX_PROCESSOR_NAME * comm_data->comm_size);
 
-#ifdef BUILD_WITH_MPI
     MPI_Allgather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, node_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, comm_data->comm);
-#else // BUILD_WITH_MPI
-    memcpy (node_names, node_name, MPI_MAX_PROCESSOR_NAME);
-#endif // BUILD_WITH_MPI
 
     for (i=0; i<comm_data->rank; i++)
     {
