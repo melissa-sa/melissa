@@ -19,20 +19,18 @@ cmake_minimum_required(VERSION 3.2.2)
 project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
 
 
-# disable in-source builds
-set(CMAKE_DISABLE_SOURCE_CHANGES ON)
-set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-if(${srcdir} STREQUAL ${bindir})
-    message("You are attempting to build in your source Directory.")
-    message("You must run cmake from a build directory.")
-endif(${srcdir} STREQUAL ${bindir})
-
+# Disable in-source builds
+#
 # CMAKE_SOURCE_DIR, CMAKE_BINARY_DIR cannot be reliably compared directly
 # because there might be symbolic links in the path
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
 
+if(${srcdir} STREQUAL ${bindir})
+    message("You are attempting to build in your source Directory.")
+    message("You must run cmake from a build directory.")
+endif(${srcdir} STREQUAL ${bindir})
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
