@@ -18,6 +18,7 @@ cmake_minimum_required(VERSION 3.2.2)
 
 project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
 
 # Disable in-source builds
@@ -32,30 +33,30 @@ if(${srcdir} STREQUAL ${bindir})
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
+# set up
 include(CTest)
 include(FindPackageHandleStandardArgs)
 
 function(find_python_module module)
-        string(TOUPPER ${module} module_upper)
-        if(NOT PY_${module_upper})
-                if(ARGC GREATER 1 AND ARGV1 STREQUAL "REQUIRED")
-                        set(${module}_FIND_REQUIRED TRUE)
-                endif()
-                # A module's location is usually a directory, but for binary modules
-                # it's a .so file.
-                execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
+    string(TOUPPER ${module} module_upper)
+    if(NOT PY_${module_upper})
+        if(ARGC GREATER 1 AND ARGV1 STREQUAL "REQUIRED")
+            set(${module}_FIND_REQUIRED TRUE)
+        endif()
+        # A module's location is usually a directory, but for binary modules
+        # it's a .so file.
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                         "import re, ${module}; print(re.compile('/__init__.py.*').sub('',${module}.__file__))"
                         RESULT_VARIABLE _${module}_status
                         OUTPUT_VARIABLE _${module}_location
                         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-                if(NOT _${module}_status)
-                        set(PY_${module_upper} ${_${module}_location} CACHE STRING
-                                "Location of Python module ${module}")
-                endif(NOT _${module}_status)
-        endif(NOT PY_${module_upper})
-        find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
+        if(NOT _${module}_status)
+            set(PY_${module_upper} ${_${module}_location} CACHE STRING
+                "Location of Python module ${module}")
+        endif(NOT _${module}_status)
+    endif(NOT PY_${module_upper})
+    find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
 
 
@@ -66,25 +67,34 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  # Set install directory to ../install
-  get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
-  set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)
+    # Set install directory to ../install
+    get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
+    set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install"
+        CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 
+# Find Python3
 find_package(PythonInterp 3 REQUIRED)
-
-message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} found")
 find_python_module(numpy REQUIRED)
 
 
-include(melissa-zmq.cmake)
+# Find ZeroMQ
+include(BuildZeroMQ)
+
+if(INSTALL_ZMQ)
+    if(ZeroMQ_ROOT)
+        message(WARNING "INSTALL_ZMQ and ZeroMQ_ROOT both set. ZeroMQ_ROOT will be ignored.")
+    endif()
+else()
+    find_package(ZeroMQ REQUIRED)
+endif()
+
 include_directories(${ZeroMQ_INCLUDE_DIR})
 
 
-# MPI #
-
-find_package(MPI QUIET)
+# Find MPI
+find_package(MPI)
 
 if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
   set(EXTRA_LIBS ${EXTRA_LIBS}
@@ -95,9 +105,6 @@ if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
   link_directories(${MPI_Fortran_LIBRARIES})
   set(EXTRA_LIBS ${EXTRA_LIBS}
 				 ${MPI_Fortran_LIBRARIES} )
-  message(STATUS "MPI Found")
-else(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
-  message("MPI NOT found")
 endif(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
 
 
