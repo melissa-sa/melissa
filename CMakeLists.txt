@@ -94,7 +94,7 @@ include_directories(${ZeroMQ_INCLUDE_DIR})
 
 
 # Find MPI
-find_package(MPI)
+find_package(MPI REQUIRED)
 
 if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
   set(EXTRA_LIBS ${EXTRA_LIBS}
