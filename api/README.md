@@ -55,7 +55,7 @@ This function is hidden from the user by the interface files `melissa_api.f90` a
 
 ## `melissa_finalize`
 
-This function closes the connections and releases all memory. It can also wait for the permission to disconect if Melissa is compiled with `-DCHECK_DECONNEXION=ON`.
+This function closes the connections and releases all memory. It can also wait for the permission to disconect if Melissa is compiled with `-DCHECK_SIMU_DECONNECTION=ON`.
 
 
 # `melissa_api.h`
