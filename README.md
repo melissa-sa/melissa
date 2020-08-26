@@ -217,3 +217,41 @@ inproceedings{terraz:hal-01607479,
      Melissa is open source under the [BSD 3-Clause License](LICENSE)
 
 
+# Development Hints
+
+## C and C++
+
+C and C++ are easily susceptible to memory bugs and undefined behavior. For example, the following C99 code shows undefined behavior because the literal `1` is taken to be a _signed_ integer by compiler:
+```c
+#include <stdint.h>
+uint32_t u = 1 << 31;
+```
+This is the corrected code:
+```c
+#include <stdint.h>
+uint32_t u = UINT32_C(1) << 31;
+```
+
+Many of these errors can be detected at compile-time if warnings are enabled and at run-time with the aid of the [_address sanitizer_](https://github.com/google/sanitizers/wiki/AddressSanitizer) (ASAN) and the [_undefined behavior sanitizer_](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) (UBSAN). Both sanitizers are supported by GCC and Clang.
+
+Most warnings are already enabled in `CMakeLists.txt`.
+
+To enable the sanitiers, pass `-fsanitize=address` for ASAN and `-fsanitize=undefined` for UBSAN on the compiler command line. When using CMake, export the following environment flags before calling CMake:
+```sh
+export CFLAGS='-fsanitize=address -fsanitize=undefined'
+export CXXFLAGS='-fsanitize=address -fsanitize=undefined'
+```
+Afterwards build the code as usual with `make` and `make install`. If an error is detected, the sanitizers print file and line data if debugging information is present in the executable files. This can be done either by adding the compiler flag `-g` to the compiler options or by settings `-DCMAKE_BUILD_TYPE=Debug` on the CMake command line.
+
+As of August 2020, some Melissa tests seems to be leaking memory. To ignore memory leaks (and have ASAN only check for memory corruption), set the following environment flag before running the tests:
+```sh
+env ASAN_OPTIONS='leak_check_at_exit=0' ctest
+```
+A list of ASAN and UBSAN options is available at the linked websites.
+
+Additionally, the standard memory allocator on Linux can be instructed to perform extra consistency checks by setting some environment flags:
+```sh
+export MALLOC_CHECK_=3
+export MALLOC_PERTURB_=1
+```
+This approach works with _any_ application and without _any_ code modification.
