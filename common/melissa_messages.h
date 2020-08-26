@@ -84,7 +84,7 @@ int send_message_drop(int   simu_id,
 
 void read_message_drop (char* msg_buffer,
                         int*  simu_id,
-                        char* job_id[]);
+                        char* job_id);
 
 void message_stop (zmq_msg_t *msg);
 
@@ -158,7 +158,7 @@ void message_simu_data (zmq_msg_t *msg,
                         int      client_rank,
                         int      vect_size,
                         int      nb_vect,
-                        char*    field_name,
+                        const char* field_name,
                         double** data_ptr);
 
 int send_message_simu_data(int      time_stamp,
@@ -166,7 +166,7 @@ int send_message_simu_data(int      time_stamp,
                              int      client_rank,
                              int      vect_size,
                              int      nb_vect,
-                             char*    field_name,
+                             const char* field_name,
                              double** data_ptr,
                              void*    socket,
                              int      flags);

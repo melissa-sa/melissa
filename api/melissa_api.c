@@ -195,11 +195,6 @@ static void free_field_data(field_data_t *data)
     }
 }
 
-static void my_free (void *data, void *hint)
-{
-    free (data);
-}
-
 
 static void print_zmq_error(int ret)
 {
@@ -768,7 +763,7 @@ static void melissa_init_internal (const char *field_name,
             flowvr_init(&comm_size, &rank);
 #else // BUILD_WITH_FLOWVR
             fprintf (stderr, "ERROR: Build with FlowVR to use FlowVR coupling");
-            exit;
+            exit(1);
 #endif // BUILD_WITH_FLOWVR
             break;
 
@@ -866,7 +861,7 @@ static void melissa_init_internal (const char *field_name,
             break;
         default:
             melissa_print(VERBOSE_ERROR, "Bad coupling parameter");
-            exit;
+            exit(1);
         }
     }
     // -------------- //
@@ -1179,7 +1174,6 @@ void melissa_send (const char   *field_name,
     {
         // in the case of machine learning, we gather everything on the rank 0
         // void* buffer = melissa_malloc(sizeof(double) * 10);
-        double start_gather = melissa_get_time();
         MPI_Gatherv(send_vect,
                     local_vect_size,
                     MPI_DOUBLE,
@@ -1189,7 +1183,6 @@ void melissa_send (const char   *field_name,
                     MPI_DOUBLE,
                     0,
                     global_data.comm);
-        double end_gather = melissa_get_time();
         send_vect_ptr = global_data.buffer_data;
         if (global_data.rank == 0)
         {
@@ -1249,7 +1242,6 @@ void melissa_send (const char   *field_name,
         // Without Sobol, the sobol_rank is always 0.
         // With Sobol, only the sobol_rank 0 sends the data to the server
         melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", global_data.sample_id, field_data_ptr->timestamp);
-        zmq_msg_t msg;
         if (global_data.learning < 2) // "classic" usage
         {
             j = 0;
@@ -1305,7 +1297,6 @@ void melissa_send (const char   *field_name,
         }
         else if (global_data.rank == 0) // here, learning >= 2. That means that we d'on' split the data for redistribution, bunt we send everything to one server rank in a round-robin fashion
         {
-            double start_send_time = melissa_get_time();
             // remember that when learning != 0 we gather all the data on rank 0
             // send all the data round-robin from proc 0
 
@@ -1380,8 +1371,6 @@ void melissa_send (const char   *field_name,
                 }
                 total_bytes_sent += buff_size;
             }
-            double end_send_time = melissa_get_time();
-            // fprintf(stdout, "Send time: %f \n", end_send_time - start_send_time);
         }
     }
     field_data_ptr->timestamp += 1;
@@ -1416,7 +1405,7 @@ void melissa_send (const char   *field_name,
 
 void melissa_finalize (void)
 {
-    int i, ret;
+    int i;
 
     if (global_data.comm_size > 1)
     {

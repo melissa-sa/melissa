@@ -159,38 +159,5 @@ void compute_stats (melissa_data_t  *data,
 
 void finalize_stats (melissa_data_t *data)
 {
-//    int time_step;
-//    for (time_step = 0; time_step<data->options->nb_time_steps; time_step++)
-//    {
-//        if (data->options->sobol_op != 1 || data->moments[time_step].max_order > 2)
-//        {
-//            if (data->options->mean_op == 1)
-//            {
-//                compute_mean (&(data->moments[time_step]), &(data->means[time_step]), data->vect_size);
-//            }
-
-//            if (data->options->variance_op == 1)
-//            {
-//                compute_variance (&(data->moments[time_step]), &(data->variances[time_step]), data->vect_size);
-//            }
-//        }
-//        else
-//        {
-//            if (data->options->mean_op == 1 && data->options->variance_op == 0)
-//            {
-//                update_mean(&(data->sobol_indices[time_step].variance_a.mean_structure),
-//                            &(data->sobol_indices[time_step].variance_b.mean_structure),
-//                            &(data->means[time_step]),
-//                            data->vect_size);
-//            }
-
-//            if (data->options->variance_op == 1)
-//            {
-//                update_variance(&(data->sobol_indices[time_step].variance_a),
-//                                &(data->sobol_indices[time_step].variance_b),
-//                                &(data->variances[time_step]),
-//                                data->vect_size);
-//            }
-//        }
-//    }
+    (void) data;
 }

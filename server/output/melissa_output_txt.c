@@ -7,11 +7,13 @@ void write_output_d(const char   *file_name,
                         const size_t  vec_size,
                         const double  vec[])
 {
-    int   i;
+    (void) statistics_name;
+    (void) field;
+    (void) t;
     FILE* f;
 
     f = fopen(file_name, "w");
-    for (i=0; i<vec_size; i++)
+    for (size_t i=0; i<vec_size; i++)
     {
         fprintf (f, "%.*e\n", 12, vec[i]);
     }
@@ -25,11 +27,13 @@ void write_output_i(const char   *file_name,
                         const size_t  vec_size,
                         const int     vec[])
 {
-    int   i;
+    (void) statistics_name;
+    (void) field;
+    (void) t;
     FILE* f;
 
     f = fopen(file_name, "w");
-    for (i=0; i<vec_size; i++)
+    for (size_t i=0; i<vec_size; i++)
     {
         fprintf (f, "%d\n", vec[i]);
     }

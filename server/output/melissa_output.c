@@ -128,8 +128,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                              char               *field)
 {
     long int    temp_offset=0;
-    MPI_Status  status;
-    long int    i, j;
+    long int    i;
     int        *offsets;
     int         t, p;
     char        file_name[256];
