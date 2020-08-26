@@ -225,7 +225,7 @@ void save_stats (melissa_data_t *data,
 
 void read_saved_stats (melissa_data_t *data,
                        comm_data_t    *comm_data,
-                       char            field_name[MAX_FIELD_NAME],
+                       char            field_name[MAX_FIELD_NAME_LEN],
                        int             client_rank)
 {
     char       file_name[256];

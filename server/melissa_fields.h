@@ -42,7 +42,7 @@ extern "C" {
 
 struct melissa_field_s /**< Structure for a linked list of output fields */
 {
-    char            name[MAX_FIELD_NAME]; /**< name of the field                                       */
+    char            name[MAX_FIELD_NAME_LEN]; /**< name of the field                                       */
     melissa_data_t *stats_data;           /**< stats_data structure                                    */
     int            *client_vect_sizes;    /**< client vector sizes for this field for each client rank */
 };

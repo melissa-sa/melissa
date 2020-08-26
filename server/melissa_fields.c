@@ -116,8 +116,8 @@ void melissa_get_fields (int               argc,
             /* walk through other tokens */
             while (temp_char != NULL)
             {
-                memset(fields[i].name, '\0', MAX_FIELD_NAME);
-                strncpy (fields[i].name, temp_char, MAX_FIELD_NAME);
+                memset(fields[i].name, '\0', MAX_FIELD_NAME_LEN);
+                strncpy (fields[i].name, temp_char, MAX_FIELD_NAME_LEN);
                 i += 1;
 
                 temp_char = strtok (NULL, s);
@@ -199,7 +199,7 @@ int get_field_id(melissa_field_t fields[],
     {
         for (field_id=0; field_id<nb_fields; field_id++)
         {
-            if (strncmp(fields[field_id].name, field_name, MAX_FIELD_NAME) == 0)
+            if (strncmp(fields[field_id].name, field_name, MAX_FIELD_NAME_LEN) == 0)
             {
                 return field_id;
             }
@@ -244,7 +244,7 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
     {
         for (i=0; i<nb_fields; i++)
         {
-            if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME) == 0)
+            if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME_LEN) == 0)
             {
                 return fields[i].stats_data;
             }

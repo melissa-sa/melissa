@@ -325,7 +325,7 @@ void read_message_confidence_interval (char*   msg_buffer,
     char* msg_ptr = msg_buffer;
     strcpy (stat_name, msg_ptr);
     msg_ptr += strlen(stat_name);
-    strcpy (field_name, msg_ptr);
+    strncpy(field_name, msg_ptr, MAX_FIELD_NAME_LEN);
     msg_ptr += strlen(field_name);
     memcpy (value, msg_ptr, sizeof(double));
 }
@@ -365,7 +365,7 @@ void message_simu_data (zmq_msg_t *msg,
 {
     int       i;
     char*     buff_ptr = NULL;
-    zmq_msg_init_size (msg, 4 * sizeof(int) + MAX_FIELD_NAME + nb_vect * vect_size * sizeof(double));
+    zmq_msg_init_size (msg, 4 * sizeof(int) + MAX_FIELD_NAME_LEN+1 + nb_vect * vect_size * sizeof(double));
     buff_ptr = zmq_msg_data (msg);
     memcpy (buff_ptr, &time_stamp, sizeof(int));
     buff_ptr += sizeof(int);
@@ -375,8 +375,9 @@ void message_simu_data (zmq_msg_t *msg,
     buff_ptr += sizeof(int);
     memcpy (buff_ptr, &vect_size, sizeof(int));
     buff_ptr += sizeof(int);
-    memcpy (buff_ptr, field_name, MAX_FIELD_NAME);
-    buff_ptr += MAX_FIELD_NAME;
+    memset(buff_ptr, 0, MAX_FIELD_NAME_LEN+1);
+    strncpy(buff_ptr, field_name, MAX_FIELD_NAME_LEN);
+    buff_ptr += MAX_FIELD_NAME_LEN;
     for (i=0; i<nb_vect; i++)
     {
         memcpy (buff_ptr, data_ptr[i], vect_size * sizeof(double));
@@ -424,6 +425,6 @@ void read_message_simu_data (char*    msg_buffer,
     memcpy(vect_size, msg_ptr, sizeof(int));
     msg_ptr += sizeof(int);
     *field_name_ptr = msg_ptr;
-    msg_ptr += MAX_FIELD_NAME * sizeof(char);
+    msg_ptr += MAX_FIELD_NAME_LEN * sizeof(char);
     *data_ptr = (double*)msg_ptr;
 }
