@@ -39,8 +39,8 @@ This function sets the `gatherv_rcvcnt` and `gatherv_displs` attributes of a fie
 
 ## `comm_1_to_m_init` and `comm_n_to_m_init`
 
-These functions staticaly define a N*M redistribution between the simulation and the server. The same distribution is computed on the server side.
-It sets some variables of a `field_data_t` structure.
+These functions compute the data distribution when there are `n` simulation and `m` server processes.
+These functions modify some variables of a `field_data_t` structure.
 
 ## `melissa_init_internal`
 
