@@ -12,7 +12,7 @@ c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 # This should maybe go into a constants file
 MAX_FIELD_NAME_LEN = 128
-MPI_MAX_PROCESSOR_NAME = 128
+MPI_MAX_PROCESSOR_NAME = 256
 
 
 def get_str(buff):
