@@ -90,7 +90,7 @@ int read_client_data (int                *client_comm_size,
                       melissa_options_t  *options)
 {
     FILE* f = NULL;
-    char  file_name[256];
+    char  file_name[320];
     int   ret = 1;
 
     snprintf(file_name, sizeof(file_name), "%s/client_data.save", options->restart_dir);
@@ -143,7 +143,7 @@ void save_stats (melissa_data_t *data,
                  comm_data_t    *comm_data,
                  char           *field_name)
 {
-    char       file_name[256];
+    char       file_name[320];
     int        i, j;
     FILE*      f = NULL;
 
@@ -228,7 +228,7 @@ void read_saved_stats (melissa_data_t *data,
                        char            field_name[MAX_FIELD_NAME_LEN],
                        int             client_rank)
 {
-    char       file_name[256];
+    char       file_name[320];
     int        j, temp_size;
     FILE*      f = NULL;
 
@@ -354,7 +354,7 @@ void read_simu_states (vector_t          *simu,
                        melissa_options_t *options,
                        comm_data_t       *comm_data)
 {
-    char                  file_name[256];
+    char                  file_name[320];
     FILE*                 f = NULL;
     int                   i, size, max_size;
     melissa_simulation_t *simu_ptr;
