@@ -19,19 +19,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #include "melissa_api.h"
-#endif // BUILD_WITH_MPI
-#include "melissa_api_no_mpi.h"
 
 static inline void error(const int ret)
 {
-#ifdef BUILD_WITH_MPI
     MPI_Abort(MPI_COMM_WORLD, ret);
-#else // BUILD_WITH_MPI
-    exit(ret);
-#endif // BUILD_WITH_MPI
 }
 
 static inline void gen_data (double       *out_vect,
@@ -73,15 +66,10 @@ int main(int argc, char **argv)
     int     comm_size, rank;
     const int sobol_tab[2] = {0,0};
 
-#ifdef BUILD_WITH_MPI
     MPI_Init (&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_size (comm, &comm_size);
     MPI_Comm_rank (comm, &rank);
-#else // BUILD_WITH_MPI
-    rank = 0;
-    comm_size = 1;
-#endif // BUILD_WITH_MPI
 
     if (argc < 4 || argv[1] == NULL || strcmp (argv[1], "-") == 0 || strcmp (argv[1], ":") == 0)
     {
@@ -100,7 +88,6 @@ int main(int argc, char **argv)
 
     out_vect = calloc (my_vect_size, sizeof(double));
 
-#ifdef BUILD_WITH_MPI
     melissa_init (&my_vect_size,
                   &comm_size,
                   &rank,
@@ -108,40 +95,25 @@ int main(int argc, char **argv)
                   &sobol_tab[1],
                   &comm,
                   &coupling);
-#else // BUILD_WITH_MPI
-    melissa_init_no_mpi (&my_vect_size,
-                         &sobol_tab[0],
-                         &sobol_tab[1]);
-#endif // BUILD_WITH_MPI
 
     while (time_step < nb_time_steps)
     {
         gen_data(out_vect, &time_step, my_vect_size, rank);
         sleep (1);
 
-#ifdef BUILD_WITH_MPI
         melissa_send (&time_step,
                       "heat",
                       out_vect,
                       &rank,
                       &sobol_tab[0],
                       &sobol_tab[1] );
-#else // BUILD_WITH_MPI
-        melissa_send_no_mpi (&time_step,
-                             "heat",
-                             out_vect,
-                             &sobol_tab[0],
-                             &sobol_tab[1] );
-#endif // BUILD_WITH_MPI
     }
 
     melissa_finalize ();
 
     free(out_vect);
 
-#ifdef BUILD_WITH_MPI
     MPI_Finalize ();
-#endif // BUILD_WITH_MPI
 
     return 0;
 }

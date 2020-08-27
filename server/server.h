@@ -34,9 +34,7 @@ extern "C" {
 #include "melissa_data.h"
 #include "melissa_utils.h"
 #include "fault_tolerance.h"
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
 
 struct melissa_server_s
 {

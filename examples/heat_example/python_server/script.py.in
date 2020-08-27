@@ -34,7 +34,7 @@ melissa_study.set_nb_timesteps(100)            # number of timesteps, from Melis
 melissa_study.set_field_names(["heat1"])       # list of field names
 melissa_study.set_simulation_timeout(400)      # simulations are restarted if no life sign for 400 seconds
 melissa_study.set_checkpoint_interval(300)     # server checkpoints every 300 seconds
-melissa_study.set_verbosity(2)                 # verbosity: 0: only errors, 1: errors + warnings, 2: usefull infos (default), 3: debug info
+melissa_study.set_verbosity(2)                 # verbosity: 0: only errors, 1: errors + warnings, 2: useful infos (default), 3: debug info
 melissa_study.set_batch_size(2)
 
 melissa_study.compute_mean()

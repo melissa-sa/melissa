@@ -30,10 +30,7 @@
 #include <errno.h>
 #include <math.h>
 #include <zmq.h>
-#ifdef BUILD_WITH_MPI
 #include <mpi.h>
-#endif // BUILD_WITH_MPI
-//#include <openturns/Study.hxx>
 
 extern "C" {
 #include "server.h"
@@ -69,14 +66,9 @@ void log_confidence_sobol_martinez(sobol_array_t *sobol_array,
 void melissa_server_init (int argc, char **argv, void **server_handle)
 {
     melissa_server_t     *server_ptr;
-//#if MELISSA4PY != 1
-//    char*                 melissa_output_lib  = INSTALL_PREFIX"/lib/libmelissa_output.so";
-//    char*                 melissa_output_func = "melissa_write_stats_seq";
-//#endif // MELISSA4PY
     int                   i;
     melissa_simulation_t *simu_ptr;
     char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50];
-//    OT::Study             OTStudy;
     zmq_msg_t             msg;
 
     *server_handle = melissa_malloc (sizeof(melissa_server_t));
@@ -124,9 +116,6 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     server_ptr->text_pusher = zmq_socket (server_ptr->context, ZMQ_PUSH);
     server_ptr->text_requester = zmq_socket (server_ptr->context, ZMQ_REQ);
 
-//    OTStudy.hasObject("toto");
-
-#ifdef BUILD_WITH_MPI
 
     // === init MPI === //
     MPI_Initialized (&i);
@@ -138,10 +127,6 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     server_ptr->comm_data.comm = MPI_COMM_WORLD;
     MPI_Comm_size (server_ptr->comm_data.comm, &server_ptr->comm_data.comm_size);
     MPI_Comm_rank (server_ptr->comm_data.comm, &server_ptr->comm_data.rank);
-#else
-    server_ptr->comm_data.comm_size       = 1;
-    server_ptr->comm_data.rank            = 0;
-#endif // BUILD_WITH_MPI
 
     // === Get the node adress === //
 
@@ -197,11 +182,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     // === Gather port names on node 0 === //
 
     sprintf (txt_buffer, "tcp://%s:%d", server_ptr->node_name, server_ptr->port_no);
-#ifdef BUILD_WITH_MPI
     MPI_Gather(txt_buffer, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, server_ptr->port_names, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, server_ptr->comm_data.comm);
-#else // BUILD_WITH_MPI
-    memcpy (server_ptr->port_names, txt_buffer, MPI_MAX_PROCESSOR_NAME);
-#endif // BUILD_WITH_MPI
 
     // === Open launcher ports === //
     i = 10000; // linger
@@ -488,9 +469,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
 
         if (server_ptr->first_init == 1)
         {
-#ifdef BUILD_WITH_MPI
             MPI_Bcast(server_ptr->rinit_tab, 2, MPI_INT, 0, server_ptr->comm_data.comm);
-#endif // BUILD_WITH_MPI
             server_ptr->comm_data.client_comm_size = server_ptr->rinit_tab[0];
             if (server_ptr->melissa_options.learning > 0)
             {
@@ -852,9 +831,7 @@ void melissa_server_run (void **server_handle, simulation_data_t *simu_data)
             save_simu_states (&server_ptr->simulations, &server_ptr->comm_data);
             if (end_signal == SIGINT)
             {
-#ifdef BUILD_WITH_MPI
                 MPI_Finalize ();
-#endif // BUILD_WITH_MPI
                 return;
             }
             server_ptr->end_save_time = melissa_get_time();
@@ -949,18 +926,15 @@ void melissa_server_finalize (void** server_handle, simulation_data_t *simu_data
     melissa_free (server_ptr->first_send);
     free_simu_vector (server_ptr->simulations);
 
-#ifdef BUILD_WITH_MPI
     double temp1;
     long int temp2;
     MPI_Reduce (&interval1, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     interval1 = temp1;
-//    MPI_Reduce (&interval_tot, &temp1, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-//    interval_tot = temp1;
     MPI_Reduce (&server_ptr->total_comm_time, &temp1, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     server_ptr->total_comm_time = temp1 / server_ptr->comm_data.comm_size;
     MPI_Reduce (&server_ptr->total_mbytes_recv, &temp2, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     server_ptr->total_mbytes_recv = temp2 / 1000000;
-#endif // BUILD_WITH_MPI
+
     if (server_ptr->comm_data.rank==0)
     {
         melissa_print (VERBOSE_INFO, " --- Number of simulations:           %d\n", server_ptr->melissa_options.nb_simu);
@@ -1016,10 +990,8 @@ int main (int argc, char **argv)
     simu_data.val_size = 0;
     simu_data.max_val_size = 0;
     simu_data.val = (double*)melissa_malloc(0);
-#ifdef BUILD_WITH_MPI
     int i;
     MPI_Init_thread (&argc, &argv, MPI_THREAD_FUNNELED , &i);
-#endif // BUILD_WITH_MPI
     melissa_server_init (argc, argv, &melissa_server_ptr);
     while (simu_data.status != 1)
     {
@@ -1027,9 +999,7 @@ int main (int argc, char **argv)
     }
     melissa_print(VERBOSE_INFO, "Finalizing, writing results...\n");
     melissa_server_finalize (&melissa_server_ptr, &simu_data);
-#ifdef BUILD_WITH_MPI
     MPI_Finalize ();
-#endif // BUILD_WITH_MPI
 
     return 0;
 }

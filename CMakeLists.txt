@@ -14,53 +14,50 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-if (POLICY CMP0048)
-  cmake_policy(SET CMP0048 NEW)
-endif (POLICY CMP0048)
+cmake_minimum_required(VERSION 3.2.2)
 
-# disable in-source builds
-set(CMAKE_DISABLE_SOURCE_CHANGES ON)
-set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
+
+
+# Disable in-source builds
+#
+# CMAKE_SOURCE_DIR, CMAKE_BINARY_DIR cannot be reliably compared directly
+# because there might be symbolic links in the path
+get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
+get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
+
 if(${srcdir} STREQUAL ${bindir})
     message("You are attempting to build in your source Directory.")
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
-project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
 
-cmake_minimum_required(VERSION 3.2.2)
-
-get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
-get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
-
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
-
+# set up
 include(CTest)
 include(FindPackageHandleStandardArgs)
 
 function(find_python_module module)
-        string(TOUPPER ${module} module_upper)
-        if(NOT PY_${module_upper})
-                if(ARGC GREATER 1 AND ARGV1 STREQUAL "REQUIRED")
-                        set(${module}_FIND_REQUIRED TRUE)
-                endif()
-                # A module's location is usually a directory, but for binary modules
-                # it's a .so file.
-                execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
+    string(TOUPPER ${module} module_upper)
+    if(NOT PY_${module_upper})
+        if(ARGC GREATER 1 AND ARGV1 STREQUAL "REQUIRED")
+            set(${module}_FIND_REQUIRED TRUE)
+        endif()
+        # A module's location is usually a directory, but for binary modules
+        # it's a .so file.
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                         "import re, ${module}; print(re.compile('/__init__.py.*').sub('',${module}.__file__))"
                         RESULT_VARIABLE _${module}_status
                         OUTPUT_VARIABLE _${module}_location
                         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-                if(NOT _${module}_status)
-                        set(PY_${module_upper} ${_${module}_location} CACHE STRING
-                                "Location of Python module ${module}")
-                endif(NOT _${module}_status)
-        endif(NOT PY_${module_upper})
-        find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
+        if(NOT _${module}_status)
+            set(PY_${module_upper} ${_${module}_location} CACHE STRING
+                "Location of Python module ${module}")
+        endif(NOT _${module}_status)
+    endif(NOT PY_${module_upper})
+    find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
-
-# The project version number.
-SET(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
 
 set(CMAKE_C_STANDARD 99)
@@ -70,86 +67,46 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wpedantic -Wextra")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  # Set install directory to ../install
-  get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
-  set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install" CACHE PATH "CMAKE_INSTALL_PREFIX: Install path prefix, prepended onto install directories." FORCE)
+    # Set install directory to ../install
+    get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
+    set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install"
+        CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-#find_package(PkgConfig REQUIRED)
 
-#find_package(PythonLibs)
+# Find Python3
 find_package(PythonInterp 3 REQUIRED)
-
-message(STATUS "Python version ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} found")
-#if(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
-#    message(ERROR "Melissa needs Python 3")
-#endif(NOT ${PYTHON_VERSION_MAJOR} STREQUAL "3")
 find_python_module(numpy REQUIRED)
-#find_python_module(openturns REQUIRED)
 
-# OpenTURNS #
 
-#find_package(OpenTURNS REQUIRED)
-#message(STATUS "OpenTURNS includes: " ${OPENTURNS_INCLUDE_DIR})
-#include_directories(${OPENTURNS_INCLUDE_DIR} ${OPENTURNS_INCLUDE_DIRS})
-#add_definitions(${OPENTURNS_DEFINITIONS})
-#link_directories(${OPENTURNS_LIBRARY})
+# Find ZeroMQ
+include(BuildZeroMQ)
 
-# BLAS #
+if(INSTALL_ZMQ)
+    if(ZeroMQ_ROOT)
+        message(WARNING "INSTALL_ZMQ and ZeroMQ_ROOT both set. ZeroMQ_ROOT will be ignored.")
+    endif()
+else()
+    find_package(ZeroMQ REQUIRED)
+endif()
 
-#find_package(BLAS REQUIRED)
-#find_path(BLAS_INCLUDE_DIRS cblas.h
-#  $ENV{BLAS_HOME}/include)
-#message(STATUS "Blas ${BLAS_FOUND} in ${BLAS_INCLUDE_DIRS} ${BLAS_LIBRARIES}")
-#include_directories( ${BLAS_INCLUDE_DIR} )
-#set(EXTRA_LIBS ${EXTRA_LIBS}
-#                 ${BLAS_LIBRARIES} )
-
-#option(BUILD_EXAMPLES "Build examples" ON)
-#if(BUILD_EXAMPLES)
-#  if(NOT CMAKE_Fortran_COMPILER)
-#    set(BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
-#    message(STATUS "Fortran compiler not found. BUILD_EXAMPLES option turned OFF")
-#  endif(NOT CMAKE_Fortran_COMPILER)
-#endif(BUILD_EXAMPLES)
-
-include(melissa-zmq.cmake)
 include_directories(${ZeroMQ_INCLUDE_DIR})
 
-# MPI #
 
-option(BUILD_WITH_MPI "Build with MPI" ON)
+# Find MPI
+find_package(MPI REQUIRED)
 
-if(BUILD_WITH_MPI)
-  find_package(MPI QUIET)
-  if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
-      set(EXTRA_LIBS ${EXTRA_LIBS}
-                     ${MPI_C_LIBRARIES})
-      add_definitions( -DBUILD_WITH_MPI )
-      include_directories( ${MPI_INCLUDE_PATH} )
-      add_definitions(${MPI_Fortran_COMPILE_FLAGS})
-      include_directories(${MPI_Fortran_INCLUDE_PATH})
-      link_directories(${MPI_Fortran_LIBRARIES})
-      set(EXTRA_LIBS ${EXTRA_LIBS}
-                     ${MPI_Fortran_LIBRARIES} )
-      message(STATUS "MPI Found")
-  else(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
-      # Disable  Option if missing dependencies
-      set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-      if(NOT MPI_Fortran_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI Fortran missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_Fortran_FOUND)
-      if(NOT MPI_C_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI C missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_C_FOUND)
-      if(NOT MPI_CXX_FOUND)
-          set(BUILD_WITH_MPI OFF CACHE BOOL "Build with MPI" FORCE)
-          message(STATUS "MPI C++ missing. BUILD_WITH_MPI option turned OFF")
-      endif(NOT MPI_CXX_FOUND)
-  endif(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
-endif(BUILD_WITH_MPI)
+if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
+  set(EXTRA_LIBS ${EXTRA_LIBS}
+				 ${MPI_C_LIBRARIES})
+  include_directories( ${MPI_INCLUDE_PATH} )
+  add_definitions(${MPI_Fortran_COMPILE_FLAGS})
+  include_directories(${MPI_Fortran_INCLUDE_PATH})
+  link_directories(${MPI_Fortran_LIBRARIES})
+  set(EXTRA_LIBS ${EXTRA_LIBS}
+				 ${MPI_Fortran_LIBRARIES} )
+endif(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
+
 
 # OpenMP #
 
@@ -169,21 +126,6 @@ if(BUILD_WITH_OpenMP)
   endif(OPENMP_FOUND)
 endif(BUILD_WITH_OpenMP)
 
-## HDF5 #
-
-#include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
-#ExternalProject_Add(HDF5
-#  URL http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.10.1.tar.gz
-#  PREFIX ${CMAKE_CURRENT_BINARY_DIR}/HDF5
-#  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF
-#)
-#set(HDF5_DIR ${CMAKE_CURRENT_BINARY_DIR}/HDF5 CACHE FORCE " ")
-#set(HDF5_LIBRARY ${HDF5_DIR}/lib/libhdf5-shared.so CACHE INTERNAL " ")
-#set(HDF5_INCLUDE_DIR ${HDF5_DIR}/include CACHE INTERNAL " ")
-#include_directories( ${HDF5_INCLUDE_DIR} )
-#set(EXTRA_LIBS ${EXTRA_LIBS}
-#              ${HDF5_LIBRARY} )
-#set( ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${HDF5_DIR}/lib/pkgconfig" )
 
 # FlowVR #
 
@@ -257,9 +199,6 @@ set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
 add_subdirectory(utility)
 
 # set environement variables
-#if(INSTALL_ZMQ)
-#  set(ZeroMQ_DIR "export ZeroMQ=${CMAKE_INSTALL_PREFIX}/share/cmake/ZeroMQ")
-#endif(INSTALL_ZMQ)
 configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_set_env.sh DESTINATION bin)
 

@@ -51,7 +51,7 @@ Melissa propose a three tier architecture, and is based on this client/server mo
 * **Melissa API**: a shared library to be linked within the numerical simulation solver. It forwards simulation data to Melissa Server.
 * **Melissa Launcher**: A manager in charge of generating and overseeing the whole global sensitivity study.
 
-Melissa can be used within a C or Fortran code, with or without MPI. In this tutorial, we will focus on C with MPI. Basic knowledge of C, Python and MPI is expected, as well as the usage of a cluster with a batch scheduler.
+Melissa can be used within a C or Fortran code. In this tutorial, we will focus on C with MPI. Basic knowledge of C, Python and MPI is expected, as well as the usage of a cluster with a batch scheduler.
 
 We will learn below how to use Melissa, from the instrumentation of the numerical solver to the management of a sensitivity analysis.
 To illustrate this documentation, we provide a simple example: a global sensitivity analysis with Melissa and a simple heat equation solver. To follow this example step-by-step alongside the documentation, unfold the example bloc after each paragraph.
@@ -60,7 +60,7 @@ To illustrate this documentation, we provide a simple example: a global sensitiv
 <summary><em> Click here to fold/unfold example </em></summary>
 
 ***
-In these foldable paragraphs, we will go through the prosessus of instrumenting a heat equation solver to run a global sensitivity analysis. This solver is available in the "examples" folder of Melissa installation in `share/melissa/examples/heat_example/solver`. The solver comes in four flavours: c+MPI, Fortran+MPI, C without MPI and Fortran without MPI, respectively in `solver/src/heat.c`, `solver/src/heat.f90`, `solver/src/heat_no_mpi.c` and `solver/src/heat_no_mpi.f90`. In this tutorial, we will focus on the c+mpi example, but they are all equivalent. If you did the "testing" part of the Getting Started, you already ran it on your machine.
+In these foldable paragraphs, we will go through the process of instrumenting a heat equation solver to run a global sensitivity analysis. This solver is available in the "examples" folder of Melissa installation in `share/melissa/examples/heat_example/solver`. The solver comes in two flavors: C+MPI, Fortran+MPI in `solver/src/heat.c`, `solver/src/heat.f90`. In this tutorial, we will focus on the C+MPI example, but they are all equivalent. If you did the "testing" part of the Getting Started, you already ran it on your machine.
 ***
 
 </details>
@@ -70,11 +70,11 @@ In these foldable paragraphs, we will go through the prosessus of instrumenting 
 Before anything else, we have to plug Melissa in our solver.
 Melissa API is a shared library composed of three functions, to be integrated in the solver. They are the link between the simulations (clients) and the server. The three functions are as simple as:
 
-* melissa_init
-* melissa_send
-* melissa_finalize
+* `melissa_init`
+* `melissa_send`
+* `melissa_finalize`
 
-In order to use these functions, you have to link melissa_api.so and include melissa_api.h to your solver.
+In order to use these functions, you have to link `melissa_api.so` and include `melissa_api.h` in your solver.
 
 ```c
 #include <melissa_api.h>
@@ -97,11 +97,11 @@ void melissa_init(const char *field_name,
 
 variables:
 
-* field name: a unique name to identify the field
-* vect_size: the size of the local result vector (in number of elements)
-* comm: the local MPI communicator
+* `field_name`: a unique name to identify the field
+* `vect_size`: the size of the local result vector (in number of elements)
+* `comm`: the local MPI communicator
 
-### melissa_send
+### `melissa_send`
 
 This function must be called at each time step that needs to be sent to Melissa Server, for each field. It can replace the I/O phase of the code. The field name is used by Melissa to identify the field, and must be declared in the launcher option file. If a field name not declared in the launcher is passed, Melissa will ignore the field. Melissa guaranties to keep the order of the cells (the array of double) and the order of the calls (in the form of timestamps), and it is up to the user to map them to the mesh and to the timesteps afterwards.
 
@@ -115,13 +115,13 @@ void melissa_send(const char *field_name,
 
 variables:
 
-* field_name: the name of the field sent
-* send_vect: the vector to send to Melissa Server
+* `field_name`: the name of the field sent
+* `send_vect`: the vector to send to Melissa Server
 
-### melissa_finalize
+### `melissa_finalize`
 
 This function terminates the Melissa environment.
-It must be called only once, at the end of the solver, before MPI_Finalize.
+It must be called only once, at the end of the solver, before `MPI_Finalize()`.
 
 Prototype:
 
@@ -164,10 +164,10 @@ The solver can take from one to five input parameters, stored in five doubles. T
 ```
         
 
-In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the "MELISSA_COUPLING_MPI" coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on MPI_COMM_WORLD for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called "MELISSA_COUPLING_ZMQ".
-A third coupling mechanism is also available if you have the FlowVR software installed in your environment. It is called "MELISSA_COUPLING_FLOWVR", and we will not use it in this example.
+In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the `MELISSA_COUPLING_MPI` coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on `MPI_COMM_WORL`D for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called `MELISSA_COUPLING_ZMQ`.
+A third coupling mechanism is also available if you have the FlowVR software installed in your environment. It is called `MELISSA_COUPLING_FLOWVR`, and we will not use it in this example.
 All these coupling mechanisms are transparent to the user.
-In the heat solver, we can easily split MPI communicator, so we will use "MELISSA_COUPLING_MPI". We split MPI_COMM_WORLD by simulation in the simulation group:
+In the heat solver, we can easily split MPI communicator, so we will use `MELISSA_COUPLING_MPI`. We split `MPI_COMM_WORLD` by simulation in the simulation group:
 
 
 ```c
@@ -185,16 +185,16 @@ We also need to give a "name" to the computed field. It must be the same name yo
 
 The first Melissa function can be called before the main "for" loop. It has to be called exactly once by process and by field. It takes 3 arguments:
 
-* field_name: the unique name of the field to send
-* vect_size: the size of the local result vector
-* comm: the local MPI communicator
+* `field_name`: the unique name of the field to send
+* `vect_size`: the size of the local result vector
+* `comm`: the local MPI communicator
  
   
 ```c
     melissa_init(field_name, vect_size, comm);
 ```  
 
-Inside the main loop, the result vector is updated by the conjgrad function. This is at this moment that we want to send the updated vector to Melissa Server. We call melissa_send right after the conjgrad function:
+Inside the main loop, the result vector is updated by the conjgrad function. This is at this moment that we want to send the updated vector to Melissa Server. We call `melissa_send` right after the `conjgrad` function:
 
 ```c
     conjgrad (&a[0], &f[0], &u[0], &nx, &ny, &epsilon, &i1, &in, &np,
@@ -204,8 +204,8 @@ Inside the main loop, the result vector is updated by the conjgrad function. Thi
 
 This function takes two arguments:
 
-* field_name: the name of the field  to send to Melissa Server
-* u: the vector to send to Melissa Server
+* `field_name`: the name of the field  to send to Melissa Server
+* `u`: the vector to send to Melissa Server
 
 After the main loop, we call `melissa_finalize` to free Melissa structures and disconnect the simulations from the server. This function does not take any argument.
 
@@ -213,14 +213,14 @@ After the main loop, we call `melissa_finalize` to free Melissa structures and d
     melissa_finalize();
 ```
     
-We are done with the solver instrumentation ! In the solver folder, you will find a CMakeFile.txt to compile the  solver. Simply do:
+We are done with the solver instrumentation! In the solver folder, you will find a `CMakeFile.txt` to compile the solver. Simply do:
 
 ```bash
-cmake .
-make install
+    cmake .
+    make install
 ```
 
-This CMakeFile.txt can be a base for your own application.
+This `CMakeFile.txt` can be a basis for your own application.
 ***
 
 </details>
@@ -232,9 +232,9 @@ Melissa Launcher can supervise the whole sensitivity analysis, as long as it kno
 That's why each user have to provide Melissa the tools to launch the simulations, to check their behavior, and other useful operations, described in more details later in this page.
 This is done by giving the launcher some functions and variables through a python file. The file is usually called options.py. An empty template of this file is provided in `share/melissa/launcher/options.py`. This is not only a configuration file: it contains functions that will be loaded and executed by the launcher. The options supported by Melissa are predefined in this file. You must copy this file and modify it to meet your needs. There are three sets of variables to define, as dictionaries.
 
-* STUDY_OPTIONS: sets the parameters of the sensitivity study. They will be used by the launcher to generate its internal structures for the study management.
-* MELISSA_STATS: contains booleans used to activate (or not) the iterative statistics.
-* USER_FUNCTIONS: contains pointers to user defined functions, used by the launcher. Some of them are optional, others are mandatory. We will describe these functions in this section.
+* `STUDY_OPTIONS`: sets the parameters of the sensitivity study. They will be used by the launcher to generate its internal structures for the study management.
+* `MELISSA_STATS`: contains booleans used to activate (or not) the iterative statistics.
+* `USER_FUNCTIONS`: contains pointers to user defined functions, used by the launcher. Some of them are optional, others are mandatory. We will describe these functions in this section.
 
 Note: you can add fields to the option dictionaries, and they can be used in the user defined functions.
 
@@ -258,8 +258,7 @@ Start by the end of the file. Here, we can see tree different dictionaries. The 
 
 ## Functions
 
-All the user defined functions must be callable from the option.py file.
-The function pointers are stored in the USER_FUNCTIONS dictionary.
+All the user defined functions must be callable from the `option.py` file. The function pointers are stored in the `USER_FUNCTIONS` dictionary.
 
 ```python
 USER_FUNCTIONS['create_study'] # (optional)
@@ -279,13 +278,13 @@ This function is used by Melissa launcher to draw the parameter sets of the simu
 USER_FUNCTIONS['create_group'] # (optional):
 ```
 
-This function is called once for each group in the study, before launching the study. Its behavior is the same as USER_FUNCTIONS['create_study'].
+This function is called once for each group in the study, before launching the study. Its behavior is the same as `USER_FUNCTIONS['create_study']`.
 
 ```python
 USER_FUNCTIONS['launch_server'] # (mandatory):
 ```
 
-When every simulation, group and parameter set is defined, Melissa Launcher uses this function to launch Melissa Server. The function takes a Server object for argument, and needs to set the server job ID in server.job_id. On a cluster the job ID is given by the batch scheduler. In your local machine, you can use the process ID. The server command line options are in server.cmd_opt and the path to the executable "melissa_server" is in server.path, you must use it and not modify it.
+When every simulation, group and parameter set is defined, Melissa Launcher uses this function to launch Melissa Server. The function takes a Server object for argument, and needs to set the server job ID in `server.job_id`. On a cluster the job ID is given by the batch scheduler. In your local machine, you can use the process ID. The server command line options are in `server.cmd_opt` and the path to the executable `melissa_server` is in `server.path`, you must use it and not modify it.
 
 <details>
 <summary><em> Example </em></summary>
@@ -330,7 +329,7 @@ USER_FUNCTIONS['launch_server'] = launch_server
             
 You can also have a ready-to-use job script. Simply parse it to add the server command line, and submit it in the function.
 
-In our "option.py" file, we see that we can use the PID of the main process of the server as an identifier. It will be usefull later for the fault tolerance mechanism.
+In our `option.py` file, we see that we can use the PID of the main process of the server as an identifier. It will be useful later for the fault tolerance mechanism.
 
 ***
 
@@ -344,11 +343,11 @@ USER_FUNCTIONS['launch_group'] # (mandatory):
 This function is used to launch simulations. The function takes a Group object for argument.
 The group object provides four important attributes:
 
-* rank: the rank of the group in the study
-* simu_id: the list of IDs of the simulations of the group in the study
-* param_set: the list parameter sets of the simulations of the group
-* job_id: the ID of the group, used for fault-tolerance
-* server_node_name: the name of the main server node, provided by the launcher
+* `rank`: the rank of the group in the study
+* `simu_id`: the list of IDs of the simulations of the group in the study
+* `param_set`: the list parameter sets of the simulations of the group
+* `job_id`: the ID of the group, used for fault-tolerance
+* `server_node_name`: the name of the main server node, provided by the launcher
 
 We distinguish two kinds of groups:
 
@@ -357,7 +356,7 @@ The parameter `STUDY_OPTIONS['sampling_size']` must be a multiple of `STUDY_OPTI
 
 * Sobol group: In the case of Sobol' indices computation, all the simulations of a Sobol' group run in the same job. `simu_id` is a list of the simulation IDs inside the Sobol' group (the ones you will pass to `melissa_init`), and `rank` is the ID of the group. `param_set` is a list of size `STUDY_OPTIONS['nb_parameters'] + 2` of numpy arrays of size `STUDY_OPTIONS['nb_parameters']`, corresponding to the sets of n parameters of the n+2 simulations in the Sobol' group.
 
-In each cases, all simulations from the same group must run in the same job. The simulation ID must be passed to the simulations using the MELISSA_SIMU_ID environment variable. The server node nam must be passed to the simulations using the MELISSA_SERVER_NODE_NAME environment variable.
+In each cases, all simulations from the same group must run in the same job. The simulation ID must be passed to the simulations using the `MELISSA_SIMU_ID` environment variable. The server node nam must be passed to the simulations using the `MELISSA_SERVER_NODE_NAME` environment variable.
 The function needs to set the group job ID in the job_id attribute.
 On a cluster the job ID is given by the batch scheduler. In your local machine, you can use the process ID.
 
@@ -401,13 +400,13 @@ USER_FUNCTIONS['cancel_job'] = cancel_job
 USER_FUNCTIONS['restart_server'] # (optional):
 ```
 
-This function have the same behavior as USER_FUNCTIONS['launch_server']. It is used to reboot the server in the case of a fault. If it is not defined, Melissa Launcher uses the launch_server function by default.
+This function have the same behavior as `USER_FUNCTIONS['launch_server']`. It is used to reboot the server in the case of a fault. If it is not defined, Melissa Launcher uses the launch_server function by default.
 
 ```python
 USER_FUNCTIONS['restart_group'] # (optional):
 ```
 
-This function have the same behavior as USER_FUNCTIONS['launch_group']. It is used to reboot a simulation group in the case of a fault. If it is not defined, Melissa Launcher uses the USER_FUNCTIONS['launch_group'] function by default.
+This function have the same behavior as `USER_FUNCTIONS['launch_group']`. It is used to reboot a simulation group in the case of a fault. If it is not defined, Melissa Launcher uses the `USER_FUNCTIONS['launch_group']` function by default.
 
 ```python
 USER_FUNCTIONS['check_scheduler_load'] # (optional):
@@ -425,7 +424,7 @@ This function is called once at the end of the study. It does nothing by default
 USER_FUNCTIONS['finalize'] # (optional):
 ```
 
-The same as USER_FUNCTIONS['postprocessing'].
+The same as `USER_FUNCTIONS['postprocessing']`.
 
 
 
@@ -437,7 +436,7 @@ To run a study, call the launcher with the path to your `options.py` file:
 melissa_launcher -o <path/to/options.py>
 ```
 
-If you only give a path to a directory, Melissa Launcher will search for a file named explicitly "options.py" in this directory. If you give the path to a file, Melissa Launcher will try load this file.
+If you only give a path to a directory, Melissa Launcher will search for a file named explicitly `options.py` in this directory. If you give the path to a file, Melissa Launcher will try load this file.
 Melissa Launcher produces a log file named `melissa_launcher.log` in the location of the call to `melissa_launcher`.
 
 <details>
@@ -455,7 +454,8 @@ melissa_launcher -o ./
 ```
 
 The results will be in the directory `STATS` because we defined it in `STUDY_OPTIONS['working_directory']`. The results files are of the form: `<field_name>_<stat>.<time_stamp>`
-For example, the variance of the field "heat" at the first timestep is stored in: heat_variance.001
+For example, the variance of the field "heat" at the first timestep is stored in `heat_variance.001`.
+
 ***
 
 </details>

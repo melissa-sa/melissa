@@ -26,9 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#ifdef BUILD_WITH_MPI
-//#include <mpi.h>
-#endif // BUILD_WITH_MPI
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP

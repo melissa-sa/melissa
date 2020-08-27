@@ -25,7 +25,6 @@ import job_scheduler_config, numpy, os, string, asyncio, shutil
 
 scheduler = job_scheduler_config.scheduler
 
-BUILD_WITH_MPI = '@BUILD_WITH_MPI@'.upper()
 EXECUTABLE = 'heatc'
 WALLTIME_SERVER = '0:10:00'
 WALLTIME_SIMU = '0:05:00'

@@ -1,4 +1,4 @@
-# Table of content
+# Table of Contents
  * [News](#news)
  * [Getting Started](#getting-started)
  * [Running Melissa](#running-melissa)
@@ -25,10 +25,10 @@
 # News
  * **Jan 2020: GitHub continuous update**
     * Sync our work repo with the github repo so all changes are immediatly visible to all
-    * Major code restructuration  and documentation update
+    * Major code restructuring  and documentation update
     * New tools for supporting a virtual cluster mode  and using Jupyter notebook for controlling a Melissa run
  * **Nov 2018: Melissa release 0.5 available on GitHub**
-    * Changes in the API: remove arguments from the melissa_send function
+    * Changes in the API: remove arguments from the `melissa_send` function
     * Add batch mode
     * Improve launcher fault tolerance
     * Improve the examples and the install tree
@@ -51,21 +51,24 @@ Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 
 ## Dependencies
 
-* CMake
-* C++ and Fortran Compiler
-* MPI, OpenMP: for melissa parallel server. A sequential server will be built if not available
-* ZeroMQ: version 4.1.5 or above. CMake can download and install it if option turned on (-DINSTALL_ZMQ=ON)
-* Python >= 3.5.3
-* Python libraries: NumPy, JupyterHub, Traitlets, async_generator, Jinja, asyncio, Tornado
+* CMake 3.2 or newer
+* C, C++, and Fortran90 compilers
+* MPI
+* ZeroMQ 4.1.5 or newer
+* OpenMP (for a parallel Melissa server, optional)
+* Python 3.5.3 or newer
+* Python libraries: NumPy, JupyterHub, Traitlets, async\_generator, Jinja, asyncio, Tornado
+
+CMake can download and install ZeroMQ if the flag `-DINSTALL_ZMQ=ON` is passed to CMake.
+
 
 ## CMake Options
 
-Most usefull CMake options:
+Most useful CMake options:
 ```cmake
 -DCMAKE_INSTALL_PREFIX (default: '../install')    ->  Melissa install directory.
--DBUILD_WITH_MPI (default: ON)                    ->  Enable MPI.
 -DBUILD_WITH_OpenMP (default: OFF)                ->  Enable OpenMP for Melissa Server.
--DINSTALL_ZMQ (default: OFF)                      ->  Allows CMake to install ZeroMQ.
+-DINSTALL_ZMQ (default: OFF)                      ->  Allows CMake to download, build, and install ZeroMQ.
 -DBUILD_DOCUMENTATION (default: OFF)              ->  If Doxygen is found, build the Doxygen documentation.
 -DBUILD_TESTING (default: ON)                     ->  Build Melissa tests. They can be run with "make test" or "ctest".
 ```
@@ -77,7 +80,7 @@ Compilation, installation and environnent variable setting from the Melissa root
 ```bash
     mkdir build
     cd build
-    cmake .. -DINSTALL_ZMQ=OFF
+    cmake ..
     make
     make install
     source ../install/bin/melissa_set_env.sh
@@ -85,7 +88,7 @@ Compilation, installation and environnent variable setting from the Melissa root
 
 ## Testing
 
-The examples are built if CMake finds a Fortran compiler and if you enabled the BUILD_EXAMPLES option. The examples are installed in `install/share/melissa/examples`. We use a heat equation solver example to test the installation.
+The examples are built if CMake finds a Fortran compiler and if you enabled the `BUILD_EXAMPLES` option. The examples are installed in `install/share/melissa/examples`. We use a heat equation solver example to test the installation.
 To compile the solver from the `install/share/melissa/examples/heat_example/solver` directory, run:
 
 ```bash
@@ -110,7 +113,7 @@ The results of this sensitivity analysis are stored in:
 # Running Melissa
 ## Local Execution
 
-Running Melissa localy means that all processes run on your local machine, executed directly by the launcher without goign through a  batch scheduler. This is a mode usefull for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution.
+Running Melissa locally means that all processes run on your local machine, executed directly by the launcher without going through a  batch scheduler. This is a mode useful for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution.
 
 
 ## Virtual Cluster
@@ -128,7 +131,7 @@ Mellisa will run on any cluster with one of the following job schedulers:
 * Grid Engine
 * Condor
 * LSF
-* OAR is to be implemented soon
+* OAR supported is to be implemented soon
 
 `job_scheduler_config.py` is a fully customisable module for managing your scheduler of choice. It is an interface to how Melissa interacts with job schedulers. It does not require programming skills and requires only basic understaing of job scheduler features.
 
@@ -207,6 +210,7 @@ inproceedings{terraz:hal-01607479,
  * Alejandro RIBES CORTES - alejandro.ribes@edf.fr
  * Bertrand IOOSS - bertrand.iooss@edf.fr
  * Sebastian FRIEDEMANN - sebastian.friedemann@inria.fr
+ * Christoph CONRADS - christoph.conrads@inria.fr
 
 
 # Licence

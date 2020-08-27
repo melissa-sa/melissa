@@ -16,7 +16,7 @@
 
 
 """
-    usefull module
+    useful module
 """
 
 import subprocess

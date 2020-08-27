@@ -1,7 +1,6 @@
 import getpass
 
 USERNAME = getpass.getuser()
-BUILD_WITH_MPI = 'ON'.upper()
 EXECUTABLE='GameOfLife'
 
 # !! THESE CONSTANTS WILL BE OVERWRITTEN !!

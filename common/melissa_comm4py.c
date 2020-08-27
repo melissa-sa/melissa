@@ -93,12 +93,7 @@ void get_node_name (char *node_name)
     }
     if (ok == 0)
     {
-//#ifdef BUILD_WITH_MPI
-//        int resultlen;
-//        MPI_Get_processor_name(node_name, &resultlen);
-//#else
         gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
-//#endif // BUILD_WITH_MPI
     }
 }
 

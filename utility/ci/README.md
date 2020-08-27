@@ -57,9 +57,10 @@ When asked for tags, type `Melissa`. This will allow to use tagged jobs. As for 
 
 ### Installing Melissa's dependencies
 
+On Debian-based systems, execute the following commands:
 ```bash
-sudo apt-get install -y pkg-config gfortran libopenmpi-dev openmpi-bin cmake cmake-curses-gui python3 pip
-sudo pip install numpy
+sudo apt-get install -y build-essential pkg-config gfortran libopenmpi-dev openmpi-bin cmake cmake-curses-gui python3 pip3 libzmq3-dev
+sudo pip3 install numpy
 ```
 
 ### Installing docker

@@ -200,7 +200,6 @@ void update_variance (variance_t *variance1,
     }
 }
 
-#ifdef BUILD_WITH_MPI
 
 /**
  *******************************************************************************
@@ -331,7 +330,6 @@ void update_global_mean_and_variance (variance_t *variance,
         MPI_Send (variance->variance, vect_size, MPI_DOUBLE, 0, 2*comm_size+rank, comm);
     }
 }
-#endif // BUILD_WITH_MPI
 
 /**
  *******************************************************************************
