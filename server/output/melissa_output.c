@@ -799,12 +799,11 @@ void write_stats_bin (melissa_data_t    **data,
 void write_simu_param (vector_t *simulations,
                        int       nb_parameters)
 {
-    char                  file_name[256];
+    const char            file_name[] = "simu_param.txt";
     FILE*                 f = NULL;
     int                   i, j;
     melissa_simulation_t *simu_ptr;
 
-    sprintf(file_name, "simu_param.txt");
     melissa_print (VERBOSE_DEBUG, "Write simulation parameters in %s (write_simu_param)\n", file_name);
     f = fopen(file_name, "w");
     if (f == NULL)
