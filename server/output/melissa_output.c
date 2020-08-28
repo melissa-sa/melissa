@@ -172,7 +172,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_mean.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_mean.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -200,7 +200,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_variance.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_variance.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -228,7 +228,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_skewness.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_skewness.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -256,7 +256,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_kurtosis.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_kurtosis.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -284,7 +284,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_min.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_min.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -310,7 +310,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         i_buffer = (int*)d_buffer;
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_min_id.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_min_id.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -335,7 +335,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         MPI_Barrier(comm_data->comm);
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_max.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_max.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -361,7 +361,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         i_buffer = (int*)d_buffer;
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "results.%s_max_id.%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "results.%s_max_id.%.*d", field, max_size_time, t+1);
             for (i=0; i<comm_data->client_comm_size; i++)
             {
                 if ((*data)[i].vect_size > 0)
@@ -393,7 +393,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         {
             for (t=0; t<options->nb_time_steps; t++)
             {
-                sprintf(file_name, "results.%s_threshold%g.%.*d", field, options->threshold[value], max_size_time, (int)t+1);
+                snprintf(file_name, sizeof(file_name), "results.%s_threshold%g.%.*d", field, options->threshold[value], max_size_time, t+1);
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if ((*data)[i].vect_size > 0)
@@ -425,7 +425,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         {
             for (t=0; t<options->nb_time_steps; t++)
             {
-                sprintf(file_name, "results.%s_quantile%g.%.*d", field, options->quantile_order[value], max_size_time, (int)t+1);
+                snprintf(file_name, sizeof(file_name), "results.%s_quantile%g.%.*d", field, options->quantile_order[value], max_size_time, t+1);
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if ((*data)[i].vect_size > 0)
@@ -458,7 +458,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         {
             for (t=0; t<options->nb_time_steps; t++)
             {
-                sprintf(file_name, "results.%s_sobol%d.%.*d", field, p, max_size_time, (int)(t+1));
+                snprintf(file_name, sizeof(file_name), "results.%s_sobol%d.%.*d", field, p, max_size_time, (int)(t+1));
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if ((*data)[i].vect_size > 0)
@@ -486,7 +486,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
         {
             for (t=0; t<options->nb_time_steps; t++)
             {
-                sprintf(file_name, "results.%s_sobol_tot%d.%.*d", field, p, max_size_time, (int)(t+1));
+                snprintf(file_name, sizeof(file_name), "results.%s_sobol_tot%d.%.*d", field, p, max_size_time, (int)(t+1));
                 for (i=0; i<comm_data->client_comm_size; i++)
                 {
                     if ((*data)[i].vect_size > 0)
@@ -603,7 +603,7 @@ void write_stats_bin (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_mean_%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "%s_mean_%.*d", field, max_size_time, t+1);
 //            /*
 //             * Set up file access property list with parallel I/O access
 //             */
@@ -642,7 +642,7 @@ void write_stats_bin (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_variance_%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "%s_variance_%.*d", field, max_size_time, t+1);
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
             temp_offset = 0;
             for (i=0; i<comm_data->client_comm_size; i++)
@@ -661,7 +661,7 @@ void write_stats_bin (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_min_%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "%s_min_%.*d", field, max_size_time, t+1);
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
             temp_offset = 0;
             for (i=0; i<comm_data->client_comm_size; i++)
@@ -677,7 +677,7 @@ void write_stats_bin (melissa_data_t    **data,
 
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_max_%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "%s_max_%.*d", field, max_size_time, t+1);
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
             temp_offset = 0;
             for (i=0; i<comm_data->client_comm_size; i++)
@@ -696,7 +696,7 @@ void write_stats_bin (melissa_data_t    **data,
     {
         for (t=0; t<options->nb_time_steps; t++)
         {
-            sprintf(file_name, "%s_threshold_exceedance_%.*d", field, max_size_time, (int)t+1);
+            snprintf(file_name, sizeof(file_name), "%s_threshold_exceedance_%.*d", field, max_size_time, t+1);
             MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
             temp_offset = 0;
             for (i=0; i<comm_data->client_comm_size; i++)
@@ -718,7 +718,7 @@ void write_stats_bin (melissa_data_t    **data,
         {
             for (t=0; t<options->nb_time_steps; t++)
             {
-                sprintf(file_name, "%s_quantile%g_%.*d", field, options->quantile_order[value], max_size_time, (int)t+1);
+                snprintf(file_name, sizeof(file_name), "%s_quantile%g_%.*d", field, options->quantile_order[value], max_size_time, t+1);
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
                 temp_offset = 0;
                 for (i=0; i<comm_data->client_comm_size; i++)
@@ -741,7 +741,7 @@ void write_stats_bin (melissa_data_t    **data,
         {
             for (p=0; p<options->nb_parameters; p++)
             {
-                sprintf(file_name, "%s_sobol_indices_%.*d.%d",field,  max_size_time, (int)t+1, p);
+                snprintf(file_name, sizeof(file_name), "%s_sobol_indices_%.*d.%d",field,  max_size_time, t+1, p);
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
                 temp_offset = 0;
                 for (i=0; i<comm_data->client_comm_size; i++)
@@ -760,7 +760,7 @@ void write_stats_bin (melissa_data_t    **data,
         {
             for (p=0; p<options->nb_parameters; p++)
             {
-                sprintf(file_name, "%s_sobol_total_indices_%.*d.%d",field,  max_size_time, (int)t+1, p);
+                snprintf(file_name, sizeof(file_name), "%s_sobol_total_indices_%.*d.%d",field,  max_size_time, t+1, p);
                 MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
                 temp_offset = 0;
                 for (i=0; i<comm_data->client_comm_size; i++)
