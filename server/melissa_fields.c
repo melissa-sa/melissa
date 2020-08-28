@@ -116,7 +116,9 @@ void melissa_get_fields (int               argc,
             /* walk through other tokens */
             while (temp_char != NULL)
             {
-                memset(fields[i].name, '\0', MAX_FIELD_NAME_LEN);
+                // TODO: use sizeof(struct melissa_field_t.name)? macro needed
+                // https://stackoverflow.com/questions/3553296/sizeof-single-struct-member-in-c#3553321
+                memset(fields[i].name, '\0', MAX_FIELD_NAME_LEN+1);
                 strncpy (fields[i].name, temp_char, MAX_FIELD_NAME_LEN);
                 i += 1;
 
