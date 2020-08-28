@@ -45,7 +45,7 @@ extern "C" {
 void melissa_write_stats_seq(melissa_data_t    **data,
                              melissa_options_t  *options,
                              comm_data_t        *comm_data,
-                             char               *field);
+                             const char         *field);
 
 void write_stats_txt(melissa_data_t    **data,
                      melissa_options_t  *options,

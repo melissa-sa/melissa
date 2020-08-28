@@ -125,7 +125,7 @@ static inline void igather_data(comm_data_t *comm_data,
 void melissa_write_stats_seq(melissa_data_t    **data,
                              melissa_options_t  *options,
                              comm_data_t        *comm_data,
-                             char               *field)
+                             const char         *field)
 {
     long int    temp_offset=0;
     long int    i;
