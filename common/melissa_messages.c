@@ -60,12 +60,12 @@ int send_message_hello (void* socket,
     return zmq_msg_send (&msg, socket, flags);
 }
 
-message_alive (zmq_msg_t *msg)
+void message_alive (zmq_msg_t *msg)
 {
-    char* buff_ptr = NULL;
+    int* buff_ptr = NULL;
     zmq_msg_init_size (msg, sizeof(int));
-    buff_ptr = (int*)zmq_msg_data (msg);
-    *((int*) buff_ptr) = (int)ALIVE;
+    buff_ptr = zmq_msg_data (msg);
+    *buff_ptr = (int)ALIVE;
 }
 
 int send_message_alive (void *socket,
@@ -162,12 +162,13 @@ int send_message_drop (int   simu_id,
 
 void read_message_drop (char* msg_buffer,
                         int*  simu_id,
-                        char* job_id[])
+                        char* job_id)
 {
     char* msg_ptr = msg_buffer;
     memcpy (simu_id, msg_ptr, sizeof(int));
     msg_ptr += sizeof(int);
-    strcpy (*job_id, msg_ptr);
+    memset(job_id, 0, 256);
+    strncpy(job_id, msg_ptr, 255);
 }
 
 void message_stop (zmq_msg_t *msg)
@@ -247,7 +248,7 @@ void read_message_simu_status (char* msg_buffer,
     char* msg_ptr = msg_buffer;
     memcpy (simu_id, msg_ptr, sizeof(int));
     msg_ptr += sizeof(int);
-    strcpy (status, msg_ptr);
+    memcpy(status, msg_ptr, sizeof(int));
 }
 
 void message_server_name (zmq_msg_t *msg,
@@ -325,7 +326,7 @@ void read_message_confidence_interval (char*   msg_buffer,
     char* msg_ptr = msg_buffer;
     strcpy (stat_name, msg_ptr);
     msg_ptr += strlen(stat_name);
-    strcpy (field_name, msg_ptr);
+    strncpy(field_name, msg_ptr, MAX_FIELD_NAME_LEN);
     msg_ptr += strlen(field_name);
     memcpy (value, msg_ptr, sizeof(double));
 }
@@ -360,12 +361,12 @@ void message_simu_data (zmq_msg_t *msg,
                         int      client_rank,
                         int      vect_size,
                         int      nb_vect,
-                        char*    field_name,
+                        const char* field_name,
                         double** data_ptr)
 {
     int       i;
     char*     buff_ptr = NULL;
-    zmq_msg_init_size (msg, 4 * sizeof(int) + MAX_FIELD_NAME + nb_vect * vect_size * sizeof(double));
+    zmq_msg_init_size (msg, 4 * sizeof(int) + MAX_FIELD_NAME_LEN+1 + nb_vect * vect_size * sizeof(double));
     buff_ptr = zmq_msg_data (msg);
     memcpy (buff_ptr, &time_stamp, sizeof(int));
     buff_ptr += sizeof(int);
@@ -375,8 +376,9 @@ void message_simu_data (zmq_msg_t *msg,
     buff_ptr += sizeof(int);
     memcpy (buff_ptr, &vect_size, sizeof(int));
     buff_ptr += sizeof(int);
-    memcpy (buff_ptr, field_name, MAX_FIELD_NAME);
-    buff_ptr += MAX_FIELD_NAME;
+    memset(buff_ptr, 0, MAX_FIELD_NAME_LEN+1);
+    strncpy(buff_ptr, field_name, MAX_FIELD_NAME_LEN);
+    buff_ptr += MAX_FIELD_NAME_LEN;
     for (i=0; i<nb_vect; i++)
     {
         memcpy (buff_ptr, data_ptr[i], vect_size * sizeof(double));
@@ -389,7 +391,7 @@ int send_message_simu_data (int      time_stamp,
                             int      client_rank,
                             int      vect_size,
                             int      nb_vect,
-                            char*    field_name,
+                            const char* field_name,
                             double** data_ptr,
                             void*    socket,
                             int      flags)
@@ -424,6 +426,6 @@ void read_message_simu_data (char*    msg_buffer,
     memcpy(vect_size, msg_ptr, sizeof(int));
     msg_ptr += sizeof(int);
     *field_name_ptr = msg_ptr;
-    msg_ptr += MAX_FIELD_NAME * sizeof(char);
+    msg_ptr += MAX_FIELD_NAME_LEN * sizeof(char);
     *data_ptr = (double*)msg_ptr;
 }

@@ -58,6 +58,10 @@ target_link_libraries(test_getoptions ${TESTS_LIBS})
 add_test(TestGetOptions ${EXECUTABLE_OUTPUT_PATH}/test_getoptions -p 3 -s 1000 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.4)
 
 add_executable(regression_16 regression_16.c ${CMAKE_SOURCE_DIR}/common/melissa_utils.c)
+# make gethostname() declaration accessible
+set_source_files_properties(
+    ${CMAKE_SOURCE_DIR}/common/melissa_utils.c
+    PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE)
 target_compile_options(regression_16 PRIVATE -fsanitize=undefined -fno-sanitize-recover=all)
 target_include_directories(regression_16 PRIVATE ${CMAKE_SOURCE_DIR})
 # this flag must also be passed at link time

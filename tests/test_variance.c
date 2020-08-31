@@ -33,7 +33,7 @@
 #include "covariance.h"
 #include "melissa_utils.h"
 
-int main(int argc, char **argv)
+int main()
 {
     double       *tableau = NULL;
     double       *ref_mean = NULL;

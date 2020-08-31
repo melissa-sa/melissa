@@ -11,8 +11,8 @@ c_void_ptr_ptr = ctypes.POINTER(ctypes.c_void_p)
 
 
 # This should maybe go into a constants file
-MAX_FIELD_NAME_SIZE = 128
-MPI_MAX_PROCESSOR_NAME = 128
+MAX_FIELD_NAME_LEN = 128
+MPI_MAX_PROCESSOR_NAME = 256
 
 
 def get_str(buff):
@@ -106,9 +106,9 @@ class SimulationData:
     @classmethod
     def from_msg(cls, msg):
         timestep, simulation_id, client_rank, data_size = np.frombuffer(msg[:4 * 4], np.int32)
-        field_name = get_str(msg[4 * 4: 4 * 4 + MAX_FIELD_NAME_SIZE])
+        field_name = get_str(msg[4 * 4: 4 * 4 + MAX_FIELD_NAME_LEN])
         # Unpack data
-        offset = 4 * 4 + MAX_FIELD_NAME_SIZE
+        offset = 4 * 4 + MAX_FIELD_NAME_LEN
         data = np.frombuffer(msg[offset: offset + data_size * 8], np.double)
         return cls(timestep, simulation_id, client_rank, data_size, field_name, data)
 

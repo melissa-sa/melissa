@@ -153,7 +153,7 @@ void process_launcher_message (void*             msg_data,
     vector_t             *simulations;// = &server_ptr->simulations;
     melissa_simulation_t *simu_ptr;
     int                   simu_id, i;
-    char                  job_id[255];
+    char                  job_id[256];
     char*                 buff_ptr = (char*)msg_data;
 
     int message_type = get_message_type(buff_ptr);
@@ -190,7 +190,7 @@ void process_launcher_message (void*             msg_data,
         simulations = &server_ptr->simulations;
         read_message_drop (buff_ptr,
                            &simu_id,
-                           &job_id);
+                           job_id);
         simu_ptr = vector_get (simulations, simu_id);
         strcpy (simu_ptr->job_id, job_id);
         simu_ptr->job_status = 1;
@@ -222,7 +222,7 @@ int check_last_timestep(melissa_field_t *fields,
                         int              nb_time_steps,
                         comm_data_t     *comm_data)
 {
-    int i, j, t;
+    int i, j;
 
     if (fields == NULL)
     {
@@ -263,6 +263,7 @@ int check_last_timestep(melissa_field_t *fields,
 
 long int count_mbytes_written (melissa_options_t  *options)
 {
+	(void) options;
     long int mbytes_written = 0;
 //    if (options->mean_op == 1)
 //    {

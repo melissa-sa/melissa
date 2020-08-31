@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <unistd.h>
+#include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -105,20 +105,20 @@ void init_context ()
 void bind_message_rcv(char* port_number)
 {
     int rcv_timeout = 1000; // miliseconds
-    char name[255];
+    char name[256];
     message.message_puller = zmq_socket (message.context, ZMQ_PULL);
     zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
-    sprintf (name, "tcp://*:%s", port_number);
+    snprintf (name, sizeof(name), "tcp://*:%s", port_number);
     melissa_bind (message.message_puller, name);
 }
 
 void connect_message_rcv(char* node_name, char* port_number)
 {
     int rcv_timeout = 1000; // miliseconds
-    char name[255];
+    char name[256];
     message.message_puller = zmq_socket (message.context, ZMQ_PULL);
     zmq_setsockopt (message.message_puller, ZMQ_RCVTIMEO, &rcv_timeout, sizeof(int));
-    sprintf (name, "tcp://%s:%s", node_name, port_number);
+    snprintf (name, sizeof(name), "tcp://%s:%s", node_name, port_number);
     melissa_connect (message.message_puller, name);
 }
 

@@ -90,10 +90,10 @@ int read_client_data (int                *client_comm_size,
                       melissa_options_t  *options)
 {
     FILE* f = NULL;
-    char  file_name[256];
+    char  file_name[320];
     int   ret = 1;
 
-    sprintf(file_name, "%s/client_data.save", options->restart_dir);
+    snprintf(file_name, sizeof(file_name), "%s/client_data.save", options->restart_dir);
     melissa_print (VERBOSE_DEBUG, "Client data save file: %s/client_data.save", file_name);
     f = fopen(file_name, "rb");
 
@@ -143,17 +143,17 @@ void save_stats (melissa_data_t *data,
                  comm_data_t    *comm_data,
                  char           *field_name)
 {
-    char       file_name[256];
+    char       file_name[320];
     int        i, j;
     FILE*      f = NULL;
 
     for (i=0; i<comm_data->client_comm_size; i++)
     {
-        sprintf(file_name, "%s%d_%d.data", field_name, comm_data->rank, i);
+        snprintf(file_name, sizeof(file_name), "%s%d_%d.data", field_name, comm_data->rank, i);
         f = fopen(file_name, "wb+");
         if (f == NULL)
         {
-            melissa_print (VERBOSE_ERROR, 2, "ERROR: Can not open %s%d_%d.data (save_stats)\n", field_name, comm_data->rank, i);
+            melissa_print (VERBOSE_ERROR, "save stats", "ERROR: Can not open %s%d_%d.data (save_stats)\n", field_name, comm_data->rank, i);
             return;
         }
         fwrite(&data[i].vect_size, sizeof(int), 1, f);
@@ -225,18 +225,18 @@ void save_stats (melissa_data_t *data,
 
 void read_saved_stats (melissa_data_t *data,
                        comm_data_t    *comm_data,
-                       char            field_name[MAX_FIELD_NAME],
+                       char            field_name[MAX_FIELD_NAME_LEN],
                        int             client_rank)
 {
-    char       file_name[256];
+    char       file_name[320];
     int        j, temp_size;
     FILE*      f = NULL;
 
-    sprintf(file_name, "%s/%s%d_%d.data", data[client_rank].options->restart_dir, field_name, comm_data->rank, client_rank);
+    snprintf(file_name, sizeof(file_name), "%s/%s%d_%d.data", data[client_rank].options->restart_dir, field_name, comm_data->rank, client_rank);
     f = fopen(file_name, "rb");
     if (f == NULL)
     {
-        melissa_print (VERBOSE_ERROR, 2, "ERROR: can not open %s/%s%d_%d.data (read_saved_stats)\n", data[client_rank].options->restart_dir, field_name, comm_data->rank, client_rank);
+        melissa_print (VERBOSE_ERROR, "read stats", "ERROR: can not open %s/%s%d_%d.data (read_saved_stats)\n", data[client_rank].options->restart_dir, field_name, comm_data->rank, client_rank);
         return;
     }
     fread(&data[client_rank].vect_size, sizeof(int), 1, f);
@@ -313,7 +313,7 @@ void save_simu_states (vector_t    *simu,
     melissa_simulation_t *simu_ptr;
     int                   i;
 
-    sprintf(file_name, "simu_%d.data",comm_data->rank);
+    snprintf(file_name, sizeof(file_name), "simu_%d.data",comm_data->rank);
     f = fopen(file_name, "wb+");
     if (f == NULL)
     {
@@ -354,13 +354,13 @@ void read_simu_states (vector_t          *simu,
                        melissa_options_t *options,
                        comm_data_t       *comm_data)
 {
-    char                  file_name[256];
+    char                  file_name[320];
     FILE*                 f = NULL;
     int                   i, size, max_size;
     melissa_simulation_t *simu_ptr;
     MPI_Request          *request;
 
-    sprintf(file_name, "%s/simu_%d.data", options->restart_dir, comm_data->rank);
+    snprintf(file_name, sizeof(file_name), "%s/simu_%d.data", options->restart_dir, comm_data->rank);
     f = fopen(file_name, "rb");
     if (f == NULL)
     {

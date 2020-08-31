@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 #include <zmq.h>
 #include <assert.h>
 #include <mpi.h>
@@ -44,10 +45,6 @@
 
 #ifndef MPI_MAX_PROCESSOR_NAME
 #define MPI_MAX_PROCESSOR_NAME 256 /**< maximum size of processor names */
-#endif
-
-#ifndef MAX_FIELD_NAME
-#define MAX_FIELD_NAME 128 /**< maximum size of field names */
 #endif
 
 #ifdef BUILD_WITH_FLOWVR
@@ -112,7 +109,7 @@ typedef struct global_data_s global_data_t; /**< type corresponding to global_da
 
 struct field_data_s
 {
-    char                  name[MPI_MAX_PROCESSOR_NAME]; /**< The field name                                             */
+    char                  name[MAX_FIELD_NAME_LEN+1];   /**< The field name                                             */
     int                   id;                           /**< The field id                                               */
     int                   global_vect_size;             /**< global field size                                          */
     int                  *server_vect_size;             /**< local vect size for the library                            */
@@ -145,7 +142,7 @@ static field_data_t* get_field_data(field_data_t *data,
 {
     if (data != NULL)
     {
-        if (strncmp(data->name, field_name, MAX_FIELD_NAME) != 0)
+        if (strncmp(data->name, field_name, MAX_FIELD_NAME_LEN) != 0)
         {
             return get_field_data(data->next, field_name);
         }
@@ -196,11 +193,6 @@ static void free_field_data(field_data_t *data)
         }
         melissa_free (data);
     }
-}
-
-static void my_free (void *data, void *hint)
-{
-    free (data);
 }
 
 
@@ -580,7 +572,7 @@ static void melissa_init_internal (const char *field_name,
         // allocate memory for the first field. The simulation must send at least one field.
         field_data = melissa_malloc(sizeof (field_data_t));
         // The field is identified by its name.
-        memcpy (field_data->name, field_name, MPI_MAX_PROCESSOR_NAME);
+        strncpy(field_data->name, field_name, MAX_FIELD_NAME_LEN);
         field_data->next = NULL;
         field_data->id = 0;
         // set field_data_ptr to point to the first field of the list
@@ -595,7 +587,7 @@ static void melissa_init_internal (const char *field_name,
             field_data_ptr->next = melissa_malloc(sizeof (field_data_t)); // we allocate the next one
             field_data_ptr->next->id = field_data_ptr->id + 1;
             field_data_ptr = field_data_ptr->next; // move forward
-            memcpy (field_data_ptr->name, field_name, MPI_MAX_PROCESSOR_NAME);
+            strncpy(field_data_ptr->name, field_name, MAX_FIELD_NAME_LEN);
             field_data_ptr->next = NULL;
         }
         else // then the user already called the melissa_init function for this field
@@ -771,7 +763,7 @@ static void melissa_init_internal (const char *field_name,
             flowvr_init(&comm_size, &rank);
 #else // BUILD_WITH_FLOWVR
             fprintf (stderr, "ERROR: Build with FlowVR to use FlowVR coupling");
-            exit;
+            exit(1);
 #endif // BUILD_WITH_FLOWVR
             break;
 
@@ -869,7 +861,7 @@ static void melissa_init_internal (const char *field_name,
             break;
         default:
             melissa_print(VERBOSE_ERROR, "Bad coupling parameter");
-            exit;
+            exit(1);
         }
     }
     // -------------- //
@@ -1182,7 +1174,6 @@ void melissa_send (const char   *field_name,
     {
         // in the case of machine learning, we gather everything on the rank 0
         // void* buffer = melissa_malloc(sizeof(double) * 10);
-        double start_gather = melissa_get_time();
         MPI_Gatherv(send_vect,
                     local_vect_size,
                     MPI_DOUBLE,
@@ -1192,7 +1183,6 @@ void melissa_send (const char   *field_name,
                     MPI_DOUBLE,
                     0,
                     global_data.comm);
-        double end_gather = melissa_get_time();
         send_vect_ptr = global_data.buffer_data;
         if (global_data.rank == 0)
         {
@@ -1252,7 +1242,6 @@ void melissa_send (const char   *field_name,
         // Without Sobol, the sobol_rank is always 0.
         // With Sobol, only the sobol_rank 0 sends the data to the server
         melissa_print(VERBOSE_DEBUG, "Group %d send data (timestamp %d)\n", global_data.sample_id, field_data_ptr->timestamp);
-        zmq_msg_t msg;
         if (global_data.learning < 2) // "classic" usage
         {
             j = 0;
@@ -1280,7 +1269,7 @@ void melissa_send (const char   *field_name,
                                                       global_data.data_ptr,
                                                       field_data_ptr->data_pusher[j],
                                                       0);
-                        buff_size = 4 * sizeof(int) + MAX_FIELD_NAME + (global_data.nb_parameters + 2) * field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
+                        buff_size = 4 * sizeof(int) + MAX_FIELD_NAME_LEN + (global_data.nb_parameters + 2) * field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
                     }
                     else
                     {
@@ -1293,7 +1282,7 @@ void melissa_send (const char   *field_name,
                                                       global_data.data_ptr,
                                                       field_data_ptr->data_pusher[j],
                                                       0);
-                        buff_size = 4 * sizeof(int) + MAX_FIELD_NAME + field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
+                        buff_size = 4 * sizeof(int) + MAX_FIELD_NAME_LEN + field_data_ptr->send_counts[field_data_ptr->pull_rank[i]] * sizeof(double);
                     }
                     melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent (proc %d)\n", buff_size, field_data_ptr->push_rank[i]);
                     if (ret == -1)
@@ -1308,7 +1297,6 @@ void melissa_send (const char   *field_name,
         }
         else if (global_data.rank == 0) // here, learning >= 2. That means that we d'on' split the data for redistribution, bunt we send everything to one server rank in a round-robin fashion
         {
-            double start_send_time = melissa_get_time();
             // remember that when learning != 0 we gather all the data on rank 0
             // send all the data round-robin from proc 0
 
@@ -1327,11 +1315,11 @@ void melissa_send (const char   *field_name,
                                                   global_data.data_ptr,
                                                   field_data_ptr->data_pusher[i],
                                                   0);
-                    buff_size = 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char);
+                    buff_size = 4 * sizeof(int) + MAX_FIELD_NAME_LEN * sizeof(char);
                 }
                 else
                 {
-                    buff_size = 4 * sizeof(int) + MAX_FIELD_NAME * sizeof(char) + local_vect_size * sizeof(double);
+                    buff_size = 4 * sizeof(int) + MAX_FIELD_NAME_LEN * sizeof(char) + local_vect_size * sizeof(double);
                     if (global_data.sobol == 1)
                     {
                         for (k=1; k<global_data.nb_parameters + 2; k++)
@@ -1383,8 +1371,6 @@ void melissa_send (const char   *field_name,
                 }
                 total_bytes_sent += buff_size;
             }
-            double end_send_time = melissa_get_time();
-            // fprintf(stdout, "Send time: %f \n", end_send_time - start_send_time);
         }
     }
     field_data_ptr->timestamp += 1;
@@ -1419,7 +1405,7 @@ void melissa_send (const char   *field_name,
 
 void melissa_finalize (void)
 {
-    int i, ret;
+    int i;
 
     if (global_data.comm_size > 1)
     {

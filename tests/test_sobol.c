@@ -33,7 +33,7 @@
 #include "sobol.h"
 #include "melissa_utils.h"
 
-int main(int argc, char **argv)
+int main()
 {
     double         *tableau = NULL;
     sobol_array_t   sobol_indices;

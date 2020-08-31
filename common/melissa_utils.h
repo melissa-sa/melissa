@@ -37,8 +37,8 @@ extern "C" {
 #define MPI_MAX_PROCESSOR_NAME 256 /**< Define the macro if mpi.h not present */
 #endif
 
-#ifndef MAX_FIELD_NAME
-#define MAX_FIELD_NAME 128 /**< Define name size if not defined */
+#ifndef MAX_FIELD_NAME_LEN
+#define MAX_FIELD_NAME_LEN 128 /**< Define name size if not defined */
 #endif
 
 #define MELISSA_ERROR 0                           /**< display only errors  */
