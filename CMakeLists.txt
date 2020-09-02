@@ -92,7 +92,24 @@ else()
     find_package(ZeroMQ REQUIRED)
 endif()
 
-include_directories(${ZeroMQ_INCLUDE_DIR})
+add_library(zmq IMPORTED SHARED GLOBAL)
+
+if(INSTALL_ZMQ)
+    add_dependencies(zmq ZeroMQ)
+    # CMake stops with an error if INTERFACE_INCLUDE_DIRECTORIES do not exist
+    # (see the call to set_target_properties() below)
+    # Create the directory now to avoid the error message
+    file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/include)
+endif()
+
+set_target_properties(
+    zmq
+    PROPERTIES
+    IMPORTED_LOCATION ${ZeroMQ_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES ${ZeroMQ_INCLUDE_DIR}
+    SOVERSION ${ZeroMQ_VERSION}
+)
+
 
 
 # Find MPI

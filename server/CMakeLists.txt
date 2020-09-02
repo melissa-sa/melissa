@@ -33,12 +33,7 @@ file(GLOB
 add_executable(melissa_server ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
 
 
-if(INSTALL_ZMQ)
-  add_dependencies(melissa_server ZeroMQ)
-endif(INSTALL_ZMQ)
-
 target_link_libraries(melissa_server ${EXTRA_LIBS}
-                                     ${ZeroMQ_LIBRARY}
                                      ${OPENTURNS_LIBRARIES}
                                      melissa_stats
                                      melissa_output
@@ -48,7 +43,7 @@ INSTALL(TARGETS melissa_server RUNTIME DESTINATION bin RENAME melissa_server)
 
 add_library(melissa_server4py SHARED ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
 set_target_properties(melissa_server4py PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} VERSION ${PROJECT_VERSION})
-target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${ZeroMQ_LIBRARY} ${OPENTURNS_LIBRARIES} melissa_stats melissa_output melissa_messages dl)
+target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${OPENTURNS_LIBRARIES} melissa_stats melissa_output melissa_messages dl)
 INSTALL(TARGETS melissa_server4py DESTINATION lib)
 
 configure_file(melissa_server.py.in melissa_server.py @ONLY)
