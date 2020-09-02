@@ -61,6 +61,7 @@ endfunction(find_python_module)
 
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -pedantic")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare")
@@ -91,7 +92,24 @@ else()
     find_package(ZeroMQ REQUIRED)
 endif()
 
-include_directories(${ZeroMQ_INCLUDE_DIR})
+add_library(zmq IMPORTED SHARED GLOBAL)
+
+if(INSTALL_ZMQ)
+    add_dependencies(zmq ZeroMQ)
+    # CMake stops with an error if INTERFACE_INCLUDE_DIRECTORIES do not exist
+    # (see the call to set_target_properties() below)
+    # Create the directory now to avoid the error message
+    file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/include)
+endif()
+
+set_target_properties(
+    zmq
+    PROPERTIES
+    IMPORTED_LOCATION ${ZeroMQ_LIBRARY}
+    INTERFACE_INCLUDE_DIRECTORIES ${ZeroMQ_INCLUDE_DIR}
+    SOVERSION ${ZeroMQ_VERSION}
+)
+
 
 
 # Find MPI

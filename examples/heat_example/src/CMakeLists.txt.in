@@ -50,8 +50,8 @@ target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
 target_link_libraries(heat_utils ${MPI_LIBS})
 install(TARGETS heat_utils ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-add_executable(heatf src/heat.f90 src/heat_utils.f90)
-target_link_libraries(heatf  ${Melissa_LIBRARY} ${MPI_LIBS})
+add_executable(heatf src/heat.f90)
+target_link_libraries(heatf  ${Melissa_LIBRARY} ${MPI_LIBS} heat_utils)
 install(TARGETS heatf RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 add_executable(heatc src/heat.c)
