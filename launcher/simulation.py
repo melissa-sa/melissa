@@ -25,7 +25,6 @@ import os
 import time
 import subprocess
 import logging
-import asyncio
 #import openturns as ot
 from threading import RLock
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
@@ -98,7 +97,7 @@ class Job(object):
         if "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job']#(self)
+            return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
@@ -180,11 +179,11 @@ class Group(Job):
         """
         if "cancel_group_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_group_job']:
-            return Job.usr_func['cancel_group_job']#(self)
+            return Job.usr_func['cancel_group_job'](self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job']#(self)
+            return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()
@@ -243,10 +242,7 @@ class MultiSimuGroup(Group):
             Ends and restarts the simulations (mandatory)
         """
         crashs_before_redraw = 3
-        try:
-            asyncio.get_event_loop().run_until_complete(self.cancel())
-        except TypeError:  ## local execution
-            self.cancel()
+        self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
             #logging.warning('Simulation group ' + str(self.group_id) +
@@ -558,11 +554,11 @@ class Server(Job):
         if "cancel_server_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_server_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_server_job']#(self)
+            return Job.usr_func['cancel_server_job'](self)
         elif "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
-            return Job.usr_func['cancel_job']#(self)
+            return Job.usr_func['cancel_job'](self)
         else:
             logging.error('Error: no \'cancel_job\' function provided')
             exit()

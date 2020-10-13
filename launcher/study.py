@@ -4,7 +4,7 @@
 #   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
 #                                                                 #
 # This source is covered by the BSD 3-Clause License.             #
-# Refer to the  LICENSE file for further information.             #
+# Refer to the  LICENCE file for further information.             #
 #                                                                 #
 #-----------------------------------------------------------------#
 #  Original Contributors:                                         #
@@ -27,7 +27,6 @@ import copy
 import numpy as np
 import logging
 import traceback
-import asyncio
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
@@ -56,6 +55,11 @@ from launcher.simulation import RUNNING
 from launcher.simulation import FINISHED
 from launcher.simulation import TIMEOUT
 
+logging.basicConfig(format='%(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    filename='melissa_launcher.log',
+                    filemode='w',
+                    level=logging.DEBUG)
 
 class StateChecker(Thread):
     """
@@ -171,7 +175,7 @@ class Messenger(Thread):
                         last_server = 0
                     else:
                         if (time.time() - last_server) > 100:
-                            logging.info('server timeout\n')
+                            logging.warning('server timeout\n')
                             with self.server[0].lock:
                                 self.server[0].status = TIMEOUT
                 if (time.time() - last_msg_to_server) > 10 and self.server[0].status == RUNNING:
@@ -294,14 +298,10 @@ class Study(object):
         Study class, containing instances of the threads
     """
     def __init__(self, stdy_opt = None, ml_stats = None, usr_func = None):
-
-
         self.nb_param = 0
         self.groups = list()
         self.server_obj = [Server()]
         self.sobol = False
-
-
         if stdy_opt is None:
             self.stdy_opt = dict()
         else:
@@ -479,7 +479,7 @@ class Study(object):
             Main study method
         """
         if not os.path.isdir(self.stdy_opt['working_directory']):
-            os.makedirs(self.stdy_opt['working_directory'], exist_ok=True)
+            os.mkdir(self.stdy_opt['working_directory'])
         os.chdir(self.stdy_opt['working_directory'])
 
         nb_errors = self.check_options()
@@ -541,7 +541,7 @@ class Study(object):
         self.threads['responder'].start()
         for group in self.groups:
             if self.fault_tolerance() != 0: return
-            while check_scheduler_load(self.usr_func) == False:  #TODO: need to check this als during the simulation, not only on the beginnint!
+            while check_scheduler_load(self.usr_func) == False:  #TODO: need to check this also during the simulation, not only on the beginnint!
                 if self.stdy_opt['assimilation']:
                     if self.server_obj[0].want_stop:
                         break  # Refactor all those breaks!
@@ -555,8 +555,9 @@ class Study(object):
 
             logging.info('submit group '+str(group.group_id))
             try:
-                group.server_node_name = str(self.server_obj[0].node_name[0])
-                group.launch()
+                with group.lock:
+                    group.server_node_name = str(self.server_obj[0].node_name[0])
+                    group.launch()
             except:
                 logging.error('Error while launching group')
                 print('=== Error while launching group ===')
@@ -581,6 +582,9 @@ class Study(object):
                 with group.lock:
                     group.cancel()
         if self.server_obj[0].job_status < FINISHED:
+            if os.getenv('MELISSA_PROFILING'):
+                # give server 10 seconds to write traces!
+                time.sleep(10)
             self.server_obj[0].cancel()
         self.threads['messenger'].running_study = False
         self.threads['responder'].running_study = False
@@ -855,11 +859,11 @@ class Study(object):
             for group in self.groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
-                        asyncio.get_event_loop().run_until_complete(group.cancel())
+                        group.cancel()
             logging.info('resubmit server job')
             time.sleep(1)
             try:
-                asyncio.get_event_loop().run_until_complete(self.server_obj[0].cancel())
+                self.server_obj[0].cancel()
                 self.server_obj[0].restart()
             except:
                 logging.error('Error while restarting server')
@@ -893,8 +897,8 @@ class Study(object):
                             group.server_node_name = str(self.server_obj[0].node_name[0])
                             group.restart()
                         except:
-                            logging.error('Error while restarting group '+group.group_id)
-                            print('=== Error while restarting group '+group.group_id+' ===')
+                            logging.error('Error while restarting group %d'%group.group_id)
+                            print('=== Error while restarting group %d === ' % group.group_id)
                             logging.error(traceback.print_exc())
                             self.stop()
                             return 1
