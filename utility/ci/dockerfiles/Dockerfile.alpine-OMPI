@@ -1,0 +1,21 @@
+FROM gitlab/gitlab-runner:alpine
+
+# Change gitlab's default entrypoint
+ENTRYPOINT /bin/bash
+
+# Add edge repo, some packages aren't available in stable one
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+
+# Install Melissa dependencies and create a non-root user
+RUN apk update && \
+    apk add build-base cmake gfortran openblas-dev zeromq-dev pkgconfig python3 py3-numpy openmpi-dev && \
+    adduser \
+        --uid=1000 \
+        --shell=/bin/bash \
+        --gecos='Docker,,,,' \
+        --disabled-password \
+        docker
+
+# Switch to non-root user
+USER docker
+WORKDIR /home/docker
