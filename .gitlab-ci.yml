@@ -5,4 +5,4 @@ gitlab_runner_latest:
   script:
     - mkdir build
     - cd build
-    - bash ../build-and-test.sh .. ~/PDAF-D_V1.15
+    - bash ../build-and-test.sh ..
