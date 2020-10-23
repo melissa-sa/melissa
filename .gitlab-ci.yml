@@ -1,23 +1,8 @@
-stages:
-  - Build
-  - Test
-  - Test Virtual Cluster
-
-Build melissa:
-  stage: Build
-  tags: [melissa]
+gitlab_runner_latest:
+  image: datamove/gitlab-runner/latest
+  tags:
+    - docker
   script:
-    - cd $HOME/CI-scripts && ./install_melissa.sh
-  artifacts:
-    paths:
-      - build/
-      - install/
-
-
-Test melissa ctest:
-  stage: Test
-  tags: [melissa]
-  script:
-    - cd $HOME/CI-scripts && ./test_melissa.sh
-  dependencies:
-    - Build melissa
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. ~/PDAF-D_V1.15
