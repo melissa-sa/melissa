@@ -65,4 +65,4 @@ cmake --build . -- --jobs="$num_jobs"
 
 cd -- "$melissa_sa_binary_dir"
 source "$melissa_sa_prefix_dir/bin/melissa_set_env.sh"
-ctest --output-on-failure --timeout 60
+ctest --output-on-failure --timeout 300
