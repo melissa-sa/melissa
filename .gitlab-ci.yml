@@ -3,6 +3,8 @@ gitlab_runner_latest:
   tags:
     - docker
   script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
     - mkdir build
     - cd build
     - bash ../build-and-test.sh ..
