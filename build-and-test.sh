@@ -40,7 +40,7 @@ num_jobs="$(getconf _NPROCESSORS_ONLN)"
 build_type='Debug'
 
 canonicalize_path() {
-	readlink --verbose --canonicalize-existing "${1:?}"
+	readlink -v -f "${1:?}"
 }
 
 melissa_sa_source_dir="$(canonicalize_path "$raw_melissa_sa_source_dir")"
