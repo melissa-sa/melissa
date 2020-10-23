@@ -1,5 +1,5 @@
 gitlab_runner_latest:
-  image: datamove/gitlab-runner/alpine
+  image: datamove/gitlab-runner/latest
   tags:
     - docker
   script:
@@ -8,3 +8,16 @@ gitlab_runner_latest:
     - mkdir build
     - cd build
     - bash ../build-and-test.sh ..
+
+
+gitlab_runner_alpine:
+  image: datamove/gitlab-runner/alpine
+  tags:
+    - docker
+  script:
+    - export CFLAGS='-march=native'
+    - export CXXFLAGS='-march=native'
+    - export FCFLAGS='-march=native'
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. Release

@@ -34,10 +34,10 @@ set -o pipefail
 set -u
 
 raw_melissa_sa_source_dir="${1:?path to Melissa SA source directory missing}"
+build_type="${2:-Debug}"
 
 cwd="$(pwd -P)"
 num_jobs="$(getconf _NPROCESSORS_ONLN)"
-build_type='Debug'
 
 canonicalize_path() {
 	readlink -v -f "${1:?}"
