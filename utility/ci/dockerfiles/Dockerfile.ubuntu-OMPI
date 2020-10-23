@@ -5,7 +5,7 @@ ENTRYPOINT /bin/bash
 
 # Install Melissa dependencies and create a non-root user
 RUN apt-get update && \
-    apt-get -y install build-essential cmake gfortran libopenblas-dev libzmq5-dev pkg-config python3 python3-numpy libopenmpi-dev && \
+    apt-get -y install build-essential clang cmake gfortran libopenblas-dev libzmq5-dev pkg-config python3 python3-numpy libopenmpi-dev && \
     adduser \
         --uid=1000 \
         --shell=/bin/bash \
