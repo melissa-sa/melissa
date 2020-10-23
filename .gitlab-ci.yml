@@ -1,5 +1,5 @@
 gitlab_runner_latest:
-  image: datamove/gitlab-runner/latest
+  image: datamove/gitlab-runner/alpine
   tags:
     - docker
   script:
