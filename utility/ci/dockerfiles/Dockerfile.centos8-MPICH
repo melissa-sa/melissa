@@ -1,0 +1,20 @@
+FROM centos:8
+
+RUN dnf makecache && \
+    dnf install -y epel-release && \
+    dnf install -y "dnf-command(config-manager)" && \
+    dnf config-manager --set-enabled PowerTools && \
+    dnf group install -y "Development Tools" && \
+    dnf install -y gcc-gfortran gcc-toolset-9-libubsan-devel cmake openblas-devel mpich-devel zeromq-devel pkgconf python3 python3-numpy
+
+RUN useradd \
+    --create-home \
+    --home-dir /home/docker \
+    --shell /bin/bash \
+    --uid 1000 \
+    docker
+
+RUN echo "module load mpi" >> /home/docker/.bashrc
+
+USER docker
+WORKDIR /home/docker
