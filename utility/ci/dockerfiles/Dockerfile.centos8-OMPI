@@ -14,7 +14,7 @@ RUN useradd \
     --uid 1000 \
     docker
 
-RUN echo "module load mpi" >> /etc/skel/.bashrc
+RUN echo "module load mpi" >> /home/docker/.bashrc
 
 USER docker
 WORKDIR /home/docker
