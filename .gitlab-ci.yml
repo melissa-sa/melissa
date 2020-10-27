@@ -21,3 +21,15 @@ gitlab_runner_alpine:
     - mkdir build
     - cd build
     - bash ../build-and-test.sh .. Release
+
+
+centos_8:
+  image: datamove/centos/8
+  tags:
+    - docker
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh ..
