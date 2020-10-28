@@ -25,4 +25,4 @@ RUN curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runne
 USER docker
 WORKDIR /home/docker
 
-ENTRYPOINT [ "/bin/bash", "--login" ]
+ENTRYPOINT [ "/bin/bash", "--login", "-c", "/bin/bash" ]
