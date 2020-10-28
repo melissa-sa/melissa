@@ -24,3 +24,5 @@ RUN curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runne
 # Switch to non-root user 
 USER docker
 WORKDIR /home/docker
+
+ENTRYPOINT [ "/bin/bash", "--login" ]
