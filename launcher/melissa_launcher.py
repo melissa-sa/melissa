@@ -87,16 +87,10 @@ def main():
     from options import USER_FUNCTIONS as usr_func
     from launcher.study import Study
 
-    
+
     # init log for launcher
     # TODO should align the verbosity option (1,2,...) with the logging level (à, 10, 20 ....)
     os.makedirs(stdy_opt['working_directory'],exist_ok=True)
-    logging.basicConfig(format='%(asctime)s %(message)s',
-                            datefmt='%m/%d/%Y %I:%M:%S %p',
-                            filename= stdy_opt['working_directory']+'/melissa_launcher.log',
-                            filemode='w',
-                            level=logging.DEBUG)
-    
 
     melissa_study = Study(stdy_opt, ml_stats, usr_func)
     try:
