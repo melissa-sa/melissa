@@ -20,4 +20,7 @@ RUN echo "module load mpi" >> /home/docker/.bashrc
 USER docker
 WORKDIR /home/docker
 
+# Fix OMPI https://github.com/open-mpi/ompi/issues/4948
+ENV OMPI_MCA_btl "^vader"
+
 ENTRYPOINT [ "/bin/bash", "--login", "-c", "/bin/bash" ]

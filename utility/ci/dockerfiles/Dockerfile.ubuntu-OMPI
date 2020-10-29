@@ -16,3 +16,7 @@ RUN apt-get update && \
 # Switch to non-root user
 USER docker
 WORKDIR /home/docker
+
+# Fix OMPI https://github.com/open-mpi/ompi/issues/4948
+ENV OMPI_MCA_btl "^vader"
+
