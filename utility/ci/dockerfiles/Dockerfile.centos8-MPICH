@@ -1,0 +1,27 @@
+FROM centos:8
+
+RUN dnf makecache && \
+    dnf install -y epel-release && \
+    dnf install -y "dnf-command(config-manager)" && \
+    dnf config-manager --set-enabled PowerTools && \
+    dnf group install -y "Development Tools" && \
+    dnf install -y gcc-gfortran gcc-toolset-9-libubsan-devel cmake openblas-devel mpich-devel zeromq-devel pkgconf python3 python3-numpy
+
+RUN useradd \
+    --create-home \
+    --home-dir /home/docker \
+    --shell /bin/bash \
+    --uid 1000 \
+    docker
+
+RUN echo "module load mpi" >> /home/docker/.bashrc
+
+# Install gitlab-runner
+RUN curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh | bash && \
+    export GITLAB_RUNNER_DISABLE_SKEL=true && \
+    dnf install -y gitlab-runner
+
+USER docker
+WORKDIR /home/docker
+
+ENTRYPOINT [ "/bin/bash", "--login", "-c", "/bin/bash" ]

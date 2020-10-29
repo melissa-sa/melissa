@@ -1,0 +1,24 @@
+FROM gitlab/gitlab-runner:latest
+
+# Change gitlab's default entrypoint
+ENTRYPOINT /bin/bash
+
+# Install Melissa dependencies and create a non-root user
+RUN apt-get update && \
+    apt-get -y install build-essential clang cmake gfortran libopenblas-dev libzmq5-dev pkg-config python3 python3-numpy libopenmpi-dev && \
+    adduser \
+        --uid=1000 \
+        --shell=/bin/bash \
+        --gecos='Docker,,,,' \
+        --disabled-password \
+        docker
+
+# Switch to non-root user
+USER docker
+WORKDIR /home/docker
+
+# Fix OMPI https://github.com/open-mpi/ompi/issues/4948
+ENV OMPI_MCA_btl "^vader"
+
+# Allow oversubscribing 
+ENV OMPI_MCA_rmaps_base_oversubscribe=1

@@ -1,23 +1,22 @@
-stages:
-  - Build
-  - Test
-  - Test Virtual Cluster
-
-Build melissa:
-  stage: Build
-  tags: [melissa]
+gitlab_runner_latest:
+  image: datamove/gitlab-runner/latest
+  tags:
+    - docker
   script:
-    - cd $HOME/CI-scripts && ./install_melissa.sh
-  artifacts:
-    paths:
-      - build/
-      - install/
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh ..
 
 
-Test melissa ctest:
-  stage: Test
-  tags: [melissa]
+centos_8:
+  image: datamove/centos/8
+  tags:
+    - docker
   script:
-    - cd $HOME/CI-scripts && ./test_melissa.sh
-  dependencies:
-    - Build melissa
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh ..

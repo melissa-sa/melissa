@@ -1,4 +1,3 @@
-build*
 install/*
 code_saturn_trunk/.git/*
 *.user
