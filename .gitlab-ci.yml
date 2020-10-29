@@ -10,19 +10,6 @@ gitlab_runner_latest:
     - bash ../build-and-test.sh ..
 
 
-gitlab_runner_alpine:
-  image: datamove/gitlab-runner/alpine
-  tags:
-    - docker
-  script:
-    - export CFLAGS='-march=native'
-    - export CXXFLAGS='-march=native'
-    - export FCFLAGS='-march=native'
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. Release
-
-
 centos_8:
   image: datamove/centos/8
   tags:
