@@ -23,4 +23,7 @@ WORKDIR /home/docker
 # Fix OMPI https://github.com/open-mpi/ompi/issues/4948
 ENV OMPI_MCA_btl "^vader"
 
+# Allow oversubscribing 
+ENV OMPI_MCA_rmaps_base_oversubscribe=1
+
 ENTRYPOINT [ "/bin/bash", "--login", "-c", "/bin/bash" ]
