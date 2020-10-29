@@ -62,6 +62,7 @@ mkdir build
 cd -- build
 cmake -DCMAKE_BUILD_TYPE="$build_type" -- ../solver
 cmake --build . -- --jobs="$num_jobs"
+cmake --build . --target install
 
 cd -- "$melissa_sa_binary_dir"
 source "$melissa_sa_prefix_dir/bin/melissa_set_env.sh"
