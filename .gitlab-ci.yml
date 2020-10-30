@@ -20,3 +20,17 @@ centos_8:
     - mkdir build
     - cd build
     - bash ../build-and-test.sh ..
+
+
+debian/9/i386:
+  image: datamove/debian/9/i386
+  tags:
+    - lxd
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - export CFLAGS='-march=native'
+    - export CXXFLAGS='-march=native'
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. Release
