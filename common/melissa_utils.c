@@ -297,28 +297,35 @@ double melissa_get_time ()
  *
  *******************************************************************************/
 
-void melissa_get_node_name (char *node_name, size_t buf_len)
+void melissa_get_node_name (char* node_name, size_t buf_len)
 {
-    struct ifaddrs *ifap, *ifa;
-    struct sockaddr_in *sa;
-    char   *addr;
+	assert(node_name);
+	assert(buf_len > 0);
+
+    struct ifaddrs *ifap;
     char ok = 0;
 
-    getifaddrs (&ifap);
-    for (ifa = ifap; ifa; ifa = ifa->ifa_next)
+    if(getifaddrs (&ifap) < 0) {
+		perror("getifaddrs");
+		exit(EXIT_FAILURE);
+	}
+
+    for (struct ifaddrs* ifa = ifap; ifa; ifa = ifa->ifa_next)
     {
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET)
         {
-            sa = (struct sockaddr_in *) ifa->ifa_addr;
-            addr = inet_ntoa(sa->sin_addr);
+            const struct sockaddr_in* sa = (struct sockaddr_in*)ifa->ifa_addr;
+            const char* addr = inet_ntoa(sa->sin_addr);
             if (strcmp (ifa->ifa_name, "ib0") == 0)
             {
-                sprintf(node_name, "%s", addr);
+                strncpy(node_name, addr, buf_len);
                 ok = 1;
                 break;
             }
         }
     }
+	freeifaddrs(ifap);
+
     if (ok == 0)
     {
         gethostname(node_name, buf_len);
