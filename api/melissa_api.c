@@ -23,19 +23,20 @@
  *
  **/
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <zmq.h>
-#include <assert.h>
-#include <mpi.h>
 #include "melissa_api.h"
-#include "melissa_utils.h"
 #include "melissa_messages.h"
+#include "melissa_utils.h"
+
+#include <assert.h>
+#include <errno.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <mpi.h>
+#include <zmq.h>
 
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
 #define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
@@ -453,12 +454,11 @@ static void melissa_init_internal (const char *field_name,
                             MPI_Comm   comm)
 {
     char          *server_node_name;
-    char           port_name[MPI_MAX_PROCESSOR_NAME] = {0};
+    char           port_name[MPI_MAX_PROCESSOR_NAME + 1] = {0};
     int            i, j, ret;
-    int            simu_id;
+    int            simu_id = -1;
     FILE*          file = NULL;
     int            linger = -1;
-    char          *master_node_name;
     char          *master_node_names = NULL;
     void          *master_requester = NULL;
     static int     first_init = 1;
@@ -485,7 +485,7 @@ static void melissa_init_internal (const char *field_name,
         global_data.comm_size = comm_size;
         assert(comm);
         MPI_Comm_dup(comm, &global_data.comm);
-        char* simu_id_a = getenv("MELISSA_SIMU_ID"); // get the simu ID from the environment variable
+        const char* simu_id_a = getenv("MELISSA_SIMU_ID"); // get the simu ID from the environment variable
         if (simu_id_a == 0)
         {
             printf("Specify the MELISSA_SIMU_ID environment variable as an int in your launch_group command in options.py! (e.g. cmd = 'mpirun -x MELISSA_SIMU_ID=%%d' %% group.simu_id ");
@@ -627,6 +627,13 @@ static void melissa_init_internal (const char *field_name,
         field_data_ptr->global_vect_size = local_vect_size;
     }
 
+	// We must have a master simulation in our group. It will be
+	// simulation 0 of the group. Don't confuse this ID with the MPI
+	// rank.  We do the same comm patern than with Melissa server. we
+	// need the node name of the rank 0 of the simulation 0 of the
+	// group.
+	char master_node_name[MPI_MAX_PROCESSOR_NAME + 1] = { 0 };
+
     if (first_init != 0) // only in the first call
     {
         port_names = NULL;
@@ -650,9 +657,6 @@ static void melissa_init_internal (const char *field_name,
             global_data.coupling = atoi(coupling_a);
             // coupling method can be ZMQ, MPI or FlowVR
 
-            // We must have a master simulation in our group. It will be simulation 0 of the group. Don't confuse this ID with the MPI rank.
-            // We do the same comm patern than with Melissa server. we need the node name of the rank 0 of the simulation 0 of the group.
-            master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME * sizeof(char));
             // The simulation's Sobol' rank is retrieved through its simu ID
             global_data.sobol_rank = simu_id % (global_data.nb_parameters + 2);
             global_data.sample_id = simu_id / (global_data.nb_parameters + 2);
@@ -663,12 +667,20 @@ static void melissa_init_internal (const char *field_name,
             // - global_data.sample_id: the ID of the Sobol' group
             // - global_data.sobol_rank: the rank of the simulation inside its Sobol' group (from 0 to nb_param+1)
 
-            // get the master node name from the environment variable. Only needed if we use COUPLING_ZMQ
-            ret = sprintf(master_node_name, "%s", getenv("MELISSA_MASTER_NODE_NAME"));
-            if (strcmp(master_node_name, "(null)") == 0)
+			// get the master node name from the environment variable. Only
+			// needed if we use COUPLING_ZMQ
+			const char* master_node_name_env =
+				getenv("MELISSA_MASTER_NODE_NAME");
+
+            if (master_node_name_env == NULL)
             {
                 ret = 0;
             }
+			else
+			{
+				strncpy(master_node_name, master_node_name_env, MPI_MAX_PROCESSOR_NAME);
+				ret = strnlen(master_node_name, MPI_MAX_PROCESSOR_NAME);
+			}
             // write master node name node name if not found in env. Always prefer to use the environment variable.
             if (rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && ret < 1)
             {
