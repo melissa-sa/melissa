@@ -25,21 +25,24 @@
  *
  **/
 
+#include "melissa_utils.h"
+
+#include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
+#include <ifaddrs.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
 #include <string.h>
-#include <stdint.h>
-#include <time.h>
 #include <sys/timeb.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <ifaddrs.h>
-#include<stdarg.h>
+#include <time.h>
+#include <unistd.h>
+
 #include <mpi.h>
 #include <zmq.h>
-#include "melissa_utils.h"
 
 int MELISSA_MESSAGE_LEN = 1024;
 
@@ -51,71 +54,12 @@ int melissa_get_message_len()
   return MELISSA_MESSAGE_LEN;
 }
 
-static void print_zmq_error(int         ret,
-                            const char* port_name)
+static void die(int error, const char* port_name)
 {
-    fprintf(stdout,"ERROR on port (%s):\n", port_name);
-    if (ret == EINVAL)
-    {
-        fprintf(stdout, "  The endpoint supplied is invalid.\n");
-    }
-    else if (ret == EPROTONOSUPPORT)
-    {
-        fprintf(stdout, "  The requested transport protocol is not supported.\n");
-    }
-    else if (ret == ENOCOMPATPROTO)
-    {
-        fprintf(stdout, "  The requested transport protocol is not compatible with the socket type.\n");
-    }
-    else if (ret == EADDRINUSE)
-    {
-        fprintf(stdout, "  The requested address is already in use.\n");
-    }
-    else if (ret == EADDRNOTAVAIL)
-    {
-        fprintf(stdout, "  The requested address was not local.\n");
-    }
-    else if (ret == ENODEV)
-    {
-        fprintf(stdout, "  The requested address specifies a nonexistent interface.\n");
-    }
-    else if (ret == ETERM)
-    {
-        fprintf(stdout, "  The ZeroMQ context associated with the specified socket was terminated.\n");
-    }
-    else if (ret == ENOTSOCK)
-    {
-        fprintf(stdout, "  The provided socket was invalid.\n");
-    }
-    else if (ret == EMTHREAD)
-    {
-        fprintf(stdout, "  No I/O thread is available to accomplish the task.\n");
-    }
-    else if (ret == EAGAIN)
-    {
-        fprintf(stdout, "  Non-blocking mode was requested and the message cannot be sent at the moment.\n");
-    }
-    else if (ret == ENOTSUP)
-    {
-        fprintf(stdout, "  The zmq_send() operation is not supported by this socket type\n");
-    }
-    else if (ret == EFSM)
-    {
-        fprintf(stdout, "  The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
-    }
-    else if (ret == EINTR)
-    {
-        fprintf(stdout, "  The operation was interrupted by delivery of a signal before the message was sent.\n");
-    }
-    else if (ret == EHOSTUNREACH)
-    {
-        fprintf(stdout, "  The message cannot be routed.\n");
-    }
-    else
-    {
-        fprintf(stdout, "  Unknown error.\n");
-    }
-    exit(1);
+    fprintf(
+		stderr, "ERROR on port '%s': %s\n", port_name, zmq_strerror(error)
+	);
+    exit(EXIT_FAILURE);
 }
 
 /**
@@ -287,12 +231,9 @@ void melissa_free (void *ptr)
 void melissa_bind (void       *socket,
                    const char *port_name)
 {
-    int ret;
-    ret = zmq_bind (socket, port_name);
-    if (ret != 0)
+    if (zmq_bind (socket, port_name) < 0)
     {
-        ret = errno;
-        print_zmq_error(ret, port_name);
+        die(errno, port_name);
     }
 }
 
@@ -316,12 +257,9 @@ void melissa_bind (void       *socket,
 void melissa_connect (void *socket,
                       char *port_name)
 {
-    int ret;
-    ret = zmq_connect (socket, port_name);
-    if (ret != 0)
+    if (zmq_connect (socket, port_name) < 0)
     {
-        ret = errno;
-        print_zmq_error(ret, port_name);
+        die(errno, port_name);
     }
 }
 
