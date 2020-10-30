@@ -23,19 +23,23 @@
  *
  **/
 
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <zmq.h>
-#include <assert.h>
-#include <mpi.h>
+// enable strnlen
+#define _POSIX_C_SOURCE 200809L
+
 #include "melissa_api.h"
-#include "melissa_utils.h"
 #include "melissa_messages.h"
+#include "melissa_utils.h"
+
+#include <assert.h>
+#include <errno.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include <mpi.h>
+#include <zmq.h>
 
 #define MELISSA_COUPLING_NONE 0    /**< No coupling */
 #define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
@@ -196,41 +200,10 @@ static void free_field_data(field_data_t *data)
 }
 
 
-static void print_zmq_error(int ret)
+static void die(int error)
 {
-    if (ret == EAGAIN)
-    {
-        fprintf(stderr, "Non-blocking mode was requested and the message cannot be sent at the moment.\n");
-    }
-    else if (ret == ENOTSUP)
-    {
-        fprintf(stderr, "The zmq_send() operation is not supported by this socket type\n");
-    }
-    else if (ret == EFSM)
-    {
-        fprintf(stderr, "The zmq_send() operation cannot be performed on this socket at the moment due to the socket not being in the appropriate state. This error may occur with socket types that switch between several states, such as ZMQ_REP. See the messaging patterns section of zmq_socket(3) for more information\n");
-    }
-    else if (ret == ETERM)
-    {
-        fprintf(stderr, "The ZeroMQ context associated with the specified socket was terminated.\n");
-    }
-    else if (ret == ENOTSOCK)
-    {
-        fprintf(stderr, "The provided socket was invalid.\n");
-    }
-    else if (ret == EINTR)
-    {
-        fprintf(stderr, "The operation was interrupted by delivery of a signal before the message was sent.\n");
-    }
-    else if (ret == EHOSTUNREACH)
-    {
-        fprintf(stderr, "The message cannot be routed.\n");
-    }
-    else
-    {
-        fprintf(stderr, "Unknown error.\n");
-    }
-    exit(0);
+	fprintf(stderr, "ZeroMQ socket: %s\n", zmq_strerror(error));
+    exit(EXIT_FAILURE);
 }
 
 static inline void gatherv_init(field_data_t  *data_field,
@@ -453,12 +426,11 @@ static void melissa_init_internal (const char *field_name,
                             MPI_Comm   comm)
 {
     char          *server_node_name;
-    char           port_name[MPI_MAX_PROCESSOR_NAME] = {0};
+    char           port_name[MPI_MAX_PROCESSOR_NAME + 1] = {0};
     int            i, j, ret;
-    int            simu_id;
+    int            simu_id = -1;
     FILE*          file = NULL;
     int            linger = -1;
-    char          *master_node_name;
     char          *master_node_names = NULL;
     void          *master_requester = NULL;
     static int     first_init = 1;
@@ -485,7 +457,7 @@ static void melissa_init_internal (const char *field_name,
         global_data.comm_size = comm_size;
         assert(comm);
         MPI_Comm_dup(comm, &global_data.comm);
-        char* simu_id_a = getenv("MELISSA_SIMU_ID"); // get the simu ID from the environment variable
+        const char* simu_id_a = getenv("MELISSA_SIMU_ID"); // get the simu ID from the environment variable
         if (simu_id_a == 0)
         {
             printf("Specify the MELISSA_SIMU_ID environment variable as an int in your launch_group command in options.py! (e.g. cmd = 'mpirun -x MELISSA_SIMU_ID=%%d' %% group.simu_id ");
@@ -544,20 +516,16 @@ static void melissa_init_internal (const char *field_name,
         melissa_connect (global_data.deconnexion_requester, port_name);
 #endif // CHECK_SIMU_DECONNECTION
         // we send the message
-        ret = zmq_msg_send (&msg, global_data.connexion_requester, 0);
-        if (ret == -1)
+        if (zmq_msg_send (&msg, global_data.connexion_requester, 0) < 0)
         {
-            ret = errno;
-            print_zmq_error(ret);
+            die(errno);
         }
         zmq_msg_close (&msg);
         zmq_msg_init (&msg);
         // we wait for the response
-        ret = zmq_msg_recv (&msg, global_data.connexion_requester, 0);
-        if (ret == -1)
+        if (zmq_msg_recv (&msg, global_data.connexion_requester, 0) < 0)
         {
-            ret = errno;
-            print_zmq_error(ret);
+			die(errno);
         }
         buf_ptr = zmq_msg_data (&msg);
         // we copy the first 5 int of the response data in the rinit tab. We will need it to init the persistent data structures.
@@ -627,6 +595,13 @@ static void melissa_init_internal (const char *field_name,
         field_data_ptr->global_vect_size = local_vect_size;
     }
 
+	// We must have a master simulation in our group. It will be
+	// simulation 0 of the group. Don't confuse this ID with the MPI
+	// rank.  We do the same comm patern than with Melissa server. we
+	// need the node name of the rank 0 of the simulation 0 of the
+	// group.
+	char master_node_name[MPI_MAX_PROCESSOR_NAME + 1] = { 0 };
+
     if (first_init != 0) // only in the first call
     {
         port_names = NULL;
@@ -650,9 +625,6 @@ static void melissa_init_internal (const char *field_name,
             global_data.coupling = atoi(coupling_a);
             // coupling method can be ZMQ, MPI or FlowVR
 
-            // We must have a master simulation in our group. It will be simulation 0 of the group. Don't confuse this ID with the MPI rank.
-            // We do the same comm patern than with Melissa server. we need the node name of the rank 0 of the simulation 0 of the group.
-            master_node_name = melissa_malloc (MPI_MAX_PROCESSOR_NAME * sizeof(char));
             // The simulation's Sobol' rank is retrieved through its simu ID
             global_data.sobol_rank = simu_id % (global_data.nb_parameters + 2);
             global_data.sample_id = simu_id / (global_data.nb_parameters + 2);
@@ -663,12 +635,20 @@ static void melissa_init_internal (const char *field_name,
             // - global_data.sample_id: the ID of the Sobol' group
             // - global_data.sobol_rank: the rank of the simulation inside its Sobol' group (from 0 to nb_param+1)
 
-            // get the master node name from the environment variable. Only needed if we use COUPLING_ZMQ
-            ret = sprintf(master_node_name, "%s", getenv("MELISSA_MASTER_NODE_NAME"));
-            if (strcmp(master_node_name, "(null)") == 0)
+			// get the master node name from the environment variable. Only
+			// needed if we use COUPLING_ZMQ
+			const char* master_node_name_env =
+				getenv("MELISSA_MASTER_NODE_NAME");
+
+            if (master_node_name_env == NULL)
             {
                 ret = 0;
             }
+			else
+			{
+				strncpy(master_node_name, master_node_name_env, MPI_MAX_PROCESSOR_NAME);
+				ret = strnlen(master_node_name, MPI_MAX_PROCESSOR_NAME);
+			}
             // write master node name node name if not found in env. Always prefer to use the environment variable.
             if (rank == 0 && global_data.sobol_rank == 0  && global_data.coupling == MELISSA_COUPLING_ZMQ && ret < 1)
             {
@@ -1287,8 +1267,7 @@ void melissa_send (const char   *field_name,
                     melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent (proc %d)\n", buff_size, field_data_ptr->push_rank[i]);
                     if (ret == -1)
                     {
-                        ret = errno;
-                        print_zmq_error(ret);
+						die(errno);
                     }
                     j += 1;
                     total_bytes_sent += buff_size;
@@ -1366,8 +1345,7 @@ void melissa_send (const char   *field_name,
                 melissa_print(VERBOSE_DEBUG, "Message of size %d byte sent to %d\n", buff_size, i);
                 if (ret == -1)
                 {
-                    ret = errno;
-                    print_zmq_error(ret);
+                    die(errno);
                 }
                 total_bytes_sent += buff_size;
             }
@@ -1434,20 +1412,16 @@ void melissa_finalize (void)
             melissa_print (VERBOSE_DEBUG, "Group %d ready to disconnect \n", global_data.sample_id);
             zmq_msg_init_size (&msg, sizeof(int));
             memcpy (zmq_msg_data (&msg), &global_data.sample_id, sizeof(int));
-            ret = zmq_msg_send (&msg, global_data.deconnexion_requester, 0);
-            if (ret == -1)
+            if (zmq_msg_send (&msg, global_data.deconnexion_requester, 0) < 0)
             {
-                ret = errno;
-                print_zmq_error(ret);
+				die(errno);
             }
             zmq_msg_close (&msg);
             melissa_print (VERBOSE_DEBUG, "Group %d waiting... \n", global_data.sample_id);
             zmq_msg_init (&msg);
-            ret = zmq_msg_recv (&msg, global_data.deconnexion_requester, 0);
-            if (ret == -1)
+            if (zmq_msg_recv (&msg, global_data.deconnexion_requester, 0) < 0)
             {
-                ret = errno;
-                print_zmq_error(ret);
+                die(errno);
             }
             memcpy(&i, zmq_msg_data (&msg), sizeof(int));
             zmq_msg_close (&msg);
