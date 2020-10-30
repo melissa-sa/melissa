@@ -14,8 +14,6 @@ RUN useradd \
     --uid 1000 \
     docker
 
-RUN echo "module load mpi" >> /home/docker/.bashrc
-
 # Switch to non-root user 
 USER docker
 WORKDIR /home/docker
@@ -26,4 +24,7 @@ ENV OMPI_MCA_btl_vader_single_copy_mechanism=none
 # Allow oversubscribing 
 ENV OMPI_MCA_rmaps_base_oversubscribe=1
 
+# ensure MPI is available:
+# modify `.bashrc` and use a login shell so that `.bashrc` is actually read
+RUN echo "module load mpi" >> /home/docker/.bashrc
 ENTRYPOINT [ "/bin/bash", "--login", "-c", "/bin/bash" ]
