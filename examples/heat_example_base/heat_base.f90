@@ -35,9 +35,9 @@ program heat
   ! The program takes at least one parameter: the initial temperature
   narg = iargc()
   param(:) = 0
-  if (narg .lt. 2) then
+  if (narg .lt. 1) then
     print*,"Missing parameter"
-    stop
+    stop 1
   endif
   ! The initial temperature is stored in param(1)
   ! The four next optional parameters are the boundary temperatures

@@ -43,9 +43,9 @@ program heat
 
   narg = iargc()
   param(:) = 0
-  if (narg .lt. 2) then
+  if (narg .lt. 1) then
     print*,"Missing parameter"
-    stop
+    stop 1
   endif
 
   param(:) = 0.
