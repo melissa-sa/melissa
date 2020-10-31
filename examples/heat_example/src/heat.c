@@ -99,7 +99,8 @@ int main( int argc, char **argv )
 {
 
   int    nx, ny, n, nmax, me, np, i1, in, vect_size, next, previous;
-  double lx, ly, dt, dx, dy, d, t, epsilon, t1, t2;
+  double lx, ly, dt, dx, dy, d, epsilon, t1, t2;
+  double t = 0;
   double *u = NULL;
   double *f = NULL;
   double a[3];
