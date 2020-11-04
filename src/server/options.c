@@ -603,7 +603,7 @@ void melissa_check_options (melissa_options_t  *options)
         exit (1);
     }
 
-    if (options->launcher_name == NULL)
+    if ( sizeof(options->launcher_name) / (options->launcher_name)[0] == 0)
     {
         melissa_print (VERBOSE_WARNING, "Melissa Launcher node name set to \"localhost\"\n");
         sprintf (options->launcher_name, "localhost");
@@ -678,7 +678,7 @@ void melissa_write_options (melissa_options_t *options)
 int melissa_read_options (melissa_options_t *options)
 {
     FILE* f = NULL;
-    int ret;
+    int ret = 0;
     char file_name[320];
 
     snprintf(file_name, sizeof(file_name), "%s/options.save", options->restart_dir);

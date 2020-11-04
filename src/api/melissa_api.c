@@ -1148,7 +1148,7 @@ void melissa_send (const char   *field_name,
     }
 
     local_vect_size = field_data_ptr->local_vect_sizes[global_data.rank];
-    send_vect_ptr = send_vect;
+    send_vect_ptr = (double *)send_vect;
 
     if (global_data.learning > 0)
     {
