@@ -1,7 +1,8 @@
-FROM gitlab/gitlab-runner:latest
+FROM ubuntu:latest
 
-# Change gitlab's default entrypoint
-ENTRYPOINT /bin/bash
+# Make tzdata configure non-interactive
+ENV TZ=Europe/Paris
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install Melissa dependencies and create a non-root user
 RUN apt-get update && \
