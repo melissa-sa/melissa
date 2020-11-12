@@ -35,12 +35,22 @@ extern "C" {
 #define JOB 1
 #define DROP 2
 #define STOP 3
-#define TIMEOUT 4
+//#define TIMEOUT 4
 #define SIMU_STATUS 5
 #define SERVER 6
 #define ALIVE 7
 #define CONFIDENCE_INTERVAL 8
 #define OPTIONS 9
+
+// SimulationStatus as defined in the launcher:
+enum SimulationStatus {
+    NOT_SUBMITTED = -1,
+    PENDING = 0,
+    WAITING = 0,
+    RUNNING = 1,
+    FINISHED = 2,
+    TIMEOUT = 4
+};
 
 int get_message_type(char* buff);
 
