@@ -334,6 +334,9 @@ class Study(object):
         self.server = Server_user_functions(self)
         self.simulation = Simulation_user_functions(self)
 
+        self.crashed_groups = 0
+
+
     # options
     def set_option(self, option_key, option_value):
         self.stdy_opt[option_key] = option_value
@@ -570,6 +573,10 @@ class Study(object):
         while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
                or any([i.status != FINISHED for i in self.groups])):
             if self.fault_tolerance() != 0: return
+            if self.stdy_opt['assimilation'] and self.crashed_groups >= len(self.groups):
+                # all runners crashed...
+                logging.error('All runners crashed. Stopping study now.')
+                break
             time.sleep(0.05)
         # time.sleep(1)
         self.server_obj[0].finalize()
@@ -898,6 +905,9 @@ class Study(object):
                         try:
                             group.server_node_name = str(self.server_obj[0].node_name[0])
                             group.restart()
+                            if group.status == FINISHED:
+                                # resarted to often... group finally crashed:
+                                self.crashed_groups += 1
                         except:
                             logging.error('Error while restarting group %d'%group.group_id)
                             print('=== Error while restarting group %d === ' % group.group_id)
@@ -920,6 +930,9 @@ class Study(object):
                                      + " (simulation crashed)")
                         try:
                             group.restart()
+                            if group.status == FINISHED:
+                                # resarted to often... group finally crashed:
+                                self.crashed_groups += 1
                         except:
                             logging.error('Error while restarting group '+str(group.group_id))
                             print('=== Error while restarting group '+str(group.group_id)+' ===')
@@ -934,6 +947,9 @@ class Study(object):
                                          + " (timeout detected by launcher)")
                             try:
                                 group.restart()
+                                if group.status == FINISHED:
+                                    # resarted to often... group finally crashed:
+                                    self.crashed_groups += 1
                             except:
                                 logging.error('Error while restarting group '+group.group_id)
                                 print('=== Error while restarting group '+group.group_id+' ===')
@@ -945,12 +961,16 @@ class Study(object):
                                  + " (timeout detected by server)")
                     try:
                         group.restart()
+                        if group.status == FINISHED:
+                            # resarted to often... group finally crashed:
+                            self.crashed_groups += 1
                     except:
                         logging.error('Error while restarting group '+group.group_id)
                         print('=== Error while restarting group '+group.group_id+' ===')
                         logging.error(traceback.print_exc())
                         self.stop()
                         return 1
+
 #    time.sleep(1)
         return 0
 

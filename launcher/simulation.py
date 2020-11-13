@@ -253,7 +253,7 @@ class MultiSimuGroup(Group):
                 #logging.info('new parameter set: ' + str(self.param_set[i]))
             #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.group_id) +
-                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
+                            ' crashed '+str(crashs_before_redraw)+' times, remove simulation')
             for i in range(self.size):
                 logging.warning('Bad parameter set '+str(i)+': ' + str(self.param_set[i]))
                 melissa_comm4py.send_drop(self.simu_id[i], str(self.job_id).encode())
