@@ -1,7 +1,4 @@
-FROM gitlab/gitlab-runner:alpine
-
-# Change gitlab's default entrypoint
-ENTRYPOINT /bin/bash
+FROM alpine:edge
 
 # Add edge repo, some packages aren't available in stable one
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories

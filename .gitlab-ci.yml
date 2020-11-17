@@ -1,5 +1,5 @@
-gitlab_runner_latest:
-  image: datamove/gitlab-runner/latest
+ubuntu/20.04:
+  image: datamove/ubuntu/20.04
   tags:
     - docker
   script:
