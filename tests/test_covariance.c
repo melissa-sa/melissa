@@ -23,73 +23,76 @@
  *
  **/
 
+#include "mean.h"
+#include "covariance.h"
+#include "variance.h"
+
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "mean.h"
-#include "variance.h"
-#include "covariance.h"
-#include "melissa_utils.h"
 
 int main()
 {
-    double       *tableau1 = NULL, *tableau2 = NULL;
-    double       *ref_mean1 = NULL, *ref_mean2 = NULL;
-    covariance_t  my_covariance;
-    double       *ref_covariance;
-    int           n = 1000; // n expériences
-    int           vect_size = 10000; // size points de l'espace
-    int           i, j;
-    int           ret = 0;
-    double        start_time = 0;
-    double        end_time = 0;
+    const size_t num_samples = 1000;
+    const size_t dimension = 10000;
 
-    init_covariance (&my_covariance, vect_size);
-    tableau1 = calloc (n * vect_size, sizeof(double));
-    tableau2 = calloc (n * vect_size, sizeof(double));
-    ref_mean1 = calloc (vect_size, sizeof(double));
-    ref_mean2 = calloc (vect_size, sizeof(double));
-    ref_covariance = calloc (vect_size, sizeof(double));
+    covariance_t my_covariance;
+    init_covariance (&my_covariance, dimension);
 
-    for (j=0; j<vect_size * n; j++)
+    double* tableau1 = calloc (num_samples * dimension, sizeof(double));
+    double* tableau2 = calloc (num_samples * dimension, sizeof(double));
+    double* ref_mean1 = calloc (dimension, sizeof(double));
+    double* ref_mean2 = calloc (dimension, sizeof(double));
+    double* ref_covariance = calloc (dimension, sizeof(double));
+
+    // the code below draws from a uniform distribution in the interval [a,b]
+    const double a = 0;
+    const double b = 1000;
+
+    for(size_t j = 0; j < dimension * num_samples; ++j)
     {
-        tableau1[j] = rand() / (double)RAND_MAX * (1000);
-        tableau2[j] = rand() / (double)RAND_MAX * (1000);
+        tableau1[j] = rand() / (double)RAND_MAX * (b-a) + a;
+        tableau2[j] = rand() / (double)RAND_MAX * (b-a) + a;
     }
-    for (i=0; i<vect_size; i++)
+    for(size_t i = 0; i < dimension; ++i)
     {
-        for (j=0; j<n; j++)
+        for(size_t j = 0; j < num_samples; ++j)
         {
-            ref_mean1[i] += tableau1[i + j*vect_size];
-            ref_mean2[i] += tableau2[i + j*vect_size];
+            ref_mean1[i] += tableau1[i + j*dimension];
+            ref_mean2[i] += tableau2[i + j*dimension];
         }
-        ref_mean1[i] /= (double)n;
-        ref_mean2[i] /= (double)n;
+        ref_mean1[i] /= num_samples;
+        ref_mean2[i] /= num_samples;
     }
-    start_time = melissa_get_time();
-    for (j=0; j<n; j++)
+
+    for(size_t j = 0; j < num_samples; ++j)
     {
-        increment_covariance (&my_covariance, &tableau1[j * vect_size], &tableau2[j * vect_size], vect_size);
+        increment_covariance(
+            &my_covariance, &tableau1[j * dimension], &tableau2[j * dimension],
+            dimension
+        );
     }
-    end_time = melissa_get_time();
-    fprintf (stdout, "covariance time: %g\n", end_time - start_time);
 
-    // covariance //
-
-    for (i=0; i<vect_size; i++)
+    for(size_t i = 0; i < dimension; ++i)
     {
-        for (j=0; j<n; j++)
+        for(size_t j = 0; j < num_samples; ++j)
         {
-            ref_covariance[i] += (tableau1[i + j*vect_size] - ref_mean1[i])*(tableau2[i + j*vect_size] - ref_mean2[i]);
+            ref_covariance[i] +=
+                (tableau1[i + j*dimension] - ref_mean1[i]) \
+                * (tableau2[i + j*dimension] - ref_mean2[i])
+            ;
         }
-        ref_covariance[i] /= (n-1);
+        ref_covariance[i] /= (num_samples-1);
     }
-    for (i=0; i<vect_size; i++)
+
+    int ret = 0;
+
+    for(size_t i = 0; i < dimension; ++i)
     {
         if (fabs((my_covariance.covariance[i] - ref_covariance[i])/ref_covariance[i]) > 10E-12)
         {
-            fprintf (stdout, "covariance failed (%g, i=%d)\n", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
+            fprintf (stdout, "covariance failed (%g, i=%zu)\num_samples", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
             ret = 1;
         }
     }
