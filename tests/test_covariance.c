@@ -23,75 +23,107 @@
  *
  **/
 
+#include "mean.h"
+#include "covariance.h"
+#include "variance.h"
+
+#include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "mean.h"
-#include "variance.h"
-#include "covariance.h"
-#include "melissa_utils.h"
+#include <time.h>
 
 int main()
 {
-    double       *tableau1 = NULL, *tableau2 = NULL;
-    double       *ref_mean1 = NULL, *ref_mean2 = NULL;
-    covariance_t  my_covariance;
-    double       *ref_covariance;
-    int           n = 1000; // n expériences
-    int           vect_size = 10000; // size points de l'espace
-    int           i, j;
-    int           ret = 0;
-    double        start_time = 0;
-    double        end_time = 0;
+    unsigned seed = time(NULL);
 
-    init_covariance (&my_covariance, vect_size);
-    tableau1 = calloc (n * vect_size, sizeof(double));
-    tableau2 = calloc (n * vect_size, sizeof(double));
-    ref_mean1 = calloc (vect_size, sizeof(double));
-    ref_mean2 = calloc (vect_size, sizeof(double));
-    ref_covariance = calloc (vect_size, sizeof(double));
+    printf("seed=%u\n", seed);
+    srand(seed);
 
-    for (j=0; j<vect_size * n; j++)
+    const size_t vector_length = 1000;
+    const size_t num_samples = 10000;
+
+    covariance_t covar;
+    init_covariance(&covar, num_samples);
+
+    double* tableau1 = calloc(vector_length * num_samples, sizeof(double));
+    double* tableau2 = calloc (vector_length * num_samples, sizeof(double));
+    double* expected_mean1 = calloc(num_samples, sizeof(double));
+    double* expected_mean2 = calloc(num_samples, sizeof(double));
+    double* expected_covariance = calloc(num_samples, sizeof(double));
+
+    // the code below draws from a uniform distribution in the interval [a,b]
+    const double a = 0;
+    const double b = 1000;
+
+    for(size_t j = 0; j < num_samples * vector_length; ++j)
     {
-        tableau1[j] = rand() / (double)RAND_MAX * (1000);
-        tableau2[j] = rand() / (double)RAND_MAX * (1000);
+        tableau1[j] = rand() / (double)RAND_MAX * (b-a) + a;
+        tableau2[j] = rand() / (double)RAND_MAX * (b-a) + a;
     }
-    for (i=0; i<vect_size; i++)
+    for(size_t i = 0; i < num_samples; ++i)
     {
-        for (j=0; j<n; j++)
+        for(size_t j = 0; j < vector_length; ++j)
         {
-            ref_mean1[i] += tableau1[i + j*vect_size];
-            ref_mean2[i] += tableau2[i + j*vect_size];
+            expected_mean1[i] += tableau1[i + j*num_samples];
+            expected_mean2[i] += tableau2[i + j*num_samples];
         }
-        ref_mean1[i] /= (double)n;
-        ref_mean2[i] /= (double)n;
+        expected_mean1[i] /= vector_length;
+        expected_mean2[i] /= vector_length;
     }
-    start_time = melissa_get_time();
-    for (j=0; j<n; j++)
+
+    for(size_t j = 0; j < vector_length; ++j)
     {
-        increment_covariance (&my_covariance, &tableau1[j * vect_size], &tableau2[j * vect_size], vect_size);
+        increment_covariance(
+            &covar, &tableau1[j * num_samples], &tableau2[j * num_samples],
+            num_samples
+        );
     }
-    end_time = melissa_get_time();
-    fprintf (stdout, "covariance time: %g\n", end_time - start_time);
 
-    // covariance //
-
-    for (i=0; i<vect_size; i++)
+    for(size_t i = 0; i < num_samples; ++i)
     {
-        for (j=0; j<n; j++)
+        for(size_t j = 0; j < vector_length; ++j)
         {
-            ref_covariance[i] += (tableau1[i + j*vect_size] - ref_mean1[i])*(tableau2[i + j*vect_size] - ref_mean2[i]);
+            expected_covariance[i] +=
+                (tableau1[i + j*num_samples] - expected_mean1[i])
+                * (tableau2[i + j*num_samples] - expected_mean2[i])
+            ;
         }
-        ref_covariance[i] /= (n-1);
+        expected_covariance[i] /= (vector_length-1);
     }
-    for (i=0; i<vect_size; i++)
+
+    int ret = 0;
+    const double mean = (b + a) / 2;
+
+    for(size_t i = 0; i < num_samples; ++i)
     {
-        if (fabs((my_covariance.covariance[i] - ref_covariance[i])/ref_covariance[i]) > 10E-12)
+        // Observation:
+        // For covariance values small in modulus, there is a large absolute
+        // error. Thus, one cannot use the usual error bound
+        // vector_length * epsilon * true_result >= true_error. The tolerance
+        // below is heuristically trying to find the cross-over point from
+        // relative error dominance to absolute error dominance.
+        double abs_covar = fabs(expected_covariance[i]);
+        const double tolerance = (sqrt(vector_length) * abs_covar > mean)
+            // relative error dominating; factor 4 is heuristically chosen
+            // CC: In my experience, this factor should NEVER be larger than 10.
+            ? 4 * vector_length * DBL_EPSILON * abs_covar
+            // absolute error dominating
+            : vector_length * DBL_EPSILON * mean
+        ;
+        double error = covar.covariance[i] - expected_covariance[i];
+
+        if(fabs(error) > tolerance)
         {
-            fprintf (stdout, "covariance failed (%g, i=%d)\n", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
+            fprintf(
+                stderr,
+                "error %8.2e for sample %zu larger than tolerance %8.2e\n",
+                fabs(error), i, tolerance
+            );
             ret = 1;
         }
     }
+
     return ret;
 }
