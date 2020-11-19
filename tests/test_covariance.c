@@ -34,67 +34,76 @@
 
 int main()
 {
-    const size_t num_samples = 1000;
-    const size_t dimension = 10000;
+    const size_t vector_length = 1000;
+    const size_t num_samples = 10000;
 
-    covariance_t my_covariance;
-    init_covariance (&my_covariance, dimension);
+    covariance_t covar;
+    init_covariance(&covar, num_samples);
 
-    double* tableau1 = calloc (num_samples * dimension, sizeof(double));
-    double* tableau2 = calloc (num_samples * dimension, sizeof(double));
-    double* ref_mean1 = calloc (dimension, sizeof(double));
-    double* ref_mean2 = calloc (dimension, sizeof(double));
-    double* ref_covariance = calloc (dimension, sizeof(double));
+    double* tableau1 = calloc(vector_length * num_samples, sizeof(double));
+    double* tableau2 = calloc (vector_length * num_samples, sizeof(double));
+    double* expected_mean1 = calloc(num_samples, sizeof(double));
+    double* expected_mean2 = calloc(num_samples, sizeof(double));
+    double* expected_covariance = calloc(num_samples, sizeof(double));
 
     // the code below draws from a uniform distribution in the interval [a,b]
     const double a = 0;
     const double b = 1000;
 
-    for(size_t j = 0; j < dimension * num_samples; ++j)
+    for(size_t j = 0; j < num_samples * vector_length; ++j)
     {
         tableau1[j] = rand() / (double)RAND_MAX * (b-a) + a;
         tableau2[j] = rand() / (double)RAND_MAX * (b-a) + a;
     }
-    for(size_t i = 0; i < dimension; ++i)
+    for(size_t i = 0; i < num_samples; ++i)
     {
-        for(size_t j = 0; j < num_samples; ++j)
+        for(size_t j = 0; j < vector_length; ++j)
         {
-            ref_mean1[i] += tableau1[i + j*dimension];
-            ref_mean2[i] += tableau2[i + j*dimension];
+            expected_mean1[i] += tableau1[i + j*num_samples];
+            expected_mean2[i] += tableau2[i + j*num_samples];
         }
-        ref_mean1[i] /= num_samples;
-        ref_mean2[i] /= num_samples;
+        expected_mean1[i] /= vector_length;
+        expected_mean2[i] /= vector_length;
     }
 
-    for(size_t j = 0; j < num_samples; ++j)
+    for(size_t j = 0; j < vector_length; ++j)
     {
         increment_covariance(
-            &my_covariance, &tableau1[j * dimension], &tableau2[j * dimension],
-            dimension
+            &covar, &tableau1[j * num_samples], &tableau2[j * num_samples],
+            num_samples
         );
     }
 
-    for(size_t i = 0; i < dimension; ++i)
+    for(size_t i = 0; i < num_samples; ++i)
     {
-        for(size_t j = 0; j < num_samples; ++j)
+        for(size_t j = 0; j < vector_length; ++j)
         {
-            ref_covariance[i] +=
-                (tableau1[i + j*dimension] - ref_mean1[i]) \
-                * (tableau2[i + j*dimension] - ref_mean2[i])
+            expected_covariance[i] +=
+                (tableau1[i + j*num_samples] - expected_mean1[i])
+                * (tableau2[i + j*num_samples] - expected_mean2[i])
             ;
         }
-        ref_covariance[i] /= (num_samples-1);
+        expected_covariance[i] /= (vector_length-1);
     }
 
     int ret = 0;
+    const double tolerance = 1e-11;
 
-    for(size_t i = 0; i < dimension; ++i)
+    for(size_t i = 0; i < num_samples; ++i)
     {
-        if (fabs((my_covariance.covariance[i] - ref_covariance[i])/ref_covariance[i]) > 10E-12)
+        double covariance_delta = covar.covariance[i] - expected_covariance[i];
+        double relative_error = covariance_delta / expected_covariance[i];
+
+        if(fabs(relative_error) > tolerance)
         {
-            fprintf (stdout, "covariance failed (%g, i=%zu)\num_samples", fabs(my_covariance.covariance[i] - ref_covariance[i]), i);
+            fprintf(
+                stderr,
+                "relative error %8.2e for sample %zu larger than tolerance %8.2e\n",
+                fabs(relative_error), i, tolerance
+            );
             ret = 1;
         }
     }
+
     return ret;
 }
