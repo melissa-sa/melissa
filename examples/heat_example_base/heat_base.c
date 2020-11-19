@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/timeb.h>
 #include <mpi.h>
 
 // Fortran interfaces:
@@ -98,7 +97,7 @@ int main( int argc, char **argv )
 {
 
   int    nx, ny, n, nmax, me, np, i1, in, vect_size, next, previous;
-  double lx, ly, dt, dx, dy, d, epsilon, t1, t2;
+  double lx, ly, dt, dx, dy, d, epsilon;
   double t = 0;
   double *u = NULL;
   double *f = NULL;
@@ -106,7 +105,6 @@ int main( int argc, char **argv )
   double param[5];
   MPI_Comm comm;
   int fcomm;
-  struct timeb tp;
 
   MPI_Init(&argc, &argv);
 
@@ -132,10 +130,6 @@ int main( int argc, char **argv )
   MPI_Comm_rank(comm, &me);
   MPI_Comm_size(comm, &np);
   fcomm = MPI_Comm_c2f(comm);
-
-  // Init timer
-  ftime(&tp);
-  t1 = (double)tp.time + (double)tp.millitm / 1000;
 
   // Neighbour ranks
   next = me+1;
@@ -186,12 +180,6 @@ int main( int argc, char **argv )
   n = 0;
   // write results on disk
   finalize (&dx, &dy, &nx, &ny, &i1, &in, &u[0], &f[0], &me, &n);
-
-  // end timer
-  ftime(&tp);
-  t2 = (double)tp.time + (double)tp.millitm / 1000;
-
-  fprintf(stdout, "Calcul time: %g sec\n", t2-t1);
 
   free(u);
   free(f);

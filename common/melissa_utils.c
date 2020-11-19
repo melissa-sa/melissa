@@ -268,19 +268,27 @@ void melissa_connect (void *socket,
  *
  * @ingroup melissa_utils
  *
- * Returns an elapsed time
+ * Return the time passed since some point in the past. The point in time is
+ * system-dependent (e.g., the uptime) and only the difference between two
+ * values is meaningful.
  *
  *******************************************************************************
  *
- * @return elapsed time
+ * @return Time passed since an arbitrary fixed points in the past in seconds
  *
  *******************************************************************************/
 
 double melissa_get_time ()
 {
-    struct timeb tp;
-    ftime(&tp);
-    return (double)tp.time + (double)tp.millitm / 1000;
+	struct timespec tp;
+
+	if(clock_gettime(CLOCK_MONOTONIC, &tp) < 0)
+	{
+		perror("clock_gettime(CLOCK_MONOTONIC)");
+		exit(EXIT_FAILURE);
+	}
+
+    return tp.tv_sec + tp.tv_nsec / 1e9;
 }
 
 /**
