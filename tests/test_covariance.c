@@ -27,6 +27,7 @@
 #include "covariance.h"
 #include "variance.h"
 
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -87,19 +88,32 @@ int main()
     }
 
     int ret = 0;
-    const double tolerance = 1e-11;
+    const double mean = (b + a) / 2;
 
     for(size_t i = 0; i < num_samples; ++i)
     {
-        double covariance_delta = covar.covariance[i] - expected_covariance[i];
-        double relative_error = covariance_delta / expected_covariance[i];
+        // Observation:
+        // For covariance values small in modulus, there is a large absolute
+        // error. Thus, one cannot use the usual error bound
+        // vector_length * epsilon * true_result >= true_error. The tolerance
+        // below is heuristically trying to find the cross-over point from
+        // relative error dominance to absolute error dominance.
+        double abs_covar = fabs(expected_covariance[i]);
+        const double tolerance = (sqrt(vector_length) * abs_covar > mean)
+            // relative error dominating; factor 4 is heuristically chosen
+            // CC: In my experience, this factor should NEVER be larger than 10.
+            ? 4 * vector_length * DBL_EPSILON * abs_covar
+            // absolute error dominating
+            : vector_length * DBL_EPSILON * mean
+        ;
+        double error = covar.covariance[i] - expected_covariance[i];
 
-        if(fabs(relative_error) > tolerance)
+        if(fabs(error) > tolerance)
         {
             fprintf(
                 stderr,
-                "relative error %8.2e for sample %zu larger than tolerance %8.2e\n",
-                fabs(relative_error), i, tolerance
+                "error %8.2e for sample %zu larger than tolerance %8.2e\n",
+                fabs(error), i, tolerance
             );
             ret = 1;
         }
