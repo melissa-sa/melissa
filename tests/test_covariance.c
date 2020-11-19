@@ -32,9 +32,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 int main()
 {
+    unsigned seed = time(NULL);
+
+    printf("seed=%u\n", seed);
+    srand(seed);
+
     const size_t vector_length = 1000;
     const size_t num_samples = 10000;
 
