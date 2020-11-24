@@ -127,11 +127,17 @@ class Messenger(Thread):
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
                         group_id = int(message[1])//self.batch_size
+                        # restarted runners for melissa-da get an id shifted by the
+                        # total number of runners to not confuse the DA server
+                        group_id = group_id % len(self.groups)
                         with self.groups[group_id].lock:
                             self.groups[group_id].status = TIMEOUT
                 elif message[0] == 'group_state':
                     group_id = int(message[1])//self.batch_size
                     simu_id = int(message[1])%self.batch_size
+                    # restarted runners for melissa-da get an id shifted by the
+                    # total number of runners to not confuse the DA server
+                    group_id = group_id % len(self.groups)
                     with self.groups[group_id].lock:
                         if self.groups[group_id].job_type == 3:
                             if self.groups[group_id].status < 2:
@@ -207,6 +213,12 @@ class Responder(Thread):
                 if message[0] == 'simu_info':
                     group = int(message[1])//self.batch_size
                     simu = int(message[1])%self.batch_size
+
+                    # restarted runners for melissa-da get an id shifted by the
+                    # total number of runners to not confuse the DA server
+                    # simu_info messages do not work in these cases:
+                    assert group < len(self.groups)
+
                     with self.groups[group].lock:
                         if self.groups[group].job_type == 4:
                             params = self.groups[group].param_set[0]
