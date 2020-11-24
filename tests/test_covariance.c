@@ -62,17 +62,19 @@ int main()
         tableau1[j] = rand() / (double)RAND_MAX * (b-a) + a;
         tableau2[j] = rand() / (double)RAND_MAX * (b-a) + a;
     }
-    for(size_t i = 0; i < num_samples; ++i)
+    for(size_t j = 0; j < vector_length; ++j)
     {
-        for(size_t j = 0; j < vector_length; ++j)
+        for(size_t i = 0; i < num_samples; ++i)
         {
             expected_mean1[i] += tableau1[i + j*num_samples];
             expected_mean2[i] += tableau2[i + j*num_samples];
         }
+    }
+    for(size_t i = 0; i < num_samples; ++i)
+    {
         expected_mean1[i] /= vector_length;
         expected_mean2[i] /= vector_length;
     }
-
     for(size_t j = 0; j < vector_length; ++j)
     {
         increment_covariance(
@@ -81,15 +83,18 @@ int main()
         );
     }
 
-    for(size_t i = 0; i < num_samples; ++i)
+    for(size_t j = 0; j < vector_length; ++j)
     {
-        for(size_t j = 0; j < vector_length; ++j)
+        for(size_t i = 0; i < num_samples; ++i)
         {
             expected_covariance[i] +=
                 (tableau1[i + j*num_samples] - expected_mean1[i])
                 * (tableau2[i + j*num_samples] - expected_mean2[i])
             ;
         }
+    }
+    for(size_t i = 0; i < num_samples; ++i)
+    {
         expected_covariance[i] /= (vector_length-1);
     }
 
@@ -105,10 +110,10 @@ int main()
         // below is heuristically trying to find the cross-over point from
         // relative error dominance to absolute error dominance.
         double abs_covar = fabs(expected_covariance[i]);
-        const double tolerance = (sqrt(vector_length) * abs_covar > mean)
+        const double tolerance = (abs_covar > mean)
             // relative error dominating; factor 4 is heuristically chosen
             // CC: In my experience, this factor should NEVER be larger than 10.
-            ? 4 * vector_length * DBL_EPSILON * abs_covar
+            ? vector_length * DBL_EPSILON * abs_covar
             // absolute error dominating
             : vector_length * DBL_EPSILON * mean
         ;
