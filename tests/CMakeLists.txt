@@ -28,10 +28,6 @@ set(TESTS_LIBS ${EXTRA_LIBS}
 #    endif()
 #endforeach()
 
-configure_file(test_horovod.py.in test_horovod.py @ONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/test_horovod.py
-        DESTINATION bin)
-
 
 add_executable(test_base test_base.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(test_base ${TESTS_LIBS} melissa_stats)
