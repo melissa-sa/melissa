@@ -110,10 +110,10 @@ int main()
         // below is heuristically trying to find the cross-over point from
         // relative error dominance to absolute error dominance.
         double abs_covar = fabs(expected_covariance[i]);
-        const double tolerance = (sqrt(vector_length) * abs_covar > mean)
+        const double tolerance = (abs_covar > mean)
             // relative error dominating; factor 4 is heuristically chosen
             // CC: In my experience, this factor should NEVER be larger than 10.
-            ? 4 * vector_length * DBL_EPSILON * abs_covar
+            ? vector_length * DBL_EPSILON * abs_covar
             // absolute error dominating
             : vector_length * DBL_EPSILON * mean
         ;
