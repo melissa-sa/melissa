@@ -20,10 +20,20 @@
 """
 
 import getpass
-import imp
-imp.load_source("melissa", "@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/melissa.py")
+import importlib.util
+import sys
+
+def import_from_file(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+
+
+import_from_file("melissa", "@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/melissa.py")
+import_from_file("functions", "@EXAMPLES_DIR@/heat_example/study_local/functions.py")
+
 import melissa
-imp.load_source("functions", "@EXAMPLES_DIR@/heat_example/study_local/functions.py")
 from functions import *
 
 melissa_study = melissa.Study()

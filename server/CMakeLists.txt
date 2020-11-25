@@ -40,12 +40,3 @@ target_link_libraries(melissa_server ${EXTRA_LIBS}
                                      melissa_messages
                                      dl)
 INSTALL(TARGETS melissa_server RUNTIME DESTINATION bin RENAME melissa_server)
-
-add_library(melissa_server4py SHARED ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
-set_target_properties(melissa_server4py PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR} VERSION ${PROJECT_VERSION})
-target_link_libraries(melissa_server4py ${EXTRA_LIBS} ${OPENTURNS_LIBRARIES} melissa_stats melissa_output melissa_messages dl)
-INSTALL(TARGETS melissa_server4py DESTINATION lib)
-
-configure_file(melissa_server.py.in melissa_server.py @ONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_server.py
-        DESTINATION bin)

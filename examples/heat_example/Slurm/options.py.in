@@ -23,9 +23,6 @@ import time
 import numpy as np
 import subprocess
 import getpass
-import imp
-#from matplotlib import pyplot as plt
-#from matplotlib import cm
 from string import Template
 from shutil import copyfile
 

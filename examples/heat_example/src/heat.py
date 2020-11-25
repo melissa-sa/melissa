@@ -26,10 +26,16 @@ import time
 import numpy as np
 from ctypes import c_double, c_int, c_char, byref
 from mpi4py import MPI
-import imp
+import importlib
 
-imp.load_source("melissa_api", '@CMAKE_INSTALL_PREFIX@/lib/melissa_api.py')
-import melissa_api
+api_spec = importlib.util.spec_from_file_location( \
+    "melissa_api", '@CMAKE_INSTALL_PREFIX@/lib/melissa_api.py'
+)
+api_options = importlib.util.module_from_spec(api_spec)
+sys.modules["melissa_api"] = api_options
+options_spec.loader.exec_module(api_options)
+
+
 
 heat_utils = np.ctypeslib.load_library('libheat_utils','@CMAKE_INSTALL_PREFIX@/share/melissa/examples/heat_example_base/lib/libheat_utils.so')
 A_array = c_double * 3

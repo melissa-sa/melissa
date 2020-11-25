@@ -18,10 +18,17 @@
 """
     User defined options module
 """
+import importlib.util
+import sys
 
-import getpass
-import imp
-imp.load_source("functions", "@EXAMPLES_DIR@/heat_example/study_local/functions.py")
+functions_spec = importlib.util.spec_from_file_location( \
+    "functions", "@EXAMPLES_DIR@/heat_example/study_local/functions.py"
+)
+functions = importlib.util.module_from_spec(functions_spec)
+sys.modules["functions"] = functions
+functions_spec.loader.exec_module(functions)
+
+
 from functions import *
 
 STUDY_OPTIONS = {}

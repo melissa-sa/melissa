@@ -25,12 +25,15 @@
     melissa_launcher path/to/options.py
 """
 
-import os
-import sys
-import signal
-import imp
 import getopt
+import importlib
+import importlib.util
+from importlib.machinery import SourceFileLoader
 import logging
+import os
+import signal
+import sys
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 def usage():
@@ -81,7 +84,12 @@ def main():
     else:
         option_file = options_path
 
-    imp.load_source("options", option_file)
+    options_spec = \
+        importlib.util.spec_from_file_location("options", option_file)
+    options = importlib.util.module_from_spec(options_spec)
+    sys.modules["options"] = options
+    options_spec.loader.exec_module(options)
+
     from options import STUDY_OPTIONS as stdy_opt
     from options import MELISSA_STATS as ml_stats
     from options import USER_FUNCTIONS as usr_func
