@@ -14,7 +14,7 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-cmake_minimum_required(VERSION 3.2.2)
+cmake_minimum_required(VERSION 3.7.2)
 
 project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
 
