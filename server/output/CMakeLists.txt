@@ -23,7 +23,7 @@ file(GLOB
 
 set(MELISSA_OUTPUT_MODULE "txt" CACHE STRING "Choose which output module will be used to write statistics")
 
-set(melissa_output_modules "txt;ensight;netcdf")
+set(melissa_output_modules "txt;netcdf")
 
 set_property(CACHE MELISSA_OUTPUT_MODULE PROPERTY STRINGS ${melissa_output_modules})
 
