@@ -22,9 +22,8 @@
 import numpy as np
 
 def draw_param_set():
-    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
-    for i in range(STUDY_OPTIONS['nb_parameters']):
-        param_set[i] = np.random.uniform(0, 1)
+    n = STUDY_OPTIONS['nb_parameters']
+    param_set = np.random.uniform(0, 1, size=n)
     return param_set
 
 STUDY_OPTIONS = {}
