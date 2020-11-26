@@ -36,6 +36,12 @@ WALLTIME_SIMU = "0:05:00"
 NODES_SIMU = NODES_GROUP
 PROC_PER_NODE = 1
 
+def draw_param_set():
+    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
+    for i in range(STUDY_OPTIONS['nb_parameters']):
+        param_set[i] = np.random.uniform(0, 1)
+    return param_set
+
 def launch_server(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory'])):
         os.mkdir(STUDY_OPTIONS['working_directory'])
@@ -103,10 +109,10 @@ def launch_simu(simulation):
     content = Template(file.read()).substitute(WALLTIME_SIMU=str(WALLTIME_SIMU),
                                                NODES_SIMU=str(NODES_SIMU*simulation.size),
                                                PROC_PER_NODE=str(PROC_PER_NODE),
+                                               COUPLING=str(simulation.coupling),
                                                SIMU_CMD=str(command),
                                                SIMU_ID=str(simulation.group_id),
-                                               COUPLING=str(simulation.coupling),
-                                               SERVER_NODE_NAME=str(simulation.server_node_name),
+                                               SERVER_NODE_NAME=simulation.server_node_name,
                                                HOSTNAME=str("$(hostname)"))
     file.close()
     file=open("run_simu.sh", "w")
@@ -152,14 +158,6 @@ def kill_job(job):
     print('killing job ...')
     os.system("oardel "+str(job.job_id))
 
-
-
-def draw_param_set():
-    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
-    for i in range(STUDY_OPTIONS['nb_parameters']):
-        param_set[i] = np.random.uniform(0, 1)
-    return param_set
-
 STUDY_OPTIONS = {}
 STUDY_OPTIONS['user_name'] = USERNAME
 STUDY_OPTIONS['working_directory'] = '@EXAMPLES_DIR@/heat_example/study_OAR/STATS'
@@ -190,9 +188,6 @@ USER_FUNCTIONS = {}
 USER_FUNCTIONS['create_study'] = None
 USER_FUNCTIONS['draw_parameter_set'] = draw_param_set
 USER_FUNCTIONS['create_group'] = None
-#if MELISSA_STATS['sobol_indices']:
-#    USER_FUNCTIONS['launch_group'] = launch_group
-#else:
 USER_FUNCTIONS['launch_group'] = launch_simu
 USER_FUNCTIONS['launch_server'] = launch_server
 USER_FUNCTIONS['check_server_job'] = check_job
