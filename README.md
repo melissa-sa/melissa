@@ -121,61 +121,6 @@ Running Melissa locally means that all processes run on your local machine, exec
 The virtual cluster enables to run Melissa on a local machine with a batch scheduler managing a virtual cluster build using docker containers.
 All instructions in the [utility/virtual_cluster/README.md](utility/virtual_cluster/README.md).
 
-## Supercomputer
-
-Mellisa will run on any cluster with one of the following job schedulers:
-* Torque
-* Moab
-* PBS
-* Slurm
-* Grid Engine
-* Condor
-* LSF
-* OAR supported is to be implemented soon
-
-`job_scheduler_config.py` is a fully customisable module for managing your scheduler of choice. It is an interface to how Melissa interacts with job schedulers. It does not require programming skills and requires only basic understaing of job scheduler features.
-
-### Configuring
-
-Start by defining a job scheduler in the `spawner` field. Next, assign values to job scheduler options: `scheduler.req_...`, `scheduler.server_script`, `scheduler.simu_script`. Only job template scripts `scheduler.server_script` and `scheduler.simu_script` are required. Job template scripts must contain selected `req_...` options without `req_` prefix.
-
-There is an example Slurm configuration in `job_scheduler_config.py`.
-
-### Schedulers
-
-Job scheduler should be defined as one of these:
-```python
-batchspawner.TorqueSpawner()
-batchspawner.MoabSpawner()
-batchspawner.PBSSpawner()
-batchspawner.SlurmSpawner()
-batchspawner.GridengineSpawner()
-batchspawner.CondorSpawner()
-batchspawner.LsfSpawner()
-```
-
-### Options
-
-* `req_queue` - queue name to submit job to resource manager
-* `req_host` - host name of batch server to submit job to resource manager
-* `req_memory` - memory to request from resource manager
-* `req_nodes` - number of nodes allocated to a job
-* `req_tasks_per_node` - number of tasks invoked on each node
-* `req_nprocs` - number of processors to request from resource manager
-* `req_ngpus` - number of GPUs to request from resource manager
-* `req_runtime` - length of time for submitted job to run
-* `req_partition` - partition name to submit job to resource manager
-* `req_account` - account name string to pass to the resource manager
-* `req_server_output_log` - server batch script standard output file
-* `req_server_error_log` - server batch script standard error file
-* `req_simu_output_log` - simulation batch script standard output file
-* `req_simu_error_log` - simulation batch script standard error file
-* `req_username` - name of a user running a job
-* `req_homedir` - home directory of a user running a job
-* `req_prologue` - script to run before batch script commands are invoked
-* `req_epilogue` - script to run after batch script commands are invoked
-* `req_options` - other job scheduler options to include into job submission script
-
 
 # How to cite Melissa
 

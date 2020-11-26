@@ -14,7 +14,7 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-set (SCHED_VERSIONS "local" "OAR" "cluster" "Slurm" "python_server")  ## TODO: remove Slurm
+set (SCHED_VERSIONS "local" "OAR" "Slurm" "python_server")  ## TODO: remove Slurm
 
 foreach(sched_version ${SCHED_VERSIONS})
     add_subdirectory(${sched_version})

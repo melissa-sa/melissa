@@ -34,6 +34,3 @@ install(FILES study.py
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_launcher.py
         DESTINATION bin
         RENAME melissa_launcher)
-
-install(FILES batchspawner.py
-        DESTINATION share/melissa/launcher)
