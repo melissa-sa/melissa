@@ -36,6 +36,7 @@ endif(${srcdir} STREQUAL ${bindir})
 
 # set up
 include(CTest)
+include(GNUInstallDirs)
 include(FindPackageHandleStandardArgs)
 
 function(find_python_module module)
@@ -192,24 +193,19 @@ option(CHECK_SIMU_DECONNECTION "check simulation deconnection" OFF)
 # Load local include directories before. This ensures that no old installed headers are
 # loaded.
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/common")
-
-add_subdirectory(common)
-
 include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
-
-add_subdirectory(api)
-
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/stats")
-
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/output")
-
 include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
 
+
+add_subdirectory(api)
+add_subdirectory(bin)
+add_subdirectory(common)
+add_subdirectory(melissa)
 add_subdirectory(server)
-
-add_subdirectory(launcher)
-
 add_subdirectory(tests)
+
 
 set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
 add_subdirectory(examples)

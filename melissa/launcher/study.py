@@ -19,41 +19,42 @@
     Study main module
 """
 
-from threading import Thread
-from sys import exit
-import os
-import time
-import copy
-import numpy as np
-import logging
-import traceback
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
+import copy
+import logging
+import numpy as np
+import os
+from sys import exit
+from threading import Thread
+import time
+import traceback
+
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
-from launcher.simulation import Server
-#from simulation import SingleSimuGroup
-from launcher.simulation import MultiSimuGroup
-from launcher.simulation import Group
-from launcher.simulation import SobolGroup
-from launcher.simulation import Job
-from launcher.simulation import melissa_install_prefix
 
-melissa_comm4py = cdll.LoadLibrary(melissa_install_prefix + '/lib/libmelissa_comm4py.so')
+from .. import config
+
+from .simulation import Group
+from .simulation import Job
+from .simulation import MultiSimuGroup
+from .simulation import Server
+from .simulation import SobolGroup
+
+# Jobs and executions status
+from .simulation import FINISHED
+from .simulation import NOT_SUBMITTED
+from .simulation import PENDING
+from .simulation import RUNNING
+from .simulation import TIMEOUT
+from .simulation import WAITING
+
+
+melissa_comm4py = cdll.LoadLibrary(os.path.join(config.libdir, "libmelissa_comm4py.so"))
 melissa_comm4py.bind_message_rcv.argtypes = [c_char_p]
 melissa_comm4py.bind_message_resp.argtypes = [c_char_p]
 melissa_comm4py.bind_message_snd.argtypes = [c_char_p]
 melissa_comm4py.send_resp_message.argtypes = [c_char_p]
-#melissa_comm4py.wait_message.argtypes = [c_char_p]
 melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
-
-
-# Jobs and executions status
-from launcher.simulation import NOT_SUBMITTED
-from launcher.simulation import WAITING
-from launcher.simulation import PENDING
-from launcher.simulation import RUNNING
-from launcher.simulation import FINISHED
-from launcher.simulation import TIMEOUT
 
 
 class StateChecker(Thread):

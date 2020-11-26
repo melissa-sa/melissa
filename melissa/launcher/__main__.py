@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/python3
 
 ###################################################################
 #                            Melissa                              #
@@ -15,8 +15,6 @@
 #    Alejandro Ribes,                                             #
 #    Bertrand Iooss,                                              #
 ###################################################################
-
-# -*- coding: utf-8 -*-
 
 """
     Main module of Melissa Launcher.
@@ -93,7 +91,7 @@ def main():
     from options import STUDY_OPTIONS as stdy_opt
     from options import MELISSA_STATS as ml_stats
     from options import USER_FUNCTIONS as usr_func
-    from launcher.study import Study
+    from .study import Study
 
 
     # init log for launcher
