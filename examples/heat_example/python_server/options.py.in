@@ -19,6 +19,9 @@
     User defined options module
 """
 
+import importlib.util
+import sys
+
 functions_spec = importlib.util.spec_from_file_location( \
     "functions", "@EXAMPLES_DIR@/heat_example/study_python_server/functions.py"
 )
