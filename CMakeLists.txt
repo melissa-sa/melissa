@@ -260,5 +260,5 @@ option(MELISSA4PY_INSTALL "Build with Melissa4py (Python server)" OFF)
 
 if(MELISSA4PY_INSTALL)
   message("Installing melissa4py")
-  add_subdirectory(${CMAKE_MODULE_PATH}/utility/melissa4py)
+  add_subdirectory(utility/melissa4py)
 endif(MELISSA4PY_INSTALL)
