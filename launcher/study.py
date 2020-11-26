@@ -1013,9 +1013,8 @@ def draw_parameter_set(usr_func, stdy_opt):
             logging.error(traceback.print_exc())
             exit()
     else:
-        param_set = np.zeros(stdy_opt['nb_parameters'])
-        for i in range(stdy_opt['nb_parameters']):
-            param_set[i] = np.random.uniform(0, 1)
+        n = stdy_opt['nb_parameters']
+        param_set = np.random.uniform(0, 1, size=n)
     return param_set
 
 def check_scheduler_load(usr_func):
