@@ -165,7 +165,5 @@ def kill_job(job):
     os.system('kill '+str(job.job_id))
 
 def draw_param_set():
-    param_set = np.zeros(5)
-    for i in range(5):
-        param_set[i] = np.random.uniform(0, 1)
+    param_set = np.random.uniform(0, 1, size=5)
     return param_set

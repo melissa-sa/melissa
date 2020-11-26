@@ -37,9 +37,8 @@ NODES_SIMU = NODES_GROUP
 PROC_PER_NODE = 1
 
 def draw_param_set():
-    param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
-    for i in range(STUDY_OPTIONS['nb_parameters']):
-        param_set[i] = np.random.uniform(0, 1)
+    n = STUDY_OPTIONS['nb_parameters']
+    param_set = np.random.uniform(0, 1, size=n)
     return param_set
 
 def launch_server(server):
@@ -179,6 +178,8 @@ STUDY_OPTIONS['field_names'] = ["heat1"]           # list of field names
 STUDY_OPTIONS['simulation_timeout'] = 40           # simulations are restarted if no life sign for 40 seconds
 STUDY_OPTIONS['checkpoint_interval'] = 20          # server checkpoints every 30 seconds
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI" # option for Sobol' simulation groups coupling
+STUDY_OPTIONS['verbosity'] = 2                     # verbosity: 0: only errors, 1: errors + warnings, 2: useful infos (default), 3: debug infos
+STUDY_OPTIONS['batch_size'] = 1
 
 MELISSA_STATS = {}
 MELISSA_STATS['mean'] = True

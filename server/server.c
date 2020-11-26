@@ -32,7 +32,6 @@
 #include <zmq.h>
 #include <mpi.h>
 
-extern "C" {
 #include "server.h"
 #include "melissa_io.h"
 #include "compute_stats.h"
@@ -42,7 +41,6 @@ extern "C" {
 #include "fault_tolerance.h"
 #include "melissa_messages.h"
 #include "melissa_output.h"
-}
 
 static volatile int end_signal = 0;
 
