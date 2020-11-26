@@ -15,23 +15,19 @@
 ###################################################################
 
 add_subdirectory(stats)
-
 add_subdirectory(output)
 
-add_definitions(-DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
-
-set(MELISSA_CMAKECONFIG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME}" CACHE STRING "install path for MelissaConfig.cmake")
-
-file(GLOB
-     ALL_SERVER
-     RELATIVE
-     ${CMAKE_CURRENT_SOURCE_DIR}
-     *.c
-     *.cxx
-     )
-
-add_executable(melissa_server ${ALL_SERVER} $<TARGET_OBJECTS:melissa_utils>)
-
+add_executable(melissa_server
+    compute_stats.c
+    fault_tolerance.c
+    melissa_fields.c
+    melissa_data.c
+    melissa_io.c
+    melissa_options.c
+    server.c
+    server_helper.c
+    $<TARGET_OBJECTS:melissa_utils>
+)
 
 target_link_libraries(melissa_server ${EXTRA_LIBS}
                                      ${OPENTURNS_LIBRARIES}

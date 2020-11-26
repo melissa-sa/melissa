@@ -16,7 +16,7 @@
 
 cmake_minimum_required(VERSION 3.7.2)
 
-project(Melissa VERSION 0.6.0 LANGUAGES C Fortran CXX)
+project(Melissa VERSION 0.6.0 LANGUAGES C Fortran)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
@@ -66,7 +66,6 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -pedantic")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-discarded-qualifiers")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wall -pedantic")
 
 IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     # Set install directory to ../install
@@ -115,7 +114,7 @@ set_target_properties(
 # Find MPI
 find_package(MPI REQUIRED)
 
-if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
+if(MPI_C_FOUND AND MPI_Fortran_FOUND)
   set(EXTRA_LIBS ${EXTRA_LIBS}
 				 ${MPI_C_LIBRARIES})
   include_directories( ${MPI_INCLUDE_PATH} )
@@ -124,7 +123,7 @@ if(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
   link_directories(${MPI_Fortran_LIBRARIES})
   set(EXTRA_LIBS ${EXTRA_LIBS}
 				 ${MPI_Fortran_LIBRARIES} )
-endif(MPI_C_FOUND AND MPI_Fortran_FOUND AND MPI_CXX_FOUND)
+endif()
 
 
 # OpenMP #
@@ -135,7 +134,6 @@ if(BUILD_WITH_OpenMP)
   find_package(OpenMP)
   if(OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     message(STATUS "OpenMP Found")
     add_definitions( -DBUILD_WITH_OPENMP )
   else(OPENMP_FOUND)
@@ -242,6 +240,8 @@ if(BUILD_DOCUMENTATION)
 endif(BUILD_DOCUMENTATION)
 
 include(CMakePackageConfigHelpers)
+
+set(MELISSA_CMAKECONFIG_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME})
 
 configure_package_config_file(${PROJECT_NAME}Config.cmake.in
                               "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
