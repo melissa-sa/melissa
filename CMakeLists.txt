@@ -33,10 +33,28 @@ if(${srcdir} STREQUAL ${bindir})
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # Set install directory to ../install
+    get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
+    set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install"
+        CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+
 
 # set up
 include(CTest)
 include(GNUInstallDirs)
+
+set(MELISSA_INSTALL_PYTHONDIR ${CMAKE_INSTALL_LIBDIR}/python3/dist-packages
+    CACHE PATH "Python3 packages"
+)
+set(MELISSA_INSTALL_FULL_PYTHONDIR
+    ${CMAKE_INSTALL_PREFIX}/${MELISSA_INSTALL_PYTHONDIR}
+)
+
+
+# Python configuration
 include(FindPackageHandleStandardArgs)
 
 function(find_python_module module)
@@ -60,25 +78,17 @@ function(find_python_module module)
     find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
 
+find_package(PythonInterp 3 REQUIRED)
+find_python_module(numpy REQUIRED)
 
+
+# C language options
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -pedantic")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-discarded-qualifiers")
-
-IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    # Set install directory to ../install
-    get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
-    set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install"
-        CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
-endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-
-
-# Find Python3
-find_package(PythonInterp 3 REQUIRED)
-find_python_module(numpy REQUIRED)
 
 
 # Find ZeroMQ

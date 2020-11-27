@@ -29,9 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-set(python_packages_path ${CMAKE_INSTALL_LIBDIR}/python3/dist-packages)
-
-
 set(python_files
     __init__.py
     launcher/__init__.py
@@ -47,7 +44,7 @@ foreach(file IN LISTS python_files)
     get_filename_component(directory ${file} DIRECTORY)
     install(
         FILES ${file}
-        DESTINATION ${python_packages_path}/melissa/${directory}
+        DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa/${directory}
     )
 endforeach()
 
@@ -55,5 +52,5 @@ endforeach()
 configure_file(config.py.in config.py @ONLY)
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/config.py
-    DESTINATION ${python_packages_path}/melissa
+    DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa
 )

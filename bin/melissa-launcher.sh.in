@@ -29,5 +29,5 @@
 set -e
 set -u
 
-exec env PYTHONPATH="@CMAKE_INSTALL_FULL_LIBDIR@/python3/dist-packages:${PATHPATH:-}" \
+exec env PYTHONPATH="@MELISSA_INSTALL_FULL_PYTHONDIR@:${PYTHONPATH:-}" \
     python3 -m melissa.launcher $@
