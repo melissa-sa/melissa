@@ -30,13 +30,15 @@ def import_from_file(name, path):
     spec.loader.exec_module(module)
 
 
-import_from_file("melissa", "@CMAKE_INSTALL_PREFIX@/share/melissa/launcher/melissa.py")
+from melissa.launcher import study
+
+
 import_from_file("functions", "@EXAMPLES_DIR@/heat_example/study_local/functions.py")
 
 import melissa
 from functions import *
 
-melissa_study = melissa.Study()
+melissa_study = study.Study()
 melissa_study.set_option('username', getpass.getuser())
 melissa_study.set_working_directory(WORKDIR)
 melissa_study.set_sampling_size(20)            # initial number of parameter sets
