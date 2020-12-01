@@ -242,7 +242,7 @@ if(BUILD_DOCUMENTATION)
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                     COMMENT "Generating API documentation with Doxygen"
                     VERBATIM )
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/melissa/doc)
+  install(DIRECTORY docs/html DESTINATION ${CMAKE_INSTALL_DOCDIR})
 endif(BUILD_DOCUMENTATION)
 
 include(CMakePackageConfigHelpers)

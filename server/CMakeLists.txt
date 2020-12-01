@@ -35,4 +35,7 @@ target_link_libraries(melissa_server ${EXTRA_LIBS}
                                      melissa_output
                                      melissa_messages
                                      dl)
-INSTALL(TARGETS melissa_server RUNTIME DESTINATION bin RENAME melissa_server)
+install(
+    TARGETS melissa_server
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

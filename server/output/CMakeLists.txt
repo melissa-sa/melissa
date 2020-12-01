@@ -46,5 +46,5 @@ set_target_properties(melissa_output PROPERTIES SOVERSION ${PROJECT_VERSION_MAJO
 
 target_link_libraries(melissa_output ${EXTRA_LIBS})
 target_compile_options(melissa_output BEFORE PUBLIC -fPIC)
-install(TARGETS melissa_output LIBRARY DESTINATION lib)
-install(FILES ${OUTPUT_H} DESTINATION include)
+install(TARGETS melissa_output LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES ${OUTPUT_H} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
