@@ -37,22 +37,6 @@ NODES_GROUP = 2
 WALLTIME_SERVER = 600
 WALLTIME_SIMU = 300
 
-def call_bash(string):
-    proc = subprocess.Popen(string,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            shell=True,
-                            universal_newlines=True)
-    (out, err) = proc.communicate()
-    return{'out':remove_end_of_line(out),
-           'err':remove_end_of_line(err)}
-
-def remove_end_of_line(string):
-    if len(string) > 0:
-        return str(string[:len(string)-int(string[-1] == "\n")])
-    else:
-        return ""
-
 def draw_param_set():
     param_set = np.zeros(STUDY_OPTIONS['nb_parameters'])
     RANGE_MIN_PARAM = np.zeros(STUDY_OPTIONS['nb_parameters'], float)
