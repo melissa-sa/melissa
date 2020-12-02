@@ -28,7 +28,6 @@ def draw_param_set():
 
 
 STUDY_OPTIONS = {}
-STUDY_OPTIONS['working_directory'] = "/home/user/melissa_study"
 STUDY_OPTIONS['nb_parameters'] = 5                      # number of varying parameters of the study
 STUDY_OPTIONS['sampling_size'] = 10                     # initial number of parameter sets
 STUDY_OPTIONS['nb_time_steps'] = 100                    # number of timesteps, from Melissa point of view

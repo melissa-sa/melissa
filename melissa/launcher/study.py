@@ -369,12 +369,6 @@ class Study(object):
     def get_quantile_values(self):
         return self.stdy_opt['quantile_values']
 
-    def set_working_directory(self, working_directory):
-        self.stdy_opt['working_directory'] = working_directory
-
-    def get_working_directory(self):
-        return self.stdy_opt['working_directory']
-
     def set_sampling_size(self, sampling_size):
         self.stdy_opt['sampling_size'] = sampling_size
 
@@ -496,10 +490,6 @@ class Study(object):
             Main study method
         """
 
-        if not os.path.isdir(self.stdy_opt['working_directory']):
-            os.mkdir(self.stdy_opt['working_directory'])
-        os.chdir(self.stdy_opt['working_directory'])
-
         nb_errors = self.check_options()
         if nb_errors > 0:
             logging.error(str(nb_errors) + ' errors in options')
@@ -526,7 +516,7 @@ class Study(object):
         logging.info('submit server')
 
         self.server_obj[0].set_nb_param(self.nb_param)
-        self.server_obj[0].set_path(self.stdy_opt['working_directory'])
+        self.server_obj[0].set_path(os.getcwd())
 
         self.server_obj[0].create_options()
 
