@@ -36,7 +36,6 @@ set(python_files
     launcher/options.py
     launcher/simulation.py
     launcher/study.py
-    launcher/utils.py
 )
 
 
