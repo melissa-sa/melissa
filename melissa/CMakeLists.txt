@@ -41,6 +41,10 @@ set(python_files
 
 foreach(file IN LISTS python_files)
     get_filename_component(directory ${file} DIRECTORY)
+
+    # copy files for testing
+    configure_file(${file} ${file} COPYONLY)
+
     install(
         FILES ${file}
         DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa/${directory}
@@ -48,8 +52,15 @@ foreach(file IN LISTS python_files)
 endforeach()
 
 
-configure_file(config.py.in config.py @ONLY)
+# config.py for installation
+configure_file(config.py.in config-install.py @ONLY)
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/config.py
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/config-install.py
     DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa
+    RENAME config.py
 )
+
+
+# config.py for testing
+set(CMAKE_INSTALL_FULL_LIBDIR ${CMAKE_BINARY_DIR}/common)
+configure_file(config.py.in config.py @ONLY)

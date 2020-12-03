@@ -41,6 +41,3 @@ install(TARGETS heatf_base RUNTIME DESTINATION ${EXAMPLES_DIR}/heat_example_base
 add_executable(heatc_base heat_base.c)
 target_link_libraries(heatc_base ${EXAMPLES_LIBS} heat_utils)
 install(TARGETS heatc_base RUNTIME DESTINATION ${EXAMPLES_DIR}/heat_example_base/bin)
-
-add_test(TestHeatcBase ${EXAMPLES_DIR}/heat_example_base/bin/heatc_base 5)
-add_test(TestHeatfBase ${EXAMPLES_DIR}/heat_example_base/bin/heatf_base 5)

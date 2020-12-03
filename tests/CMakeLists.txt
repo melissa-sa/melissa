@@ -19,15 +19,6 @@ set(TESTS_LIBS ${EXTRA_LIBS}
                zmq
                m)
 
-#foreach(lang C CXX Fortran)
-#    if(CMAKE_COMPILER_IS_GNU${lang})
-#        set(TESTS_LIBS ${TESTS_LIBS}
-#                   gcov )
-#        include(CodeCoverage)
-#        setup_target_for_coverage(${PROJECT_NAME}_coverage ${PROJECT_TEST_NAME} coverage)
-#    endif()
-#endforeach()
-
 
 add_executable(test_base test_base.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(test_base ${TESTS_LIBS} melissa_stats)
@@ -80,3 +71,25 @@ if(HAS_SANITIZERS)
     target_link_libraries(regression_16 ${TESTS_LIBS})
     add_test(Regression16 regression_16)
 endif()
+
+
+add_executable(dummy-simulation dummy-simulation.c)
+set_source_files_properties(
+    dummy-simulation.c PROPERTIES COMPILE_DEFINITIONS _XOPEN_SOURCE
+)
+target_compile_options(dummy-simulation PRIVATE ${MPI_C_COMPILE_FLAGS})
+target_include_directories(dummy-simulation PRIVATE ${MPI_C_INCLUDE_PATH})
+target_link_libraries(
+    dummy-simulation
+    melissa_api
+    ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
+)
+
+configure_file(dummy-simulation-options.py.in dummy-simulation-options.py @ONLY)
+
+add_test(
+    NAME dummy-simulation
+    COMMAND env PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}
+                python3 -m melissa.launcher
+                    --options ${CMAKE_CURRENT_BINARY_DIR}/dummy-simulation-options.py
+)

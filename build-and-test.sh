@@ -55,6 +55,7 @@ cmake \
 	-DCMAKE_INSTALL_PREFIX="$melissa_sa_prefix_dir" \
 	-- "$melissa_sa_source_dir"
 cmake --build . -- --jobs="$num_jobs"
+ctest --output-on-failure --timeout 300
 cmake --build . --target install
 
 cd -- "$melissa_sa_prefix_dir/share/melissa/examples/heat_example"
@@ -63,7 +64,3 @@ cd -- build
 cmake -DCMAKE_BUILD_TYPE="$build_type" -- ../solver
 cmake --build . -- --jobs="$num_jobs"
 cmake --build . --target install
-
-cd -- "$melissa_sa_binary_dir"
-source "$melissa_sa_prefix_dir/bin/melissa_set_env.sh"
-ctest --output-on-failure --timeout 300
