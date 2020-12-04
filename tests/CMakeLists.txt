@@ -77,6 +77,9 @@ add_executable(dummy-simulation dummy-simulation.c)
 set_source_files_properties(
     dummy-simulation.c PROPERTIES COMPILE_DEFINITIONS _XOPEN_SOURCE
 )
+
+separate_arguments(MPI_C_COMPILE_FLAGS)
+
 target_compile_options(dummy-simulation PRIVATE ${MPI_C_COMPILE_FLAGS})
 target_include_directories(dummy-simulation PRIVATE ${MPI_C_INCLUDE_PATH})
 target_link_libraries(
