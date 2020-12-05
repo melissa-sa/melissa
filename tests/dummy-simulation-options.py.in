@@ -163,9 +163,8 @@ def kill_job(job):
     os.system('kill '+str(job.job_id))
 
 def draw_param_set():
-    param_set = np.random.uniform(0, 1, size=2)
+    param_set = np.random.randint(0, 2**31, size=2)
     return param_set
-
 
 
 

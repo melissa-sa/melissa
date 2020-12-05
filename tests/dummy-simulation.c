@@ -56,22 +56,35 @@ int main(int argc, char **argv) {
 	{
 		char* first = argv[1];
 		char* last = NULL;
-		double arg = strtod(first, &last);
+		int base = 0;
+		// use a signed value because strtoull does not return errors when
+		// parsing negative values
+		long long raw_seed = strtoll(first, &last, base);
 
 		assert(last);
 
-		if(first == last || *last != '\0' || !isnormal(arg)) {
+		if(first == last || *last != '\0') {
 			fprintf(
 				stderr,
-				"cannot parse input '%s' as a finite floating-point number\n",
+				"cannot parse seed '%s' as integer\n", first
+			);
+			exit(EXIT_FAILURE);
+		}
+
+		const int64_t SEED_MAX = (INT64_C(1) << 48) - 1;
+
+		if(raw_seed < 0 || raw_seed > SEED_MAX) {
+			fprintf(
+				stderr,
+				"expected seed in interval [0, 2**48), got %s\n",
 				first
 			);
 			exit(EXIT_FAILURE);
 		}
 
-		memcpy(&prng_state, &arg, sizeof(prng_state));
+		uint64_t seed = raw_seed;
+		memcpy(&prng_state, &seed, sizeof(prng_state));
 	}
-
 
 	const char field_name[] = "heat1";
 	const size_t vector_size = 2;
