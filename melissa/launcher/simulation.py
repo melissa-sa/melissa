@@ -66,7 +66,7 @@ class Job(object):
         """
         self.job_status = NOT_SUBMITTED
         self.job_id = 0
-        self.cmd_opt = ''
+        self.cmd_opt = []
         self.start_time = 0.0
         self.job_type = 0
         self.node_name = ['']
@@ -410,6 +410,7 @@ class Server(Job):
         node_name = buff.value.decode()
 
         if Job.stdy_opt['assimilation']:
+            assert False
             def mget(what):
                 op_name = 'assimilation_%s' % what
                 return Job.stdy_opt[op_name]
@@ -448,23 +449,25 @@ class Server(Job):
                     return
             self.options += ' '
             self.options += threshold_str
-            self.cmd_opt = ' '.join(('-o', op_str,
-                                     '-p', str(self.nb_param),
-                                     '-s', str(Job.stdy_opt['sampling_size']),
-                                     '-t', str(Job.stdy_opt['nb_timesteps']),
-                                     '-q', quantile_str,
-                                     '-e', threshold_str,
-                                     '-c', str(Job.stdy_opt['checkpoint_interval']),
-                                     '-w', str(Job.stdy_opt['simulation_timeout']),
-                                     '-f', field_str,
-                                     '-v', str(Job.stdy_opt['verbosity']),
-                                     '--txt_push_port', str(Job.stdy_opt['recv_port']),
-                                     '--txt_pull_port', str(Job.stdy_opt['send_port']),
-                                     '--txt_req_port', str(Job.stdy_opt['resp_port']),
-                                     '--data_port', str(Job.stdy_opt['data_port']),
-                                     '-n', node_name))
+            self.cmd_opt = [ \
+                '-o', op_str,
+                '-p', str(self.nb_param),
+                '-s', str(Job.stdy_opt['sampling_size']),
+                '-t', str(Job.stdy_opt['nb_timesteps']),
+                '-q', quantile_str,
+                '-e', threshold_str,
+                '-c', str(Job.stdy_opt['checkpoint_interval']),
+                '-w', str(Job.stdy_opt['simulation_timeout']),
+                '-f', field_str,
+                '-v', str(Job.stdy_opt['verbosity']),
+                '--txt_push_port', str(Job.stdy_opt['recv_port']),
+                '--txt_pull_port', str(Job.stdy_opt['send_port']),
+                '--txt_req_port', str(Job.stdy_opt['resp_port']),
+                '--data_port', str(Job.stdy_opt['data_port']),
+                '-n', node_name
+            ]
             if Job.stdy_opt['learning']:
-                self.cmd_opt += " -l "+str(Job.stdy_opt['nn_path'])
+                raise NotImplementedError("learning option in launcher")
             else:
                 if op_str == '':
                     logging.error('error bad option: no operation given')
@@ -480,7 +483,7 @@ class Server(Job):
 
         os.chdir(self.directory)
         logging.info('launch server')
-        logging.info('server options: '+self.cmd_opt)
+        logging.info('server options: '+str(self.cmd_opt))
         if "launch_server" in Job.usr_func.keys() \
         and Job.usr_func['launch_server']:
             Job.usr_func['launch_server'](self)  # Refactor: here it woulld be better to not give self but only a directory of important properties to not break things and to clearly describe the interface..., same for simulation...

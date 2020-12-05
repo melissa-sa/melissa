@@ -36,3 +36,10 @@ foreach(component IN ITEMS launcher)
         DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 endforeach()
+
+
+configure_file(redirect-io.py redirect-io COPYONLY)
+install(
+    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/redirect-io
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

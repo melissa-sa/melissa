@@ -1,89 +1,93 @@
 #!/usr/bin/python3
 
-###################################################################
-#                            Melissa                              #
-#-----------------------------------------------------------------#
-#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
-#                                                                 #
-# This source is covered by the BSD 3-Clause License.             #
-# Refer to the  LICENSE file for further information.             #
-#                                                                 #
-#-----------------------------------------------------------------#
-#  Original Contributors:                                         #
-#    Theophile Terraz,                                            #
-#    Bruno Raffin,                                                #
-#    Alejandro Ribes,                                             #
-#    Bertrand Iooss,                                              #
-###################################################################
+# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2017, EDF (https://www.edf.fr/)
+#               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-    Main module of Melissa Launcher.
 
-    usage:
-    melissa_launcher path/to/options.py
-"""
-
-import getopt
-import importlib
+import argparse
 import importlib.util
-from importlib.machinery import SourceFileLoader
 import logging
 import os
-import signal
 import sys
 
-signal.signal(signal.SIGINT, signal.SIG_DFL)
+from ..scheduler.oar import OarScheduler
+from ..scheduler.openmpi import OpenMpiScheduler
+from . import job_management as jm
+from .study import Study
 
-def usage():
-    print("Usage:")
-    print("  melissa_launcher [option [argument]]")
-    print("  option:  long option:  argument:               description:")
-    print("  -o       --options     <path/to/options/file>  Path to user defined option file")
-    print("  -h       --help        NONE                    Print this help")
 
 def main():
-    """
-        Import options from command line, and launch Melissa study
-    """
     cwd = os.getcwd()
 
-    options_path = ""
+    parser = argparse.ArgumentParser(prog="launcher", description="Melissa SA Launcher")
+    parser.add_argument( \
+        "scheduler",
+        choices=["oar", "openmpi"],
+        default="openmpi"
+    )
+    parser.add_argument("options")
+    parser.add_argument("simulation")
+    parser.add_argument("-s", "--scheduler-arg", action="append", default=[])
+    parser.add_argument("--num-server-processes", type=int, default=1)
+    parser.add_argument("--num-client-processes", type=int, default=1)
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "ho:", ["help", "options="])
-    except getopt.GetoptError as err:
-        # print help information and exit:
-        print(err) # will print something like "option -a not recognized"
-        usage()
-        sys.exit(2)
-    output = None
-    verbose = False
-    for o, a in opts:
-        if o == "-v":
-            verbose = True
-        elif o in ("-h", "--help"):
-            usage()
-            sys.exit()
-        elif o in ("-o", "--options"):
-            options_path = a
-        else:
-            assert False, "unhandled option"
+    args = parser.parse_args()
 
-    if len(sys.argv) == 2:
-        options_path = sys.argv[1]
-
-    if not os.path.isfile(options_path):
-        if not os.path.isfile(options_path+"/options.py"):
-            print("ERROR no Melissa Launcher options file given")
-            usage()
-            sys.exit(2)
-        else:
-            option_file = options_path+"/options.py"
+    if args.scheduler == "oar":
+        scheduler = OarScheduler()
+    elif args.scheduler == "openmpi":
+        scheduler = OpenMpiScheduler()
     else:
-        option_file = options_path
+        assert False
+        sys.exit("BUG: unknown scheduler '{:s}'".format(args.scheduler))
+
+    options_file = os.path.realpath(args.options)
+    simulation_path = os.path.realpath(args.simulation)
+    server_options = ["-n", str(args.num_server_processes)]
+    client_options = ["-n", str(args.num_client_processes)]
+
+    # check if the simulation executable exists
+    # do not try to figure out if it is executable for the launcher
+    if not os.path.isfile(simulation_path):
+        return "simulation '{:s}' is not a file".format(simulation_path)
+
+    # try to open the options file for reading because the importlib module
+    # returns only `None` on error
+    try:
+        with open(options_file, "r") as f:
+            pass
+    except Exception as e:
+        return str(e)
 
     options_spec = \
-        importlib.util.spec_from_file_location("options", option_file)
+        importlib.util.spec_from_file_location("options", options_file)
     options = importlib.util.module_from_spec(options_spec)
     sys.modules["options"] = options
     options_spec.loader.exec_module(options)
@@ -91,7 +95,22 @@ def main():
     from options import STUDY_OPTIONS as stdy_opt
     from options import MELISSA_STATS as ml_stats
     from options import USER_FUNCTIONS as usr_func
-    from .study import Study
+
+    usr_func["launch_group"] = jm.make_launch_group_fn( \
+        scheduler, simulation_path, client_options, stdy_opt
+    )
+    launch_server = \
+        jm.make_launch_server_fn(scheduler, server_options)
+    check_job = jm.make_check_job_fn(scheduler)
+    check_load = lambda: True
+    kill_job = jm.make_kill_job_fn(scheduler)
+
+    usr_func['launch_server'] = launch_server
+    usr_func['check_server_job'] = check_job
+    usr_func['check_group_job'] = check_job
+    usr_func['restart_server'] = launch_server
+    usr_func['check_scheduler_load'] = check_load
+    usr_func['cancel_job'] = kill_job
 
 
     # init log for launcher
@@ -104,5 +123,6 @@ def main():
         print(e)
         sys.exit(1)
 
-if __name__ == '__main__':
-    main()
+
+if __name__ == "__main__":
+    sys.exit(main())

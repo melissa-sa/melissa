@@ -1,6 +1,6 @@
-# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
-#               2017, EDF (https://www.edf.fr/)
-#               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#!/usr/bin/python3
+
+# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,45 +29,33 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-set(python_files
-    __init__.py
-    launcher/__init__.py
-    launcher/__main__.py
-    launcher/job_management.py
-    launcher/options.py
-    launcher/simulation.py
-    launcher/study.py
-    scheduler/__init__.py
-    scheduler/job.py
-    scheduler/oar.py
-    scheduler/openmpi.py
-    scheduler/scheduler.py
-)
+class State:
+    def __init__(self, name):
+        assert isinstance(name, str)
+        self.name = name
+
+    def __repr__(self):
+        return self.name
 
 
-foreach(file IN LISTS python_files)
-    get_filename_component(directory ${file} DIRECTORY)
-
-    # copy files for testing
-    configure_file(${file} ${file} COPYONLY)
-
-    install(
-        FILES ${file}
-        DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa/${directory}
-    )
-endforeach()
+# There job failed for reasons unrelated to program execution.
+# The program may have never run.
+State.ERROR = State("ERROR")
+State.WAITING = State("WAITING")
+State.RUNNING = State("RUNNING")
+# The job ran and the program terminated successfully.
+State.TERMINATED = State("TERMINATED")
+# The job ran but the program terminated unsuccessfully.
+State.FAILED = State("FAILED")
 
 
-# config.py for installation
-configure_file(config.py.in config-install.py @ONLY)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/config-install.py
-    DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa
-    RENAME config.py
-)
 
+class Job:
+    def id(self):
+        raise NotImplementedError("Job.id not implemented")
 
-# config.py for testing
-set(CMAKE_INSTALL_FULL_BINDIR ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
-set(CMAKE_INSTALL_FULL_LIBDIR ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-configure_file(config.py.in config.py @ONLY)
+    def state(self):
+        raise NotImplementedError("Job.state not implemented")
+
+    def __repr__(self):
+        raise NotImplementedError("Job.__repr__ not implemented")
