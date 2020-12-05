@@ -469,8 +469,6 @@ class Server(Job):
                 if op_str == '':
                     logging.error('error bad option: no operation given')
                     return
-            if Job.stdy_opt['disable_fault_tolerance'] == True:
-                self.cmd_opt += " --disable_fault_tolerancel"
 
 
     def launch(self):
