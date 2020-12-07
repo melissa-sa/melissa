@@ -67,17 +67,23 @@ class Slurm(Scheduler):
         errors = []
 
         for a in args:
-            if a in ["-n", "--ntasks", "--test-only"]:
+            if a[0] != "-":
+                errors.append("non-option argument `{:s}` detected".format(a))
+            elif a in ["-n", "--ntasks", "--test-only"]:
                 errors.append("remove `{:s}` argument".format(a))
 
         command = ["srun", "--test-only", "--ntasks=1"] + args + ["--", "true"]
-        srun = subprocess.run(command, universal_newlines=True)
+        srun = subprocess.run( \
+            command,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
 
         if srun.returncode != 0:
             e = "srun error on trial execution: {:s}".format(srun.stderr)
             errors.append(e)
 
-        return es
+        return errors
 
 
     def submit_heterogeneous_job_impl( \
@@ -112,7 +118,7 @@ class Slurm(Scheduler):
                 + ["--wrap={:s}".format(" ".join(srun_cmd))] \
                 + ([":"] if i+1 < len(commands) else [])
 
-            sbatch_commands.append(sbatch_cmd)
+            sbatch_commands = sbatch_commands + sbatch_cmd
 
 
         sbatch_call = ["sbatch"] + sbatch_args + sbatch_commands
