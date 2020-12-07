@@ -106,7 +106,9 @@ target_link_libraries(
 
 configure_file(dummy-simulation-options.py.in dummy-simulation-options.py @ONLY)
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/workspace-dummy-simulation)
+# TODO:
+# this test clutters the test directory; this may be a problem when re-running
+# the test
 add_test(
     NAME dummy-simulation
     COMMAND env PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}
@@ -114,5 +116,4 @@ add_test(
                     openmpi
                     ${CMAKE_CURRENT_BINARY_DIR}/dummy-simulation-options.py
                     ${CMAKE_CURRENT_BINARY_DIR}/dummy-simulation
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/workspace-dummy-simulation
 )
