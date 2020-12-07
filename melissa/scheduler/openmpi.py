@@ -80,7 +80,6 @@ class OpenMpiScheduler(Scheduler):
         assert isinstance(environment, dict)
         assert isinstance(commands, list)
         assert name is None or isinstance(name, str)
-        assert options is None or isinstance(options, list)
 
         # Approach to environment variables:
         # Follow OpenMPI mpirun man page advice, that is,
@@ -95,10 +94,9 @@ class OpenMpiScheduler(Scheduler):
             ompi_env[key] = environment[key]
             env_args += ["-x", key]
 
-        if options is None:
-            ompi_options = ["-n", "1"]
-        else:
-            ompi_options = options
+        ompi_options = \
+            options.raw_options \
+            + ["-n", "{:d}".format(options.num_processes)]
 
         ompi_commands = []
         for i, cmd in enumerate(commands):

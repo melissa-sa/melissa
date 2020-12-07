@@ -38,6 +38,7 @@ import os
 import shutil
 import sys
 
+from ..scheduler.options import Options as SchedulerOptions
 from ..scheduler.oar import OarScheduler
 from ..scheduler.openmpi import OpenMpiScheduler
 from . import job_management as jm
@@ -55,9 +56,11 @@ def main():
     )
     parser.add_argument("options")
     parser.add_argument("simulation")
-    parser.add_argument("-s", "--scheduler-arg", action="append", default=[])
-    parser.add_argument("--num-server-processes", type=int, default=1)
+    parser.add_argument("--scheduler-arg", action="append", default=[])
+    parser.add_argument("--scheduler-arg-client", action="append", default=[])
+    parser.add_argument("--scheduler-arg-server", action="append", default=[])
     parser.add_argument("--num-client-processes", type=int, default=1)
+    parser.add_argument("--num-server-processes", type=int, default=1)
 
     args = parser.parse_args()
 
@@ -70,8 +73,14 @@ def main():
         sys.exit("BUG: unknown scheduler '{:s}'".format(args.scheduler))
 
     options_file = os.path.realpath(args.options)
-    server_options = ["-n", str(args.num_server_processes)]
-    client_options = ["-n", str(args.num_client_processes)]
+    client_options = SchedulerOptions( \
+        args.num_client_processes, \
+        args.scheduler_arg + args.scheduler_arg_client
+    )
+    server_options = SchedulerOptions( \
+        args.num_server_processes,
+        args.scheduler_arg + args.scheduler_arg_server
+    )
 
     # check if the simulation executable exists
     # do not try to figure out if it is executable for the launcher

@@ -29,6 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from .job import Job
+from .options import Options
 
 class Scheduler:
     def submit_job(self, command, *args, **kwargs):
@@ -41,7 +42,7 @@ class Scheduler:
         assert isinstance(commands, list)
         assert isinstance(environment, dict)
         assert name is None or isinstance(name, str)
-        assert options is None or isinstance(options, list)
+        assert options is None or isinstance(options, Options)
 
         # allow None as dictionary value so that callers can pass, for example,
         #   env = { "PYTHONPATH": os.getenv("PYTHONPATH") }

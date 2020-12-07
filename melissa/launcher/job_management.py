@@ -60,7 +60,6 @@ def make_launch_server_fn(scheduler, options):
 
 
 def make_launch_group_fn(scheduler, simulation_path, options, study_options):
-    assert isinstance(options, list)
     assert isinstance(study_options, dict)
 
     def launch_group(group):

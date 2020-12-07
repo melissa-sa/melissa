@@ -1,6 +1,6 @@
-# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
-#               2017, EDF (https://www.edf.fr/)
-#               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#!/usr/bin/python3
+
+# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,47 +28,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+class Options:
+    def __init__(self, num_procs, raw_options_):
+        assert isinstance(num_procs, int)
+        assert num_procs > 0
+        assert isinstance(raw_options_, list)
 
-set(python_files
-    __init__.py
-    launcher/__init__.py
-    launcher/__main__.py
-    launcher/job_management.py
-    launcher/options.py
-    launcher/simulation.py
-    launcher/study.py
-    scheduler/__init__.py
-    scheduler/job.py
-    scheduler/oar.py
-    scheduler/openmpi.py
-    scheduler/options.py
-    scheduler/scheduler.py
-)
-
-
-foreach(file IN LISTS python_files)
-    get_filename_component(directory ${file} DIRECTORY)
-
-    # copy files for testing
-    configure_file(${file} ${file} COPYONLY)
-
-    install(
-        FILES ${file}
-        DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa/${directory}
-    )
-endforeach()
-
-
-# config.py for installation
-configure_file(config.py.in config-install.py @ONLY)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/config-install.py
-    DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa
-    RENAME config.py
-)
-
-
-# config.py for testing
-set(CMAKE_INSTALL_FULL_BINDIR ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
-set(CMAKE_INSTALL_FULL_LIBDIR ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
-configure_file(config.py.in config.py @ONLY)
+        self.num_processes = num_procs
+        self.raw_options = raw_options_
