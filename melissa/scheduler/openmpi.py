@@ -107,7 +107,6 @@ class OpenMpiScheduler(Scheduler):
                 + env_args \
                 + ["--"] \
                 + ["python3", os.path.join(config.bindir, "redirect-io")] \
-                + ["stdbuf", "--output=L"] \
                 + cmd \
                 + ([":"] if i+1 < len(commands) else [])
 

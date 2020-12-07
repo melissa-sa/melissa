@@ -48,7 +48,9 @@ def replace_filedescriptor(filename, f):
     fd = f.fileno()
 
     try:
-        fd_new = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        mode = 0o644
+        fd_new = os.open(filename, flags, mode)
         os.dup2(fd_new, fd)
     finally:
         os.close(fd_new)
@@ -67,7 +69,9 @@ def main():
     replace_filedescriptor(filename_fmt.format("out"), sys.stdout)
     replace_filedescriptor(filename_fmt.format("err"), sys.stderr)
 
-    os.execvp(sys.argv[1], sys.argv[1:])
+    cmdline = ["stdbuf", "--output=L", "--"] + sys.argv[1:]
+
+    os.execvp(cmdline[0], cmdline)
 
 
 if __name__ == "__main__":
