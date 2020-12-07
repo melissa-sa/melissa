@@ -85,6 +85,18 @@ def main():
         args.scheduler_arg + args.scheduler_arg_server
     )
 
+    # check scheduler options
+    def print_scheduler_argument_error(errors):
+        for e in errors:
+            fmt = "error in server options: {:s}"
+            print(fmt.format(e), file=sys.stderr)
+
+        if errors != []:
+            sys.exit(1)
+
+    print_scheduler_argument_error(scheduler.sanity_check(server_options))
+    print_scheduler_argument_error(scheduler.sanity_check(client_options))
+
     # check if the simulation executable exists
     # do not try to figure out if it is executable for the launcher
     if shutil.which(args.simulation) is None:
