@@ -30,9 +30,11 @@
 
 import os
 import subprocess
+import unittest
 
 from .. import config
 from .job import Job, State
+from .options import Options
 from .scheduler import Scheduler
 
 
@@ -74,6 +76,24 @@ class OpenMpiScheduler(Scheduler):
             raise RuntimeError("error in mpirun test call") from e
 
 
+    def sanity_check_impl(self, options):
+        args = options.raw_arguments
+        es = []
+
+        for a in args:
+            e = None
+            if "do-not-launch" in a:
+                e = "remove `{:s}` argument".format(a)
+            elif a in ["-N", "-c", "-n", "--n", "-np"]:
+                e = "remove `{:s}` argument".format(a)
+
+            if e is not None:
+                es.append(e)
+
+        return es
+
+
+
     def submit_heterogeneous_job_impl( \
         self, commands, environment, name, options
     ):
@@ -95,7 +115,7 @@ class OpenMpiScheduler(Scheduler):
             env_args += ["-x", key]
 
         ompi_options = \
-            options.raw_options \
+            options.raw_arguments \
             + ["-n", "{:d}".format(options.num_processes)]
 
         ompi_commands = []
@@ -155,17 +175,23 @@ class OpenMpiScheduler(Scheduler):
             j.set_state(state)
 
 
+
+class TestOpenMpiScheduler(unittest.TestCase):
+    def test_sanity_check(self):
+        s = OpenMpiScheduler()
+        f = s.sanity_check
+        options = Options(1, [])
+        es = s.sanity_check(options)
+
+        self.assertEqual(len(es), 0)
+
+        options = Options(2, ["--xml", "--do-not-launch", "--verbose"])
+        self.assertEqual(len(f(options)), 1)
+
+        options = Options( \
+            52, ["--enable-recovery", "-c", "6", "--max-restarts", "1"])
+        self.assertEqual(len(f(options)), 1)
+
+
 if __name__ == "__main__":
-    import time
-
-    s = OpenMpiScheduler()
-    job = s.submit_heterogeneous_job([["echo", "foo"], ["echo", "bar"]])
-
-    while job.state() in [State.WAITING, State.RUNNING]:
-        time.sleep(1)
-        s.update_jobs([job])
-
-    if job.state() == State.FAILED:
-        out, err = job.process_.communicate()
-        print("out", out)
-        print("err", err)
+    unittest.main()

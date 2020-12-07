@@ -29,10 +29,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class Options:
-    def __init__(self, num_procs, raw_options_):
+    def __init__(self, num_procs, raw_arguments_):
         assert isinstance(num_procs, int)
-        assert num_procs > 0
-        assert isinstance(raw_options_, list)
+        assert isinstance(raw_arguments_, list)
+
+        if num_procs < 1:
+            e = "expected positive number of processes, got {:d}"
+            raise ValueError(e.format(num_procs))
 
         self.num_processes = num_procs
-        self.raw_options = raw_options_
+        self.raw_arguments = raw_arguments_

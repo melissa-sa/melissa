@@ -32,6 +32,14 @@ from .job import Job
 from .options import Options
 
 class Scheduler:
+    def sanity_check(self, options):
+        assert isinstance(options, Options)
+
+        errors = self.sanity_check_impl(options)
+        assert isinstance(errors, list)
+        return errors
+
+
     def submit_job(self, command, *args, **kwargs):
         return self.submit_heterogeneous_job([command], *args, **kwargs)
 
@@ -78,6 +86,9 @@ class Scheduler:
 
         self.update_jobs_impl(jobs)
 
+
+    def sanity_check_impl(self, options):
+        return []
 
     def submit_heterogeneous_job_impl(self, command, environment, name):
         raise NotImplementedError("Scheduler.submit_heterogeneous_job_impl not implemented")
