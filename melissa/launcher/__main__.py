@@ -35,6 +35,7 @@ import argparse
 import importlib.util
 import logging
 import os
+import shutil
 import sys
 
 from ..scheduler.oar import OarScheduler
@@ -69,14 +70,13 @@ def main():
         sys.exit("BUG: unknown scheduler '{:s}'".format(args.scheduler))
 
     options_file = os.path.realpath(args.options)
-    simulation_path = os.path.realpath(args.simulation)
     server_options = ["-n", str(args.num_server_processes)]
     client_options = ["-n", str(args.num_client_processes)]
 
     # check if the simulation executable exists
     # do not try to figure out if it is executable for the launcher
-    if not os.path.isfile(simulation_path):
-        return "simulation '{:s}' is not a file".format(simulation_path)
+    if shutil.which(args.simulation) is None:
+        return "simulation executable '{:s}' not found".format(args.simulation)
 
     # try to open the options file for reading because the importlib module
     # returns only `None` on error
@@ -97,7 +97,7 @@ def main():
     from options import USER_FUNCTIONS as usr_func
 
     usr_func["launch_group"] = jm.make_launch_group_fn( \
-        scheduler, simulation_path, client_options, stdy_opt
+        scheduler, args.simulation, client_options, stdy_opt
     )
     launch_server = \
         jm.make_launch_server_fn(scheduler, server_options)
