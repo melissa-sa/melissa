@@ -43,6 +43,7 @@ set(python_files
     scheduler/openmpi.py
     scheduler/options.py
     scheduler/scheduler.py
+    scheduler/slurm.py
 )
 
 

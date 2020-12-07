@@ -41,6 +41,7 @@ import sys
 from ..scheduler.options import Options as SchedulerOptions
 from ..scheduler.oar import OarScheduler
 from ..scheduler.openmpi import OpenMpiScheduler
+from ..scheduler.slurm import Slurm
 from . import job_management as jm
 from .study import Study
 
@@ -51,7 +52,7 @@ def main():
     parser = argparse.ArgumentParser(prog="launcher", description="Melissa SA Launcher")
     parser.add_argument( \
         "scheduler",
-        choices=["oar", "openmpi"],
+        choices=["oar", "openmpi", "slurm"],
         default="openmpi"
     )
     parser.add_argument("options")
@@ -68,6 +69,8 @@ def main():
         scheduler = OarScheduler()
     elif args.scheduler == "openmpi":
         scheduler = OpenMpiScheduler()
+    elif args.scheduler == "slurm":
+        scheduler = Slurm()
     else:
         assert False
         sys.exit("BUG: unknown scheduler '{:s}'".format(args.scheduler))
