@@ -97,7 +97,6 @@ static inline void init_options (melissa_options_t *options)
     options->sobol_order     = 0;
     options->learning        = 0;
     options->restart         = 0;
-    options->disable_fault_tolerance = 0;
     options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
@@ -412,7 +411,6 @@ void melissa_get_options (int                 argc,
                                 { "data_port",               required_argument, NULL, 1002 },
                                 { "txt_req_port",            required_argument, NULL, 1003 },
                                 { "horovod",                 no_argument,       NULL, 1004 },
-                                { "disable_fault_tolerance", no_argument,       NULL, 1005 },
                                 { NULL,                      0,                 NULL,  0   }};
 
     do
@@ -457,13 +455,6 @@ void melissa_get_options (int                 argc,
         case 's':
             options->sampling_size = atoi (optarg);
             break;
-        case 'l':
-            if (options->learning < 1)
-            {
-                options->learning = 1;
-            }
-            sprintf (options->nn_path, "%s", optarg);
-            break;
         case 'n':
             sprintf (options->launcher_name, "%s", optarg);
             break;
@@ -493,9 +484,6 @@ void melissa_get_options (int                 argc,
             break;
         case 1004:
             options->learning = 2;
-            break;
-        case 1005:
-            options->disable_fault_tolerance = 1;
             break;
         case 'h':
             stats_usage ();

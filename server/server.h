@@ -98,7 +98,6 @@ struct simulation_data_s
     double *val;
     int     val_size;
     int     max_val_size;
-    char*   nn_path_ptr;
 };
 
 typedef struct simulation_data_s simulation_data_t; /**< type corresponding to simulation_data_s */
