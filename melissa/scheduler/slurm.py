@@ -130,10 +130,10 @@ class Slurm(Scheduler):
 
         sbatch_call = \
             ["sbatch"] \
+            + ["--parsable"] \
             + ["--job-name={:s}".format(name)] \
             + sbatch_arguments \
             + ["--wrap=srun {:s}".format(" ".join(srun_arguments))]
-        print(sbatch_call)
 
         sbatch = subprocess.run(
             sbatch_call,
@@ -145,12 +145,10 @@ class Slurm(Scheduler):
             check=True
         )
 
-        stderr = sbatch.stderr
+        if sbatch.stderr != "":
+            print("sbatch: {:s}".format(sbatch.stderr), file=sys.stderr)
 
-        if stderr != "":
-            print("sbatch: {:s}".format(stderr), file=sys.stderr)
-
-        job_id_regexp = "Submitted batch job (\d+)"
+        job_id_regexp = "\A(\d+)"
         match = re.compile(job_id_regexp, re.ASCII).search(sbatch.stdout)
 
         if match is None:
