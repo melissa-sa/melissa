@@ -28,10 +28,23 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(EXAMPLES_LIBS ${EXTRA_LIBS}
-                  m)
+set(destination ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/Code_Saturne)
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat_example)
-add_subdirectory(Code_Saturne)
-add_subdirectory(TELEMAC-2D)
+foreach(file IN ITEMS
+    case1/case1.xml
+    MESH/downcomer.des
+    MESH/fdc.des
+    MESH/pic.des
+)
+    get_filename_component(directory ${file} DIRECTORY)
+    install(
+        FILES ${file}
+        DESTINATION ${destination}/${directory}
+    )
+endforeach()
+
+configure_file(options.py.in options.py @ONLY)
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/options.py
+    DESTINATION ${destination}
+)
