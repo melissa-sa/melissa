@@ -414,9 +414,6 @@ class Study(object):
     def set_batch_size(self, batch_size):
         self.stdy_opt['batch_size'] = batch_size
 
-    def set_assimilation(self, assimilation):
-        self.stdy_opt['assimilation'] = assimilation
-
     def get_batch_size(self):
         return self.stdy_opt['batch_size']
 
@@ -425,12 +422,6 @@ class Study(object):
 
     def get_param_distribution(self):
         return self.stdy_opt['param_distribution']
-
-    def set_disable_fault_tolerance(self, disable_fault_tolerance):
-        self.stdy_opt['disable_fault_tolerance'] = disable_fault_tolerance
-
-    def get_disable_fault_tolerance(self):
-        return self.stdy_opt['disable_fault_tolerance']
 
     # stats
     def compute_stat(self, stat_key):
@@ -550,12 +541,8 @@ class Study(object):
         for group in self.groups:
             if self.fault_tolerance() != 0: return
             while check_scheduler_load(self.usr_func) == False:  #TODO: need to check this also during the simulation, not only on the beginnint!
-                if self.stdy_opt['assimilation']:
-                    if self.server_obj[0].want_stop:
-                        break  # Refactor all those breaks!
-                else:
-                    # don't start to quick after each other... achtually that should not be a problem!
-                    time.sleep(1)
+                # don't start to quick after each other... achtually that should not be a problem!
+                time.sleep(1)
                 if self.fault_tolerance() != 0: return
 
             if self.server_obj[0].want_stop:  # nice! already finished, break out!
@@ -576,10 +563,6 @@ class Study(object):
         while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
                or any([i.status != FINISHED for i in self.groups])):
             if self.fault_tolerance() != 0: return
-            if self.stdy_opt['assimilation'] and self.crashed_groups >= len(self.groups):
-                # all runners crashed...
-                logging.error('All runners crashed. Stopping study now.')
-                break
             time.sleep(0.05)
         # time.sleep(1)
         self.server_obj[0].finalize()
@@ -643,44 +626,22 @@ class Study(object):
         if (not 'quantiles' in self.ml_stats.keys()):
             self.ml_stats['quantiles'] = False
 
-        if (not 'assimilation' in self.stdy_opt):
-            self.stdy_opt['assimilation'] = False
-
-        if (not 'server_cores' in self.stdy_opt):
-            self.stdy_opt['server_cores'] = -1
-
-        if (not 'server_nodes' in self.stdy_opt):
-            self.stdy_opt['server_nodes'] = -1
-
-        if (not 'simulation_cores' in self.stdy_opt):
-            self.stdy_opt['simulation_cores'] = -1
-
-        if (not 'simulation_nodes' in self.stdy_opt):
-            self.stdy_opt['simulation_nodes'] = -1
-
-        if self.stdy_opt['assimilation']:
-            self.usr_func['draw_parameter_set'] = lambda : []
-
         test_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
         self.nb_param = len(test_parameters)
 
         # refactor option error checking?
-        if not self.stdy_opt['assimilation']:
-            if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
-                logging.error('Error bad option: not enough parameters')
-                errors += 1
-            if self.ml_stats['sobol_indices'] and self.nb_param < 2:
-                logging.error('Error bad option: not enough parameters')
-                errors += 1
-            if self.stdy_opt['sampling_size'] < 1:
-                logging.error('Error bad option: sample_size not big enough')
-                errors += 1
+        if not self.ml_stats['sobol_indices'] and self.nb_param < 1:
+            logging.error('Error bad option: not enough parameters')
+            errors += 1
+        if self.ml_stats['sobol_indices'] and self.nb_param < 2:
+            logging.error('Error bad option: not enough parameters')
+            errors += 1
+        if self.stdy_opt['sampling_size'] < 1:
+            logging.error('Error bad option: sample_size not big enough')
+            errors += 1
 
         if (not 'verbosity' in self.stdy_opt):
             self.stdy_opt['verbosity'] = 2
-
-        if (not 'disable_fault_tolerance' in self.stdy_opt):
-            self.stdy_opt['disable_fault_tolerance'] = False
 
         if (not 'batch_size' in self.stdy_opt):
             self.stdy_opt['batch_size'] = 1
@@ -697,13 +658,6 @@ class Study(object):
 
         if (not 'data_port' in self.stdy_opt):
             self.stdy_opt['data_port'] = 2006
-
-
-        if (not 'learning' in self.stdy_opt):
-            self.stdy_opt['learning'] = False
-        else:
-            if (not 'nn_path' in self.stdy_opt):
-                self.stdy_opt['nn_path'] = melissa_install_prefix + "/lib"
 
 
         if (self.ml_stats['sobol_indices']):
@@ -825,13 +779,6 @@ class Study(object):
             Compares job status and study status, restart crashed groups
         """
 
-        if self.stdy_opt['disable_fault_tolerance']:
-            return 0
-
-        # with self.server_obj[0].lock:
-            # if self.server_obj[0].status == FINISHED:
-                # return 0
-
         # check if threads are still alive
         if not self.threads['messenger'].isAlive():
             logging.error('Messenger thread crashed')
@@ -895,9 +842,6 @@ class Study(object):
 
             logging.info('server start')
             self.server_obj[0].write_node_name()
-            # connect to server
-            #logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
-            #melissa_comm4py.connect_message_snd(str(server.node_name[0]), str(self.stdy_opt['send_port']))
 
             time.sleep(1)
             for group in self.groups:
@@ -974,7 +918,6 @@ class Study(object):
                         self.stop()
                         return 1
 
-#    time.sleep(1)
         return 0
 
 
