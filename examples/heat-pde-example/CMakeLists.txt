@@ -28,10 +28,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(EXAMPLES_LIBS ${EXTRA_LIBS}
-                  m)
+set(destination
+    ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/heat-pde-example
+)
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat-pde-example)
-add_subdirectory(Code_Saturne)
-add_subdirectory(TELEMAC-2D)
+configure_file(heat.py.in heat.py @ONLY)
+configure_file(CMakeLists.txt.in CMakeLists.txt @ONLY)
+install(FILES
+    DESTINATION ${destination}
+)
+
+install(
+    FILES
+        heat.f90 
+        heat.c
+        heat_utils.f90
+        ${CMAKE_CURRENT_BINARY_DIR}/heat.py
+        ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+    DESTINATION ${destination}
+)
