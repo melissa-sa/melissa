@@ -30,7 +30,7 @@
 
 cmake_minimum_required(VERSION 3.7.2)
 
-project(Melissa VERSION 0.6.0 LANGUAGES C Fortran)
+project(melissa VERSION 0.6.0 LANGUAGES C Fortran)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
