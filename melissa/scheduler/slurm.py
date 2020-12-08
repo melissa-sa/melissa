@@ -94,34 +94,45 @@ class Slurm(Scheduler):
 
         num_commands = len(commands)
         num_tasks = options.num_processes * num_commands
+        sbatch_arguments = []
+        srun_arguments = []
+        output_filename = "{:s}.%j.stdout".format(name)
+        error_filename = "{:s}.%j.stderr".format(name)
 
-        sbatch_args = ["--ntasks={:d}".format(num_tasks)]
-        sbatch_commands = []
-        for i, cmd in enumerate(commands):
-            executable = os.path.basename(cmd[0])
+        if len(commands) == 1:
+            sbatch_arguments = [ \
+                *options.raw_arguments, \
+                "--ntasks={:d}".format(num_tasks),
+                "--output={:s}".format(output_filename),
+                "--error={:s}".format(error_filename)
+            ]
 
-            if " " in executable:
-                e = "Scheduler cannot handle whitespace in executable name '{:s}'"
-                raise RuntimeError(e.format(executable))
+            srun_arguments = ["--"] + commands[0]
 
-            srun_cmd = [ \
-                    "srun",
-                    "--ntasks={:d}".format(options.num_processes),
-                    "--output={:s}.%J.stdout".format(executable),
-                    "--error={:s}.%J.stderr".format(executable),
-                    "--"
-                ] \
-                + cmd
+        else:
+            for i, cmd in enumerate(commands):
+                sbatch_args = \
+                    options.raw_arguments \
+                    + ["--ntasks={:d}".format(num_tasks)] \
+                    + ([":"] if i+1 < len(commands) else [])
 
-            sbatch_cmd = \
-                options.raw_arguments \
-                + ["--wrap={:s}".format(" ".join(srun_cmd))] \
-                + ([":"] if i+1 < len(commands) else [])
+                srun_args = [ \
+                    "--pack-group={:d}".format(i),
+                    "--output={:s}".format(output_filename),
+                    "--error={:s}".format(error_filename),
+                    "--",
+                    *cmd
+                ]
 
-            sbatch_commands = sbatch_commands + sbatch_cmd
+                sbatch_arguments = sbatch_arguments + sbatch_args
+                srun_arguments = srun_arguments + srun_args
 
 
-        sbatch_call = ["sbatch"] + sbatch_args + sbatch_commands
+        sbatch_call = \
+            ["sbatch"] \
+            + ["--job-name={:s}".format(name)] \
+            + sbatch_arguments \
+            + ["--wrap=srun {:s}".format(" ".join(srun_arguments))]
         print(sbatch_call)
 
         sbatch = subprocess.run(
