@@ -232,16 +232,16 @@ if (BUILD_DOCUMENTATION)
     if(NOT DOXYGEN_FOUND)
         message(SEND_ERROR "Doxygen not found. Cannot build documentation.")
     endif(DOXYGEN_FOUND)
-    configure_file(docs/doxygen/Doxyfile.in docs/doxygen/Doxyfile @ONLY)
+    configure_file(doc/doxygen/Doxyfile.in doc/doxygen/Doxyfile @ONLY)
     # Add a custom target to run Doxygen when ever the project is built
     add_custom_target(
-        docs ALL
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/docs/doxygen/Doxyfile
+        doc ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/doc/doxygen/Doxyfile
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen"
         VERBATIM
     )
-    install(DIRECTORY docs/html DESTINATION ${CMAKE_INSTALL_DOCDIR})
+    install(DIRECTORY doc/html DESTINATION ${CMAKE_INSTALL_DOCDIR})
 endif(BUILD_DOCUMENTATION)
 
 
