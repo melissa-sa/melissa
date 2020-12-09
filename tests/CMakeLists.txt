@@ -37,24 +37,24 @@ function(add_stats_executable name)
     target_link_libraries(${name} melissa-stats)
 endfunction()
 
-add_stats_executable(base test_base.c)
+add_stats_executable(base base.c)
 add_test(NAME base COMMAND mpirun -np 2 base)
 
-add_stats_executable(mean test_mean.c)
+add_stats_executable(mean mean.c)
 add_test(mean mean)
 
-add_stats_executable(variance test_variance.c)
+add_stats_executable(variance variance.c)
 add_test(variance variance)
 
-add_stats_executable(covariance test_covariance.c)
+add_stats_executable(covariance covariance.c)
 add_test(covariance covariance)
 
-add_stats_executable(sobol test_sobol.c)
+add_stats_executable(sobol sobol.c)
 add_test(sobol sobol)
 
 
 add_executable(getoptions
-    test_getoptions.c
+    getoptions.c
     ${CMAKE_SOURCE_DIR}/src/server/melissa_options.c
 )
 target_link_libraries(getoptions melissa)
