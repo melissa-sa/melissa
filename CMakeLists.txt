@@ -98,7 +98,7 @@ function(find_python_module module)
     find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
 
-find_package(PythonInterp 3 REQUIRED)
+find_package(PythonInterp 3.5.3 REQUIRED)
 find_python_module(numpy REQUIRED)
 
 

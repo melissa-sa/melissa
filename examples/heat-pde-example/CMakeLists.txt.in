@@ -35,7 +35,7 @@ include(GNUInstallDirs)
 
 find_package(Melissa CONFIG REQUIRED)
 find_package(MPI REQUIRED)
-find_package(PythonInterp 3.5 REQUIRED)
+find_package(PythonInterp 3.5.3 REQUIRED)
 
 # fixes compilation on CentOS 8 with CMake 3.11
 separate_arguments(MPI_C_COMPILE_FLAGS)
