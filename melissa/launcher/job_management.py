@@ -50,7 +50,7 @@ def make_launch_server_fn(scheduler, options):
     def launch_server(server):
         assert isinstance(server.cmd_opt, list)
 
-        executable = os.path.join(server.path, "melissa_server")
+        executable = os.path.join(server.path, "melissa-server")
         cmd = [executable] + server.cmd_opt
         server.job_id = scheduler.submit_job( \
             cmd, name="melissa-server", options=options

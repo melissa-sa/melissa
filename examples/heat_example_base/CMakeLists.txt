@@ -14,30 +14,11 @@
 #    Bertrand Iooss,                                              #
 ###################################################################
 
-
-#configure_file(options.py options_base.py @ONLY)
-#install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/options_base.py DESTINATION ${EXAMPLES_DIR}/heat_example)
-configure_file(heat_base.c heat_base.c COPYONLY)
-install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_base.c DESTINATION ${EXAMPLES_DIR}/heat_example_base/src)
-configure_file(heat_base.f90 heat_base.f90 COPYONLY)
-install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_base.f90 DESTINATION ${EXAMPLES_DIR}/heat_example_base/src)
-configure_file(heat_utils.f90 heat_utils.f90 COPYONLY)
-install(FILES ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_utils.f90 DESTINATION ${EXAMPLES_DIR}/heat_example_base/src)
-configure_file(heat_base.py heat_base.py @ONLY)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/examples/heat_example_base/heat_base.py
-        DESTINATION ${EXAMPLES_DIR}/heat_example_base/src)
-
-
 add_library(heat_utils STATIC heat_utils.f90)
-target_compile_options(heat_utils BEFORE PUBLIC -fPIC)
-target_link_libraries(heat_utils ${EXAMPLES_LIBS})
-set_target_properties(heat_utils PROPERTIES OUTPUT_NAME heat_utils)
-install(TARGETS heat_utils ARCHIVE DESTINATION ${EXAMPLES_DIR}/heat_example_base/lib)
-
-add_executable(heatf_base heat_base.f90)
-target_link_libraries(heatf_base ${EXAMPLES_LIBS} heat_utils)
-install(TARGETS heatf_base RUNTIME DESTINATION ${EXAMPLES_DIR}/heat_example_base/bin)
+target_link_libraries(heat_utils PRIVATE mpif)
 
 add_executable(heatc_base heat_base.c)
-target_link_libraries(heatc_base ${EXAMPLES_LIBS} heat_utils)
-install(TARGETS heatc_base RUNTIME DESTINATION ${EXAMPLES_DIR}/heat_example_base/bin)
+target_link_libraries(heatc_base heat_utils mpic)
+
+add_executable(heatf_base heat_base.f90)
+target_link_libraries(heatf_base heat_utils mpif)

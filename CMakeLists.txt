@@ -55,6 +55,10 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 
+# options
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
+
 
 # set up
 include(CTest)
@@ -145,22 +149,38 @@ set_target_properties(
 
 
 
-# Find MPI
+# MPI
 find_package(MPI REQUIRED)
 
-if(MPI_C_FOUND AND MPI_Fortran_FOUND)
-  set(EXTRA_LIBS ${EXTRA_LIBS}
-				 ${MPI_C_LIBRARIES})
-  include_directories( ${MPI_INCLUDE_PATH} )
-  add_definitions(${MPI_Fortran_COMPILE_FLAGS})
-  include_directories(${MPI_Fortran_INCLUDE_PATH})
-  link_directories(${MPI_Fortran_LIBRARIES})
-  set(EXTRA_LIBS ${EXTRA_LIBS}
-				 ${MPI_Fortran_LIBRARIES} )
+# fix compilation on CentOS 8 with CMake 3.11
+separate_arguments(MPI_C_COMPILE_FLAGS)
+separate_arguments(MPI_Fortran_COMPILE_FLAGS)
+
+# remove leading, trailing whitespace when CMake 3.7 + MPICH is used
+if(MPI_C_LINK_FLAGS)
+    string(STRIP ${MPI_C_LINK_FLAGS} MPI_C_LINK_FLAGS)
+endif()
+if(MPI_Fortran_LINK_FLAGS)
+    string(STRIP ${MPI_Fortran_LINK_FLAGS} MPI_Fortran_LINK_FLAGS)
 endif()
 
+add_library(mpic INTERFACE)
+target_include_directories(mpic INTERFACE ${MPI_C_INCLUDE_PATH})
+target_compile_options(mpic INTERFACE ${MPI_C_COMPILE_FLAGS})
+target_link_libraries(
+    mpic INTERFACE ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
+)
 
-# OpenMP #
+add_library(mpif INTERFACE)
+target_include_directories(mpif INTERFACE ${MPI_Fortran_INCLUDE_PATH})
+target_compile_options(mpif INTERFACE ${MPI_Fortran_COMPILE_FLAGS})
+target_link_libraries(
+    mpif INTERFACE ${MPI_Fortran_LINK_FLAGS} ${MPI_Fortran_LIBRARIES}
+)
+
+
+
+# OpenMP
 
 option(BUILD_WITH_OpenMP "Build with OpenMP" OFF)
 
@@ -209,52 +229,36 @@ endif(BUILD_WITH_FLOWVR)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
 if (BUILD_DOCUMENTATION)
     find_package(Doxygen)
-    if(DOXYGEN_FOUND)# TODO: this if is obsolete if using find_package(... REQUIRED) !
-        message(STATUS "Doxygen Found")
-    else(DOXYGEN_FOUND)
-        set(BUILD_DOCUMENTATION FALSE CACHE BOOL "Use Doxygen to create the documentation" FORCE)
-        message(STATUS "Doxygen Not Found. BUILD_DOCUMENTATION option turned OFF")
+    if(NOT DOXYGEN_FOUND)
+        message(SEND_ERROR "Doxygen not found. Cannot build documentation.")
     endif(DOXYGEN_FOUND)
+    configure_file(docs/doxygen/Doxyfile.in docs/doxygen/Doxyfile @ONLY)
+    # Add a custom target to run Doxygen when ever the project is built
+    add_custom_target(
+        docs ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/docs/doxygen/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
+    install(DIRECTORY docs/html DESTINATION ${CMAKE_INSTALL_DOCDIR})
 endif(BUILD_DOCUMENTATION)
 
 
-add_subdirectory(api)
+#
+set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
+set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
+
 add_subdirectory(bin)
-add_subdirectory(common)
+add_subdirectory(examples)
 add_subdirectory(include)
 add_subdirectory(melissa)
-add_subdirectory(server)
+add_subdirectory(src)
 add_subdirectory(tests)
-
-
-set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
-add_subdirectory(examples)
-
-set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
 add_subdirectory(utility)
 
+
 # set environement variables
-configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_set_env.sh DESTINATION bin)
-
-if(BUILD_DOCUMENTATION)
-  if(NOT DOXYGEN_FOUND)
-    message(SEND_ERROR "Doxygen needed to build the documentation. Please install it correctly")
-  endif(NOT DOXYGEN_FOUND)
-
-  # Configure the Template Doxyfile for our project
-  set(DOX_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/Doxyfile.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
-  # Add a custom target to run Doxygen when ever the project is built
-  add_custom_target(docs ALL
-                    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                    COMMENT "Generating API documentation with Doxygen"
-                    VERBATIM )
-  install(DIRECTORY docs/html DESTINATION ${CMAKE_INSTALL_DOCDIR})
-endif(BUILD_DOCUMENTATION)
-
 include(CMakePackageConfigHelpers)
 
 set(MELISSA_CMAKECONFIG_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME})

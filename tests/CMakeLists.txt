@@ -31,34 +31,37 @@
 # do not move executables from this directory around
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
-set(TESTS_LIBS ${EXTRA_LIBS}
-               zmq
-               m)
+
+function(add_stats_executable name)
+    add_executable(${name} ${ARGN})
+    target_link_libraries(${name} melissa-stats)
+endfunction()
+
+add_stats_executable(base test_base.c)
+add_test(NAME base COMMAND mpirun -np 2 base)
+
+add_stats_executable(mean test_mean.c)
+add_test(mean mean)
+
+add_stats_executable(variance test_variance.c)
+add_test(variance variance)
+
+add_stats_executable(covariance test_covariance.c)
+add_test(covariance covariance)
+
+add_stats_executable(sobol test_sobol.c)
+add_test(sobol sobol)
 
 
-add_executable(test_base test_base.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(test_base ${TESTS_LIBS} melissa_stats)
-add_test(TestBase mpirun -np 2 ./test_base)
-
-add_executable(test_mean test_mean.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(test_mean ${TESTS_LIBS} melissa_stats)
-add_test(TestMean ./test_mean)
-
-add_executable(test_variance test_variance.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(test_variance ${TESTS_LIBS} melissa_stats)
-add_test(TestVariance ./test_variance)
-
-add_executable(test_covariance test_covariance.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(test_covariance ${TESTS_LIBS} melissa_stats)
-add_test(TestCovariance ./test_covariance)
-
-add_executable(test_sobol test_sobol.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(test_sobol ${TESTS_LIBS} melissa_stats)
-add_test(TestSobol ./test_sobol)
-
-add_executable(test_getoptions test_getoptions.c ../server/melissa_options.c $<TARGET_OBJECTS:melissa_utils>)
-target_link_libraries(test_getoptions ${TESTS_LIBS})
-add_test(TestGetOptions ${EXECUTABLE_OUTPUT_PATH}/test_getoptions -p 3 -s 1000 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.4)
+add_executable(getoptions
+    test_getoptions.c
+    ${CMAKE_SOURCE_DIR}/src/server/melissa_options.c
+)
+target_link_libraries(getoptions melissa)
+add_test(
+    NAME getoptions
+    COMMAND getoptions -p 3 -s 1000 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.4
+)
 
 
 # check for sanitizer presence
@@ -79,30 +82,22 @@ endif()
 
 
 if(HAS_SANITIZERS)
-    add_executable(regression_16 regression_16.c $<TARGET_OBJECTS:melissa_utils>)
+    add_executable(regression_16 regression_16.c)
     target_compile_options(regression_16 PRIVATE -fsanitize=undefined -fno-sanitize-recover=all)
     target_include_directories(regression_16 PRIVATE ${CMAKE_SOURCE_DIR})
 # this flag must also be passed at link time
     target_link_libraries(regression_16 "-fsanitize=undefined")
-    target_link_libraries(regression_16 ${TESTS_LIBS})
+    target_link_libraries(regression_16 melissa)
     add_test(Regression16 regression_16)
 endif()
 
 
 add_executable(dummy-simulation dummy-simulation.c)
+# enable `erand48()`
 set_source_files_properties(
     dummy-simulation.c PROPERTIES COMPILE_DEFINITIONS _XOPEN_SOURCE
 )
-
-separate_arguments(MPI_C_COMPILE_FLAGS)
-
-target_compile_options(dummy-simulation PRIVATE ${MPI_C_COMPILE_FLAGS})
-target_include_directories(dummy-simulation PRIVATE ${MPI_C_INCLUDE_PATH})
-target_link_libraries(
-    dummy-simulation
-    melissa_api
-    ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
-)
+target_link_libraries(dummy-simulation melissa)
 
 configure_file(dummy-simulation-options.py.in dummy-simulation-options.py @ONLY)
 

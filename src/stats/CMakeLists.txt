@@ -28,7 +28,17 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat-pde-example)
-add_subdirectory(Code_Saturne)
-add_subdirectory(TELEMAC-2D)
+add_library(melissa-stats
+    covariance.c
+    general_moments.c
+    mean.c
+    min_max.c
+    quantile.c
+    sobol.c
+    threshold.c
+    variance.c
+)
+
+set_target_properties(melissa-stats PROPERTIES VERSION ${PROJECT_VERSION})
+target_link_libraries(melissa-stats PUBLIC m melissa)
+install(TARGETS melissa-stats DESTINATION ${CMAKE_INSTALL_LIBDIR})

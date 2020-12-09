@@ -1,6 +1,4 @@
-# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (Inria)
-#               2017, EDF (https://www.edf.fr/)
-#               2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +26,30 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat-pde-example)
-add_subdirectory(Code_Saturne)
-add_subdirectory(TELEMAC-2D)
+# make gethostname() declaration accessible
+set_source_files_properties(
+    melissa_utils.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+)
+set_source_files_properties(
+    melissa_comm4py.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+)
+
+
+add_library(melissa
+    api/melissa_api.c
+    melissa_utils.c
+    melissa_messages.c
+    vector.c
+)
+target_link_libraries(melissa PUBLIC mpic zmq)
+set_target_properties(melissa PROPERTIES VERSION ${PROJECT_VERSION})
+
+
+add_library(melissa_comm4py SHARED melissa_comm4py.c)
+target_link_libraries(melissa_comm4py PUBLIC melissa mpic zmq)
+set_target_properties(melissa_comm4py PROPERTIES VERSION ${PROJECT_VERSION})
+install(TARGETS melissa_comm4py LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+
+add_subdirectory(stats)
+add_subdirectory(server)

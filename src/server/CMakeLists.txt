@@ -28,7 +28,41 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_subdirectory(heat_example_base)
-add_subdirectory(heat-pde-example)
-add_subdirectory(Code_Saturne)
-add_subdirectory(TELEMAC-2D)
+set(MELISSA_OUTPUT_MODULE "txt"
+    CACHE STRING "Choose which output module will be used to write statistics"
+)
+set_property(CACHE MELISSA_OUTPUT_MODULE PROPERTY STRINGS "text;netcdf")
+
+
+add_executable(melissa-server
+    compute_stats.c
+    fault_tolerance.c
+    melissa_fields.c
+    melissa_data.c
+    melissa_io.c
+    melissa_options.c
+    server.c
+    server_helper.c
+    output/melissa_output.c
+    output/melissa_output_${MELISSA_OUTPUT_MODULE}.c
+)
+target_link_libraries(melissa-server melissa-stats)
+
+
+if(${MELISSA_OUTPUT_MODULE} STREQUAL "netcdf")
+    find_path(NETCDF_INCLUDE_DIR netcdf.h)
+    find_library(NETCDF_LIBRARY netcdf)
+
+    if(NETCDF_INCLUDE_DIR AND NETCDF_LIBRARY)
+        target_include_directories(melissa-server ${NETCDF_INCLUDES})
+        target_link_libraries(melissa-server ${NETCDF_LIBRARY})
+    else()
+        message(SEND_ERROR "netCDF output requested but netCDF not found")
+    endif()
+endif()
+
+
+install(
+    TARGETS melissa-server
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
