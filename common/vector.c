@@ -14,15 +14,16 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
- 
+#include <melissa/utils.h>
+#include <melissa/vector.h>
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "vector.h"
-#include "melissa_utils.h"
-
 void alloc_vector(vector_t *v, int capacity)
 {
+	assert(v);
     v->capacity = capacity;
     v->size = 0;
     v->items = melissa_calloc(v->capacity, sizeof(void *));
@@ -30,11 +31,13 @@ void alloc_vector(vector_t *v, int capacity)
 
 int vector_size(vector_t *v)
 {
+	assert(v);
     return v->size;
 }
 
 void resize_vector(vector_t *v, int capacity)
 {
+	assert(v);
     void **items = realloc(v->items, sizeof(void *) * capacity);
     if (items)
     {
@@ -45,6 +48,8 @@ void resize_vector(vector_t *v, int capacity)
 
 void vector_add(vector_t *v, void *item)
 {
+	assert(v);
+
     if (v->capacity == v->size)
     {
         resize_vector(v, v->capacity * 2);
@@ -52,16 +57,12 @@ void vector_add(vector_t *v, void *item)
     v->items[v->size++] = item;
 }
 
-//void vector_set(vector_t *v, int index, void *item)
-//{
-//    if (index >= 0 && index < v->size)
-//    {
-//        v->items[index] = item;
-//    }
-//}
-
 void *vector_get(vector_t *v, int index)
 {
+	assert(v);
+	assert(index >= 0);
+	assert(index < v->size);
+
     if (index >= 0 && index < v->size)
     {
         return v->items[index];
@@ -74,7 +75,9 @@ void *vector_get(vector_t *v, int index)
 
 void vector_delete(vector_t *v, int index)
 {
-    int i;
+	assert(v);
+	assert(index >= 0); // the wonders of signed integers
+	assert(index < v->size);
 
     if (index < 0 || index >= v->size)
     {
@@ -83,7 +86,7 @@ void vector_delete(vector_t *v, int index)
 
     v->items[index] = NULL;
 
-    for (i = index; i < v->size - 1; i++)
+    for (int i = index; i < v->size - 1; i++)
     {
         v->items[i] = v->items[i + 1];
         v->items[i + 1] = NULL;
@@ -99,5 +102,6 @@ void vector_delete(vector_t *v, int index)
 
 void free_vector(vector_t *v)
 {
+	assert(v);
     melissa_free(v->items);
 }

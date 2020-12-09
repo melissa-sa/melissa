@@ -16,7 +16,7 @@
 
 /**
  *
- * @file quantile.h
+ * @file melissa/stats/quantile.h
  * @author Terraz Théophile
  * @date 2017-18-05
  *
@@ -25,11 +25,11 @@
 #ifndef QUANTILE_H
 #define QUANTILE_H
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdio.h>
 
 /**
  *******************************************************************************

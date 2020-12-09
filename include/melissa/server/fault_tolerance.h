@@ -16,7 +16,7 @@
 
 /**
  *
- * @file fault_tolerance.h
+ * @file melissa/server/fault_tolerance.h
  * @author Terraz Théophile
  * @date 2017-30-06
  *
@@ -29,10 +29,8 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <melissa_utils.h>
-#include <vector.h>
+#include <melissa/utils.h>
+#include <melissa/vector.h>
 
 /**
  *******************************************************************************

@@ -16,7 +16,7 @@
 
 /**
  *
- * @file melissa_fields.h
+ * @file melissa/server/fields.h
  * @author Terraz Théophile
  * @date 2017-15-01
  *
@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include "melissa_data.h"
+#include <melissa/server/data.h>
 
 /**
  *******************************************************************************
@@ -75,10 +75,6 @@ void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
                           melissa_options_t *options,
                           double *write_time);
-
-//#if MELISSA4PY != 1
-//void melissa_close_output_lib();
-//#endif // MELISSA4PY
 
 #ifdef __cplusplus
 }

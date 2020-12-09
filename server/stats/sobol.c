@@ -23,18 +23,13 @@
  *
  **/
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <melissa/stats/sobol.h>
+#include <melissa/utils.h>
+
 #include <math.h>
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP
-#include "mean.h"
-#include "variance.h"
-#include "covariance.h"
-#include "sobol.h"
-#include "melissa_utils.h"
 
 static inline void increment_sobol_covariance (double    *covariance,
                                                double     in_vect1[],

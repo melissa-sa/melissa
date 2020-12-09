@@ -23,15 +23,14 @@
  *
  **/
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <melissa/stats/quantile.h>
+#include <melissa/utils.h>
+
 #include <math.h>
+#include <string.h>
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP
-#include "quantile.h"
-#include "melissa_utils.h"
 
 /**
  *******************************************************************************

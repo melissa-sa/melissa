@@ -28,7 +28,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "melissa_api.h"
+#include <melissa/api.h>
 
 #include <assert.h>
 #include <inttypes.h>

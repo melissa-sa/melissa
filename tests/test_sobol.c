@@ -23,15 +23,13 @@
  *
  **/
 
+#include <melissa/stats/sobol.h>
+#include <melissa/utils.h>
+
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "mean.h"
-#include "variance.h"
-#include "covariance.h"
-#include "sobol.h"
-#include "melissa_utils.h"
 
 int main()
 {

@@ -23,11 +23,11 @@
  *
  **/
 
+#include <melissa/server/data.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "melissa_data.h"
 
 void d_print_vector (double    in_vect[],
                             const int vect_size,

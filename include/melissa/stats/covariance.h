@@ -16,7 +16,7 @@
 
 /**
  *
- * @file covariance.h
+ * @file melissa/stats/covariance.h
  * @author Terraz Théophile
  * @date 2017-15-01
  *
@@ -24,7 +24,8 @@
 
 #ifndef COVARIANCE_H
 #define COVARIANCE_H
-#include "mean.h"
+
+#include <melissa/stats/mean.h>
 
 #ifdef __cplusplus
 extern "C" {

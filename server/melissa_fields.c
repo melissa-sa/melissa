@@ -25,48 +25,16 @@
  *
  **/
 
-#include <stdlib.h>
+#include <melissa/server/compute_stats.h>
+#include <melissa/server/data.h>
+#include <melissa/server/fields.h>
+#include <melissa/server/io.h>
+#include <melissa/server/output.h>
+
 #include <getopt.h>
-#include <string.h>
 #include <stdio.h>
-//#include <dlfcn.h>
-#include "melissa_fields.h"
-#include "melissa_data.h"
-#include "melissa_io.h"
-#include "compute_stats.h"
-#include "melissa_output.h"
-
-
-//#if MELISSA4PY != 1
-//void (*write_stats)(melissa_data_t**,
-//                    melissa_options_t*,
-//                    comm_data_t*,
-//                    write_output_d_txt,
-//                    write_output_i_txt,
-//                    char*);
-//void* output_lib;
-
-//void melissa_get_output_lib(char* lib_name,
-//                            char* func_name)
-//{
-//    write_stats = NULL;
-//    melissa_print (VERBOSE_DEBUG, "open lib %s\n", lib_name);
-//    output_lib = dlopen(lib_name, RTLD_NOW);
-//    if (output_lib == NULL)
-//    {
-//        perror("cannot load library:");
-//        fprintf(stdout, "ERROR: Cannot load output library\n");
-//        exit(1);
-//    }
-//    melissa_print (VERBOSE_DEBUG, "load func  %s\n", func_name);
-//    write_stats = dlsym(output_lib, func_name);
-//    if (write_stats == NULL)
-//    {
-//        fprintf(stdout, "ERROR: Cannot load output function\n");
-//        exit(1);
-//    }
-//}
-//#endif // MELISSA4PY
+#include <stdlib.h>
+#include <string.h>
 
 /**
  *******************************************************************************

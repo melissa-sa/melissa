@@ -23,13 +23,12 @@
  *
  **/
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <melissa/stats/threshold.h>
+#include <melissa/utils.h>
+
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP
-#include "threshold.h"
-#include "melissa_utils.h"
 
 /**
  *******************************************************************************

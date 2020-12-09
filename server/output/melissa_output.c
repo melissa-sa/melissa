@@ -25,15 +25,16 @@
  *
  **/
 
+#include <melissa/server/fault_tolerance.h>
+#include <melissa/server/output.h>
+#include <melissa/utils.h>
+
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
-//#include "hdf5.h"
-#include "melissa_output.h"
-#include "melissa_utils.h"
-#include "fault_tolerance.h"
+
+#include <mpi.h>
 
 static inline void dgather_data(comm_data_t *comm_data,
                                int *local_vect_sizes,

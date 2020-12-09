@@ -16,31 +16,42 @@
 
 /**
  *
- * @file compute_stats.h
+ * @file melissa/api.h
  * @author Terraz Théophile
- * @date 2017-15-01
+ * @date 2016-09-05
+ *
+ * @defgroup melissa_api API
  *
  **/
 
-#ifndef COMPUTE_STATS_H
-#define COMPUTE_STATS_H
+#ifndef MELISSA_API_H
+#define MELISSA_API_H
 
-#ifdef __cplusplus
+#include <mpi.h>
+
+#define MELISSA_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define MELISSA_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define MELISSA_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+#if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
 
-#include "melissa_data.h"
+void melissa_init(const char *field_name,
+                  const int  local_vect_size,
+                  MPI_Comm   comm);
 
-void compute_stats (melissa_data_t  *data,
-                    const int        time_step,
-                    const int        simu_id,
-                    const int        nb_vect,
-                    double         **in_vect_tab);
+void melissa_init_f(const char *field_name,
+                    int        *local_vect_size,
+                    MPI_Fint   *comm_fortran);
 
-void finalize_stats (melissa_data_t *data);
+void melissa_send(const char   *field_name,
+                  const double *send_vect);
 
-#ifdef __cplusplus
+void melissa_finalize(void);
+
+#if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
 
-#endif // COMPUTE_STATS_H
+#endif // MELISSA_API_H

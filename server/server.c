@@ -22,25 +22,24 @@
  *
  **/
 
-#include <unistd.h>
+#include <melissa/server/compute_stats.h>
+#include <melissa/server/data.h>
+#include <melissa/server/fault_tolerance.h>
+#include <melissa/server/io.h>
+#include <melissa/server/options.h>
+#include <melissa/server/output.h>
+#include <melissa/server/server.h>
+#include <melissa/messages.h>
+#include <melissa/utils.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <errno.h>
-#include <math.h>
-#include <zmq.h>
-#include <mpi.h>
+#include <unistd.h>
 
-#include "server.h"
-#include "melissa_io.h"
-#include "compute_stats.h"
-#include "melissa_options.h"
-#include "melissa_data.h"
-#include "melissa_utils.h"
-#include "fault_tolerance.h"
-#include "melissa_messages.h"
-#include "melissa_output.h"
+#include <mpi.h>
+#include <zmq.h>
 
 static volatile int end_signal = 0;
 

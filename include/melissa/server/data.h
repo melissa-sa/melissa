@@ -16,7 +16,7 @@
 
 /**
  *
- * @file melissa_data.h
+ * @file melissa/server/data.h
  * @author Terraz Théophile
  * @date 2017-15-01
  *
@@ -29,18 +29,17 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include "melissa_utils.h"
-#include "melissa_options.h"
-#include "mean.h"
-#include "variance.h"
-#include "general_moments.h"
-#include "min_max.h"
-#include "threshold.h"
-#include "quantile.h"
-#include "covariance.h"
-#include "sobol.h"
-#include "vector.h"
+#include <melissa/server/options.h>
+#include <melissa/stats/covariance.h>
+#include <melissa/stats/general_moments.h>
+#include <melissa/stats/mean.h>
+#include <melissa/stats/min_max.h>
+#include <melissa/stats/quantile.h>
+#include <melissa/stats/sobol.h>
+#include <melissa/stats/threshold.h>
+#include <melissa/stats/variance.h>
+#include <melissa/utils.h>
+#include <melissa/vector.h>
 
 /**
  *******************************************************************************

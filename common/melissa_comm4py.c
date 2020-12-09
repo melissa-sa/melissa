@@ -14,17 +14,19 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
+#include <melissa/messages.h>
+#include <melissa/utils.h>
 
+#include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <ifaddrs.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <zmq.h>
-#include "melissa_utils.h"
-#include "melissa_messages.h"
 
 #define PORT_NUMBER 5555
 
@@ -156,24 +158,8 @@ void bind_message_resp(char* port_number)
     melissa_bind (message.message_resp, name);
 }
 
-//void wait_message(char* buff)
-//{
-//    zmq_msg_t msg;
-//    fprintf(stdout, "wait message\n");
-//    int size = zmq_msg_recv (&msg, message.message_puller, 0);
-//    if (get_message_type(zmq_msg_get_data(&msg)) == STOP)
-//    {
-//        sprintf (buff, "stop");
-//    }
-//    else
-//    {
-//        memcpy (buff, zmq_msg_get_data(&msg), size);
-//    }
-//}
-
 void wait_message(char* buff)  // TODO: why parsing it like this! this is ugly! than later I  have to redo stirng parsing....
 {
-//    char text[MELISSA_MESSAGE_LEN];
     char* buff_ptr = NULL;
     zmq_msg_t msg;
     zmq_msg_init (&msg);

@@ -3,7 +3,8 @@
 // Regression test for Melissa issue #16:
 // Undefined behavior in `common/melissa_utils.c`
 
-#include <common/melissa_utils.h>
+#include <melissa/utils.h>
+
 #include <stdint.h>
 
 int main()

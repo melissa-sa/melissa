@@ -16,7 +16,7 @@
 
 /**
  *
- * @file melissa_messages.h
+ * @file melissa/messages.h
  * @author Terraz Théophile
  * @date 2019-16-07
  *
@@ -25,7 +25,7 @@
 #ifndef MELISSA_MESSAGES_H_
 #define MELISSA_MESSAGES_H_
 
-#include "zmq.h"
+#include <zmq.h>
 
 #ifdef __cplusplus
 extern "C" {

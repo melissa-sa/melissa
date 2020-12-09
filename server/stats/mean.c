@@ -23,15 +23,16 @@
  *
  **/
 
-#include <stdlib.h>
-#include <string.h>
+#include <melissa/stats/mean.h>
+#include <melissa/utils.h>
+
 #include <stdio.h>
-#include <math.h>
+#include <string.h>
+
+#include <mpi.h>
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP
-#include "mean.h"
-#include "melissa_utils.h"
 
 /**
  *******************************************************************************

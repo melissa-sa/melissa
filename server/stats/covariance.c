@@ -23,16 +23,16 @@
  *
  **/
 
-#include <stdlib.h>
-#include <string.h>
+#include <melissa/stats/covariance.h>
+#include <melissa/stats/mean.h>
+#include <melissa/stats/variance.h>
+#include <melissa/utils.h>
+
 #include <stdio.h>
+
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP
-#include "mean.h"
-#include "variance.h"
-#include "covariance.h"
-#include "melissa_utils.h"
 
 /**
  *******************************************************************************
@@ -83,30 +83,6 @@ void init_covariance (covariance_t *covariance,
  * size of the input vectors
  *
  *******************************************************************************/
-
-//void increment_covariance (covariance_t *covariance,
-//                           double        in_vect1[],
-//                           double        in_vect2[],
-//                           const int     vect_size)
-//{
-//    int     i;
-//    int     incr = 0;
-
-//    increment_mean(&(covariance->mean1), in_vect1, vect_size);
-//    incr = covariance->increment;
-//    if (covariance->increment > 0)
-//    {
-//#pragma omp parallel for schedule(static) firstprivate(incr)
-//        for (i=0; i<vect_size; i++)
-//        {
-//            covariance->covariance[i] *= (incr - 1);
-//            covariance->covariance[i] +=  (in_vect1[i] - covariance->mean1.mean[i]) * (in_vect2[i] - covariance->mean2.mean[i]);
-//            covariance->covariance[i] /= (double)(incr);
-//        }
-//    }
-//    increment_mean(&(covariance->mean2), in_vect2, vect_size);
-//    covariance->increment += 1;
-//}
 
 void increment_covariance (covariance_t *covariance,
                            double        in_vect1[],

@@ -23,9 +23,12 @@
  *
  **/
 
+#include <melissa/messages.h>
+#include <melissa/utils.h>
+
+#include <stdio.h>
 #include <string.h>
-#include "melissa_messages.h"
-#include "melissa_utils.h"
+#include <zmq.h>
 
 #ifdef DEBUG_MELISSA_MESSAGES
 int msend(zmq_msg_t *msg, void *b, void *c, int line, char* file, char* func) {

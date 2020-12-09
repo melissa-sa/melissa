@@ -25,18 +25,16 @@
  *
  **/
 
-//#include <unistd.h>
+#include <melissa/server/data.h>
+#include <melissa/stats/sobol.h>
+#include <melissa/utils.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include "melissa_data.h"
-#include "melissa_utils.h"
-#include "sobol.h"
 
 static void melissa_init_steps (melissa_data_t *data)
 {
     int      i;
-//    int32_t* items_ptr;
 
     if (data->is_valid != 1)
     {
@@ -58,7 +56,6 @@ static void melissa_init_steps (melissa_data_t *data)
 static void melissa_alloc_data (melissa_data_t *data)
 {
     int      i, j;
-//    int32_t* items_ptr;
 
     if (data->is_valid != 1)
     {
@@ -101,20 +98,6 @@ static void melissa_alloc_data (melissa_data_t *data)
 
     for (i=0; i<data->options->nb_time_steps; i++)
         init_moments (&(data->moments[i]), data->vect_size, j);
-
-//    if (data->options->mean_op == 1 && data->options->variance_op == 0)
-//    {
-//        data->means = melissa_malloc (data->options->nb_time_steps * sizeof(mean_t));
-//        for (i=0; i<data->options->nb_time_steps; i++)
-//            init_mean (&(data->means[i]), data->vect_size);
-//    }
-
-//    if (data->options->variance_op == 1)
-//    {
-//        data->variances = melissa_malloc (data->options->nb_time_steps * sizeof(variance_t));
-//        for (i=0; i<data->options->nb_time_steps; i++)
-//            init_variance (&(data->variances[i]), data->vect_size);
-//    }
 
     if (data->options->min_and_max_op == 1)
     {
@@ -191,8 +174,6 @@ void melissa_init_data (melissa_data_t    *data,
 {
     data->vect_size       = vect_size;
     data->options         = options;
-//    data->means           = NULL;
-//    data->variances       = NULL;
     data->moments         = NULL;
     data->min_max         = NULL;
     data->thresholds      = NULL;
@@ -330,69 +311,3 @@ void melissa_free_data (melissa_data_t *data)
 
     data->is_valid = 0;
 }
-
-///**
-// *******************************************************************************
-// *
-// * @ingroup stats_data
-// *
-// * This function computes and displays the memory consumption of the library
-// *
-// *******************************************************************************
-// *
-// * @param[in] *options
-// * pointer to the structure containing global options
-// *
-// *******************************************************************************/
-
-//long int mem_conso (melissa_options_t *options)
-//{
-//    long int memory = 0;
-//    long int temp_mem = 0;
-
-//    if (options->mean_op != 0)
-//    {
-//        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-//        fprintf(stdout, " --- Mean memory usage:               %ld MB\n", temp_mem);
-//        memory += temp_mem;
-//    }
-//    if (options->variance_op != 0 && options->mean_op == 0)
-//    {
-//        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-//        fprintf(stdout, " --- Variance memory usage:           %ld MB\n", temp_mem);
-//        memory += temp_mem;
-//    }
-//    if (options->variance_op != 0 && options->mean_op != 0)
-//    {
-//        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-//        fprintf(stdout, " --- Variance memory usage:           %ld MB\n", temp_mem);
-//        memory += temp_mem;
-//    }
-//    if (options->min_and_max_op != 0)
-//    {
-//        temp_mem = 2 * options->global_vect_size * options->nb_time_steps * sizeof(double)/* + sizeof(int)*/ / 1000000;
-//        fprintf(stdout, " --- Min and max memory usage:        %ld MB\n", temp_mem);
-//        memory += temp_mem;
-//    }
-//    if (options->threshold_op != 0)
-//    {
-//        temp_mem = options->global_vect_size * options->nb_time_steps * sizeof(int) / 1000000;
-//        fprintf(stdout, " --- Threshold memory usage:          %ld MB\n", temp_mem);
-//        memory += temp_mem;
-//    }
-//    if (options->sobol_op != 0)
-//    {
-//        // sobol indices
-//        temp_mem  = options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-//        // variances
-//        temp_mem += options->nb_parameters * 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-//        // covariances
-//        temp_mem += options->nb_parameters * 6 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-//        // glob variances
-//        temp_mem += 2 * options->global_vect_size * options->nb_time_steps * sizeof(double) / 1000000;
-//        fprintf(stdout, " --- Sobol indices memory usage:      %ld MB\n", temp_mem);
-//        memory += temp_mem;
-//    }
-//    fprintf(stdout, " --- Total memory usage:      %d MB\n", memory);
-//    return memory;
-//}

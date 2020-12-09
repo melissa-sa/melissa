@@ -23,9 +23,7 @@
  *
  **/
 
-#include "mean.h"
-#include "covariance.h"
-#include "variance.h"
+#include <melissa/stats/covariance.h>
 
 #include <float.h>
 #include <math.h>

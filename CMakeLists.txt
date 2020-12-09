@@ -110,6 +110,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -pedantic")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-discarded-qualifiers")
 
+include_directories(include)
+include_directories(${CMAKE_BINARY_DIR}/include)
+
 
 # Find ZeroMQ
 include(BuildZeroMQ)
@@ -215,18 +218,10 @@ if (BUILD_DOCUMENTATION)
 endif(BUILD_DOCUMENTATION)
 
 
-# Load local include directories before. This ensures that no old installed headers are
-# loaded.
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/common")
-include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/stats")
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/output")
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
-
-
 add_subdirectory(api)
 add_subdirectory(bin)
 add_subdirectory(common)
+add_subdirectory(include)
 add_subdirectory(melissa)
 add_subdirectory(server)
 add_subdirectory(tests)

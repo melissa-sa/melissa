@@ -25,9 +25,10 @@
  *
  **/
 
+#include <melissa/server/fault_tolerance.h>
+#include <melissa/messages.h>
+
 #include <string.h>
-#include "fault_tolerance.h"
-#include "melissa_messages.h"
 
 /**
  *******************************************************************************

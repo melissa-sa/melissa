@@ -16,7 +16,7 @@
 
 /**
 *
-* @file melissa_io.h
+* @file melissa/server/io.h
 * @author Terraz Théophile
 * @date 2017-15-01
 *
@@ -29,8 +29,8 @@
 extern "C" {
 #endif
 
-#include "melissa_data.h"
-#include "melissa_options.h"
+#include <melissa/server/data.h>
+#include <melissa/server/options.h>
 
 void write_stats_bin(melissa_data_t    **data,
                      melissa_options_t  *options,
@@ -69,12 +69,6 @@ void save_simu_states (vector_t    *simu_states,
 void read_simu_states (vector_t          *simu_states,
                        melissa_options_t *options,
                        comm_data_t       *comm_data);
-
-//void read_ensight (melissa_options_t  *options,
-//                   comm_data_t      *comm_data,
-//                   double           *in_vect,
-//                   int              *local_vect_sizes,
-//                   char             *file_name);
 
 #ifdef __cplusplus
 }

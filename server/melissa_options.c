@@ -25,14 +25,15 @@
  *
  **/
 
-#include <stdio.h>
+#include <melissa/server/data.h>
+#include <melissa/server/options.h>
+#include <melissa/utils.h>
+
 #include <ctype.h>
+#include <getopt.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include "melissa_options.h"
-#include "melissa_data.h"
-#include "melissa_utils.h"
 
 static inline void stats_usage ()
 {

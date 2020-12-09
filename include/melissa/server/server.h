@@ -16,7 +16,7 @@
 
 /**
  *
- * @file server.h
+ * @file melissa/server/server.h
  * @author Terraz Théophile
  * @date 2016-15-03
  *
@@ -29,11 +29,12 @@
 extern "C" {
 #endif
 
-#include <zmq.h>
-#include "melissa_fields.h"
-#include "melissa_data.h"
-#include "melissa_utils.h"
-#include "fault_tolerance.h"
+#include <melissa/server/data.h>
+#include <melissa/server/fault_tolerance.h>
+#include <melissa/server/fields.h>
+#include <melissa/utils.h>
+#include <melissa/vector.h>
+
 #include <mpi.h>
 
 struct melissa_server_s

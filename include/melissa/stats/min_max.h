@@ -16,14 +16,16 @@
 
 /**
  *
- * @file threshold.h
+ * @file melissa/stats/min_max.h
  * @author Terraz Théophile
  * @date 2017-15-01
  *
  **/
 
-#ifndef THRESHOLD_H
-#define THRESHOLD_H
+#ifndef MIN_MAX_H
+#define MIN_MAX_H
+
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,44 +36,45 @@ extern "C" {
  *
  * @ingroup stats_base
  *
- * @struct threshold_s
+ * @struct min_max_s
  *
- * Structure containing threshold exceedance arrays
+ * Structure containing two arrays of min and max values
  *
  *******************************************************************************/
 
-struct threshold_s
+struct min_max_s
 {
-    int    *threshold_exceedance; /**< threshold arrays           */
-    double  value;                /**< threshold values           */
+    double *min;     /**< min[vect_size]                          */
+    double *max;     /**< max[vect_size]                          */
+    int    *min_id;  /**< min[vect_size]                          */
+    int    *max_id;  /**< max[vect_size]                          */
+    int     is_init; /**< 0 before the first update, 1 otherwhise */
 };
 
-typedef struct threshold_s threshold_t; /**< type corresponding to variance_s */
+typedef struct min_max_s min_max_t; /**< type corresponding to min_max_s */
 
-void init_threshold (threshold_t  *threshold,
-                     const int     vect_size,
-                     const double  value);
+void init_min_max(min_max_t *min_max,
+                  const int  vect_size);
 
-void update_threshold_exceedance (threshold_t *threshold,
-                                  double       in_vect[],
-                                  const int    vect_size);
+void min_and_max (min_max_t *min_max,
+                  double     in_vect[],
+                  const int  simu_id,
+                  const int  vect_size);
 
-void save_threshold(threshold_t **threshold,
-                    int           vect_size,
-                    int           nb_time_steps,
-                    int           nb_values,
-                    FILE*         f);
+void save_min_max(min_max_t *minmax,
+                  int        vect_size,
+                  int        nb_time_steps,
+                  FILE*      f);
 
-void read_threshold(threshold_t **threshold,
-                    int           vect_size,
-                    int           nb_time_steps,
-                    int           nb_values,
-                    FILE*         f);
+void read_min_max(min_max_t *minmax,
+                  int        vect_size,
+                  int        nb_time_steps,
+                  FILE*      f);
 
-void free_threshold(threshold_t *threshold);
+void free_min_max (min_max_t *min_max);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // THRESHOLD_H
+#endif // MIN_MAX_H

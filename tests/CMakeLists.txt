@@ -56,7 +56,7 @@ add_executable(test_sobol test_sobol.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(test_sobol ${TESTS_LIBS} melissa_stats)
 add_test(TestSobol ./test_sobol)
 
-add_executable(test_getoptions test_getoptions.c ../server/melissa_options.c ../server/melissa_options.h $<TARGET_OBJECTS:melissa_utils>)
+add_executable(test_getoptions test_getoptions.c ../server/melissa_options.c $<TARGET_OBJECTS:melissa_utils>)
 target_link_libraries(test_getoptions ${TESTS_LIBS})
 add_test(TestGetOptions ${EXECUTABLE_OUTPUT_PATH}/test_getoptions -p 3 -s 1000 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.4)
 

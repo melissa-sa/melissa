@@ -25,11 +25,15 @@
 #ifndef VARIANCE_H
 #define VARIANCE_H
 
+#include <melissa/stats/mean.h>
+
+#include <stdio.h>
+
+#include <mpi.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <mpi.h>
 
 /**
  *******************************************************************************

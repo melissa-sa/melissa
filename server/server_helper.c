@@ -14,20 +14,18 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
+#include <melissa/messages.h>
+#include <melissa/server/compute_stats.h>
+#include <melissa/server/data.h>
+#include <melissa/server/io.h>
+#include <melissa/server/options.h>
+#include <melissa/server/server.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <ifaddrs.h>
+
 #include <zmq.h>
-#include "compute_stats.h"
-#include "melissa_options.h"
-#include "melissa_data.h"
-#include "melissa_io.h"
-#include "melissa_messages.h"
-#include "server.h"
 
 int create_port_number (comm_data_t *comm_data,
                         const char*  node_name,

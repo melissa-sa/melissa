@@ -16,7 +16,7 @@
 
 /**
  *
- * @file melissa_output.h
+ * @file melissa/server/output.h
  * @brief Writes stats on disc.
  * @author Terraz Théophile
  * @date 2017-19-01
@@ -32,15 +32,12 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <math.h>
+#include <melissa/server/data.h>
+#include <melissa/server/options.h>
+#include <melissa/utils.h>
+#include <melissa/vector.h>
 
-//#include "hdf5.h"
-#include "melissa_data.h"
-#include "melissa_utils.h"
+#include <stddef.h>
 
 void melissa_write_stats_seq(melissa_data_t    **data,
                              melissa_options_t  *options,

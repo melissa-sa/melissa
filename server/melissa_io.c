@@ -25,15 +25,15 @@
  *
  **/
 
+#include <melissa/server/data.h>
+#include <melissa/server/fault_tolerance.h>
+#include <melissa/utils.h>
+
 #include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <math.h>
-//#include "hdf5.h"
-#include "melissa_data.h"
-#include "melissa_utils.h"
-#include "fault_tolerance.h"
+
+#include <mpi.h>
 
 /**
  *******************************************************************************

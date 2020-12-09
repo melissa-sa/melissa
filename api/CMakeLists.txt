@@ -27,14 +27,12 @@ if(BUILD_WITH_FLOWVR)
 endif(BUILD_WITH_FLOWVR)
 
 
-configure_file(melissa_api.h melissa_api.h @ONLY)
 configure_file(melissa_api.f melissa_api.f COPYONLY)
 configure_file(melissa_api.f90 melissa_api.f90 COPYONLY)
 configure_file(melissa_api.py melissa_api.py COPYONLY)
 
 install(
     FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/melissa_api.h
         ${CMAKE_CURRENT_BINARY_DIR}/melissa_api.f
         ${CMAKE_CURRENT_BINARY_DIR}/melissa_api.f90
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

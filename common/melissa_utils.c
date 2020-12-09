@@ -25,7 +25,7 @@
  *
  **/
 
-#include "melissa_utils.h"
+#include <melissa/utils.h>
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/timeb.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <unistd.h>

@@ -16,7 +16,7 @@
 
 /**
  *
- * @file melissa_utils.h
+ * @file melissa/utils.h
  * @author Terraz Théophile
  * @date 2016-15-02
  *
@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #include <mpi.h>
-#include <stdio.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #ifndef MPI_MAX_PROCESSOR_NAME

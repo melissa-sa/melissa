@@ -26,9 +26,9 @@
 // enable strnlen
 #define _POSIX_C_SOURCE 200809L
 
-#include "melissa_api.h"
-#include "melissa_messages.h"
-#include "melissa_utils.h"
+#include <melissa/api.h>
+#include <melissa/messages.h>
+#include <melissa/utils.h>
 
 #include <assert.h>
 #include <errno.h>

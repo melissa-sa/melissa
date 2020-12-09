@@ -16,7 +16,7 @@
 
 /**
  *
- * @file mean.h
+ * @file melissa/stats/mean.h
  * @author Terraz Théophile
  * @date 2017-15-01
  *
@@ -25,12 +25,13 @@
 #ifndef MEAN_H
 #define MEAN_H
 
+#include <stdio.h>
+
+#include <mpi.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <mpi.h>
-#include <stdio.h>
 
 /**
  *******************************************************************************

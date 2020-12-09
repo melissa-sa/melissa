@@ -16,7 +16,7 @@
 
 /**
  *
- * @file melissa_options.h
+ * @file melissa/server/options.h
  * @author Terraz Théophile
  * @date 2017-15-01
  *

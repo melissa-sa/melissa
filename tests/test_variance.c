@@ -23,15 +23,14 @@
  *
  **/
 
+#include <melissa/stats/general_moments.h>
+#include <melissa/stats/variance.h>
+#include <melissa/utils.h>
+
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
-#include "mean.h"
-#include "variance.h"
-#include "general_moments.h"
-#include "covariance.h"
-#include "melissa_utils.h"
 
 int main()
 {

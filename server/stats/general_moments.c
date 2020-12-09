@@ -23,17 +23,16 @@
  *
  **/
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <melissa/stats/general_moments.h>
+#include <melissa/stats/mean.h>
+#include <melissa/stats/variance.h>
+#include <melissa/utils.h>
+
+#include <math.h>
+
 #ifdef BUILD_WITH_OPENMP
 #include <omp.h>
 #endif // BUILD_WITH_OPENMP
-#include <math.h>
-#include "general_moments.h"
-#include "mean.h"
-#include "variance.h"
-#include "melissa_utils.h"
 
 static inline void increment_moments_mean (double    *mean,
                                            double    *in_vect,

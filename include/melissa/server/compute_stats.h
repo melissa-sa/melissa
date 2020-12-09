@@ -16,53 +16,31 @@
 
 /**
  *
- * @file vector.h
+ * @file melissa/server/compute_stats.h
  * @author Terraz Théophile
- * @date 2017-01-07
+ * @date 2017-15-01
  *
  **/
 
-#ifndef MELISSA_VECTOR_H
-#define MELISSA_VECTOR_H
+#ifndef COMPUTE_STATS_H
+#define COMPUTE_STATS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct vector_s {
-    void **items;
-    int capacity;
-    int size;
-};
+#include <melissa/server/data.h>
 
-typedef struct vector_s vector_t;
+void compute_stats (melissa_data_t  *data,
+                    const int        time_step,
+                    const int        simu_id,
+                    const int        nb_vect,
+                    double         **in_vect_tab);
 
-void alloc_vector(vector_t *v,
-                  int capacity);
-
-int vector_size(vector_t *v);
-
-void vector_add(vector_t *v,
-                void     *item);
-
-void vector_set(vector_t *v,
-                int       index,
-                void     *item);
-
-void resize_vector(vector_t *v,
-                   int capacity);
-
-void *vector_get(vector_t *v,
-                 int index);
-
-void vector_delete(vector_t *v,
-                   int index);
-
-void free_vector(vector_t *v);
+void finalize_stats (melissa_data_t *data);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // MELISSA_VECTOR_H
-
+#endif // COMPUTE_STATS_H
