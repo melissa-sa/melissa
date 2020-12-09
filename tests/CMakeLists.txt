@@ -55,7 +55,7 @@ add_test(sobol sobol)
 
 add_executable(getoptions
     getoptions.c
-    ${CMAKE_SOURCE_DIR}/src/server/melissa_options.c
+    ${CMAKE_SOURCE_DIR}/src/server/options.c
 )
 target_link_libraries(getoptions melissa)
 add_test(

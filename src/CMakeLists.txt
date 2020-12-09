@@ -28,24 +28,24 @@
 
 # make gethostname() declaration accessible
 set_source_files_properties(
-    melissa_utils.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+    comm4py.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
 )
 set_source_files_properties(
-    melissa_comm4py.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+    utils.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
 )
 
 
 add_library(melissa
     api/melissa_api.c
-    melissa_utils.c
-    melissa_messages.c
+    messages.c
+    utils.c
     vector.c
 )
 target_link_libraries(melissa PUBLIC mpic zmq)
 set_target_properties(melissa PROPERTIES VERSION ${PROJECT_VERSION})
 
 
-add_library(melissa_comm4py SHARED melissa_comm4py.c)
+add_library(melissa_comm4py SHARED comm4py.c)
 target_link_libraries(melissa_comm4py PUBLIC melissa mpic zmq)
 set_target_properties(melissa_comm4py PROPERTIES VERSION ${PROJECT_VERSION})
 install(TARGETS melissa_comm4py LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

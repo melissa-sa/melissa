@@ -37,14 +37,14 @@ set_property(CACHE MELISSA_OUTPUT_MODULE PROPERTY STRINGS "text;netcdf")
 add_executable(melissa-server
     compute_stats.c
     fault_tolerance.c
-    melissa_fields.c
-    melissa_data.c
-    melissa_io.c
-    melissa_options.c
+    fields.c
+    data.c
+    io.c
+    options.c
     server.c
     server_helper.c
-    output/melissa_output.c
-    output/melissa_output_${MELISSA_OUTPUT_MODULE}.c
+    output/output.c
+    output/output_${MELISSA_OUTPUT_MODULE}.c
 )
 target_link_libraries(melissa-server melissa-stats)
 
