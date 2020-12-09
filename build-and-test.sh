@@ -57,10 +57,3 @@ cmake \
 cmake --build . -- --jobs="$num_jobs"
 ctest --output-on-failure --timeout 300
 cmake --build . --target install
-
-cd -- "$melissa_sa_prefix_dir/share/melissa/examples/heat_example"
-mkdir build
-cd -- build
-cmake -DCMAKE_BUILD_TYPE="$build_type" -- ../solver
-cmake --build . -- --jobs="$num_jobs"
-cmake --build . --target install
