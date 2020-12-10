@@ -59,7 +59,12 @@ set_target_properties(melissa PROPERTIES VERSION ${PROJECT_VERSION})
 add_library(melissa_comm4py SHARED comm4py.c)
 target_link_libraries(melissa_comm4py PUBLIC melissa mpic zmq)
 set_target_properties(melissa_comm4py PROPERTIES VERSION ${PROJECT_VERSION})
-install(TARGETS melissa_comm4py LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+
+install(
+    TARGETS melissa melissa_comm4py
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 
 add_subdirectory(server)
