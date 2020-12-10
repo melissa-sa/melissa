@@ -150,34 +150,7 @@ set_target_properties(
 
 
 # MPI
-find_package(MPI REQUIRED)
-
-# fix compilation on CentOS 8 with CMake 3.11
-separate_arguments(MPI_C_COMPILE_FLAGS)
-separate_arguments(MPI_Fortran_COMPILE_FLAGS)
-
-# remove leading, trailing whitespace when CMake 3.7 + MPICH is used
-if(MPI_C_LINK_FLAGS)
-    string(STRIP ${MPI_C_LINK_FLAGS} MPI_C_LINK_FLAGS)
-endif()
-if(MPI_Fortran_LINK_FLAGS)
-    string(STRIP ${MPI_Fortran_LINK_FLAGS} MPI_Fortran_LINK_FLAGS)
-endif()
-
-add_library(mpic INTERFACE)
-target_include_directories(mpic INTERFACE ${MPI_C_INCLUDE_PATH})
-target_compile_options(mpic INTERFACE ${MPI_C_COMPILE_FLAGS})
-target_link_libraries(
-    mpic INTERFACE ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
-)
-
-add_library(mpif INTERFACE)
-target_include_directories(mpif INTERFACE ${MPI_Fortran_INCLUDE_PATH})
-target_compile_options(mpif INTERFACE ${MPI_Fortran_COMPILE_FLAGS})
-target_link_libraries(
-    mpif INTERFACE ${MPI_Fortran_LINK_FLAGS} ${MPI_Fortran_LIBRARIES}
-)
-
+find_package(MelissaMPI REQUIRED)
 
 
 # OpenMP
@@ -248,6 +221,10 @@ endif(BUILD_DOCUMENTATION)
 #
 set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
 set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
+set(MELISSA_INSTALL_CMAKEDIR
+    ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+)
+
 
 add_subdirectory(bin)
 add_subdirectory(examples)
@@ -256,22 +233,6 @@ add_subdirectory(melissa)
 add_subdirectory(src)
 add_subdirectory(tests)
 add_subdirectory(utility)
-
-
-# set environement variables
-include(CMakePackageConfigHelpers)
-
-set(MELISSA_CMAKECONFIG_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME})
-
-configure_package_config_file(${PROJECT_NAME}Config.cmake.in
-                              "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-                              INSTALL_DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
-write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-                                 VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
-                                 COMPATIBILITY AnyNewerVersion)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-              DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
 
 
 # Melissa4py #

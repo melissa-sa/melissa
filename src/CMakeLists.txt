@@ -49,20 +49,39 @@ add_library(melissa
     stats/threshold.c
     stats/variance.c
 )
-target_link_libraries(melissa
-    PRIVATE m
-    PUBLIC mpic zmq
+target_include_directories(
+    melissa
+    INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_FULL_INCLUDEDIR}>
+    PUBLIC ${MPI_C_INCLUDE_PATH}
+
+)
+target_compile_options(melissa PUBLIC ${MPI_C_COMPILE_FLAGS})
+target_link_libraries(
+    melissa
+    PRIVATE m zmq
+    PUBLIC ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
 )
 set_target_properties(melissa PROPERTIES VERSION ${PROJECT_VERSION})
 
-
-add_library(melissa_comm4py SHARED comm4py.c)
-target_link_libraries(melissa_comm4py PUBLIC melissa mpic zmq)
-set_target_properties(melissa_comm4py PROPERTIES VERSION ${PROJECT_VERSION})
-
+install(
+    TARGETS melissa
+    EXPORT melissa-export
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 install(
-    TARGETS melissa melissa_comm4py
+    EXPORT melissa-export
+    FILE melissa-config.cmake
+    DESTINATION ${MELISSA_INSTALL_CMAKEDIR}
+)
+
+
+add_library(melissa_comm4py SHARED comm4py.c)
+target_link_libraries(melissa_comm4py PUBLIC melissa mpi_C zmq)
+set_target_properties(melissa_comm4py PROPERTIES VERSION ${PROJECT_VERSION})
+install(
+    TARGETS melissa_comm4py
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
