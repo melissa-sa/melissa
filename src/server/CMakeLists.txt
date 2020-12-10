@@ -46,7 +46,7 @@ add_executable(melissa-server
     output/output.c
     output/output_${MELISSA_OUTPUT_MODULE}.c
 )
-target_link_libraries(melissa-server melissa-stats)
+target_link_libraries(melissa-server m melissa)
 
 
 if(${MELISSA_OUTPUT_MODULE} STREQUAL "netcdf")

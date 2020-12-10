@@ -36,12 +36,23 @@ set_source_files_properties(
 
 
 add_library(melissa
-    api/melissa_api.c
     messages.c
     utils.c
     vector.c
+    api/melissa_api.c
+    stats/covariance.c
+    stats/general_moments.c
+    stats/mean.c
+    stats/min_max.c
+    stats/quantile.c
+    stats/sobol.c
+    stats/threshold.c
+    stats/variance.c
 )
-target_link_libraries(melissa PUBLIC mpic zmq)
+target_link_libraries(melissa
+    PRIVATE m
+    PUBLIC mpic zmq
+)
 set_target_properties(melissa PROPERTIES VERSION ${PROJECT_VERSION})
 
 
@@ -51,5 +62,4 @@ set_target_properties(melissa_comm4py PROPERTIES VERSION ${PROJECT_VERSION})
 install(TARGETS melissa_comm4py LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 
-add_subdirectory(stats)
 add_subdirectory(server)

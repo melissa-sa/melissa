@@ -32,24 +32,24 @@
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
 
-function(add_stats_executable name)
+function(add_melissa_executable name)
     add_executable(${name} ${ARGN})
-    target_link_libraries(${name} melissa-stats)
+    target_link_libraries(${name} melissa)
 endfunction()
 
-add_stats_executable(base base.c)
+add_melissa_executable(base base.c)
 add_test(NAME base COMMAND mpirun -np 2 base)
 
-add_stats_executable(mean mean.c)
+add_melissa_executable(mean mean.c)
 add_test(mean mean)
 
-add_stats_executable(variance variance.c)
+add_melissa_executable(variance variance.c)
 add_test(variance variance)
 
-add_stats_executable(covariance covariance.c)
+add_melissa_executable(covariance covariance.c)
 add_test(covariance covariance)
 
-add_stats_executable(sobol sobol.c)
+add_melissa_executable(sobol sobol.c)
 add_test(sobol sobol)
 
 
