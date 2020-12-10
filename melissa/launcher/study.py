@@ -949,6 +949,10 @@ def draw_parameter_set(usr_func, stdy_opt):
     else:
         n = stdy_opt['nb_parameters']
         param_set = np.random.uniform(0, 1, size=n)
+
+    # ensure 64-bit float parameters
+    param_set = param_set.astype(np.float64)
+
     return param_set
 
 def check_scheduler_load(usr_func):
