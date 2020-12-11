@@ -1,22 +1,36 @@
-###################################################################
-#                            Melissa                              #
-#-----------------------------------------------------------------#
-#   COPYRIGHT (C) 2017  by INRIA and EDF. ALL RIGHTS RESERVED.    #
-#                                                                 #
-# This source is covered by the BSD 3-Clause License.             #
-# Refer to the  LICENSE file for further information.             #
-#                                                                 #
-#-----------------------------------------------------------------#
-#  Original Contributors:                                         #
-#    Theophile Terraz,                                            #
-#    Bruno Raffin,                                                #
-#    Alejandro Ribes,                                             #
-#    Bertrand Iooss,                                              #
-###################################################################
+# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2017, EDF (https://www.edf.fr/)
+#               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 cmake_minimum_required(VERSION 3.7.2)
 
-project(Melissa VERSION 0.6.0 LANGUAGES C Fortran)
+project(melissa VERSION 0.7.0 LANGUAGES C Fortran)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
@@ -33,9 +47,38 @@ if(${srcdir} STREQUAL ${bindir})
     message("You must run cmake from a build directory.")
 endif(${srcdir} STREQUAL ${bindir})
 
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    # Set install directory to ../install
+    get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
+    set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install"
+        CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+
+# options
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
+
 
 # set up
 include(CTest)
+include(GNUInstallDirs)
+
+set(MELISSA_INSTALL_PYTHONDIR ${CMAKE_INSTALL_LIBDIR}/python3/dist-packages
+    CACHE PATH "Python3 packages"
+)
+set(MELISSA_INSTALL_FULL_PYTHONDIR
+    ${CMAKE_INSTALL_PREFIX}/${MELISSA_INSTALL_PYTHONDIR}
+)
+
+# move compiled binaries directly into bin, lib dir
+# this way they can be found easier for testing
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+
+
+# Python configuration
 include(FindPackageHandleStandardArgs)
 
 function(find_python_module module)
@@ -59,7 +102,11 @@ function(find_python_module module)
     find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
 
+find_package(PythonInterp 3.5.3 REQUIRED)
+find_python_module(numpy REQUIRED)
 
+
+# C language options
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -67,17 +114,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -pedantic")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-discarded-qualifiers")
 
-IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    # Set install directory to ../install
-    get_filename_component(PARENT_DIR ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
-    set(CMAKE_INSTALL_PREFIX "${PARENT_DIR}/install"
-        CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
-endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-
-
-# Find Python3
-find_package(PythonInterp 3 REQUIRED)
-find_python_module(numpy REQUIRED)
+include_directories(include)
+include_directories(${CMAKE_BINARY_DIR}/include)
 
 
 # Find ZeroMQ
@@ -111,22 +149,11 @@ set_target_properties(
 
 
 
-# Find MPI
-find_package(MPI REQUIRED)
-
-if(MPI_C_FOUND AND MPI_Fortran_FOUND)
-  set(EXTRA_LIBS ${EXTRA_LIBS}
-				 ${MPI_C_LIBRARIES})
-  include_directories( ${MPI_INCLUDE_PATH} )
-  add_definitions(${MPI_Fortran_COMPILE_FLAGS})
-  include_directories(${MPI_Fortran_INCLUDE_PATH})
-  link_directories(${MPI_Fortran_LIBRARIES})
-  set(EXTRA_LIBS ${EXTRA_LIBS}
-				 ${MPI_Fortran_LIBRARIES} )
-endif()
+# MPI
+find_package(MelissaMPI REQUIRED)
 
 
-# OpenMP #
+# OpenMP
 
 option(BUILD_WITH_OpenMP "Build with OpenMP" OFF)
 
@@ -175,83 +202,37 @@ endif(BUILD_WITH_FLOWVR)
 option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
 if (BUILD_DOCUMENTATION)
     find_package(Doxygen)
-    if(DOXYGEN_FOUND)# TODO: this if is obsolete if using find_package(... REQUIRED) !
-        message(STATUS "Doxygen Found")
-    else(DOXYGEN_FOUND)
-        set(BUILD_DOCUMENTATION FALSE CACHE BOOL "Use Doxygen to create the documentation" FORCE)
-        message(STATUS "Doxygen Not Found. BUILD_DOCUMENTATION option turned OFF")
+    if(NOT DOXYGEN_FOUND)
+        message(SEND_ERROR "Doxygen not found. Cannot build documentation.")
     endif(DOXYGEN_FOUND)
+    configure_file(doc/doxygen/Doxyfile.in doc/doxygen/Doxyfile @ONLY)
+    # Add a custom target to run Doxygen when ever the project is built
+    add_custom_target(
+        doc ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/doc/doxygen/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
+    install(DIRECTORY doc/html DESTINATION ${CMAKE_INSTALL_DOCDIR})
 endif(BUILD_DOCUMENTATION)
 
-# If we run on a Omnipath cluster, we need to check simulation deconnection.
 
-option(CHECK_SIMU_DECONNECTION "check simulation deconnection" OFF)
-
-#set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--export-all-symbols")
-
-# Load local include directories before. This ensures that no old installed headers are
-# loaded.
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/common")
-
-add_subdirectory(common)
-
-include_directories(BEFORE "${CMAKE_BINARY_DIR}/api")
-
-add_subdirectory(api)
-
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/stats")
-
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server/output")
-
-include_directories(BEFORE "${PROJECT_SOURCE_DIR}/server")
-
-add_subdirectory(server)
-
-add_subdirectory(launcher)
-
-add_subdirectory(tests)
-
+#
 set (EXAMPLES_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/examples)
-add_subdirectory(examples)
-
 set (UTILITY_DIR ${CMAKE_INSTALL_PREFIX}/share/melissa/utility)
+set(MELISSA_INSTALL_CMAKEDIR
+    ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+)
+
+
+add_subdirectory(bin)
+add_subdirectory(examples)
+add_subdirectory(include)
+add_subdirectory(melissa)
+add_subdirectory(src)
+add_subdirectory(tests)
 add_subdirectory(utility)
-
-# set environement variables
-configure_file(melissa_set_env.sh.in melissa_set_env.sh @ONLY)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa_set_env.sh DESTINATION bin)
-
-if(BUILD_DOCUMENTATION)
-  if(NOT DOXYGEN_FOUND)
-    message(SEND_ERROR "Doxygen needed to build the documentation. Please install it correctly")
-  endif(NOT DOXYGEN_FOUND)
-
-  # Configure the Template Doxyfile for our project
-  set(DOX_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen/Doxyfile.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile )
-  # Add a custom target to run Doxygen when ever the project is built
-  add_custom_target(docs ALL
-                    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen/Doxyfile
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                    COMMENT "Generating API documentation with Doxygen"
-                    VERBATIM )
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/docs/html DESTINATION share/melissa/doc)
-endif(BUILD_DOCUMENTATION)
-
-include(CMakePackageConfigHelpers)
-
-set(MELISSA_CMAKECONFIG_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/${PROJECT_NAME})
-
-configure_package_config_file(${PROJECT_NAME}Config.cmake.in
-                              "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-                              INSTALL_DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
-write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-                                 VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
-                                 COMPATIBILITY AnyNewerVersion)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-              DESTINATION ${MELISSA_CMAKECONFIG_INSTALL_DIR})
 
 
 # Melissa4py #

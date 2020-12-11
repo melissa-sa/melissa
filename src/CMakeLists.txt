@@ -26,36 +26,64 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-option(INSTALL_ZMQ "Build ZeroMQ" OFF)
+# make gethostname() declaration accessible
+set_source_files_properties(
+    comm4py.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+)
+set_source_files_properties(
+    utils.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+)
 
-include(GNUInstallDirs)
 
-# ZeroMQ is written in C++ and must be linked against a C++ standard library.
-# This build script cannot determine the C++ standard library implementation
-# used by ZeroMQ and this is a problem when building a *static* ZeroMQ library.
+add_library(melissa
+    messages.c
+    utils.c
+    vector.c
+    api/melissa_api.c
+    stats/covariance.c
+    stats/general_moments.c
+    stats/mean.c
+    stats/min_max.c
+    stats/quantile.c
+    stats/sobol.c
+    stats/threshold.c
+    stats/variance.c
+)
+target_include_directories(
+    melissa
+    INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_FULL_INCLUDEDIR}>
+    PUBLIC ${MPI_C_INCLUDE_PATH}
 
-if(INSTALL_ZMQ)
-    set(ZeroMQ_VERSION 4.3.1 CACHE INTERNAL "ZeroMQ version")
-    set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}"
-        CACHE PATH "ZeroMQ include directory")
-    set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        CACHE FILEPATH "ZeroMQ library")
+)
+target_compile_options(melissa PUBLIC ${MPI_C_COMPILE_FLAGS})
+target_link_libraries(
+    melissa
+    PRIVATE m zmq
+    PUBLIC ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
+)
+set_target_properties(melissa PROPERTIES VERSION ${PROJECT_VERSION})
 
-    mark_as_advanced(ZeroMQ_VERSION ZeroMQ_INCLUDE_DIR ZeroMQ_LIBRARY)
+install(
+    TARGETS melissa
+    EXPORT melissa-export
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
-    include(ExternalProject)
-    ExternalProject_Add(
-        ZeroMQ
-        URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
-        URL_HASH SHA256=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-        CMAKE_ARGS
-            -DBUILD_SHARED:BOOL=ON
-            -DBUILD_STATIC:BOOL=OFF
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_FULL_LIBDIR}
-            -DWITH_PERF_TOOL:BOOL=OFF
-            -DWITH_DOCS:BOOL=OFF
-            -DZMQ_BUILD_TESTS:BOOL=OFF
-    )
-endif()
+install(
+    EXPORT melissa-export
+    FILE melissa-config.cmake
+    DESTINATION ${MELISSA_INSTALL_CMAKEDIR}
+)
+
+
+add_library(melissa_comm4py SHARED comm4py.c)
+target_link_libraries(melissa_comm4py PUBLIC melissa mpi_C zmq)
+set_target_properties(melissa_comm4py PROPERTIES VERSION ${PROJECT_VERSION})
+install(
+    TARGETS melissa_comm4py
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+
+add_subdirectory(server)

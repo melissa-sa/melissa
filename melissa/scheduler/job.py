@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
@@ -26,36 +28,34 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-option(INSTALL_ZMQ "Build ZeroMQ" OFF)
 
-include(GNUInstallDirs)
+class State:
+    def __init__(self, name):
+        assert isinstance(name, str)
+        self.name = name
 
-# ZeroMQ is written in C++ and must be linked against a C++ standard library.
-# This build script cannot determine the C++ standard library implementation
-# used by ZeroMQ and this is a problem when building a *static* ZeroMQ library.
+    def __repr__(self):
+        return self.name
 
-if(INSTALL_ZMQ)
-    set(ZeroMQ_VERSION 4.3.1 CACHE INTERNAL "ZeroMQ version")
-    set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}"
-        CACHE PATH "ZeroMQ include directory")
-    set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        CACHE FILEPATH "ZeroMQ library")
 
-    mark_as_advanced(ZeroMQ_VERSION ZeroMQ_INCLUDE_DIR ZeroMQ_LIBRARY)
+# There job failed for reasons unrelated to program execution.
+# The program may have never run.
+State.ERROR = State("ERROR")
+State.WAITING = State("WAITING")
+State.RUNNING = State("RUNNING")
+# The job ran and the program terminated successfully.
+State.TERMINATED = State("TERMINATED")
+# The job ran but the program terminated unsuccessfully.
+State.FAILED = State("FAILED")
 
-    include(ExternalProject)
-    ExternalProject_Add(
-        ZeroMQ
-        URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
-        URL_HASH SHA256=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-        CMAKE_ARGS
-            -DBUILD_SHARED:BOOL=ON
-            -DBUILD_STATIC:BOOL=OFF
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_FULL_LIBDIR}
-            -DWITH_PERF_TOOL:BOOL=OFF
-            -DWITH_DOCS:BOOL=OFF
-            -DZMQ_BUILD_TESTS:BOOL=OFF
-    )
-endif()
+
+
+class Job:
+    def id(self):
+        raise NotImplementedError("Job.id not implemented")
+
+    def state(self):
+        raise NotImplementedError("Job.state not implemented")
+
+    def __repr__(self):
+        raise NotImplementedError("Job.__repr__ not implemented")

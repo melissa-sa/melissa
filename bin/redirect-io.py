@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
@@ -26,36 +28,51 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-option(INSTALL_ZMQ "Build ZeroMQ" OFF)
 
-include(GNUInstallDirs)
+# This program redirects standard output and standard error to files. The
+# filename is composed of
+# * executable name,
+# * timestamp (UNIX epoch), and
+# * the process ID.
 
-# ZeroMQ is written in C++ and must be linked against a C++ standard library.
-# This build script cannot determine the C++ standard library implementation
-# used by ZeroMQ and this is a problem when building a *static* ZeroMQ library.
 
-if(INSTALL_ZMQ)
-    set(ZeroMQ_VERSION 4.3.1 CACHE INTERNAL "ZeroMQ version")
-    set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}"
-        CACHE PATH "ZeroMQ include directory")
-    set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        CACHE FILEPATH "ZeroMQ library")
+import math
+import os
+import sys
+import time
 
-    mark_as_advanced(ZeroMQ_VERSION ZeroMQ_INCLUDE_DIR ZeroMQ_LIBRARY)
 
-    include(ExternalProject)
-    ExternalProject_Add(
-        ZeroMQ
-        URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
-        URL_HASH SHA256=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-        CMAKE_ARGS
-            -DBUILD_SHARED:BOOL=ON
-            -DBUILD_STATIC:BOOL=OFF
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_FULL_LIBDIR}
-            -DWITH_PERF_TOOL:BOOL=OFF
-            -DWITH_DOCS:BOOL=OFF
-            -DZMQ_BUILD_TESTS:BOOL=OFF
-    )
-endif()
+def replace_filedescriptor(filename, f):
+    assert isinstance(filename, str)
+
+    fd = f.fileno()
+
+    try:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        mode = 0o644
+        fd_new = os.open(filename, flags, mode)
+        os.dup2(fd_new, fd)
+    finally:
+        os.close(fd_new)
+
+
+
+def main():
+    if len(sys.argv) < 2:
+        return
+
+    name = os.path.basename(sys.argv[1])
+    pid = os.getpid()
+    now_sec = math.floor(time.time())
+    filename_fmt = "{:s}.{:d}.{:d}.{{:s}}".format(name, now_sec, pid)
+
+    replace_filedescriptor(filename_fmt.format("out"), sys.stdout)
+    replace_filedescriptor(filename_fmt.format("err"), sys.stderr)
+
+    cmdline = ["stdbuf", "--output=L", "--"] + sys.argv[1:]
+
+    os.execvp(cmdline[0], cmdline)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

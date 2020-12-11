@@ -1,4 +1,6 @@
-# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (Inria)
+#               2017, EDF (https://www.edf.fr/)
+#               2020, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,36 +28,41 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-option(INSTALL_ZMQ "Build ZeroMQ" OFF)
+set(MELISSA_OUTPUT_MODULE "txt"
+    CACHE STRING "Choose which output module will be used to write statistics"
+)
+set_property(CACHE MELISSA_OUTPUT_MODULE PROPERTY STRINGS "text;netcdf")
 
-include(GNUInstallDirs)
 
-# ZeroMQ is written in C++ and must be linked against a C++ standard library.
-# This build script cannot determine the C++ standard library implementation
-# used by ZeroMQ and this is a problem when building a *static* ZeroMQ library.
+add_executable(melissa-server
+    compute_stats.c
+    fault_tolerance.c
+    fields.c
+    data.c
+    io.c
+    options.c
+    server.c
+    server_helper.c
+    output/output.c
+    output/output_${MELISSA_OUTPUT_MODULE}.c
+)
+target_link_libraries(melissa-server m melissa zmq)
 
-if(INSTALL_ZMQ)
-    set(ZeroMQ_VERSION 4.3.1 CACHE INTERNAL "ZeroMQ version")
-    set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}"
-        CACHE PATH "ZeroMQ include directory")
-    set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        CACHE FILEPATH "ZeroMQ library")
 
-    mark_as_advanced(ZeroMQ_VERSION ZeroMQ_INCLUDE_DIR ZeroMQ_LIBRARY)
+if(${MELISSA_OUTPUT_MODULE} STREQUAL "netcdf")
+    find_path(NETCDF_INCLUDE_DIR netcdf.h)
+    find_library(NETCDF_LIBRARY netcdf)
 
-    include(ExternalProject)
-    ExternalProject_Add(
-        ZeroMQ
-        URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
-        URL_HASH SHA256=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-        CMAKE_ARGS
-            -DBUILD_SHARED:BOOL=ON
-            -DBUILD_STATIC:BOOL=OFF
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_FULL_LIBDIR}
-            -DWITH_PERF_TOOL:BOOL=OFF
-            -DWITH_DOCS:BOOL=OFF
-            -DZMQ_BUILD_TESTS:BOOL=OFF
-    )
+    if(NETCDF_INCLUDE_DIR AND NETCDF_LIBRARY)
+        target_include_directories(melissa-server ${NETCDF_INCLUDES})
+        target_link_libraries(melissa-server ${NETCDF_LIBRARY})
+    else()
+        message(SEND_ERROR "netCDF output requested but netCDF not found")
+    endif()
 endif()
+
+
+install(
+    TARGETS melissa-server
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

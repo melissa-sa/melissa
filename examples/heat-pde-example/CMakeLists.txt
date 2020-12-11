@@ -1,4 +1,6 @@
-# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (Inria)
+#               2017, EDF (https://www.edf.fr/)
+#               2020, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,36 +28,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-option(INSTALL_ZMQ "Build ZeroMQ" OFF)
+set(destination
+    ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/heat-pde-example
+)
 
-include(GNUInstallDirs)
+configure_file(heat.py.in heat.py @ONLY)
+configure_file(CMakeLists.txt.in CMakeLists.txt @ONLY)
+install(FILES
+    DESTINATION ${destination}
+)
 
-# ZeroMQ is written in C++ and must be linked against a C++ standard library.
-# This build script cannot determine the C++ standard library implementation
-# used by ZeroMQ and this is a problem when building a *static* ZeroMQ library.
-
-if(INSTALL_ZMQ)
-    set(ZeroMQ_VERSION 4.3.1 CACHE INTERNAL "ZeroMQ version")
-    set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}"
-        CACHE PATH "ZeroMQ include directory")
-    set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        CACHE FILEPATH "ZeroMQ library")
-
-    mark_as_advanced(ZeroMQ_VERSION ZeroMQ_INCLUDE_DIR ZeroMQ_LIBRARY)
-
-    include(ExternalProject)
-    ExternalProject_Add(
-        ZeroMQ
-        URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
-        URL_HASH SHA256=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-        CMAKE_ARGS
-            -DBUILD_SHARED:BOOL=ON
-            -DBUILD_STATIC:BOOL=OFF
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_FULL_LIBDIR}
-            -DWITH_PERF_TOOL:BOOL=OFF
-            -DWITH_DOCS:BOOL=OFF
-            -DZMQ_BUILD_TESTS:BOOL=OFF
-    )
-endif()
+install(
+    FILES
+        heat.f90 
+        heat.c
+        heat_utils.f90
+        ${CMAKE_CURRENT_BINARY_DIR}/heat.py
+        ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+    DESTINATION ${destination}
+)

@@ -1,4 +1,6 @@
-# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2017, EDF (https://www.edf.fr/)
+#               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,36 +28,48 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-option(INSTALL_ZMQ "Build ZeroMQ" OFF)
 
-include(GNUInstallDirs)
+set(python_files
+    __init__.py
+    launcher/__init__.py
+    launcher/__main__.py
+    launcher/job_management.py
+    launcher/options.py
+    launcher/simulation.py
+    launcher/study.py
+    scheduler/__init__.py
+    scheduler/job.py
+    scheduler/oar.py
+    scheduler/openmpi.py
+    scheduler/options.py
+    scheduler/scheduler.py
+    scheduler/slurm.py
+)
 
-# ZeroMQ is written in C++ and must be linked against a C++ standard library.
-# This build script cannot determine the C++ standard library implementation
-# used by ZeroMQ and this is a problem when building a *static* ZeroMQ library.
 
-if(INSTALL_ZMQ)
-    set(ZeroMQ_VERSION 4.3.1 CACHE INTERNAL "ZeroMQ version")
-    set(ZeroMQ_INCLUDE_DIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}"
-        CACHE PATH "ZeroMQ include directory")
-    set(ZeroMQ_LIBRARY "${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}zmq${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        CACHE FILEPATH "ZeroMQ library")
+foreach(file IN LISTS python_files)
+    get_filename_component(directory ${file} DIRECTORY)
 
-    mark_as_advanced(ZeroMQ_VERSION ZeroMQ_INCLUDE_DIR ZeroMQ_LIBRARY)
+    # copy files for testing
+    configure_file(${file} ${file} COPYONLY)
 
-    include(ExternalProject)
-    ExternalProject_Add(
-        ZeroMQ
-        URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
-        URL_HASH SHA256=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
-        CMAKE_ARGS
-            -DBUILD_SHARED:BOOL=ON
-            -DBUILD_STATIC:BOOL=OFF
-            -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_INSTALL_LIBDIR:PATH=${CMAKE_INSTALL_FULL_LIBDIR}
-            -DWITH_PERF_TOOL:BOOL=OFF
-            -DWITH_DOCS:BOOL=OFF
-            -DZMQ_BUILD_TESTS:BOOL=OFF
+    install(
+        FILES ${file}
+        DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa/${directory}
     )
-endif()
+endforeach()
+
+
+# config.py for installation
+configure_file(config.py.in config-install.py @ONLY)
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/config-install.py
+    DESTINATION ${MELISSA_INSTALL_PYTHONDIR}/melissa
+    RENAME config.py
+)
+
+
+# config.py for testing
+set(CMAKE_INSTALL_FULL_BINDIR ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR})
+set(CMAKE_INSTALL_FULL_LIBDIR ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+configure_file(config.py.in config.py @ONLY)
