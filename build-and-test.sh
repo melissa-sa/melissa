@@ -57,3 +57,38 @@ cmake \
 cmake --build . -- --jobs="$num_jobs"
 ctest --output-on-failure --timeout 300
 cmake --build . --target install
+
+
+find_and_link_source_dir="$cwd/find-and-link"
+find_and_link_binary_dir="$cwd/build.find-and-link"
+
+mkdir --parents -- "$find_and_link_source_dir"
+cat >"$find_and_link_source_dir/CMakeLists.txt" <<EOF
+cmake_minimum_required(VERSION 3.2.3)
+project(find-and-link-test-melissa-sa VERSION 0.7.0 LANGUAGES C)
+find_package(Melissa CONFIG REQUIRED)
+add_executable(main main.c)
+target_link_libraries(main melissa)
+EOF
+
+cat >"$find_and_link_source_dir/main.c" <<EOF
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <melissa/api.h>
+
+int main(int argc, char** argv) {
+    MPI_Init(&argc, &argv);
+    melissa_init("foo", 1, MPI_COMM_WORLD);
+    melissa_send("foo", NULL);
+    melissa_finalize();
+    MPI_Finalize();
+}
+EOF
+
+mkdir -- "$find_and_link_binary_dir"
+cd -- "$find_and_link_binary_dir"
+cmake \
+	-DCMAKE_PREFIX_PATH="$melissa_sa_prefix_dir" \
+	-- "$find_and_link_source_dir"
+cmake --build .
