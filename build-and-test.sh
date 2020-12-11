@@ -34,7 +34,7 @@ set -o pipefail
 set -u
 
 raw_melissa_sa_source_dir="${1:?path to Melissa SA source directory missing}"
-build_type="${2:-Debug}"
+shift
 
 cwd="$(pwd -P)"
 num_jobs="$(getconf _NPROCESSORS_ONLN)"
@@ -51,8 +51,8 @@ melissa_sa_prefix_dir="$cwd/prefix.melissa-sa"
 mkdir -- "$melissa_sa_binary_dir"
 cd -- "$melissa_sa_binary_dir"
 cmake \
-	-DCMAKE_BUILD_TYPE="$build_type" \
 	-DCMAKE_INSTALL_PREFIX="$melissa_sa_prefix_dir" \
+	$@ \
 	-- "$melissa_sa_source_dir"
 cmake --build . -- --jobs="$num_jobs"
 ctest --output-on-failure --timeout 300
