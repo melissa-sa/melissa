@@ -393,10 +393,10 @@ class Server(Job):
 
     def write_node_name(self):
         os.chdir(self.directory)
-        fichier=open("server_name.txt", "w")
-        fichier.write(self.node_name[0])
-        fichier.close()
-        os.system("chmod 744 server_name.txt")
+        filename = "server_name.txt"
+        with open(filename, "w") as f:
+            f.write(self.node_name[0])
+        os.chmod(filename, mode=0o644)
 
     def create_options(self):
         """
