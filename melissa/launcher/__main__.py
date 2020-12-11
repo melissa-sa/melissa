@@ -144,8 +144,16 @@ def main():
     try:
         melissa_study.run()
     except Exception as e:
-        print(e)
-        sys.exit(1)
+        print("Fatal launcher error: {}".format(e), file=sys.stderr)
+
+        server_jobs = [server.job_id for server in melissa_study.server_obj]
+        server_job_ids = [j.id() for j in server_jobs]
+
+        print("Cancelling server jobs. Job IDs {}".format(server_job_ids))
+        scheduler.cancel_jobs(server_jobs)
+
+        # do not wait for other threads
+        os._exit(1)
 
 
 if __name__ == "__main__":
