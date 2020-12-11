@@ -54,6 +54,12 @@ int main(int argc, char **argv) {
 	unsigned short prng_state[3] = { 0 };
 	// parse command line
 	{
+		size_t len = strlen(argv[1]);
+		// check if the caller casted the int data to float
+		if(argv[1][len-2] == '.') {
+			argv[1][len-2] = '\0';
+		}
+
 		char* first = argv[1];
 		char* last = NULL;
 		int base = 0;
