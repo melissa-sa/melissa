@@ -29,10 +29,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <mpi.h>
-#ifdef BUILD_WITH_OPENMP
-#include <omp.h>
-#endif // BUILD_WITH_OPENMP
 
 /**
  *******************************************************************************
@@ -87,7 +83,6 @@ void increment_mean (mean_t    *mean,
     double temp;
 
     mean->increment += 1;
-#pragma omp parallel for schedule(static) private(temp)
     for (i=0; i<vect_size; i++)
     {
         temp = mean->mean[i];
@@ -129,7 +124,6 @@ void update_mean (mean_t    *mean1,
 
     updated_mean->increment = mean2->increment + mean1->increment;
 
-#pragma omp parallel for schedule(static) private(delta)
     for (i=0; i<vect_size; i++)
     {
         delta = (mean2->mean[i] - mean1->mean[i]);

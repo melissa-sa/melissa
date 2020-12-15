@@ -27,9 +27,6 @@
 #include <melissa/utils.h>
 
 #include <string.h>
-#ifdef BUILD_WITH_OPENMP
-#include <omp.h>
-#endif // BUILD_WITH_OPENMP
 
 /**
  *******************************************************************************
@@ -80,25 +77,6 @@ void init_variance (variance_t *variance,
 void increment_mean_and_variance (variance_t *partial_variance,
                                   double      in_vect[],
                                   const int   vect_size)
-//{
-//    int     i;
-
-//#pragma omp parallel for schedule(static)
-//    for (i=0; i<vect_size; i++)
-//    {
-//        double temp = partial_variance->mean_structure.mean[i];
-//        partial_variance->mean_structure.mean[i] = temp + (in_vect[i] - temp)/(partial_variance->mean_structure.increment+1);
-//        if (partial_variance->mean_structure.increment > 0)
-//        {
-//            partial_variance->variance[i] = (partial_variance->variance[i]*(partial_variance->mean_structure.increment-1)
-//                                             + (in_vect[i] - temp) * (in_vect[i] - partial_variance->mean_structure.mean[i]))
-//                                             / (partial_variance->mean_structure.increment);
-//        }
-//    }
-
-//    partial_variance->mean_structure.increment += 1;
-//}
-
 {
     int i;
     double  incr = 0;
@@ -181,7 +159,6 @@ void update_variance (variance_t *variance1,
                 &updated_variance->mean_structure,
                 vect_size);
 
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         double delta = (variance1->mean_structure.mean[i] - variance2->mean_structure.mean[i]);

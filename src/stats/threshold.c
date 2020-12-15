@@ -26,9 +26,6 @@
 #include <melissa/stats/threshold.h>
 #include <melissa/utils.h>
 
-#ifdef BUILD_WITH_OPENMP
-#include <omp.h>
-#endif // BUILD_WITH_OPENMP
 
 /**
  *******************************************************************************
@@ -84,7 +81,6 @@ void update_threshold_exceedance (threshold_t *threshold,
 {
     int i;
 
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         if (in_vect[i] > threshold->value)

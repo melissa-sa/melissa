@@ -30,10 +30,6 @@
 
 #include <math.h>
 
-#ifdef BUILD_WITH_OPENMP
-#include <omp.h>
-#endif // BUILD_WITH_OPENMP
-
 static inline void increment_moments_mean (double    *mean,
                                            double    *in_vect,
                                            const int  vect_size,
@@ -43,7 +39,6 @@ static inline void increment_moments_mean (double    *mean,
     int     i;
     double temp;
 
-#pragma omp parallel for schedule(static) private(temp)
     for (i=0; i<vect_size; i++)
     {
         temp = mean[i];
@@ -61,7 +56,6 @@ static inline void update_moments_mean (double    *m1,
     int    i;
     double delta;
 
-#pragma omp parallel for schedule(static) private(delta)
     for (i=0; i<vect_size; i++)
     {
         delta = (m2[i] - m1[i]);
@@ -164,7 +158,6 @@ void increment_moments (moments_t *moments,
     // thetas
     if (moments->increment > 1)
     {
-#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             if (moments->max_order > 1)
@@ -255,7 +248,6 @@ void update_moments (moments_t *moments1,
     }
 
     // thetas
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         if (updated_moments->max_order > 1)
@@ -402,7 +394,6 @@ void compute_mean (moments_t *moments,
                    const int  vect_size)
 {
     int i;
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         mean[i] = moments->m1[i];
@@ -434,7 +425,6 @@ void compute_variance (moments_t *moments,
                        const int  vect_size)
 {
     int i;
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         variance[i] = moments->theta2[i]*moments->increment/(moments->increment-1);
@@ -466,7 +456,6 @@ void compute_skewness (moments_t *moments,
                        const int  vect_size)
 {
     int i;
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         skewness[i] = moments->theta3[i] / pow(moments->theta2[i], 1.5);
@@ -498,7 +487,6 @@ void compute_kurtosis (moments_t *moments,
                        const int  vect_size)
 {
     int i;
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         kurtosis[i] = moments->theta4[i] / pow(moments->theta3[i], 2);

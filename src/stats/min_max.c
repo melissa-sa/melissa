@@ -28,9 +28,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#ifdef BUILD_WITH_OPENMP
-#include <omp.h>
-#endif // BUILD_WITH_OPENMP
 
 /**
  *******************************************************************************
@@ -94,7 +91,6 @@ void min_and_max (min_max_t *min_max,
     else
     {
         int     i;
-#pragma omp parallel for schedule(static)
         for (i=0; i<vect_size; i++)
         {
             if (min_max->min[i] > in_vect[i])

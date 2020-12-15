@@ -154,26 +154,6 @@ set_target_properties(
 find_package(MelissaMPI REQUIRED)
 
 
-# OpenMP
-
-option(BUILD_WITH_OpenMP "Build with OpenMP" OFF)
-
-if(BUILD_WITH_OpenMP)
-  find_package(OpenMP)
-  if(OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    message(STATUS "OpenMP Found")
-    add_definitions( -DBUILD_WITH_OPENMP )
-  else(OPENMP_FOUND)
-    # Disable  Option if missing dependencies
-    set(BUILD_WITH_OpenMP FALSE CACHE BOOL "Build with OpenMP" FORCE)
-    message(STATUS "OpenMP missing. BUILD_WITH_OpenMP option turned OFF")
-  endif(OPENMP_FOUND)
-else(BUILD_WITH_OpenMP)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unknown-pragmas")
-endif(BUILD_WITH_OpenMP)
-
-
 # FlowVR #
 
 option(BUILD_WITH_FLOWVR "Build with FlowVR interface" OFF)

@@ -30,10 +30,6 @@
 
 #include <stdio.h>
 
-#ifdef BUILD_WITH_OPENMP
-#include <omp.h>
-#endif // BUILD_WITH_OPENMP
-
 /**
  *******************************************************************************
  *
@@ -97,7 +93,6 @@ void increment_covariance (covariance_t *covariance,
     increment_mean(&(covariance->mean1), in_vect1, vect_size);
     if (covariance->increment > 1)
     {
-#pragma omp parallel for schedule(static) firstprivate(incr)
         for (i=0; i<vect_size; i++)
         {
             covariance->covariance[i] *= (incr - 2);
@@ -140,7 +135,6 @@ void update_covariance (covariance_t *covariance1,
 
     updated_covariance->increment = covariance1->increment + covariance2->increment;
 
-#pragma omp parallel for schedule(static)
     for (i=0; i<vect_size; i++)
     {
         updated_covariance->covariance[i] = ((covariance1->increment - 1) * covariance1->covariance[i]

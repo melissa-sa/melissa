@@ -28,9 +28,6 @@
 
 #include <math.h>
 #include <string.h>
-#ifdef BUILD_WITH_OPENMP
-#include <omp.h>
-#endif // BUILD_WITH_OPENMP
 
 /**
  *******************************************************************************
@@ -97,7 +94,6 @@ void increment_quantile (quantile_t *quantile,
 
     if (quantile->increment > 1)
     {
-#pragma omp parallel for schedule(static) private(temp)
         for (i=0; i<vect_size; i++)
         {
             gamma = (quantile->increment - 1) * 0.9 / (nmax-1) + 0.1;
@@ -114,11 +110,6 @@ void increment_quantile (quantile_t *quantile,
     }
     else
     {
-//#pragma omp parallel for schedule(static)
-//        for (i=0; i<vect_size; i++)
-//        {
-//            quantile->quantile[i] = in_vect[i];
-//        }
         memcpy (quantile->quantile, in_vect, vect_size * sizeof(double));
     }
 }
