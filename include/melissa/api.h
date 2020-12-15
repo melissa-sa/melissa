@@ -27,11 +27,9 @@
 #ifndef MELISSA_API_H
 #define MELISSA_API_H
 
-#include <mpi.h>
+#include <melissa/config.h>
 
-#define MELISSA_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
-#define MELISSA_VERSION_MINOR @PROJECT_VERSION_MINOR@
-#define MELISSA_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#include <mpi.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {

@@ -1480,3 +1480,19 @@ void melissa_finalize (void)
 #endif
     melissa_print(VERBOSE_INFO, " --- Bytes sent: %ld bytes\n",total_bytes_sent);
 }
+
+
+
+#if MELISSA_ENABLE_NO_MPI_API
+
+void melissa_init_no_mpi(const char* field, int vector_size) {
+	int rank = 0;
+	int comm_size = 1;
+	melissa_init_internal(field, vector_size, comm_size, rank, MPI_COMM_WORLD);
+}
+
+void melissa_send_no_mpi(const char* field, const double* data) {
+	melissa_send(field, data);
+}
+
+#endif
