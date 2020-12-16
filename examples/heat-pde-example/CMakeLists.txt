@@ -43,6 +43,7 @@ install(
         heat.f90 
         heat.c
         heat_utils.f90
+        options.py
         ${CMAKE_CURRENT_BINARY_DIR}/heat.py
         ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
     DESTINATION ${destination}

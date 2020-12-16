@@ -22,7 +22,7 @@ program heat
 
   implicit none
 
-  include "melissa_api.f90"
+  include "melissa/api.f90"
 
   integer :: i, j, k, nx, ny, n, nmax, me, np, i1, iN, statinfo, vect_size, next, previous, narg
   integer, dimension(mpi_status_size) :: status
