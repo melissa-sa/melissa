@@ -30,6 +30,7 @@ configure_file(melissa/config.h.in melissa/config.h @ONLY)
 install(
     FILES
         melissa/api.h
+        melissa/api.f90
         ${CMAKE_CURRENT_BINARY_DIR}/melissa/config.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/melissa/
 )
