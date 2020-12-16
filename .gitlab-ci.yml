@@ -7,7 +7,7 @@ ubuntu/20.04:
     - export MALLOC_PERTURB_=1
     - mkdir build
     - cd build
-    - bash ../build-and-test.sh ..
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
 
 
 centos_8:
@@ -19,7 +19,7 @@ centos_8:
     - export MALLOC_PERTURB_=1
     - mkdir build
     - cd build
-    - bash ../build-and-test.sh ..
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
 
 
 debian/9/i386:
@@ -33,4 +33,4 @@ debian/9/i386:
     - export CXXFLAGS='-march=native'
     - mkdir build
     - cd build
-    - bash ../build-and-test.sh .. Release
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Release
