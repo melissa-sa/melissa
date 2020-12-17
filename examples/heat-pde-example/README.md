@@ -6,9 +6,39 @@
 2. [Instrument the solver](#instrument-the-solver)
 3. [Configure Melissa launcher](#configure-melissa-launcher)
 4. [Run the Study](#run-the-study)
+
+
+## Quick Start
+
+Open a shell, locate your Melissa installation path and store this path in a variable called `MELISSA_INSTALL_PREFIX`.
+
+On Linux systems, the operating system looks for libraries and executables in standard directories and directories given in environment variables. For example, executables are searched in the directories `/bin` and `/usr/bin` even if no environment variables are set. Check if your Melissa installation is in a standard directory:
+* `/usr`
+* `/usr/local`.
+If not, you need to modify environment variables:
+```sh
+export PATH="${PATH:-}:$MELISSA_INSTALL_PREFIX/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$MELISSA_INSTALL_PREFIX/lib:$MELISSA_INSTALL_PREFIX/lib64"
+```
+
+Next, you can build the example code:
+```sh
+mkdir workspace.heat-pde
+cd workspace.heat-pde
+cmake \
+    -DCMAKE_PREFIX_PATH="$MELISSA_INSTALL_PREFIX" \
+    "$MELISSA_INSTALL_PREFIX/share/melissa/examples/heat-pde"
+make
+```
+With the simulation code, copy the experiment options and run the experiment locally with OpenMPI:
+```sh
+cp "$MELISSA_INSTALL_PREFIX/share/melissa/examples/heat-pde/options.py" .
+melissa-launcher openmpi options.py heatc
+```
+
+
  
- 
-# Prepare the Study
+## Prepare the Study
 
 The options file is located in every example and it is mandatory to run Melissa. The file contains python code with 3 python dictionaries:
 
@@ -18,7 +48,7 @@ The options file is located in every example and it is mandatory to run Melissa.
 
 There are a few mandatory functions that need to be defined, the rest is optional:
 
-* `USER_FUNCTIONS['draw_parameter_set']` - this function is used by Melissa launcher to draw the parameter sets of the simulations. It must return a Numpy array of floats of the size `STUDY_OPTIONS['nb_parameters']`
+* `USER_FUNCTIONS['draw_parameter_set']` - this function is used by Melissa launcher to draw the parameter sets of the simulations. It must return a NumPy array of floats of the size `STUDY_OPTIONS['nb_parameters']`
 * `USER_FUNCTIONS['launch_server']` - function that will launch Melissa server. Takes `Server` object as an argument and needs to set server job ID in `server.job_id`. On cluster, job ID is given by batch scheduler and on local machine it can be a PID of the process. The server command line options are in `server.cmd_opt` and the path to the executable `melissa_server` is in `server.path`, you must use it and not modify it.
 * `USER_FUNCTIONS['launch_group']` - this function is quite complex and is described below
 * `USER_FUNCTIONS['check_server_job']` - function checks the server status. Takes `Job` object as an argument and needs to set `job.job_status` to 1 if the server is running or 2 if otherwise. 
@@ -38,9 +68,9 @@ The function needs to set the group job ID in the `job_id` attribute. On a clust
 
 This is bare minimum you need to know about the options file to run the sensitivity study. Look at the options file in other example to get an overall understanding how to create such a file. To learn about 2 other groups or optional functions visit [user documentation on github](https://github.com/melissa-sa/melissa/wiki/4-User-Documentation)
 
-# Instrument the Solver
+## Instrument the Solver
 
-## Introduction
+### Introduction
 
 The principle of a global sensitivity analysis is to run a large number of simulations with varying input parameter sets, and measure the influence of the parameters on the solver output. The key to enable large scale sensitivity analysis is to process the data in-situ and iteratively.
 On a cluster, all the simulations from a ensemble study run on their own independent jobs. These simulations can run in any order, asynchronously: they are all independents. In an in-situ sensitivity analysis, the main difference is during the I/O phase. the simulations must send their data to an external server instead of writing them on the filesystem. This server will then use the data to update a set of ubiquitous statistics in an iterative fashion, and discard the data. This server must run during the entire simulation campaign, on its own job. To be able to handle such a study, one need a tool to manage the whole process of generating the study, running the simulations, and controlling the progress of the campaign.
@@ -65,7 +95,7 @@ In these foldable paragraphs, we will go through the process of instrumenting a 
 
 </details>
 
-## Melissa API
+### Melissa API
 
 Before anything else, we have to plug Melissa in our solver.
 Melissa API is a shared library composed of three functions, to be integrated in the solver. They are the link between the simulations (clients) and the server. The three functions are as simple as:
@@ -82,7 +112,7 @@ In order to use these functions, you have to link `melissa_api.so` and include `
 
 We will now explain how to use each one of these functions.        
 
-### melissa_init
+#### melissa_init
 
 This function must be called once for every scalar field to send to Melissa Server. The field names have to be declared in the launcher option file, as we will see later. A scalar field is an array of doubles. It is the simulation result at a given timestep without any other metadata (in particular, without mesh).
 
@@ -101,7 +131,7 @@ variables:
 * `vect_size`: the size of the local result vector (in number of elements)
 * `comm`: the local MPI communicator
 
-### `melissa_send`
+#### `melissa_send`
 
 This function must be called at each time step that needs to be sent to Melissa Server, for each field. It can replace the I/O phase of the code. The field name is used by Melissa to identify the field, and must be declared in the launcher option file. If a field name not declared in the launcher is passed, Melissa will ignore the field. Melissa guaranties to keep the order of the cells (the array of double) and the order of the calls (in the form of timestamps), and it is up to the user to map them to the mesh and to the timesteps afterwards.
 
@@ -118,7 +148,7 @@ variables:
 * `field_name`: the name of the field sent
 * `send_vect`: the vector to send to Melissa Server
 
-### `melissa_finalize`
+#### `melissa_finalize`
 
 This function terminates the Melissa environment.
 It must be called only once, at the end of the solver, before `MPI_Finalize()`.
@@ -225,7 +255,7 @@ This `CMakeFile.txt` can be a basis for your own application.
 
 </details>
 
-# Configure Melissa Launcher
+## Configure Melissa Launcher
 
 Once the solver  is instrumented, it can be managed by Melissa.
 Melissa Launcher can supervise the whole sensitivity analysis, as long as it knows how to interact with the machine and the solver. These informations are very specific to each environment.
@@ -256,7 +286,7 @@ Start by the end of the file. Here, we can see tree different dictionaries. The 
 
 </details>
 
-## Functions
+### Functions
 
 All the user defined functions must be callable from the `option.py` file. The function pointers are stored in the `USER_FUNCTIONS` dictionary.
 
@@ -272,7 +302,7 @@ You can use this function to create a folder tree, copy files, compile code, etc
 USER_FUNCTIONS['draw_parameter_set'] # (mandatory):
 ```
 
-This function is used by Melissa launcher to draw the parameter sets of the simulations. It must return a Numpy array of floats of the size STUDY_OPTIONS['nb_parameters']
+This function is used by Melissa launcher to draw the parameter sets of the simulations. It must return a NumPy array of floats of the size STUDY_OPTIONS['nb_parameters']
 
 ```python
 USER_FUNCTIONS['create_group'] # (optional):
@@ -428,7 +458,7 @@ The same as `USER_FUNCTIONS['postprocessing']`.
 
 
 
-# Run the study
+## Run the study
 
 To run a study, call the launcher with the path to your `options.py` file:
 
