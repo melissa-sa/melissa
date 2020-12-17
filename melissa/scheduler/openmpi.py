@@ -70,6 +70,8 @@ class OpenMpiScheduler(Scheduler):
         try:
             mpirun = subprocess.run( \
                 ["mpirun", "--do-not-launch", "-x", "ABC=1", "-n", "1", "true"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 check=True
             )
         except subprocess.CalledProcessError as e:
