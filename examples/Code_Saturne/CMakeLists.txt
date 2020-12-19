@@ -31,7 +31,8 @@
 set(destination ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/Code_Saturne)
 
 foreach(file IN ITEMS
-    case1/case1.xml
+    options.py
+    DATA/case1.xml
     MESH/downcomer.des
     MESH/fdc.des
     MESH/pic.des
@@ -43,8 +44,8 @@ foreach(file IN ITEMS
     )
 endforeach()
 
-configure_file(options.py.in options.py @ONLY)
+configure_file(run-code-saturne.py.in run-code-saturne.py @ONLY)
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/options.py
+    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/run-code-saturne.py
     DESTINATION ${destination}
 )

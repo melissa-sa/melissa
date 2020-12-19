@@ -259,7 +259,7 @@
 			<mesh name="downcomer.des"/>
 			<mesh name="fdc.des"/>
 			<mesh name="pic.des"/>
-			<meshdir name="../MESH"/>
+			<meshdir name="MESH"/>
 		</meshes_list>
 		<periodicity/>
 		<thin_walls/>

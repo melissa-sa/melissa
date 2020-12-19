@@ -1,0 +1,124 @@
+#!/usr/bin/python3
+
+# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (Inria)
+#               2017, EDF (https://www.edf.fr/)
+#               2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# * Redistributions of source code must retain the above copyright notice,
+#   this list of conditions and the following disclaimer.
+#
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+#
+# * Neither the name of the copyright holder nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+# IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from lxml import etree
+import os
+import shutil
+import sys
+import warnings
+
+
+example_directory="@CMAKE_CURRENT_SOURCE_DIR@"
+
+
+
+def main():
+    # copy command line parameters directly into Code_Saturne input to avoid
+    # having to bother about the number of digits when printing floating-point
+    # numbers
+    temperature_str = sys.argv[1]
+    molecular_viscosity_str = sys.argv[2]
+    # sanity check for input
+    float(temperature_str)
+    float(molecular_viscosity_str)
+
+    if len(sys.argv) > 3:
+        warnings.warn("expected 3 arguments, got {:d}".format(len(sys.argv)))
+
+
+    maybe_sid_str = os.getenv("MELISSA_SIMU_ID")
+
+    if maybe_sid_str is None:
+        raise RuntimeError("environment variable MELISSA_SIMU_ID not set")
+
+    sid = int(maybe_sid_str)
+
+    # set up working directory
+    working_directory_name = "workspace-{:d}".format(sid)
+    working_directory = os.path.abspath(working_directory_name)
+
+    if not os.path.exists(working_directory):
+        os.mkdir(working_directory)
+
+
+    os.chdir(example_directory)
+    for subdir in ["DATA", "MESH"]:
+        shutil.copytree(subdir, os.path.join(working_directory, subdir))
+
+    for subdir in ["RESU", "SRC"]:
+        os.mkdir(os.path.join(working_directory, subdir))
+
+
+    # add parameters to xml file
+    input_xml_path = os.path.join(example_directory, "DATA", "case1.xml")
+    output_xml_path = os.path.join(working_directory, "DATA", "case1.xml")
+
+    tree = etree.parse(input_xml_path)
+    root = tree.getroot()
+    root.find('thermophysical_models') \
+        .find('thermal_scalar') \
+        .find('variable') \
+        .find('formula') \
+        .text = "temperature = {:s};".format(temperature_str)
+
+    root.find("physical_properties") \
+        .find("fluid_properties") \
+        .find("property/[@name='molecular_viscosity']") \
+        .find("initial_value") \
+        .text = molecular_viscosity_str
+
+    root.find("analysis_control") \
+        .find("output") \
+        .find("writer/[@label='results']") \
+        .find("format/[@name='melissa']") \
+        .set("options", str(maybe_sid_str))
+
+    # we do that because Code_Saturne needs double quotes
+    xml_header = '<?xml version="1.0" encoding="utf-8"?>'.encode()
+    xml_body = etree.tostring( \
+        root, encoding="utf-8", pretty_print=True, xml_declaration=False)
+    output_xml = xml_header + xml_body
+
+    with open(output_xml_path, 'wb+') as f:
+        f.write(output_xml)
+
+
+    # run Code_Saturne
+    os.chdir(working_directory)
+    cs_args = ["code_saturne", "run", "--param", "case1.xml"]
+    os.execvp("code_saturne", cs_args)
+
+
+if __name__ == "__main__":
+    main()
