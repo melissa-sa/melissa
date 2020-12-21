@@ -82,10 +82,6 @@ void melissa_check_options (melissa_options_t  *options);
 
 void melissa_print_options (melissa_options_t *options);
 
-void melissa_write_options (melissa_options_t *options);
-
-int melissa_read_options(melissa_options_t  *options);
-
 #ifdef __cplusplus
 }
 #endif
