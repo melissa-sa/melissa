@@ -5,6 +5,8 @@ ubuntu/20.04:
   script:
     - export MALLOC_CHECK_=3
     - export MALLOC_PERTURB_=1
+    - export CC=clang
+    - export CXX=clang++
     - mkdir build
     - cd build
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
