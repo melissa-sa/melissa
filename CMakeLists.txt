@@ -112,7 +112,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wextra -Wall -pedantic")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-sign-compare")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-discarded-qualifiers")
 
 include_directories(include)
 include_directories(${CMAKE_BINARY_DIR}/include)
