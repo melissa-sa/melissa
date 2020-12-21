@@ -603,12 +603,6 @@ void melissa_check_options (melissa_options_t  *options)
         exit (1);
     }
 
-    if ( sizeof(options->launcher_name) / (options->launcher_name)[0] == 0)
-    {
-        melissa_print (VERBOSE_WARNING, "Melissa Launcher node name set to \"localhost\"\n");
-        sprintf (options->launcher_name, "localhost");
-    }
-
     if (strlen(options->restart_dir) < 1)
     {
         melissa_print (VERBOSE_WARNING, "options->restart_dir= %s changing to .\n", options->restart_dir);
