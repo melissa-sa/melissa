@@ -603,12 +603,6 @@ void melissa_check_options (melissa_options_t  *options)
         exit (1);
     }
 
-    if (options->launcher_name == NULL)
-    {
-        melissa_print (VERBOSE_WARNING, "Melissa Launcher node name set to \"localhost\"\n");
-        sprintf (options->launcher_name, "localhost");
-    }
-
     if (strlen(options->restart_dir) < 1)
     {
         melissa_print (VERBOSE_WARNING, "options->restart_dir= %s changing to .\n", options->restart_dir);
@@ -626,83 +620,4 @@ void melissa_check_options (melissa_options_t  *options)
         melissa_print (VERBOSE_WARNING, "time before simulation timeout too small, changing to 5.0\n");
         options->timeout_simu = 5.0;
     }
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_options
- *
- * This function writes the option structure on disc
- *
- *******************************************************************************
- *
- * @param[in] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
-
-void melissa_write_options (melissa_options_t *options)
-{
-    FILE* f;
-
-    f = fopen("options.save", "wb+");
-
-    fwrite(options, sizeof(melissa_options_t), 1, f);
-    if (options->threshold_op)
-    {
-        fwrite(options->threshold, sizeof(double), options->nb_thresholds, f);
-    }
-    if (options->quantile_op)
-    {
-        fwrite(options->quantile_order, sizeof(double), options->nb_quantiles, f);
-    }
-
-    fclose(f);
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_options
- *
- * This function reads a saved option structure on disc
- *
- *******************************************************************************
- *
- * @param[in,out] *options
- * pointer to the structure containing global options
- *
- *******************************************************************************/
-
-int melissa_read_options (melissa_options_t *options)
-{
-    FILE* f = NULL;
-    int ret;
-    char file_name[320];
-
-    snprintf(file_name, sizeof(file_name), "%s/options.save", options->restart_dir);
-    f = fopen(file_name, "rb");
-
-    if (f != NULL)
-    {
-        fread(options, sizeof(melissa_options_t), 1, f);
-        if (options->threshold_op)
-        {
-            options->threshold = melissa_calloc (options->nb_thresholds, sizeof(double));
-            fread(options->threshold, sizeof(double), options->nb_thresholds, f);
-        }
-        if (options->quantile_op)
-        {
-            options->quantile_order = melissa_calloc (options->nb_quantiles, sizeof(double));
-            fread(options->quantile_order, sizeof(double), options->nb_quantiles, f);
-        }
-    }
-    else
-    {
-        ret = -1;
-    }
-
-    fclose(f);
-    return ret;
 }

@@ -1148,7 +1148,11 @@ void melissa_send (const char   *field_name,
     }
 
     local_vect_size = field_data_ptr->local_vect_sizes[global_data.rank];
-    send_vect_ptr = send_vect;
+	// WARNING
+	//
+	// This cast serves only to silence compiler warnings.
+	// The assignment is highly suspicious but not easy to fix, cf. issue #70.
+    send_vect_ptr = (double *)send_vect;
 
     if (global_data.learning > 0)
     {
