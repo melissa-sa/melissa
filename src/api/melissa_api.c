@@ -426,7 +426,8 @@ static void melissa_init_internal (const char *field_name,
                             MPI_Comm   comm)
 {
     char          *server_node_name;
-    char           port_name[MPI_MAX_PROCESSOR_NAME + 1] = {0};
+    // extra bytes for "tcp://", TCP port number ":%d", null byte
+    char           port_name[MPI_MAX_PROCESSOR_NAME + 32 + 1] = {0};
     int            i, j, ret;
     int            simu_id = -1;
     FILE*          file = NULL;
