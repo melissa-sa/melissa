@@ -92,6 +92,11 @@ class Job(object):
         """
             Cancels a job (mandatory)
         """
+        if self.job_status == NOT_SUBMITTED:
+            return
+
+        assert self.job_id != 0
+
         if "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
             self.job_status = FINISHED
@@ -172,6 +177,11 @@ class Group(Job):
         """
             Cancels a simulation job (mandatory)
         """
+        if self.job_status == NOT_SUBMITTED:
+            return
+
+        assert self.job_id != 0
+
         if "cancel_group_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_group_job']:
             return Job.usr_func['cancel_group_job'](self)
@@ -522,6 +532,11 @@ class Server(Job):
         """
             Cancels a simulation job (mandatory)
         """
+        if self.job_status == NOT_SUBMITTED:
+            return
+
+        assert self.job_id != 0
+
         if "cancel_server_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_server_job']:
             self.job_status = FINISHED
