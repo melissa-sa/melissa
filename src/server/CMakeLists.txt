@@ -37,7 +37,7 @@ set_source_files_properties(
     options.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE
 )
 
-add_library(server OBJECT
+add_library(server STATIC
     compute_stats.c
     fault_tolerance.c
     fields.c
@@ -48,9 +48,10 @@ add_library(server OBJECT
     output/output.c
     output/output_${MELISSA_OUTPUT_MODULE}.c
 )
+target_link_libraries(server m melissa zmq)
 
-add_executable(melissa-server server.c $<TARGET_OBJECTS:server>)
-target_link_libraries(melissa-server m melissa zmq)
+add_executable(melissa-server server.c)
+target_link_libraries(melissa-server server)
 
 
 if(${MELISSA_OUTPUT_MODULE} STREQUAL "netcdf")
