@@ -37,18 +37,19 @@ set_source_files_properties(
     options.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE
 )
 
-add_executable(melissa-server
+add_library(server OBJECT
     compute_stats.c
     fault_tolerance.c
     fields.c
     data.c
     io.c
     options.c
-    server.c
     server_helper.c
     output/output.c
     output/output_${MELISSA_OUTPUT_MODULE}.c
 )
+
+add_executable(melissa-server server.c $<TARGET_OBJECTS:server>)
 target_link_libraries(melissa-server m melissa zmq)
 
 
