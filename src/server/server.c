@@ -65,7 +65,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     melissa_server_t     *server_ptr;
     int                   i;
     melissa_simulation_t *simu_ptr;
-    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50];
+    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50] = {0};
     zmq_msg_t             msg;
 
     *server_handle = melissa_malloc (sizeof(melissa_server_t));
