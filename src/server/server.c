@@ -65,7 +65,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
     melissa_server_t     *server_ptr;
     int                   i;
     melissa_simulation_t *simu_ptr;
-    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50];
+    char                  txt_buffer[MPI_MAX_PROCESSOR_NAME + 50] = {0};
     zmq_msg_t             msg;
 
     *server_handle = melissa_malloc (sizeof(melissa_server_t));
@@ -133,7 +133,7 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
     // === Read options from command line === //
 
-    melissa_get_options (argc, argv, &server_ptr->melissa_options);
+    melissa_get_options(argc, argv, server_ptr);
 
     // === Install signal handler === //
 
@@ -152,15 +152,6 @@ void melissa_server_init (int argc, char **argv, void **server_handle)
 
         server_ptr->port_names = (char*)melissa_malloc (MPI_MAX_PROCESSOR_NAME * server_ptr->comm_data.comm_size);
     }
-
-    // === load the output library === //
-
-//#if MELISSA4PY != 1
-//    melissa_get_output_lib (melissa_output_lib, melissa_output_func);
-//#endif // MELISSA4PY
-
-    server_ptr->fields = (melissa_field_t*)melissa_malloc (server_ptr->melissa_options.nb_fields * sizeof(melissa_field_t));
-    melissa_get_fields (argc, argv, server_ptr->fields, server_ptr->melissa_options.nb_fields);
 
     // === Open data puller port === //
 

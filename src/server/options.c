@@ -26,9 +26,10 @@
  **/
 
 #include <melissa/server/data.h>
-#include <melissa/server/options.h>
+#include <melissa/server/server.h>
 #include <melissa/utils.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -77,27 +78,10 @@ static inline void str_tolower (char *string)
     return;
 }
 
-static inline void init_options (melissa_options_t *options)
+static inline void init_options (melissa_options_t* options)
 {
-    // everything is set to 0
-    options->nb_time_steps   = 0;
-    options->nb_parameters   = 0;
-    options->sampling_size   = 0;
-    options->nb_simu         = 0;
-    options->nb_fields       = 0;
-    options->nb_thresholds   = 0;
-    options->mean_op         = 0;
-    options->variance_op     = 0;
-    options->skewness_op     = 0;
-    options->kurtosis_op     = 0;
-    options->min_and_max_op  = 0;
-    options->threshold_op    = 0;
-    options->quantile_op     = 0;
-    options->nb_quantiles    = 0;
-    options->sobol_op        = 0;
-    options->sobol_order     = 0;
-    options->learning        = 0;
-    options->restart         = 0;
+    memset(options, 0, sizeof(*options));
+
     options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
@@ -105,31 +89,89 @@ static inline void init_options (melissa_options_t *options)
     options->txt_push_port   = 5555;
     options->txt_req_port    = 5554;
     options->data_port       = 2004;
-    sprintf (options->restart_dir, ".");
-    sprintf (options->launcher_name, "localhost");
+    sprintf(options->restart_dir, ".");
+    sprintf(options->launcher_name, "localhost");
 }
 
-static inline void get_nb_fields (char               *name,
-                                  melissa_options_t  *options)
+
+int melissa_options_get_fields(char* optarg, melissa_server_t* server)
 {
-    int i, len;
+    assert(optarg);
+    assert(server);
+	assert(server->melissa_options.nb_fields == 0);
+	assert(!server->fields);
 
-    if (name == NULL || strncmp(&name[0],"-",1) == 0 || strncmp(&name[0],":",1) == 0)
-    {
-        stats_usage ();
-        exit (1);
+    if(optarg[0] == '\0') {
+        fprintf(stderr, "-f option passed without argument\n");
+        return -1;
     }
 
-    i=0;
-    len = strlen(name);
-    options->nb_fields = 1;
-    for (i = 0; i < len; i++)
-    {
-        if (strncmp(&name[i],":",1) == 0)
-        {
-            options->nb_fields += 1;
+	if(optarg[0] == ':') {
+		fprintf(stderr, "first name in -f argument is empty\n");
+		return -1;
+	}
+
+    size_t num_fields = 1;
+	size_t arglen = strlen(optarg);
+
+	if(optarg[arglen-1] == ':') {
+		fprintf(stderr, "last name in -f argument is empty\n");
+		return -1;
+	}
+
+    for(size_t i = 0; i < arglen; ++i) {
+        if(optarg[i] == ':') {
+            ++num_fields;
+
+            // strtok ignores consecutive delimiters (see below)
+            if(i > 0 && optarg[i-1] == ':') {
+                fprintf(stderr, "found consecutive delimiters in field names\n");
+                return -1;
+            }
         }
+		else if(!isalnum(optarg[i])) {
+			fprintf(
+				stderr,
+				"field names must contain only alphanumeric charachters, got '%c'\n",
+				optarg[i]
+			);
+			return -1;
+		}
     }
+
+    size_t fields_size_bytes = num_fields * sizeof(melissa_field_t);
+
+    server->melissa_options.nb_fields = num_fields;
+    server->fields = (melissa_field_t*)melissa_malloc(fields_size_bytes);
+    memset(server->fields, 0, fields_size_bytes);
+
+    const char delimiters[] = ":";
+    char* strtok_state = NULL;
+    size_t index = 0;
+
+    for(const char* name = strtok_r(optarg, delimiters, &strtok_state);
+        name && index < num_fields;
+        name = strtok_r(NULL, delimiters, &strtok_state), ++index
+    )
+    {
+        if(strlen(name) > MAX_FIELD_NAME_LEN) {
+            fprintf(
+                stderr, "field name '%s' longer than %u\n",
+                name, MAX_FIELD_NAME_LEN
+            );
+
+			free(server->fields);
+			server->fields = NULL;
+
+            return -1;
+        }
+
+        strncpy(server->fields[index].name, name, MAX_FIELD_NAME_LEN);
+    }
+
+    assert(index == num_fields);
+
+    return 0;
 }
 
 static inline void get_nb_thresholds (char               *name,
@@ -375,19 +417,18 @@ void melissa_print_options (melissa_options_t *options)
  *
  *******************************************************************************/
 
-void melissa_get_options (int                 argc,
-                          char              **argv,
-                          melissa_options_t  *options)
+void melissa_get_options(int argc, char **argv, melissa_server_t* server)
 {
-    int opt;
+    assert(server);
 
-    if (argc == 1) {
+    if(argc <= 1) {
         fprintf (stderr, "Error: missing options\n");
-        stats_usage ();
-        exit (0);
+        stats_usage();
+        exit(EXIT_FAILURE);
     }
 
-    init_options (options);
+    melissa_options_t* options = &server->melissa_options;
+    init_options(options);
 
     struct option longopts[] = {{ "checkintervals",          required_argument, NULL, 'c' },
                                 { "treshold",                required_argument, NULL, 'e' },
@@ -414,6 +455,7 @@ void melissa_get_options (int                 argc,
                                 { "horovod",                 no_argument,       NULL, 1004 },
                                 { NULL,                      0,                 NULL,  0   }};
 
+    int opt = -1;
     do
     {
         opt = getopt_long (argc, argv, "c:e:f:hl:m:n:o:p:q:r:s:t:v:w:", longopts, NULL);
@@ -460,7 +502,10 @@ void melissa_get_options (int                 argc,
             sprintf (options->launcher_name, "%s", optarg);
             break;
         case 'f':
-            get_nb_fields (optarg, options);
+            if(melissa_options_get_fields(optarg, server) < 0) {
+                stats_usage();
+                exit(1);
+            }
             break;
         case 'c':
             options->check_interval = atof (optarg);

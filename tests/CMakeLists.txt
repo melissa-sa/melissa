@@ -37,6 +37,12 @@ function(add_melissa_executable name)
     target_link_libraries(${name} melissa)
 endfunction()
 
+function(add_melissa_test_executable name)
+	add_melissa_executable(${name} ${ARGN})
+	add_test(${name} ${name})
+endfunction()
+
+
 add_melissa_executable(base base.c)
 add_test(NAME base COMMAND mpirun -np 2 base)
 
@@ -53,14 +59,21 @@ add_melissa_executable(sobol sobol.c)
 add_test(sobol sobol)
 
 
-add_executable(getoptions
-    getoptions.c
-    ${CMAKE_SOURCE_DIR}/src/server/options.c
-)
-target_link_libraries(getoptions melissa)
+add_melissa_executable(getoptions getoptions.c)
+target_link_libraries(getoptions server)
 add_test(
     NAME getoptions
     COMMAND getoptions -p 3 -s 1000 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.4
+)
+
+add_melissa_test_executable(
+	melissa_options_get_fields
+	melissa_options_get_fields.c
+)
+target_link_libraries(melissa_options_get_fields server)
+# enable strdup()
+set_source_files_properties(
+    melissa_options_get_fields.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE=200809L
 )
 
 

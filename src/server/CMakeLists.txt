@@ -33,20 +33,25 @@ set(MELISSA_OUTPUT_MODULE "txt"
 )
 set_property(CACHE MELISSA_OUTPUT_MODULE PROPERTY STRINGS "text;netcdf")
 
+set_source_files_properties(
+    options.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE
+)
 
-add_executable(melissa-server
+add_library(server STATIC
     compute_stats.c
     fault_tolerance.c
     fields.c
     data.c
     io.c
     options.c
-    server.c
     server_helper.c
     output/output.c
     output/output_${MELISSA_OUTPUT_MODULE}.c
 )
-target_link_libraries(melissa-server m melissa zmq)
+target_link_libraries(server m melissa zmq)
+
+add_executable(melissa-server server.c)
+target_link_libraries(melissa-server server)
 
 
 if(${MELISSA_OUTPUT_MODULE} STREQUAL "netcdf")
