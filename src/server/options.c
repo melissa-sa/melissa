@@ -101,23 +101,42 @@ int melissa_options_get_fields(char* optarg, melissa_server_t* server)
 	assert(server->melissa_options.nb_fields == 0);
 	assert(!server->fields);
 
-    if(strlen(optarg) == 0) {
-        fprintf(stderr, "-f option passed without argument");
+    if(optarg[0] == '\0') {
+        fprintf(stderr, "-f option passed without argument\n");
         return -1;
     }
 
-    size_t num_fields = 1;
+	if(optarg[0] == ':') {
+		fprintf(stderr, "first name in -f argument is empty\n");
+		return -1;
+	}
 
-    for(size_t i = 0; i < strlen(optarg); ++i) {
+    size_t num_fields = 1;
+	size_t arglen = strlen(optarg);
+
+	if(optarg[arglen-1] == ':') {
+		fprintf(stderr, "last name in -f argument is empty\n");
+		return -1;
+	}
+
+    for(size_t i = 0; i < arglen; ++i) {
         if(optarg[i] == ':') {
             ++num_fields;
 
             // strtok ignores consecutive delimiters (see below)
             if(i > 0 && optarg[i-1] == ':') {
-                fprintf(stderr, "found consecutive delimiters in field names");
+                fprintf(stderr, "found consecutive delimiters in field names\n");
                 return -1;
             }
         }
+		else if(!isalnum(optarg[i])) {
+			fprintf(
+				stderr,
+				"field names must contain only alphanumeric charachters, got '%c'\n",
+				optarg[i]
+			);
+			return -1;
+		}
     }
 
     size_t fields_size_bytes = num_fields * sizeof(melissa_field_t);
@@ -130,20 +149,24 @@ int melissa_options_get_fields(char* optarg, melissa_server_t* server)
     char* strtok_state = NULL;
     size_t index = 0;
 
-    for(const char* p = strtok_r(optarg, delimiters, &strtok_state);
-        p && index < num_fields;
-        p = strtok_r(NULL, delimiters, &strtok_state), ++index
+    for(const char* name = strtok_r(optarg, delimiters, &strtok_state);
+        name && index < num_fields;
+        name = strtok_r(NULL, delimiters, &strtok_state), ++index
     )
     {
-        if(strlen(p) > MAX_FIELD_NAME_LEN) {
+        if(strlen(name) > MAX_FIELD_NAME_LEN) {
             fprintf(
                 stderr, "field name '%s' longer than %u\n",
-                p, MAX_FIELD_NAME_LEN
+                name, MAX_FIELD_NAME_LEN
             );
+
+			free(server->fields);
+			server->fields = NULL;
+
             return -1;
         }
 
-        strncpy(server->fields[index].name, p, MAX_FIELD_NAME_LEN);
+        strncpy(server->fields[index].name, name, MAX_FIELD_NAME_LEN);
     }
 
     assert(index == num_fields);
