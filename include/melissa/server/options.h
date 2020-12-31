@@ -29,6 +29,8 @@
 extern "C" {
 #endif
 
+struct melissa_server_s;
+
 /**
  *******************************************************************************
  *
@@ -74,13 +76,20 @@ struct melissa_options_s
 
 typedef struct melissa_options_s melissa_options_t; /**< type corresponding to melissa_options_s */
 
-void melissa_get_options (int                 argc,
-                          char              **argv,
-                          melissa_options_t  *options);
+void melissa_get_options(int argc, char **argv, struct melissa_server_s* server);
 
 void melissa_check_options (melissa_options_t  *options);
 
 void melissa_print_options (melissa_options_t *options);
+
+
+/**
+ * This function initializes the list of fields with the field names passed on
+ * the command line.
+ *
+ * @param[in,out] optarg The argument of the `-f` option
+ */
+int melissa_options_get_fields(char* optarg, struct melissa_server_s* server);
 
 #ifdef __cplusplus
 }

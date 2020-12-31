@@ -41,69 +41,6 @@
  *
  * @ingroup melissa_fields
  *
- * This function parses field names from command line
- *
- *******************************************************************************
- *
- * @param[in] argc
- * number of Melissa Server arguments
- *
- * @param[in] **argv
- * Melissa Server arguments
- *
- * @param[in,out] *fields
- * melissa_field_t array
- *
- * @param[in] nb_fields
- * number of fields
- *
- *******************************************************************************/
-
-void melissa_get_fields (int               argc,
-                         char            **argv,
-                         melissa_field_t   fields[],
-                         int               nb_fields)
-{
-    int         opt, i;
-    const char  s[2] = ":";
-    char       *temp_char;
-    for (i=0; i<nb_fields; i++)
-    {
-        fields[i].stats_data = NULL;
-    }
-
-    optind = 1;
-    do
-    {
-        opt = getopt (argc, argv, ":f:");
-        switch (opt) {
-        case 'f':
-            /* get the first token */
-            temp_char = strtok (optarg, s);
-            i = 0;
-            /* walk through other tokens */
-            while (temp_char != NULL)
-            {
-                // TODO: use sizeof(struct melissa_field_t.name)? macro needed
-                // https://stackoverflow.com/questions/3553296/sizeof-single-struct-member-in-c#3553321
-                memset(fields[i].name, '\0', MAX_FIELD_NAME_LEN+1);
-                strncpy (fields[i].name, temp_char, MAX_FIELD_NAME_LEN);
-                i += 1;
-
-                temp_char = strtok (NULL, s);
-            }
-            break;
-        default:
-            break;
-        }
-    } while (opt != -1);
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_fields
- *
  * This function initializes the fields after first contact with a client
  *
  *******************************************************************************

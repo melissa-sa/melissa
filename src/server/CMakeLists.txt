@@ -33,6 +33,9 @@ set(MELISSA_OUTPUT_MODULE "txt"
 )
 set_property(CACHE MELISSA_OUTPUT_MODULE PROPERTY STRINGS "text;netcdf")
 
+set_source_files_properties(
+    options.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE
+)
 
 add_executable(melissa-server
     compute_stats.c
