@@ -66,11 +66,13 @@ add_test(
 )
 
 add_melissa_test_executable(
-	server-options server-options.c $<TARGET_OBJECTS:server>
+	melissa_options_get_fields
+	melissa_options_get_fields.c
+	$<TARGET_OBJECTS:server>
 )
 # enable strdup()
 set_source_files_properties(
-    server-options.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE=200809L
+    melissa_options_get_fields.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE=200809L
 )
 
 
