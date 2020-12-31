@@ -24,18 +24,17 @@
  **/
 
 #include <melissa/server/options.h>
+#include <melissa/server/server.h>
 
 #include <mpi.h>
 
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
-    melissa_options_t options;
+    melissa_server_t server;
 
-    MPI_Init (&argc, &argv);
-    melissa_get_options(argc, argv, &options);
-    melissa_print_options (&options);
+    MPI_Init(&argc, &argv);
+    melissa_get_options(argc, argv, &server);
+    melissa_print_options(&server.melissa_options);
 
-    MPI_Finalize ();
-
-    return (0);
+    MPI_Finalize();
 }
