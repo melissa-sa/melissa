@@ -34,7 +34,7 @@ unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
 function(add_melissa_executable name)
     add_executable(${name} ${ARGN})
-    target_link_libraries(${name} melissa mpi zmq)
+    target_link_libraries(${name} melissa)
 endfunction()
 
 function(add_melissa_test_executable name)
