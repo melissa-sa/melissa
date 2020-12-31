@@ -37,6 +37,12 @@ function(add_melissa_executable name)
     target_link_libraries(${name} melissa mpi zmq)
 endfunction()
 
+function(add_melissa_test_executable name)
+	add_melissa_executable(${name} ${ARGN})
+	add_test(${name} ${name})
+endfunction()
+
+
 add_melissa_executable(base base.c)
 add_test(NAME base COMMAND mpirun -np 2 base)
 
@@ -57,6 +63,14 @@ add_melissa_executable(getoptions getoptions.c $<TARGET_OBJECTS:server>)
 add_test(
     NAME getoptions
     COMMAND getoptions -p 3 -s 1000 -t 100 -o mean:variance:min:max:threshold:sobol -e 0.4
+)
+
+add_melissa_test_executable(
+	server-options server-options.c $<TARGET_OBJECTS:server>
+)
+# enable strdup()
+set_source_files_properties(
+    server-options.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE=200809L
 )
 
 
