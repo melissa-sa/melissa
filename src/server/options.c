@@ -77,27 +77,10 @@ static inline void str_tolower (char *string)
     return;
 }
 
-static inline void init_options (melissa_options_t *options)
+static inline void init_options (melissa_options_t* options)
 {
-    // everything is set to 0
-    options->nb_time_steps   = 0;
-    options->nb_parameters   = 0;
-    options->sampling_size   = 0;
-    options->nb_simu         = 0;
-    options->nb_fields       = 0;
-    options->nb_thresholds   = 0;
-    options->mean_op         = 0;
-    options->variance_op     = 0;
-    options->skewness_op     = 0;
-    options->kurtosis_op     = 0;
-    options->min_and_max_op  = 0;
-    options->threshold_op    = 0;
-    options->quantile_op     = 0;
-    options->nb_quantiles    = 0;
-    options->sobol_op        = 0;
-    options->sobol_order     = 0;
-    options->learning        = 0;
-    options->restart         = 0;
+    memset(options, 0, sizeof(*options));
+
     options->verbose_lvl     = MELISSA_INFO;
     options->check_interval  = 300.0;
     options->timeout_simu    = 300.0;
@@ -105,8 +88,8 @@ static inline void init_options (melissa_options_t *options)
     options->txt_push_port   = 5555;
     options->txt_req_port    = 5554;
     options->data_port       = 2004;
-    sprintf (options->restart_dir, ".");
-    sprintf (options->launcher_name, "localhost");
+    sprintf(options->restart_dir, ".");
+    sprintf(options->launcher_name, "localhost");
 }
 
 static inline void get_nb_fields (char               *name,
