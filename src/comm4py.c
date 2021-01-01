@@ -40,7 +40,6 @@ struct cmessage_s
 
 typedef struct cmessage_s cmessage_t;
 
-void get_node_name (char *node_name);
 void init_context();
 void bind_message_rcv(char* port_number);
 void bind_message_resp(char* port_number);
@@ -70,34 +69,6 @@ void send_options (char* options);
 void close_message();
 cmessage_t message;
 
-
-void get_node_name (char *node_name)
-{
-    struct ifaddrs *ifap, *ifa;
-    struct sockaddr_in *sa;
-    char   *addr;
-    char ok = 0;
-
-    getifaddrs (&ifap);
-    for (ifa = ifap; ifa; ifa = ifa->ifa_next)
-    {
-        if (ifa->ifa_addr && ifa->ifa_addr->sa_family==AF_INET)
-        {
-            sa = (struct sockaddr_in *) ifa->ifa_addr;
-            addr = inet_ntoa(sa->sin_addr);
-            if (strcmp (ifa->ifa_name, "ib0") == 0)
-            {
-                sprintf(node_name, "%s", addr);
-                ok = 1;
-                break;
-            }
-        }
-    }
-    if (ok == 0)
-    {
-        gethostname(node_name, MPI_MAX_PROCESSOR_NAME);
-    }
-}
 
 void init_context ()
 {

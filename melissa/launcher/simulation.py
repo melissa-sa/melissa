@@ -20,6 +20,7 @@
     Simulations and server jobs module
 """
 
+import ctypes
 from ctypes import cdll, create_string_buffer, c_char_p, c_wchar_p, c_int, c_double, POINTER
 import numpy
 import os
@@ -37,6 +38,8 @@ melissa_comm4py.send_message.argtypes = [c_char_p]
 melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
 melissa_comm4py.send_drop.argtypes = [c_int, c_char_p]
 melissa_comm4py.send_options.argtypes = [c_char_p]
+melissa_comm4py.melissa_get_node_name.argtypes = [c_char_p, ctypes.c_size_t]
+melissa_comm4py.melissa_get_node_name.restype = None
 
 # Jobs and executions status
 
@@ -412,8 +415,9 @@ class Server(Job):
         """
             Melissa Server command line options
         """
-        buff = create_string_buffer(256)
-        melissa_comm4py.get_node_name(buff)
+        buff_size = 256
+        buff = create_string_buffer(buff_size)
+        melissa_comm4py.melissa_get_node_name(buff, buff_size - 1)
         node_name = buff.value.decode()
 
         op_str = ':'.join([x for x in Job.ml_stats if Job.ml_stats[x]])

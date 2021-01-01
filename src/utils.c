@@ -295,12 +295,11 @@ double melissa_get_time ()
  *
  * @ingroup melissa_utils
  *
- * Gets the name of the processus node
+ * Returns the name of the current node.
+ * The string copied into `node_name` may not be null-terminated if the node
+ * name is too long.
  *
- *******************************************************************************
- *
- * @param[out] *node_name
- * The node name
+ * @param[out] node_name Contains the node name, may not be null-terminated
  *
  *******************************************************************************/
 
