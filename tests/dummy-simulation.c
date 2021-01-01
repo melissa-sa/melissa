@@ -36,11 +36,28 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <stdio.h>
+#include <string.h>
+
 
 int main(int argc, char **argv) {
 	MPI_Init(&argc, &argv);
 
-    const char* simu_id_str = getenv("MELISSA_SIMU_ID");
+	void* p_appnum = NULL;
+	int info = 0;
+	MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &p_appnum, &info);
+
+	assert(info != 0);
+
+	int appnum = -1;
+	memcpy(&appnum, p_appnum, sizeof(appnum));
+
+	assert(appnum >= 0);
+
+	MPI_Comm app;
+	MPI_Comm_split(MPI_COMM_WORLD, appnum, 0, &app);
+
+	const char* simu_id_str = getenv("MELISSA_SIMU_ID");
 
     if(!simu_id_str) {
         exit(EXIT_FAILURE);
@@ -52,7 +69,7 @@ int main(int argc, char **argv) {
 	const size_t vector_size = 2;
 	double data[2] = { 0, NAN };
 
-	melissa_init(field_name, vector_size, MPI_COMM_WORLD);
+	melissa_init(field_name, vector_size, app);
 
 	for(unsigned it = 0; it < num_iterations; ++it) {
 		data[1] = 1.0 * it * sid;
