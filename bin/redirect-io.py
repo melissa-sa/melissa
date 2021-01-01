@@ -38,6 +38,7 @@
 
 import math
 import os
+import shutil
 import sys
 import time
 
@@ -69,7 +70,12 @@ def main():
     replace_filedescriptor(filename_fmt.format("out"), sys.stdout)
     replace_filedescriptor(filename_fmt.format("err"), sys.stderr)
 
-    cmdline = ["stdbuf", "--output=L", "--"] + sys.argv[1:]
+    have_stdbuf = shutil.which("stdbuf") is not None
+
+    if have_stdbuf:
+        cmdline = ["stdbuf", "--output=L", "--"] + sys.argv[1:]
+    else:
+        cmdline = sys.argv[1:]
 
     os.execvp(cmdline[0], cmdline)
 

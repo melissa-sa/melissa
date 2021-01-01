@@ -30,7 +30,6 @@
 
 
 set -e
-set -o pipefail
 set -u
 
 raw_melissa_sa_source_dir="${1:?path to Melissa SA source directory missing}"

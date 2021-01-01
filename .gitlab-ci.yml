@@ -1,3 +1,15 @@
+alpine/edge:
+  image: datamove/alpine/edge
+  tags:
+    - docker
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - mkdir build
+    - cd build
+    - sh ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
+
+
 ubuntu/20.04:
   image: datamove/ubuntu/20.04
   tags:
