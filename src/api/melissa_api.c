@@ -1183,10 +1183,6 @@ void melissa_send (const char   *field_name,
     {
         melissa_print(VERBOSE_DEBUG, "Group %d gather data (rank %d)\n", global_data.sample_id, global_data.rank);
         // gather data from the Sobol' group to sobol_rank 0
-
-        int sobol_comm_size = -1;
-        MPI_Comm_size(global_data.comm_sobol, &sobol_comm_size);
-
         switch (global_data.coupling)
         {
 #ifdef BUILD_WITH_FLOWVR
@@ -1220,13 +1216,8 @@ void melissa_send (const char   *field_name,
             break;
 
         case MELISSA_COUPLING_MPI:
-            if(sobol_comm_size > 1) {
-				MPI_Gather(send_vect_ptr, local_vect_size, MPI_DOUBLE, global_data.buffer_data, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
-            }
+            MPI_Gather(send_vect_ptr, local_vect_size, MPI_DOUBLE, global_data.buffer_data, local_vect_size, MPI_DOUBLE, 0, global_data.comm_sobol);
             break;
-
-        default:
-            assert(0);
         }
         total_bytes_sent += local_vect_size * sizeof(double);
     }
