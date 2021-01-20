@@ -76,7 +76,7 @@ def main():
     for subdir in ["DATA", "MESH"]:
         shutil.copytree(subdir, os.path.join(working_directory, subdir))
 
-    for subdir in ["RESU", "SRC"]:
+    for subdir in ["RESU", "SCRIPTS", "SRC"]:
         os.mkdir(os.path.join(working_directory, subdir))
 
 
@@ -100,11 +100,10 @@ def main():
 
     root.find("analysis_control") \
         .find("output") \
-        .find("writer/[@label='results']") \
+        .find("writer/[@label='melissa']") \
         .find("format/[@name='melissa']") \
         .set("options", str(maybe_sid_str))
 
-    # we do that because Code_Saturne needs double quotes
     xml_header = '<?xml version="1.0" encoding="utf-8"?>'.encode()
     xml_body = etree.tostring( \
         root, encoding="utf-8", pretty_print=True, xml_declaration=False)
