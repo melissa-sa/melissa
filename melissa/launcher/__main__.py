@@ -97,10 +97,12 @@ def main():
     print_scheduler_argument_error(scheduler.sanity_check(server_options))
     print_scheduler_argument_error(scheduler.sanity_check(client_options))
 
-    # check if the simulation executable exists
-    # do not try to figure out if it is executable for the launcher
-    if shutil.which(args.simulation) is None:
+    maybe_simulation_path = shutil.which(args.simulation)
+    if maybe_simulation_path is None:
         return "simulation executable '{:s}' not found".format(args.simulation)
+
+    # this fixes problems if the user passed something like `./simulation`
+    simulation_path = os.path.realpath(maybe_simulation_path)
 
     # try to open the options file for reading because the importlib module
     # returns only `None` on error
@@ -121,7 +123,7 @@ def main():
     from options import USER_FUNCTIONS as usr_func
 
     usr_func["launch_group"] = jm.make_launch_group_fn( \
-        scheduler, args.simulation, client_options, stdy_opt
+        scheduler, simulation_path, client_options, stdy_opt
     )
     launch_server = \
         jm.make_launch_server_fn(scheduler, server_options)
