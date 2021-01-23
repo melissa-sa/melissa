@@ -113,6 +113,11 @@ def main():
         f.write(output_xml)
 
 
+    # flush output buffers before calling `execvp` for otherwise output is lost
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+
     # run Code_Saturne
     os.chdir(working_directory)
     cs_args = ["code_saturne", "run", "--param", "case1.xml"]
