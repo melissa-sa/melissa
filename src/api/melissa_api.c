@@ -1486,6 +1486,17 @@ void melissa_finalize (void)
 #if MELISSA_ENABLE_NO_MPI_API
 
 void melissa_init_no_mpi(const char* field, int vector_size) {
+	// check if MPI was initialized
+	// Code_Saturne 6.0 does not initialize MPI when there is only one process
+	// (e.g., it was called with `code_saturn run -n 1 --param case1.xml`).
+	// `_p` for predicate
+	int mpi_initialized_p = -1;
+	MPI_Initialized(&mpi_initialized_p);
+
+	if(!mpi_initialized_p) {
+		MPI_Init(NULL, NULL);
+	}
+
 	int rank = 0;
 	int comm_size = 1;
 	melissa_init_internal(field, vector_size, comm_size, rank, MPI_COMM_WORLD);
