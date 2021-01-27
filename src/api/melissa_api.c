@@ -1483,6 +1483,10 @@ void melissa_finalize (void)
 
 
 
+// The "no MPI" API is called "no MPI" because the user is not expected to call
+// `MPI_Init` or to pass a valid MPI communicator. The API still requires MPI
+// to be present at both compile and run time.  The name is based on
+// preprocessor flags existing in the code before August 2020.
 #if MELISSA_ENABLE_NO_MPI_API
 
 void melissa_init_no_mpi(const char* field, int vector_size) {
