@@ -45,7 +45,6 @@ def make_restore_current_working_directory_fn(fn):
     return call_fn
 
 
-
 def make_launch_server_fn(scheduler, options):
     def launch_server(server):
         assert isinstance(server.cmd_opt, list)
@@ -81,7 +80,7 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options):
         # n+2 simulations in the Sobol' group.
         if group.ml_stats["sobol_indices"] \
             and study_options["coupling"] == "MELISSA_COUPLING_FLOWVR":
-                raise NotImplementedError("launch_group with FlowVR coupling")
+            raise NotImplementedError("launch_group with FlowVR coupling")
 
         if not group.ml_stats["sobol_indices"]:
             assert "sampling_size" in study_options
@@ -90,7 +89,6 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options):
             sampling_size = study_options["sampling_size"]
             batch_size = study_options["batch_size"]
             assert sampling_size % batch_size == 0
-
 
         env = {
             "MELISSA_COUPLING": "{:d}".format(group.coupling),
@@ -113,7 +111,6 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options):
             commands, environment=env, name=job_name, options=options
         )
 
-
     return make_restore_current_working_directory_fn(launch_group)
 
 
@@ -134,7 +131,8 @@ def make_check_job_fn(scheduler):
             return 2
 
         assert False
-        raise NotImplementedError("cannot handle job state {:s}".format(job.state))
+        raise NotImplementedError("cannot handle job state {:s}".format(
+            job.state))
 
     return check_job
 
