@@ -1,6 +1,7 @@
 # Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
 #               2017, EDF (https://www.edf.fr/)
 #               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2021, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -48,10 +49,19 @@ set(python_files
 
 
 foreach(file IN LISTS python_files)
+    get_filename_component(filename ${file} NAME)
     get_filename_component(directory ${file} DIRECTORY)
 
     # copy files for testing
     configure_file(${file} ${file} COPYONLY)
+
+    if(NOT ${filename} STREQUAL __init__.py AND NOT ${filename} STREQUAL __main__.py)
+        add_test(
+            NAME ${file}
+            COMMAND python3 -m unittest ${CMAKE_CURRENT_BINARY_DIR}/${file}
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+    endif()
 
     install(
         FILES ${file}
