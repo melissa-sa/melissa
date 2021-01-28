@@ -30,9 +30,14 @@
 
 import os
 import subprocess
+import sys
+import tempfile
+import unittest
 
+from .simulation import MultiSimuGroup
 from .. import config
 from ..scheduler.job import State
+from ..scheduler import dummy
 
 
 def make_restore_current_working_directory_fn(fn):
@@ -167,3 +172,67 @@ def make_kill_job_fn(scheduler):
         scheduler.cancel_jobs([job])
 
     return kill_job
+
+
+class Test_make_launch_group_fn(unittest.TestCase):
+    def setUp(self):
+        self.cwd = os.getcwd()
+        # preserving the temporary directory:
+        # * the TemporaryDirectory instance always cleans up the tmpdir
+        # * unittest always calls the tearDown method of this class; this
+        #   method calls `TemporaryDirectory.cleanup()` to suppress warnings
+        self.tmpdir = tempfile.TemporaryDirectory(
+            prefix="melissa.launcher.test.")
+        os.chdir(self.tmpdir.name)
+
+    def tearDown(self):
+        os.chdir(self.cwd)
+        self.tmpdir.cleanup()
+
+    # This method tests if the setup script is run by providing a dummy setup
+    # script to `make_kill_job_fn` that creates certain files.
+    def test_simple(self):
+        scheduler = dummy.DummyScheduler()
+        simulation_setup_path = os.path.realpath("melissa-launcher-jm-test.sh")
+        simulation_path = "/bin/simulation"
+        options = None
+        study_options = {"coupling": "MELISSA_COUPLING_MPI"}
+        launch_group = make_launch_group_fn(scheduler, simulation_setup_path,
+                                            simulation_path, options,
+                                            study_options)
+
+        with open(simulation_setup_path, mode="x") as f:
+            f.write("#!/bin/sh\n")
+            f.write("set -e\n")
+            f.write("set -u\n")
+            f.write('filename="setup-$MELISSA_SIMU_ID.txt"\n')
+            # $filename should not exist at this point
+            f.write('if [ -f "$filename" ]; then\n')
+            f.write('  >/dev/stderr echo "file $filename already exists"\n')
+            f.write('  exit 1\n')
+            f.write('fi\n')
+            f.write('echo $@ >"$filename"\n')
+
+            os.chmod(f.fileno(), mode=0o755)
+
+        param_sets = [[1], [2], [3]]
+        gid = 19
+        group = MultiSimuGroup(param_sets)
+        group.group_id = gid
+        group.ml_stats["sobol_indices"] = True
+        launch_group(group)
+
+        for simu_id, _ in enumerate(param_sets):
+            setup_file_fmt = os.path.join(os.getcwd(), "group{:d}",
+                                          "setup-{:d}.txt")
+            setup_file = setup_file_fmt.format(gid, simu_id)
+
+            self.assertTrue(os.path.isfile(setup_file))
+
+        self.assertEqual(group.job_id.state(), State.RUNNING)
+        scheduler.cancel_jobs([group.job_id])
+        self.assertEqual(group.job_id.state(), State.FAILED)
+
+
+if __name__ == "__main__":
+    unittest.main()
