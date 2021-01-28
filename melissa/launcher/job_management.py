@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2020, 2021, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import subprocess
 
 from .. import config
 from ..scheduler.job import State
@@ -58,7 +59,8 @@ def make_launch_server_fn(scheduler, options):
     return make_restore_current_working_directory_fn(launch_server)
 
 
-def make_launch_group_fn(scheduler, simulation_path, options, study_options):
+def make_launch_group_fn(scheduler, simulation_setup_path, simulation_path,
+                         options, study_options):
     assert isinstance(study_options, dict)
 
     def launch_group(group):
@@ -105,6 +107,28 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options):
             ]
 
             commands.append(cmd)
+
+            try:
+                if simulation_setup_path is not None:
+                    setup_args = [ \
+                        "env",
+                        "MELISSA_SIMU_ID={:d}".format(sid),
+                        simulation_setup_path,
+                        *[str(p) for p in group.param_set[i]]
+                    ]
+                    setup_timeout_sec = 10
+
+                    s = subprocess.run(setup_args,
+                                       env=env,
+                                       stdin=subprocess.DEVNULL,
+                                       timeout=setup_timeout_sec,
+                                       check=True)
+            except subprocess.TimeoutExpired as e:
+                fmt = "setup for simulation ID {:d} timed out (time-out={:d}s)"
+                raise RuntimeError(fmt.format(sid, setup_timeout_sec)) from e
+            except subprocess.CalledProcessError as e:
+                fmt = "setup for simulation ID {:d} had non-zero exit code"
+                raise RuntimeError(fmt.format(sid)) from e
 
         job_name = "melissa-group-{:d}".format(group.group_id)
         group.job_id = scheduler.submit_heterogeneous_job( \
