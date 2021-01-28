@@ -34,7 +34,7 @@ import sys
 import tempfile
 import unittest
 
-from .simulation import MultiSimuGroup
+from .simulation import Job, MultiSimuGroup, Server
 from .. import config
 from ..scheduler.job import State
 from ..scheduler import dummy
@@ -64,8 +64,8 @@ def make_launch_server_fn(scheduler, options):
     return make_restore_current_working_directory_fn(launch_server)
 
 
-def make_launch_group_fn(scheduler, simulation_setup_path, simulation_path,
-                         options, study_options):
+def make_launch_group_fn(scheduler, simulation_path, options, study_options,
+                         with_simulation_setup):
     assert isinstance(study_options, dict)
 
     def launch_group(group):
@@ -102,29 +102,35 @@ def make_launch_group_fn(scheduler, simulation_setup_path, simulation_path,
             "MELISSA_SERVER_NODE_NAME": group.server_node_name
         }
 
+        # OpenMPI and Slurm set up the environment automatically and the
+        # dictionaries passed to them contain only additional environment
+        # variables in contrast to the subprocess module which expects the user
+        # to set all or none of the environment variables manually.
+        subprocess_env = os.environ.copy()
+        subprocess_env.update(env)
+
         commands = []
         for i, sid in enumerate(group.simu_id):
-            cmd = [ \
+            cmd_no_params = [ \
                 "env",
                 "MELISSA_SIMU_ID={:d}".format(sid),
-                simulation_path,
-                *[str(p) for p in group.param_set[i]]
+                simulation_path
             ]
+            params = [str(p) for p in group.param_set[i]]
+
+            if with_simulation_setup:
+                cmd = cmd_no_params + ["run"] + params
+            else:
+                cmd = cmd_no_params + params
 
             commands.append(cmd)
 
             try:
-                if simulation_setup_path is not None:
-                    setup_args = [ \
-                        "env",
-                        "MELISSA_SIMU_ID={:d}".format(sid),
-                        simulation_setup_path,
-                        *[str(p) for p in group.param_set[i]]
-                    ]
+                if with_simulation_setup:
+                    setup_args = cmd_no_params + ["setup"] + params
                     setup_timeout_sec = 10
-
                     s = subprocess.run(setup_args,
-                                       env=env,
+                                       env=subprocess_env,
                                        stdin=subprocess.DEVNULL,
                                        timeout=setup_timeout_sec,
                                        check=True)
@@ -193,27 +199,37 @@ class Test_make_launch_group_fn(unittest.TestCase):
     # script to `make_kill_job_fn` that creates certain files.
     def test_simple(self):
         scheduler = dummy.DummyScheduler()
-        simulation_setup_path = os.path.realpath("melissa-launcher-jm-test.sh")
-        simulation_path = "/bin/simulation"
+        simulation_path = os.path.realpath("melissa-launcher-jm-test.sh")
         options = None
         study_options = {"coupling": "MELISSA_COUPLING_MPI"}
-        launch_group = make_launch_group_fn(scheduler, simulation_setup_path,
-                                            simulation_path, options,
-                                            study_options)
+        launch_group = make_launch_group_fn(scheduler,
+                                            simulation_path,
+                                            options,
+                                            study_options,
+                                            with_simulation_setup=True)
 
-        with open(simulation_setup_path, mode="x") as f:
-            f.write("#!/bin/sh\n")
-            f.write("set -e\n")
-            f.write("set -u\n")
-            f.write('filename="setup-$MELISSA_SIMU_ID.txt"\n')
-            # $filename should not exist at this point
-            f.write('if [ -f "$filename" ]; then\n')
-            f.write('  >/dev/stderr echo "file $filename already exists"\n')
-            f.write('  exit 1\n')
-            f.write('fi\n')
-            f.write('echo $@ >"$filename"\n')
+        simulation_shell_code = """#!/bin/sh
+set -e
+set -u
+filename="setup-$MELISSA_SIMU_ID.txt"
+# filename should not exist at this point
+if [ "$1" = 'setup' ]; then
+    if [ -f "$filename" ]; then
+        >/dev/stderr echo "file $filename already exists"
+        exit 1
+    fi
+    echo $@ >"$filename"
+elif [ "$1" = 'run' ]; then
+else
+    >/dev/stderr echo "unknown stage '$1'"
+fi
+"""
+        with open(simulation_path, mode="x") as f:
+            f.write(simulation_shell_code)
 
             os.chmod(f.fileno(), mode=0o755)
+
+        os._exit(0)
 
         param_sets = [[1], [2], [3]]
         gid = 19

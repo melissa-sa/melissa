@@ -57,12 +57,15 @@ def main():
     )
     parser.add_argument("options")
     parser.add_argument("simulation")
-    parser.add_argument("--simulation-setup")
     parser.add_argument("--scheduler-arg", action="append", default=[])
     parser.add_argument("--scheduler-arg-client", action="append", default=[])
     parser.add_argument("--scheduler-arg-server", action="append", default=[])
     parser.add_argument("--num-client-processes", type=int, default=1)
     parser.add_argument("--num-server-processes", type=int, default=1)
+    parser.add_argument("--with-simulation-setup",
+                        action="store_const",
+                        const=True,
+                        default=False)
 
     args = parser.parse_args()
 
@@ -105,18 +108,6 @@ def main():
     # this fixes problems if the user passed something like `./simulation`
     simulation_path = os.path.realpath(maybe_simulation_path)
 
-
-    # check simulation setup
-    if args.simulation_setup is None:
-        simulation_setup_path = None
-    else:
-        maybe_simulation_setup_path = shutil.which(args.simulation_setup)
-        if maybe_simulation_setup_path is None:
-            return "simulation setup executable '{:s}' not found".format(
-                args.simulation_setup)
-
-        simulation_setup_path = os.path.realpath(maybe_simulation_setup_path)
-
     # try to open the options file for reading because the importlib module
     # returns only `None` on error
     try:
@@ -136,7 +127,7 @@ def main():
     from options import USER_FUNCTIONS as usr_func
 
     usr_func["launch_group"] = jm.make_launch_group_fn( \
-        scheduler, simulation_setup_path, simulation_path, client_options, stdy_opt
+        scheduler, simulation_path, client_options, stdy_opt, args.with_simulation_setup
     )
     launch_server = \
         jm.make_launch_server_fn(scheduler, server_options)
