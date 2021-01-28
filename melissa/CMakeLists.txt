@@ -39,6 +39,7 @@ set(python_files
     launcher/simulation.py
     launcher/study.py
     scheduler/__init__.py
+    scheduler/dummy.py
     scheduler/job.py
     scheduler/oar.py
     scheduler/openmpi.py
