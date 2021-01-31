@@ -53,19 +53,40 @@ def main():
     parser.add_argument( \
         "scheduler",
         choices=["oar", "openmpi", "slurm"],
-        default="openmpi"
+        default="openmpi",
+        help="select batch scheduler"
     )
-    parser.add_argument("options")
-    parser.add_argument("simulation")
-    parser.add_argument("--scheduler-arg", action="append", default=[])
-    parser.add_argument("--scheduler-arg-client", action="append", default=[])
-    parser.add_argument("--scheduler-arg-server", action="append", default=[])
-    parser.add_argument("--num-client-processes", type=int, default=1)
-    parser.add_argument("--num-server-processes", type=int, default=1)
-    parser.add_argument("--with-simulation-setup",
-                        action="store_const",
-                        const=True,
-                        default=False)
+    parser.add_argument("options", help="path to options.py")
+    parser.add_argument("simulation",
+                        help="name of or path to simulation executable")
+    parser.add_argument("--scheduler-arg",
+                        action="append",
+                        default=[],
+                        help="arguments for batch scheduler")
+    parser.add_argument(
+        "--scheduler-arg-client",
+        action="append",
+        default=[],
+        help="arguments for batch scheduler when launching simulations")
+    parser.add_argument(
+        "--scheduler-arg-server",
+        action="append",
+        default=[],
+        help="arguments for batch scheduler when launching servers")
+    parser.add_argument("--num-client-processes",
+                        type=int,
+                        default=1,
+                        help="the number of processes for each simulation")
+    parser.add_argument("--num-server-processes",
+                        type=int,
+                        default=1,
+                        help="the number of processes for each server")
+    parser.add_argument(
+        "--with-simulation-setup",
+        action="store_const",
+        const=True,
+        default=False,
+        help="the simulation needs a setup before parallel execution")
 
     args = parser.parse_args()
 
