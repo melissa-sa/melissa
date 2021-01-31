@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2020, 2021 Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,11 @@ foreach(component IN ITEMS launcher)
     )
 endforeach()
 
+configure_file(melissa-set-env.sh.in melissa-set-env.sh @ONLY)
+install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/melissa-set-env.sh
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 configure_file(redirect-io.py redirect-io COPYONLY)
 install(
