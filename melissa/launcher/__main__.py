@@ -36,6 +36,7 @@ import logging
 import os
 import shutil
 import sys
+import warnings
 
 from ..scheduler.options import Options as SchedulerOptions
 from ..scheduler.oar import OarScheduler
@@ -100,7 +101,6 @@ def main():
         assert False
         sys.exit("BUG: unknown scheduler '{:s}'".format(args.scheduler))
 
-    options_file = os.path.realpath(args.options)
     client_options = SchedulerOptions( \
         args.num_client_processes, \
         args.scheduler_arg + args.scheduler_arg_client
@@ -129,16 +129,21 @@ def main():
     # this fixes problems if the user passed something like `./simulation`
     simulation_path = os.path.realpath(maybe_simulation_path)
 
-    # try to open the options file for reading because the importlib module
-    # returns only `None` on error
-    try:
-        with open(options_file, "r") as f:
-            pass
-    except Exception as e:
-        return str(e)
+    # copy options.py into the current working directory
+    options_path = os.path.join(os.getcwd(), "options.py")
+    user_options_path = os.path.realpath(args.options)
+    user_options_filename = os.path.basename(user_options_path)
 
+    if user_options_filename != "options.py":
+        fmt = "copy of options file '{:s}' will be renamed to 'options.py'"
+        warnings.warn(fmt.format(user_options_path))
+
+    if options_path != user_options_path:
+        shutil.copy(src=user_options_path, dst=options_path)
+
+    # read options.py
     options_spec = \
-        importlib.util.spec_from_file_location("options", options_file)
+        importlib.util.spec_from_file_location("options", options_path)
     options = importlib.util.module_from_spec(options_spec)
     sys.modules["options"] = options
     options_spec.loader.exec_module(options)
