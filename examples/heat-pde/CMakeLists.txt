@@ -40,6 +40,7 @@ install(FILES
 
 install(
     FILES
+        README.md
         heat.f90 
         heat.c
         heat_utils.f90

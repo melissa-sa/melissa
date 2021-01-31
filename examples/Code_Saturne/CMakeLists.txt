@@ -32,6 +32,7 @@ set(destination ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/Code_Saturne)
 
 foreach(file IN ITEMS
     options.py
+    README.md
     DATA/case1.xml
     MESH/downcomer.des
     MESH/fdc.des
