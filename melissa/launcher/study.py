@@ -13,8 +13,6 @@
 #    Alejandro Ribes,                                             #
 #    Bertrand Iooss,                                              #
 ###################################################################
-
-
 """
     Study main module
 """
@@ -48,8 +46,8 @@ from .simulation import RUNNING
 from .simulation import TIMEOUT
 from .simulation import WAITING
 
-
-melissa_comm4py = cdll.LoadLibrary(os.path.join(config.libdir, "libmelissa_comm4py.so"))
+melissa_comm4py = cdll.LoadLibrary(
+    os.path.join(config.libdir, "libmelissa_comm4py.so"))
 melissa_comm4py.bind_message_rcv.argtypes = [c_char_p]
 melissa_comm4py.bind_message_resp.argtypes = [c_char_p]
 melissa_comm4py.bind_message_snd.argtypes = [c_char_p]
@@ -61,7 +59,7 @@ class StateChecker(Thread):
     """
         Thread in charge of recieving Server messages
     """
-    def __init__(self, server = [], groups = []):
+    def __init__(self, server=[], groups=[]):
         Thread.__init__(self)
         self.running_study = True
         self.server = server
@@ -75,15 +73,17 @@ class StateChecker(Thread):
                     self.server[0].check_job()
                 for group in self.groups:
                     with group.lock:
-                        if (group.job_status < FINISHED and
-                                group.job_status > NOT_SUBMITTED):
+                        if (group.job_status < FINISHED
+                                and group.job_status > NOT_SUBMITTED):
                             s = copy.deepcopy(group.job_status)
                             group.check_job()
                             if s <= PENDING and group.job_status == RUNNING:
-                                logging.info('group ' + str(group.group_id) + ' job started')
+                                logging.info('group ' + str(group.group_id) +
+                                             ' job started')
                                 group.start_time = time.time()
                             elif s <= RUNNING and group.job_status == FINISHED:
-                                logging.info('end job group ' + str(group.group_id))
+                                logging.info('end job group ' +
+                                             str(group.group_id))
                                 group.finalize()
             logging.info('closing state checker process')
         except:
@@ -91,11 +91,12 @@ class StateChecker(Thread):
             logging.error(traceback.print_exc())
             return
 
+
 class Messenger(Thread):
     """
         Thread in charge of checking job status
     """
-    def __init__(self, batch_size = 1, server = [], groups = []):
+    def __init__(self, batch_size=1, server=[], groups=[]):
         Thread.__init__(self)
         self.running_study = True
         self.batch_size = batch_size
@@ -107,13 +108,14 @@ class Messenger(Thread):
         try:
             last_server = 0
             last_msg_to_server = 0
-            buff = create_string_buffer(melissa_comm4py.melissa_get_message_len())
+            buff = create_string_buffer(
+                melissa_comm4py.melissa_get_message_len())
             while self.running_study:
                 melissa_comm4py.wait_message(buff)
                 last_server = time.time()
                 message = buff.value.decode().split()
                 if message[0] != 'nothing':
-                    logging.debug('message: '+buff.value.decode())
+                    logging.debug('message: ' + buff.value.decode())
                 if message[0] == 'stop':
                     with self.server[0].lock:
                         self.server[0].status = FINISHED  # finished
@@ -127,15 +129,15 @@ class Messenger(Thread):
                         logging.info('end study')
                 elif message[0] == 'timeout':
                     if message[1] != '-1':
-                        group_id = int(message[1])//self.batch_size
+                        group_id = int(message[1]) // self.batch_size
                         # restarted runners for melissa-da get an id shifted by the
                         # total number of runners to not confuse the DA server
                         group_id = group_id % len(self.groups)
                         with self.groups[group_id].lock:
                             self.groups[group_id].status = TIMEOUT
                 elif message[0] == 'group_state':
-                    group_id = int(message[1])//self.batch_size
-                    simu_id = int(message[1])%self.batch_size
+                    group_id = int(message[1]) // self.batch_size
+                    simu_id = int(message[1]) % self.batch_size
                     # restarted runners for melissa-da get an id shifted by the
                     # total number of runners to not confuse the DA server
                     group_id = group_id % len(self.groups)
@@ -143,11 +145,11 @@ class Messenger(Thread):
                         if self.groups[group_id].job_type == 3:
                             if self.groups[group_id].status < 2:
                                 self.groups[group_id].status = int(message[2])
-                            #print("group " +str(group_id)+ " simu "+str(simu_id))
-                            self.groups[group_id].simu_status[simu_id] = int(message[2])
-                            if all(simu_status == 2 for simu_status in self.groups[group_id].simu_status):
+                            self.groups[group_id].simu_status[simu_id] = int(
+                                message[2])
+                            if all(simu_status == 2 for simu_status in
+                                   self.groups[group_id].simu_status):
                                 self.groups[group_id].status = 2
-                                #print('Group ' + str(group_id) + ' status: ' + str(groups[group_id].status))
                         else:
                             self.groups[group_id].status = int(message[2])
                         if self.groups[group_id].status == 2:
@@ -155,22 +157,25 @@ class Messenger(Thread):
                     if message[2] == 2:
                         logging.info('Group ' + message[1] + ' finished')
                     if message[2] == 1:
-                        logging.info('Group ' + message[1] + ' connected to server')
+                        logging.info('Group ' + message[1] +
+                                     ' connected to server')
                 elif message[0] == 'server':
                     with self.server[0].lock:
                         rank = int(message[1])
                         while (len(self.server[0].node_name) <= rank):
                             self.server[0].node_name.append([''])
                         self.server[0].node_name[rank] = message[2]
-                        logging.info('Melissa Server node '+str(rank)+' name: ' +
-                                     str(self.server[0].node_name[rank]) + '; '+
-                                     'Melissa Server job id: ' +
+                        logging.info('Melissa Server node ' + str(rank) +
+                                     ' name: ' +
+                                     str(self.server[0].node_name[rank]) +
+                                     '; ' + 'Melissa Server job id: ' +
                                      str(self.server[0].job_id))
                         self.server[0].status = RUNNING
                         self.server[0].job_status = RUNNING
                 elif message[0] == 'interval':
                     self.confidence_interval[message[1]] = float(message[3])
-                    logging.info(message[1] + ' confidence interval: ' + message[3])
+                    logging.info(message[1] + ' confidence interval: ' +
+                                 message[3])
 
                 if last_server > 0:
                     if self.server[0].status != RUNNING:
@@ -180,7 +185,8 @@ class Messenger(Thread):
                             logging.warning('server timeout\n')
                             with self.server[0].lock:
                                 self.server[0].status = TIMEOUT
-                if (time.time() - last_msg_to_server) > 10 and self.server[0].status == RUNNING:
+                if (time.time() - last_msg_to_server
+                    ) > 10 and self.server[0].status == RUNNING:
                     melissa_comm4py.send_hello()
                     last_msg_to_server = time.time()
             logging.info('closing messenger thread')
@@ -189,11 +195,12 @@ class Messenger(Thread):
             logging.error(traceback.print_exc())
             return
 
+
 class Responder(Thread):
     """
         Thread in charge of responding to server requests
     """
-    def __init__(self, batch_size = 1, server = [], groups = []):
+    def __init__(self, batch_size=1, server=[], groups=[]):
         Thread.__init__(self)
         self.running_study = True
         self.batch_size = batch_size
@@ -203,17 +210,15 @@ class Responder(Thread):
     def run(self):
         try:
             while self.running_study:
-                buff = create_string_buffer(melissa_comm4py.melissa_get_message_len())
+                buff = create_string_buffer(
+                    melissa_comm4py.melissa_get_message_len())
                 melissa_comm4py.get_resp_message(buff)
-                    #with self.server[0].lock:
-                        #self.server[0].status = RUNNING
-                    #print('message: '+buff.value.decode())
                 message = buff.value.decode().split()
                 if message[0] != 'nothing':
-                    logging.debug('message: '+buff.value.decode())
+                    logging.debug('message: ' + buff.value.decode())
                 if message[0] == 'simu_info':
-                    group = int(message[1])//self.batch_size
-                    simu = int(message[1])%self.batch_size
+                    group = int(message[1]) // self.batch_size
+                    simu = int(message[1]) % self.batch_size
 
                     # restarted runners for melissa-da get an id shifted by the
                     # total number of runners to not confuse the DA server
@@ -223,33 +228,37 @@ class Responder(Thread):
                     with self.groups[group].lock:
                         if self.groups[group].job_type == 4:
                             params = self.groups[group].param_set[0]
-                            melissa_comm4py.send_job(self.groups[group].group_id,
-                                                     str(self.groups[group].job_id).encode(),
-                                                     len(self.groups[group].param_set[0]),
-                                                     (c_double * len(params))(*params))
+                            melissa_comm4py.send_job(
+                                self.groups[group].group_id,
+                                str(self.groups[group].job_id).encode(),
+                                len(self.groups[group].param_set[0]),
+                                (c_double * len(params))(*params))
                         elif self.groups[group].job_type == 3:
                             params = self.groups[group].param_set[simu]
-                            melissa_comm4py.send_job(self.groups[group].simu_id[simu],
-                                                     str(self.groups[group].job_id).encode(),
-                                                     len(self.groups[group].param_set[0]),
-                                                     (c_double * len(params))(*params))
+                            melissa_comm4py.send_job(
+                                self.groups[group].simu_id[simu],
+                                str(self.groups[group].job_id).encode(),
+                                len(self.groups[group].param_set[0]),
+                                (c_double * len(params))(*params))
                         elif self.groups[group].job_type == 2:
                             params = self.groups[group].param_set
-                            melissa_comm4py.send_job(self.groups[group].group_id,
-                                                     str(self.groups[group].job_id).encode(),
-                                                     len(self.groups[group].param_set[0]),
-                                                     (c_double * len(params))(*params))
+                            melissa_comm4py.send_job(
+                                self.groups[group].group_id,
+                                str(self.groups[group].job_id).encode(),
+                                len(self.groups[group].param_set[0]),
+                                (c_double * len(params))(*params))
                 if message[0] == 'test_timeout':
                     melissa_comm4py.send_alive()
                 if message[0] == 'options':
-                    melissa_comm4py.send_options(self.server[0].options.encode())
-
+                    melissa_comm4py.send_options(
+                        self.server[0].options.encode())
 
             logging.info('closing responder thread')
         except:
             print('=== Responder thread crashed ===')
             logging.error(traceback.print_exc())
             return
+
 
 class Server_user_functions(object):
     """
@@ -276,6 +285,7 @@ class Server_user_functions(object):
     def finalize(self, func_ptr):
         self.parent.usr_func['finalize_server'] = func_ptr
 
+
 class Simulation_user_functions(object):
     """
         Options for the simulations
@@ -301,16 +311,17 @@ class Simulation_user_functions(object):
     def finalize(self, func_ptr):
         self.parent.usr_func['finalize_group'] = func_ptr
 
+
 class Study(object):
     """
         Study class, containing instances of the threads
     """
-    def __init__(self, stdy_opt = None, ml_stats = None, usr_func = None):
+    def __init__(self, stdy_opt=None, ml_stats=None, usr_func=None):
         logging.basicConfig(format='%(asctime)s %(message)s',
-                                datefmt='%m/%d/%Y %I:%M:%S %p',
-                                filename='melissa_launcher.log',
-                                filemode='w',
-                                level=logging.DEBUG)
+                            datefmt='%m/%d/%Y %I:%M:%S %p',
+                            filename='melissa_launcher.log',
+                            filemode='w',
+                            level=logging.DEBUG)
 
         self.nb_param = 0
         self.groups = list()
@@ -348,7 +359,6 @@ class Study(object):
         self.simulation = Simulation_user_functions(self)
 
         self.crashed_groups = 0
-
 
     # options
     def set_option(self, option_key, option_value):
@@ -453,7 +463,7 @@ class Study(object):
         self.stdy_opt['quantile_values'] = quantile_values
         self.ml_stats['quantiles'] = True
 
-    def compute_sobol_indices(self, coupling = "MELISSA_COUPLING_DEFAULT"):
+    def compute_sobol_indices(self, coupling="MELISSA_COUPLING_DEFAULT"):
         self.stdy_opt['coupling'] = coupling
         self.ml_stats['sobol_indices'] = True
 
@@ -492,18 +502,23 @@ class Study(object):
         Job.set_nb_param(self.nb_param)
 
         logging.debug('create threads dict')
-        self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'], self.server_obj, self.groups)
-        self.threads['state_checker'] = StateChecker(self.server_obj, self.groups)
-        self.threads['responder'] = Responder(self.stdy_opt['batch_size'], self.server_obj, self.groups)
+        self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'],
+                                              self.server_obj, self.groups)
+        self.threads['state_checker'] = StateChecker(self.server_obj,
+                                                     self.groups)
+        self.threads['responder'] = Responder(self.stdy_opt['batch_size'],
+                                              self.server_obj, self.groups)
 
         create_study(self.usr_func)
         self.create_group_list()
         # init zmq context
         melissa_comm4py.init_context()
-        logging.debug('bind to recv port '+str(self.stdy_opt['recv_port']))
-        print('bind to recv port '+str(self.stdy_opt['recv_port']))
-        melissa_comm4py.bind_message_rcv(str(self.stdy_opt['recv_port']).encode())
-        melissa_comm4py.bind_message_resp(str(self.stdy_opt['resp_port']).encode())
+        logging.debug('bind to recv port ' + str(self.stdy_opt['recv_port']))
+        print('bind to recv port ' + str(self.stdy_opt['recv_port']))
+        melissa_comm4py.bind_message_rcv(
+            str(self.stdy_opt['recv_port']).encode())
+        melissa_comm4py.bind_message_resp(
+            str(self.stdy_opt['resp_port']).encode())
         logging.info('submit server')
 
         self.server_obj[0].set_nb_param(self.nb_param)
@@ -532,26 +547,31 @@ class Study(object):
             exit(1)
         self.server_obj[0].write_node_name()
         # connect to server
-        logging.debug('connect to server port '+str(self.stdy_opt['send_port']))
-        #melissa_comm4py.connect_message_snd(str(server.node_name), str(self.stdy_opt['send_port']))
-        melissa_comm4py.bind_message_snd(str(self.stdy_opt['send_port']).encode())
+        logging.debug('connect to server port ' +
+                      str(self.stdy_opt['send_port']))
+        melissa_comm4py.bind_message_snd(
+            str(self.stdy_opt['send_port']).encode())
         logging.debug('start status checker thread')
         self.threads['state_checker'].start()
         self.threads['responder'].start()
         for group in self.groups:
             if self.fault_tolerance() != 0: return
-            while check_scheduler_load(self.usr_func) == False:  #TODO: need to check this also during the simulation, not only on the beginnint!
+            while check_scheduler_load(
+                    self.usr_func
+            ) == False:  #TODO: need to check this also during the simulation, not only on the beginnint!
                 # don't start to quick after each other... achtually that should not be a problem!
                 time.sleep(1)
                 if self.fault_tolerance() != 0: return
 
-            if self.server_obj[0].want_stop:  # nice! already finished, break out!
+            if self.server_obj[
+                    0].want_stop:  # nice! already finished, break out!
                 break
 
-            logging.info('submit group '+str(group.group_id))
+            logging.info('submit group ' + str(group.group_id))
             try:
                 with group.lock:
-                    group.server_node_name = str(self.server_obj[0].node_name[0])
+                    group.server_node_name = str(
+                        self.server_obj[0].node_name[0])
                     group.launch()
             except:
                 logging.error('Error while launching group')
@@ -559,12 +579,11 @@ class Study(object):
                 logging.error(traceback.print_exc())
                 self.stop()
                 exit(1)
-        # time.sleep(1)
-        while (not self.server_obj[0].want_stop) and (self.server_obj[0].status != FINISHED
-               or any([i.status != FINISHED for i in self.groups])):
+        while (not self.server_obj[0].want_stop) and (
+                self.server_obj[0].status != FINISHED
+                or any([i.status != FINISHED for i in self.groups])):
             if self.fault_tolerance() != 0: return
             time.sleep(0.05)
-        # time.sleep(1)
         self.server_obj[0].finalize()
         self.stop()
         return
@@ -659,31 +678,38 @@ class Study(object):
         if (not 'data_port' in self.stdy_opt):
             self.stdy_opt['data_port'] = 2006
 
-
         if (self.ml_stats['sobol_indices']):
             self.stdy_opt['batch_size'] = 1
             self.sobol = True
 
         if self.stdy_opt['send_port'] == self.stdy_opt['recv_port']:
-            logging.error('Error: send_port and recv_port can not have the same value')
+            logging.error(
+                'Error: send_port and recv_port can not have the same value')
             errors += 1
 
         if 'threshold_exceedance' in self.ml_stats:
-            self.ml_stats['threshold_exceedances'] = self.ml_stats['threshold_exceedance']
+            self.ml_stats['threshold_exceedances'] = self.ml_stats[
+                'threshold_exceedance']
             self.ml_stats['threshold_exceedance'] = False
 
         if 'threshold_value' in self.stdy_opt:
-            self.stdy_opt['threshold_values'] = self.stdy_opt['threshold_value']
+            self.stdy_opt['threshold_values'] = self.stdy_opt[
+                'threshold_value']
         elif 'threshold_value' in self.ml_stats:
-            self.stdy_opt['threshold_values'] = self.ml_stats['threshold_value']
+            self.stdy_opt['threshold_values'] = self.ml_stats[
+                'threshold_value']
             self.ml_stats['threshold_value'] = False
         elif 'threshold_values' in self.ml_stats:
-            self.stdy_opt['threshold_values'] = self.ml_stats['threshold_values']
+            self.stdy_opt['threshold_values'] = self.ml_stats[
+                'threshold_values']
             self.ml_stats['threshold_values'] = False
 
         if 'threshold_values' in self.stdy_opt:
-            if type(self.stdy_opt['threshold_values']) not in (list, tuple, set):
-                self.stdy_opt['threshold_values'] = [self.stdy_opt['threshold_values']]
+            if type(self.stdy_opt['threshold_values']) not in (list, tuple,
+                                                               set):
+                self.stdy_opt['threshold_values'] = [
+                    self.stdy_opt['threshold_values']
+                ]
 
         if 'quantile' in self.ml_stats:
             self.ml_stats['quantiles'] = self.ml_stats['quantile']
@@ -699,8 +725,11 @@ class Study(object):
             self.ml_stats['quantile_values'] = False
 
         if 'quantile_values' in self.stdy_opt:
-            if type(self.stdy_opt['quantile_values']) not in (list, tuple, set):
-                self.stdy_opt['quantile_values'] = [self.stdy_opt['quantile_values']]
+            if type(self.stdy_opt['quantile_values']) not in (list, tuple,
+                                                              set):
+                self.stdy_opt['quantile_values'] = [
+                    self.stdy_opt['quantile_values']
+                ]
 
         if not 'check_server_job' in self.usr_func.keys():
             if 'check_job' in self.usr_func.keys():
@@ -708,41 +737,39 @@ class Study(object):
 
         if not 'check_group_job' in self.usr_func.keys():
             if 'check_job' in self.usr_func.keys():
-                self.usr_func['check_group_job'] = self.usr_func['check_job']  # TODO: refactor how these functions work! it's dirty that they change their parameter!
+                self.usr_func['check_group_job'] = self.usr_func[
+                    'check_job']  # TODO: refactor how these functions work! it's dirty that they change their parameter!
 
         if not 'cancel_server_job' in self.usr_func.keys():
             if 'cancel_job' in self.usr_func.keys():
-                self.usr_func['cancel_server_job'] = self.usr_func['cancel_job']
+                self.usr_func['cancel_server_job'] = self.usr_func[
+                    'cancel_job']
 
         if not 'cancel_group_job' in self.usr_func.keys():
             if 'cancel_job' in self.usr_func.keys():
                 self.usr_func['cancel_group_job'] = self.usr_func['cancel_job']
 
-
-        optional_func = ['create_study',
-                         'create_group',
-                         'restart_server',
-                         'restart_group',
-                         'check_scheduler_load',
-                         'postprocessing',
-                         'finalize']
-        mandatory_func = ['launch_server',
-                          'launch_group',
-                          'check_server_job',
-                          'check_group_job',
-                          'cancel_server_job',
-                          'cancel_group_job']
+        optional_func = [
+            'create_study', 'create_group', 'restart_server', 'restart_group',
+            'check_scheduler_load', 'postprocessing', 'finalize'
+        ]
+        mandatory_func = [
+            'launch_server', 'launch_group', 'check_server_job',
+            'check_group_job', 'cancel_server_job', 'cancel_group_job'
+        ]
 
         for func_name in optional_func:
             if not func_name in self.usr_func.keys():
                 self.usr_func[func_name] = None
-                logging.warning('Warning: no \''+func_name+'\' key in USER_FUNCTIONS')
+                logging.warning('Warning: no \'' + func_name +
+                                '\' key in USER_FUNCTIONS')
             elif self.usr_func[func_name] is None:
-                logging.warning('Warning: no \''+func_name+'\' provided')
+                logging.warning('Warning: no \'' + func_name + '\' provided')
 
         for func_name in mandatory_func:
             if not func_name in self.usr_func.keys():
-                logging.error('Error: no \''+func_name+'\' key in USER_FUNCTIONS')
+                logging.error('Error: no \'' + func_name +
+                              '\' key in USER_FUNCTIONS')
                 errors += 1
 
         return errors
@@ -756,23 +783,25 @@ class Study(object):
 
         if self.sobol:
             for i in range(self.stdy_opt['sampling_size']):
-                input_parameters = draw_parameter_set(self.usr_func, self.stdy_opt)
-                input_parameters2 = draw_parameter_set(self.usr_func, self.stdy_opt)
-                self.groups.append(SobolGroup(
-                    input_parameters,
-                    input_parameters2))
+                input_parameters = draw_parameter_set(self.usr_func,
+                                                      self.stdy_opt)
+                input_parameters2 = draw_parameter_set(self.usr_func,
+                                                       self.stdy_opt)
+                self.groups.append(
+                    SobolGroup(input_parameters, input_parameters2))
         else:
-            for i in range(self.stdy_opt['sampling_size']//self.stdy_opt['batch_size']):
+            for i in range(self.stdy_opt['sampling_size'] //
+                           self.stdy_opt['batch_size']):
                 param_sets = list()
                 for j in range(self.stdy_opt['batch_size']):
-                    param_sets.append(draw_parameter_set(self.usr_func, self.stdy_opt))
+                    param_sets.append(
+                        draw_parameter_set(self.usr_func, self.stdy_opt))
                 self.groups.append(MultiSimuGroup(param_sets))
 
         logging.debug('created %d groups' % len(self.groups))
 
         for group in self.groups:
             group.create()
-        # groups = self.groups
 
     def fault_tolerance(self):
         """
@@ -784,7 +813,8 @@ class Study(object):
             logging.error('Messenger thread crashed')
             self.threads['messenger'].join()
             if self.server_obj[0].status != FINISHED:
-                self.threads['messenger'] = Messenger(self.stdy_opt['batch_size'])
+                self.threads['messenger'] = Messenger(
+                    self.stdy_opt['batch_size'])
                 self.threads['messenger'].start()
         if not self.threads['state_checker'].isAlive():
             logging.error('State checker thread crashed')
@@ -801,20 +831,24 @@ class Study(object):
 
         sleep = False
         with self.server_obj[0].lock:
-            if self.server_obj[0].status != RUNNING or self.server_obj[0].job_status != RUNNING:
+            if self.server_obj[0].status != RUNNING or self.server_obj[
+                    0].job_status != RUNNING:
                 sleep = True
         if sleep == True:
             time.sleep(3)
             sleep = False
 
         want_stop = False
-        with self.server_obj[0].lock:  # did we get a want stop in the meantime? ... Refactor race conditions!
+        with self.server_obj[
+                0].lock:  # did we get a want stop in the meantime? ... Refactor race conditions!
             want_stop = self.server_obj[0].want_stop
 
-        if (not want_stop and ((self.server_obj[0].status != RUNNING or self.server_obj[0].job_status > RUNNING)
-                and self.server_obj[0].status != FINISHED)
+        if (not want_stop and ((self.server_obj[0].status != RUNNING
+                                or self.server_obj[0].job_status > RUNNING)
+                               and self.server_obj[0].status != FINISHED)
                 and not all([i.status == FINISHED for i in self.groups])):
-            print('server status: '+str(self.server_obj[0].status)+' job_status: '+str(self.server_obj[0].job_status))
+            print('server status: ' + str(self.server_obj[0].status) +
+                  ' job_status: ' + str(self.server_obj[0].job_status))
             for group in self.groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
@@ -847,17 +881,20 @@ class Study(object):
             for group in self.groups:
                 if group.status < FINISHED and group.status > NOT_SUBMITTED:
                     with group.lock:
-                        logging.info('resubmit group ' + str(group.group_id)
-                                     + ' (server crash)')
+                        logging.info('resubmit group ' + str(group.group_id) +
+                                     ' (server crash)')
                         try:
-                            group.server_node_name = str(self.server_obj[0].node_name[0])
+                            group.server_node_name = str(
+                                self.server_obj[0].node_name[0])
                             group.restart()
                             if group.status == FINISHED:
                                 # resarted to often... group finally crashed:
                                 self.crashed_groups += 1
                         except:
-                            logging.error('Error while restarting group %d'%group.group_id)
-                            print('=== Error while restarting group %d === ' % group.group_id)
+                            logging.error('Error while restarting group %d' %
+                                          group.group_id)
+                            print('=== Error while restarting group %d === ' %
+                                  group.group_id)
                             logging.error(traceback.print_exc())
                             self.stop()
                             return 1
@@ -873,47 +910,56 @@ class Study(object):
                 sleep = False
                 with group.lock:
                     if group.status <= RUNNING:
-                        logging.info("resubmit group " + str(group.group_id)
-                                     + " (simulation crashed)")
+                        logging.info("resubmit group " + str(group.group_id) +
+                                     " (simulation crashed)")
                         try:
                             group.restart()
                             if group.status == FINISHED:
                                 # resarted to often... group finally crashed:
                                 self.crashed_groups += 1
                         except:
-                            logging.error('Error while restarting group '+str(group.group_id))
-                            print('=== Error while restarting group '+str(group.group_id)+' ===')
+                            logging.error('Error while restarting group ' +
+                                          str(group.group_id))
+                            print('=== Error while restarting group ' +
+                                  str(group.group_id) + ' ===')
                             logging.error(traceback.print_exc())
                             self.stop()
                             return 1
             with group.lock:
                 if group.status == WAITING:
                     if group.job_status == RUNNING:
-                        if (self.stdy_opt['simulation_timeout'] > 0) and (time.time() - group.start_time > self.stdy_opt['simulation_timeout']):
-                            logging.info("resubmit group " + str(group.group_id)
-                                         + " (timeout detected by launcher)")
+                        if (self.stdy_opt['simulation_timeout'] >
+                                0) and (time.time() - group.start_time >
+                                        self.stdy_opt['simulation_timeout']):
+                            logging.info("resubmit group " +
+                                         str(group.group_id) +
+                                         " (timeout detected by launcher)")
                             try:
                                 group.restart()
                                 if group.status == FINISHED:
                                     # resarted to often... group finally crashed:
                                     self.crashed_groups += 1
                             except:
-                                logging.error('Error while restarting group '+group.group_id)
-                                print('=== Error while restarting group '+group.group_id+' ===')
+                                logging.error('Error while restarting group ' +
+                                              group.group_id)
+                                print('=== Error while restarting group ' +
+                                      group.group_id + ' ===')
                                 logging.error(traceback.print_exc())
                                 self.stop()
                                 return 1
                 if group.status == TIMEOUT:
-                    logging.info("resubmit group " + str(group.group_id)
-                                 + " (timeout detected by server)")
+                    logging.info("resubmit group " + str(group.group_id) +
+                                 " (timeout detected by server)")
                     try:
                         group.restart()
                         if group.status == FINISHED:
                             # resarted to often... group finally crashed:
                             self.crashed_groups += 1
                     except:
-                        logging.error('Error while restarting group '+group.group_id)
-                        print('=== Error while restarting group '+group.group_id+' ===')
+                        logging.error('Error while restarting group ' +
+                                      group.group_id)
+                        print('=== Error while restarting group ' +
+                              group.group_id + ' ===')
                         logging.error(traceback.print_exc())
                         self.stop()
                         return 1
@@ -935,6 +981,7 @@ def create_study(usr_func):
     else:
         pass
 
+
 def draw_parameter_set(usr_func, stdy_opt):
     """
         Draws a set of parameters using user defined function
@@ -955,6 +1002,7 @@ def draw_parameter_set(usr_func, stdy_opt):
 
     return param_set
 
+
 def check_scheduler_load(usr_func):
     """
         Return False if the load is full
@@ -970,7 +1018,9 @@ def check_scheduler_load(usr_func):
     else:
         return True
 
+
 # Study end #
+
 
 def postprocessing(usr_func):
     """
@@ -986,6 +1036,7 @@ def postprocessing(usr_func):
     else:
         pass
 
+
 def finalize(usr_func):
     """
         User defined final step
@@ -999,4 +1050,3 @@ def finalize(usr_func):
             logging.error(traceback.print_exc())
     else:
         pass
-
