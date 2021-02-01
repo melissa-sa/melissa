@@ -26,6 +26,7 @@ from sys import exit
 from threading import Thread
 import time
 import traceback
+import warnings
 
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
@@ -987,6 +988,11 @@ def draw_parameter_set(usr_func, stdy_opt):
         Draws a set of parameters using user defined function
     """
     if usr_func['draw_parameter_set']:
+        if 'nb_parameters' in stdy_opt:
+            warnings.warn(
+                "keys 'nb_parameters' and 'draw_parameter_set' present in study options. 'nb_parameters' will be ignored."
+            )
+
         try:
             param_set = usr_func['draw_parameter_set']()
         except:
