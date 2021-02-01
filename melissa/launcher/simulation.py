@@ -30,10 +30,10 @@ import time
 
 from .. import config
 
-
 c_int_p = POINTER(c_int)
 c_double_p = POINTER(c_double)
-melissa_comm4py = cdll.LoadLibrary(os.path.join(config.libdir, "libmelissa_comm4py.so"))
+melissa_comm4py = cdll.LoadLibrary(
+    os.path.join(config.libdir, "libmelissa_comm4py.so"))
 melissa_comm4py.send_message.argtypes = [c_char_p]
 melissa_comm4py.send_job.argtypes = [c_int, c_char_p, c_int, c_double_p]
 melissa_comm4py.send_drop.argtypes = [c_int, c_char_p]
@@ -49,11 +49,14 @@ WAITING = 0
 RUNNING = 1
 FINISHED = 2
 TIMEOUT = 4
-COUPLING_DICT = {"MELISSA_COUPLING_NONE":0,
-                 "MELISSA_COUPLING_DEFAULT":0,
-                 "MELISSA_COUPLING_ZMQ":0,
-                 "MELISSA_COUPLING_MPI":1,
-                 "MELISSA_COUPLING_FLOWVR":2}
+COUPLING_DICT = {
+    "MELISSA_COUPLING_NONE": 0,
+    "MELISSA_COUPLING_DEFAULT": 0,
+    "MELISSA_COUPLING_ZMQ": 0,
+    "MELISSA_COUPLING_MPI": 1,
+    "MELISSA_COUPLING_FLOWVR": 2
+}
+
 
 class Job(object):
     """
@@ -63,6 +66,7 @@ class Job(object):
     stdy_opt = {}
     ml_stats = {}
     nb_param = 0
+
     def __init__(self):
         """
             Job constructor
@@ -114,11 +118,13 @@ class Job(object):
         """
         pass
 
+
 class Group(Job):
     """
         Group class
     """
     nb_groups = 0
+
     def __init__(self):
         """
             Group constructor
@@ -134,7 +140,9 @@ class Group(Job):
         self.group_id = Group.nb_groups
         Group.nb_groups += 1
 
+
 #    @classmethod
+
     def reset():
         Group.nb_groups = 0
 
@@ -172,8 +180,8 @@ class Group(Job):
         and Job.usr_func['check_job']:
             return Job.usr_func['check_job'](self)
         else:
-            logging.error('Error: no \'check_group_job\''
-                          +' function provided')
+            logging.error('Error: no \'check_group_job\'' +
+                          ' function provided')
             exit()
 
     def cancel(self):
@@ -204,11 +212,13 @@ class Group(Job):
             if Job.usr_func['finalize_group']:
                 Job.usr_func['finalize_group'](self)
 
+
 class MultiSimuGroup(Group):
     """
     Multiple simulation group class (without Sobol' indices)
     """
     nb_simu = 0
+
     def __init__(self, param_sets):
         """
             MultiSimuGroup constructor
@@ -222,9 +232,9 @@ class MultiSimuGroup(Group):
         self.job_type = 3
         for i in range(self.size):
             #if isinstance(param_sets[i], ot.Point):
-                #self.param_set.append(numpy.zeros(self.nb_param))
-                #for j in range(self.nb_param):
-                    #self.param_set[i][j] = float(param_sets[i][j])
+            #self.param_set.append(numpy.zeros(self.nb_param))
+            #for j in range(self.nb_param):
+            #self.param_set[i][j] = float(param_sets[i][j])
             #else:
             self.param_set.append(numpy.copy(param_sets[i]))
             self.simu_id.append(MultiSimuGroup.nb_simu)
@@ -253,18 +263,14 @@ class MultiSimuGroup(Group):
         self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
-            #logging.warning('Simulation group ' + str(self.group_id) +
-                            #'crashed 5 times, drawing new parameter sets')
-            #for i in range(self.size):
-                #logging.info('old parameter set: ' + str(self.param_set[i]))
-                #self.param_set[i] = Job.usr_func['draw_parameter_set']()
-                #logging.info('new parameter set: ' + str(self.param_set[i]))
-            #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.group_id) +
-                            ' crashed '+str(crashs_before_redraw)+' times, remove simulation')
+                            ' crashed ' + str(crashs_before_redraw) +
+                            ' times, remove simulation')
             for i in range(self.size):
-                logging.warning('Bad parameter set '+str(i)+': ' + str(self.param_set[i]))
-                melissa_comm4py.send_drop(self.simu_id[i], str(self.job_id).encode())
+                logging.warning('Bad parameter set ' + str(i) + ': ' +
+                                str(self.param_set[i]))
+                melissa_comm4py.send_drop(self.simu_id[i],
+                                          str(self.job_id).encode())
             self.job_status = FINISHED
             self.status = FINISHED
             return
@@ -273,9 +279,9 @@ class MultiSimuGroup(Group):
         and Job.usr_func['restart_group']:
             Job.usr_func['restart_group'](self)
         else:
-            logging.warning('warning: no \'restart_group\''
-                            +' function provided,'
-                            +' using \'launch_group\' instead')
+            logging.warning('warning: no \'restart_group\'' +
+                            ' function provided,' +
+                            ' using \'launch_group\' instead')
             self.launch()
         self.job_status = PENDING
         self.status = WAITING
@@ -300,33 +306,34 @@ class SobolGroup(Group):
         self.param_set = list()
         self.simu_id = list()
         self.job_type = 4
-        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(), "MELISSA_COUPLING_DEFAULT")
+        self.coupling = COUPLING_DICT.get(Job.stdy_opt['coupling'].upper(),
+                                          "MELISSA_COUPLING_DEFAULT")
         #if isinstance(param_set_a, ot.Point):
-            #self.param_set.append(numpy.zeros(self.nb_param))
-            #for j in range(self.nb_param):
-                #self.param_set[0][j] = float(param_set_a[j])
+        #self.param_set.append(numpy.zeros(self.nb_param))
+        #for j in range(self.nb_param):
+        #self.param_set[0][j] = float(param_set_a[j])
         #else:
         self.param_set.append(numpy.copy(param_set_a))
-        self.simu_id.append(self.group_id*(len(param_set_a)+2))
+        self.simu_id.append(self.group_id * (len(param_set_a) + 2))
         #if isinstance(param_set_b, ot.Point):
-            #self.param_set.append(numpy.zeros(self.nb_param))
-            #for j in range(self.nb_param):
-                #self.param_set[1][j] = float(param_set_b[j])
+        #self.param_set.append(numpy.zeros(self.nb_param))
+        #for j in range(self.nb_param):
+        #self.param_set[1][j] = float(param_set_b[j])
         #else:
         self.param_set.append(numpy.copy(param_set_b))
-        self.simu_id.append(self.group_id*(len(param_set_a)+2)+1)
+        self.simu_id.append(self.group_id * (len(param_set_a) + 2) + 1)
         for i in range(len(param_set_a)):
             self.param_set.append(numpy.copy(self.param_set[0]))
-            self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
-            self.simu_id.append(self.group_id*(len(param_set_a)+2)+i+2)
+            self.param_set[i + 2][i] = numpy.copy(self.param_set[1][i])
+            self.simu_id.append(self.group_id * (len(param_set_a) + 2) + i + 2)
         self.size = len(self.param_set)
 
     def launch(self):
         Group.launch(self)
-        melissa_comm4py.send_job_init(self.group_id,
-                                      str(self.job_id).encode(),
-                                      len(self.param_set[0]),
-                                      self.param_set[0].ctypes.data_as(POINTER(c_double)))
+        melissa_comm4py.send_job_init(
+            self.group_id,
+            str(self.job_id).encode(), len(self.param_set[0]),
+            self.param_set[0].ctypes.data_as(POINTER(c_double)))
 
     def restart(self):
         """
@@ -336,21 +343,9 @@ class SobolGroup(Group):
         self.cancel()
         self.nb_restarts += 1
         if self.nb_restarts > crashs_before_redraw:
-            #logging.warning('Group ' +
-                            #str(self.group_id) +
-                            #'crashed 5 times, drawing new parameter sets')
-            #logging.debug('old parameter set A: ' + str(self.param_set[0]))
-            #logging.debug('old parameter set B: ' + str(self.param_set[1]))
-            #self.param_set[0] = Job.usr_func['draw_parameter_set']()
-            #self.param_set[1] = Job.usr_func['draw_parameter_set']()
-            #logging.info('new parameter set A: ' + str(self.param_set[0]))
-            #logging.info('new parameter set B: ' + str(self.param_set[1]))
-            #for i in range(len(self.param_set[0])):
-                #self.param_set[i+2] = numpy.copy(self.param_set[0])
-                #self.param_set[i+2][i] = numpy.copy(self.param_set[1][i])
-            #self.nb_restarts = 0
             logging.warning('Simulation group ' + str(self.group_id) +
-                            'crashed '+str(crashs_before_redraw)+' times, remove simulation')
+                            'crashed ' + str(crashs_before_redraw) +
+                            ' times, remove simulation')
             logging.warning('Bad parameter set A: ' + str(self.param_set[0]))
             logging.warning('Bad parameter set B: ' + str(self.param_set[1]))
             melissa_comm4py.send_drop(self.group_id, str(self.job_id).encode())
@@ -365,16 +360,17 @@ class SobolGroup(Group):
             Job.usr_func['restart_group'](self)
             param_str = " ".join(str(j) for j in self.param_set[0])
         else:
-            logging.warning('warning: no \'restart_group\''
-                            +' function provided,'
-                            +' using \'launch_group\' instead')
+            logging.warning('warning: no \'restart_group\'' +
+                            ' function provided,' +
+                            ' using \'launch_group\' instead')
             self.launch()
         self.job_status = PENDING
         self.status = WAITING
-        melissa_comm4py.send_job_init(self.group_id,
-                                      str(self.job_id).encode(),
-                                      len(self.param_set[0]),
-                                      self.param_set[0].ctypes.data_as(POINTER(c_double)))
+        melissa_comm4py.send_job_init(
+            self.group_id,
+            str(self.job_id).encode(), len(self.param_set[0]),
+            self.param_set[0].ctypes.data_as(POINTER(c_double)))
+
 
 # Refactor: it's a bit unlogic that this file is named simulation.py and then there is a
 # server in it...
@@ -391,7 +387,7 @@ class Server(Job):
         self.status = WAITING
         self.first_job_id = ''
         self.directory = "./"
-#        self.create_options()
+        #        self.create_options()
         self.lock = RLock()
         self.path = config.bindir
         self.job_type = 1
@@ -430,7 +426,8 @@ class Server(Job):
             return
         quantile_str = '0'
         if Job.ml_stats['quantiles']:
-            quantile_str = ':'.join([str(x) for x in Job.stdy_opt['quantile_values']])
+            quantile_str = ':'.join(
+                [str(x) for x in Job.stdy_opt['quantile_values']])
             if quantile_str == '':
                 logging.error('error bad option: no quantile value given')
                 return
@@ -438,7 +435,8 @@ class Server(Job):
         self.options += quantile_str
         threshold_str = '0'
         if Job.ml_stats['threshold_exceedances']:
-            threshold_str = ':'.join([str(x) for x in Job.stdy_opt['threshold_values']])
+            threshold_str = ':'.join(
+                [str(x) for x in Job.stdy_opt['threshold_values']])
             if threshold_str == '':
                 logging.error('error bad option: no threshold value given')
                 return
@@ -465,17 +463,18 @@ class Server(Job):
             logging.error('error bad option: no operation given')
             return
 
-
     def launch(self):
         """
             Launches server job
         """
         os.chdir(self.directory)
         logging.info('launch server')
-        logging.info('server options: '+str(self.cmd_opt))
+        logging.info('server options: ' + str(self.cmd_opt))
         if "launch_server" in Job.usr_func.keys() \
         and Job.usr_func['launch_server']:
-            Job.usr_func['launch_server'](self)  # Refactor: here it woulld be better to not give self but only a directory of important properties to not break things and to clearly describe the interface..., same for simulation...
+            Job.usr_func['launch_server'](
+                self
+            )  # Refactor: here it woulld be better to not give self but only a directory of important properties to not break things and to clearly describe the interface..., same for simulation...
         else:
             logging.error('Error: no \'launch_server\' function provided')
             exit()
@@ -490,7 +489,9 @@ class Server(Job):
             status = self.status
         while status < RUNNING:
             # time.sleep(1)  # if such a sleep is needed it should be done by the user who knows that the server job will not be launched directly!
-            time.sleep(0.05)  # so sleep less... seems we wait for an answer from the other thread...
+            time.sleep(
+                0.05
+            )  # so sleep less... seems we wait for an answer from the other thread...
             with self.lock:
                 status = self.status
         if status > RUNNING:
@@ -508,8 +509,9 @@ class Server(Job):
         and Job.usr_func['restart_server']:
             Job.usr_func['restart_server'](self)
         else:
-            logging.warning('Warning: no \'restart_server\' function provided'
-                            +' using launch_server instead')
+            logging.warning(
+                'Warning: no \'restart_server\' function provided' +
+                ' using launch_server instead')
             self.launch()
         if not self.want_stop:
             # Restart wants to cancel the study! Refactor how its done. maybe check return value of restart function?
