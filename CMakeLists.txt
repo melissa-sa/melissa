@@ -57,19 +57,13 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 # options
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(MELISSA_INSTALL_PYTHON_PACKAGE "Install Melissa Python package" OFF)
 
 
 
 # set up
 include(CTest)
 include(GNUInstallDirs)
-
-set(MELISSA_INSTALL_PYTHONDIR ${CMAKE_INSTALL_LIBDIR}/python3/dist-packages
-    CACHE PATH "Python3 packages"
-)
-set(MELISSA_INSTALL_FULL_PYTHONDIR
-    ${CMAKE_INSTALL_PREFIX}/${MELISSA_INSTALL_PYTHONDIR}
-)
 
 # move compiled binaries directly into bin, lib dir
 # this way they can be found easier for testing
@@ -104,6 +98,40 @@ endfunction(find_python_module)
 
 find_package(PythonInterp 3.5.3 REQUIRED)
 find_python_module(numpy REQUIRED)
+
+
+# determine Python3 package installation directory
+if(MELISSA_INSTALL_PYTHON_PACKAGE)
+    if(CMAKE_INSTALL_PREFIX STREQUAL $ENV{HOME})
+        set(python3_site_command "import site; print(site.getusersitepackages())")
+    else()
+        set(python3_site_command "import site; print(site.getsitepackages()[0])")
+    endif()
+
+    execute_process(
+        COMMAND ${PYTHON_EXECUTABLE} -c "${python3_site_command}"
+        TIMEOUT 10
+        OUTPUT_VARIABLE melissa_python_dir_init
+        ERROR_VARIABLE python3_stderr
+        RESULT_VARIABLE python3_exit_status
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    if(NOT ${python3_exit_status} EQUAL 0)
+        message(
+            SEND_ERROR
+            "error when querying Python3 for package locations:\n${python3_stderr}"
+        )
+    endif()
+else()
+    set(melissa_python_dir_init ${CMAKE_INSTALL_FULL_DATAROOTDIR}/melissa)
+endif()
+
+set(MELISSA_INSTALL_PYTHONDIR ${melissa_python_dir_init}
+    CACHE PATH "Melissa Python package install path"
+)
+
+unset(melissa_python_dir_init)
 
 
 # C language options
