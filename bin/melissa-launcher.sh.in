@@ -31,5 +31,5 @@
 set -e
 set -u
 
-exec env PYTHONPATH="@MELISSA_INSTALL_FULL_PYTHONDIR@:${PYTHONPATH:-}" \
+exec env PYTHONPATH="@MELISSA_INSTALL_PYTHONDIR@:${PYTHONPATH:-}" \
     python3 -m melissa.launcher $@
