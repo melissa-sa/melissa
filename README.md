@@ -162,6 +162,18 @@ inproceedings{terraz:hal-01607479,
      Melissa is open source under the [BSD 3-Clause License](LICENSE)
 
 
+# Dependencies
+
+Melissa would not exist without high-quality C compilers, Fortran compilers, Python interpreters, standard language libraries, build systems, development tools, text editors, command line tools, and Linux distributions. The Melissa developers want to thank all developers, maintainers, forum moderators and everybody else who helped to improve these pieces of software.
+
+Melissa links against [ØMQ](https://zeromq.org/) (ZeroMQ) and because Melissa may be _distributing in binary form_ (when static linking is enabled), we are obliged to mention that ZeroMQ is available under the terms of the [GNU Lesser General Public License version 3 with static linking exception](http://wiki.zeromq.org/area:licensing).
+
+Copies of the licenses can be found in the folder [`licenses`](licenses).
+
+
+
+
+
 # Development Hints
 
 ## C and C++
