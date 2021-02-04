@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set(destination
-    ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/heat-pde-example
+    ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/heat-pde
 )
 
 configure_file(heat.py.in heat.py @ONLY)
