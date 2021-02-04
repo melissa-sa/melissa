@@ -63,7 +63,7 @@ def get_working_directory(sid):
     return working_directory
 
 
-def setup(sid):
+def initialize(sid):
     working_directory = get_working_directory(sid)
 
     # set up working directory
@@ -127,7 +127,7 @@ def setup(sid):
     code_saturne(sid, "case1.xml", "--initialize")
 
 
-def run(sid):
+def execute(sid):
     working_directory = get_working_directory(sid)
     os.chdir(working_directory)
 
@@ -153,10 +153,10 @@ def main():
 
     sid = int(maybe_sid_str)
 
-    if stage == "setup":
-        return setup(sid)
-    elif stage == "run":
-        return run(sid)
+    if stage == "initialize":
+        return initialize(sid)
+    elif stage == "execute":
+        return execute(sid)
     else:
         raise RuntimeError("unknown stage '{:s}'".format(stage))
 

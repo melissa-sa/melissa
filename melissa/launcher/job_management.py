@@ -119,7 +119,7 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options,
             params = [str(p) for p in group.param_set[i]]
 
             if with_simulation_setup:
-                cmd = cmd_no_params + ["run"] + params
+                cmd = cmd_no_params + ["execute"] + params
             else:
                 cmd = cmd_no_params + params
 
@@ -127,7 +127,7 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options,
 
             try:
                 if with_simulation_setup:
-                    setup_args = cmd_no_params + ["setup"] + params
+                    setup_args = cmd_no_params + ["initialize"] + params
                     setup_timeout_sec = 10
                     s = subprocess.run(setup_args,
                                        env=subprocess_env,
@@ -135,10 +135,10 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options,
                                        timeout=setup_timeout_sec,
                                        check=True)
             except subprocess.TimeoutExpired as e:
-                fmt = "setup for simulation ID {:d} timed out (time-out={:d}s)"
+                fmt = "simulation ID {:d} initialization timed out (time-out={:d}s)"
                 raise RuntimeError(fmt.format(sid, setup_timeout_sec)) from e
             except subprocess.CalledProcessError as e:
-                fmt = "setup for simulation ID {:d} had non-zero exit code"
+                fmt = "simulation ID {:d} initialization had non-zero exit code"
                 raise RuntimeError(fmt.format(sid)) from e
 
         job_name = "melissa-group-{:d}".format(group.group_id)
@@ -213,13 +213,13 @@ set -e
 set -u
 filename="setup-$MELISSA_SIMU_ID.txt"
 # filename should not exist at this point
-if [ "$1" = 'setup' ]; then
+if [ "$1" = 'initialize' ]; then
     if [ -f "$filename" ]; then
         >/dev/stderr echo "file $filename already exists"
         exit 1
     fi
     echo $@ >"$filename"
-elif [ "$1" = 'run' ]; then
+elif [ "$1" = 'execute' ]; then
 else
     >/dev/stderr echo "unknown stage '$1'"
 fi
