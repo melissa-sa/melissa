@@ -71,10 +71,3 @@ install(
     TARGETS heatc heatf
     DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
-
-configure_file(heat.py heat.py.in @ONLY)
-install(
-    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/heat.py
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
