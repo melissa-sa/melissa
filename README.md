@@ -1,28 +1,31 @@
-# Table of Contents
- * [News](#news)
- * [Getting Started](#getting-started)
- * [Running Melissa](#running-melissa)
-    * [Local Execution](#local-execution)
-    * [Virtual Cluster](#virtual-cluster)
-    * [Supercomputer](#supercomputer)
-       * [Configuring](#configuring)
-       * [Schedulers](#schedulers)
-       * [Options](#options)
- * [Utility](utility/README.md)
- * [Solver Instrumenting and Study Setup](examples/heat_example/README.md)
- * Developer Documentation
-    * [Server](server/README.md)
-    * [Launcher](launcher/README.md)
-    * [Solver API](api/README.md)
-    * [Common](api/README.md)
- * [How to cite Melissa](#how-to-cite-melissa)
- * [Publications](#publications)
- * [Contacts](#contacts)
- * [Licence](#licence)
+# Melissa Sensitivity Analysis
+
+## Table of Contents
+
+* [About](#about)
+* [News](#news)
+* [Getting Started](#getting-started)
+* [Solver Instrumenting and Study Setup](examples/heat-pde/README.md)
+* Developer Documentation
+* [Server](server/README.md)
+* [Launcher](launcher/README.md)
+* [Solver API](api/README.md)
+* [Common](api/README.md)
+* [How to cite Melissa](#how-to-cite-melissa)
+* [Publications](#publications)
+* [Contacts](#contacts)
+* [Licence](#licence)
 
 
 
-# News
+## About
+
+Melissa is a scientific computing software for global sensitivity analysis.
+
+Abstract : Global sensitivity analysis is an important step for analyzing and validating numerical simulations. One classical approach consists in computing statistics on the outputs from well-chosen multiple simulation runs. Simulation results are stored to disk and statistics are computed postmortem. Even if supercomputers enable to run large studies, scientists are constrained to run low resolution simulations with a limited number of probes to keep the amount of intermediate storage manageable. In this paper we propose a file avoiding, adaptive, fault tolerant and elastic framework that enables high resolution global sensitivity analysis at large scale. Our approach combines iterative statistics and in transit processing to compute Sobol' indices without any intermediate storage. Statistics are updated on-the-fly as soon as the in transit parallel server receives results from one of the running simulations. For one experiment, we computed the Sobol' indices on 10M hexahedra and 100 timesteps, running 8000 parallel simulations executed in 1h27 on up to 28672 cores, avoiding 48TB of file storage. 
+
+
+## News
  * **Jan 2020: GitHub continuous update**
     * Sync our work repo with the github repo so all changes are immediatly visible to all
     * Major code restructuring  and documentation update
@@ -42,87 +45,79 @@
    * Many bug fixes
 
 
-# Getting Started
+## Getting Started
 
-## Get the software
+### Get the software
 
 Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 
 
-## Dependencies
+### Dependencies
 
-* CMake 3.2 or newer
-* C, C++, and Fortran90 compilers
+* CMake 3.7.2 or newer
+* GNU Make
+* A C99 compiler
+* A Fortran90 compiler
 * MPI
 * ZeroMQ 4.1.5 or newer
-* OpenMP (for a parallel Melissa server, optional)
 * Python 3.5.3 or newer
-* Python libraries: NumPy, JupyterHub, Traitlets, async\_generator, Jinja, asyncio, Tornado
+* NumPy (for Python3)
 
 CMake can download and install ZeroMQ if the flag `-DINSTALL_ZMQ=ON` is passed to CMake.
 
+If you are unsure if all dependencies are installed, simply run CMake because it will find all required software packages automatically and check their version numbers or print error messages otherwise.
 
-## CMake Options
 
-Most useful CMake options:
-```cmake
--DCMAKE_INSTALL_PREFIX (default: '../install')    ->  Melissa install directory.
--DBUILD_WITH_OpenMP (default: OFF)                ->  Enable OpenMP for Melissa Server.
--DINSTALL_ZMQ (default: OFF)                      ->  Allows CMake to download, build, and install ZeroMQ.
--DBUILD_DOCUMENTATION (default: OFF)              ->  If Doxygen is found, build the Doxygen documentation.
--DBUILD_TESTING (default: ON)                     ->  Build Melissa tests. They can be run with "make test" or "ctest".
+### Compilation and Installation
+
+Create a build directory and change directories:
+```sh
+mkdir build
+cd build
+```
+Call CMake and customize the build by passing build options on its command line (see the table below). The build here has a compiler optimizations enabled:
+```sh
+cmake -DCMAKE_BUILD_TYPE=Release -- ../
+make
+make test
+make install
+```
+Update environment variables to ensure the Melissa launcher and server can be found by the shell:
+```sh
+source ../install/bin/melissa-setup-env.sh
+```
+This command needs to be executed whenever you start a new shell.
+
+For a sensitivity analysis,
+* simulation software must be augmented to share its state with Melissa
+* the Melissa configuration must be put into a file called `options.py`, and
+* the Melissa launcher must be started.
+
+```sh
+melissa-launcher openmpi options.py simulation-executable
 ```
 
-## Compile and Install
 
-Compilation, installation and environnent variable setting from the Melissa root directory:
+### Build Options
 
-```bash
-    mkdir build
-    cd build
-    cmake ..
-    make
-    make install
-    source ../install/bin/melissa_set_env.sh
-```
-
-## Testing
-
-The examples are built if CMake finds a Fortran compiler and if you enabled the `BUILD_EXAMPLES` option. The examples are installed in `install/share/melissa/examples`. We use a heat equation solver example to test the installation.
-To compile the solver from the `install/share/melissa/examples/heat_example/solver` directory, run:
-
-```bash
-    cd ../install/share/melissa/examples/heat_example/
-    mkdir build
-    cd build
-    cmake ../solver
-    make
-    make install
-    cd ..
-```
-To start  the study (from `heat_example` dir):
-
-```bash
-    melissa_launcher  -o ./study_local/options.py
-```
-The results of this sensitivity analysis are stored in:
-```bash
-   ./study_local/STATS
-```
-
-# Running Melissa
-## Local Execution
-
-Running Melissa locally means that all processes run on your local machine, executed directly by the launcher without going through a  batch scheduler. This is a mode useful for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution.
+| CMake option | Default value | Description |
+| -- | -- | -- |
+| `-DCMAKE_BUILD_TYPE` | `Debug` | Build type (try `Debug` or `Release`) |
+| `-DCMAKE_INSTALL_PREFIX` | `../install` | Melissa installation directory |
+| `-DINSTALL_ZMQ` | `OFF` | Download, build, and install ZeroMQ |
+| `-DBUILD_DOCUMENTATION` | `OFF` | Build the documentation (requires Doxygen) |
+| `-DBUILD_TESTING` | `ON` | Build tests; run with `make test` in build directory |
 
 
-## Virtual Cluster
-
-The virtual cluster enables to run Melissa on a local machine with a batch scheduler managing a virtual cluster build using docker containers.
-All instructions in the [utility/virtual_cluster/README.md](utility/virtual_cluster/README.md).
+## Reporting Issues
 
 
-# How to cite Melissa
+## License
+
+Melissa is open source under the [BSD 3-Clause License](LICENSE).
+
+
+## How to cite Melissa
 
 Melissa: Large Scale In Transit Sensitivity Analysis Avoiding Intermediate Files. Théophile Terraz, Alejandro Ribes, Yvan Fournier, Bertrand Iooss, Bruno Raffin. The International Conference for High Performance Computing, Networking, Storage and Analysis (Supercomputing), Nov 2017, Denver, United States. pp.1 - 14.
 
@@ -144,25 +139,11 @@ inproceedings{terraz:hal-01607479,
 ```
 
 
-# Publications
+## Publications
    * Melissa: Large Scale In Transit Sensitivity Analysis Avoiding Intermediate Files. Théophile Terraz, Alejandro Ribes, Yvan Fournier, Bertrand Iooss, Bruno Raffin. The International Conference for High Performance Computing, Networking, Storage and Analysis (Supercomputing), Nov 2017, Denver, United States. pp.1 - 14. [PDF](https://hal.inria.fr/hal-01607479/file/main-Sobol-SC-2017-HALVERSION.pdf)
 
 
-# Contacts
-
- * Theophile TERRAZ - theophile.terraz@inria.fr
- * Bruno RAFFIN - bruno.raffin@inria.fr
- * Alejandro RIBES CORTES - alejandro.ribes@edf.fr
- * Bertrand IOOSS - bertrand.iooss@edf.fr
- * Sebastian FRIEDEMANN - sebastian.friedemann@inria.fr
- * Christoph CONRADS - christoph.conrads@inria.fr
-
-
-# Licence
-     Melissa is open source under the [BSD 3-Clause License](LICENSE)
-
-
-# Dependencies
+## Dependencies
 
 Melissa would not exist without high-quality C compilers, Fortran compilers, Python interpreters, standard language libraries, build systems, development tools, text editors, command line tools, and Linux distributions. The Melissa developers want to thank all developers, maintainers, forum moderators and everybody else who helped to improve these pieces of software.
 
@@ -174,9 +155,9 @@ Copies of the licenses can be found in the folder [`licenses`](licenses).
 
 
 
-# Development Hints
+## Development Hints
 
-## C and C++
+### C and C++
 
 C and C++ are easily susceptible to memory bugs and undefined behavior. For example, the following C99 code shows undefined behavior because the literal `1` is taken to be a _signed_ integer by compiler:
 ```c
@@ -214,13 +195,13 @@ export MALLOC_PERTURB_=1
 This approach works with _any_ application and without _any_ code modification.
 
 
-## MPI
+### MPI
 
 MPI code may lead to false positives when checking for leaks with Valgrind or the address sanitizer. The address sanitizer can be instructed not to check for memory leaks on exit (update the environment variable `ASAN_OPTIONS='leak_check_on_exit=0'`) and the Valgrind manual contains instructions for MPI applications (see [§4.9 _Debugging MPI Parallel Programs with Valgrind_](https://www.valgrind.org/docs/manual/mc-manual.html#mc-manual.mpiwrap).
 
 Open MPI is known to leak (usually) small amounts of statically allocated memory. For this reason recent Open MPI releases ship with a Valgrind suppression file, see the Open MPI FAQ [13. _Is Open MPI 'Valgrind-clean' or how can I identify real errors?_](https://www-lb.open-mpi.org/faq/?category=debugging#valgrind_clean)
 
 
-## ZeroMQ
+### ZeroMQ
 
 Building ZeroMQ causes linker errors when the GNU ld options `-z defs` is used.
