@@ -154,7 +154,7 @@ if(INSTALL_ZMQ)
         message(WARNING "INSTALL_ZMQ and ZeroMQ_ROOT both set. ZeroMQ_ROOT will be ignored.")
     endif()
 else()
-    find_package(ZeroMQ REQUIRED)
+    find_package(ZeroMQ 4.1.5 REQUIRED)
 endif()
 
 add_library(zmq IMPORTED SHARED GLOBAL)
