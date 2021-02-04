@@ -1,6 +1,6 @@
 # Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
 #               2017, EDF (https://www.edf.fr/)
-#               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2020, 2021 Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,15 +36,15 @@ import numpy as np
 def draw_param_set():
     r = np.random
     params = np.array([ \
-        r.uniform(200, 500),
-        r.uniform(1, 2) * 10**(-r.randint(0, 5))
+        r.uniform(200, 500), # temperature in degree Celsius
+        r.uniform(1, 2) * 10**(-r.randint(0, 5)) # molecular viscosity in kg/(m*s)
     ])
     return params
 
 
+USER_FUNCTIONS = {'draw_parameter_set': draw_param_set}
+
 STUDY_OPTIONS = {}
-# number of varying parameters of the study
-STUDY_OPTIONS['nb_parameters'] = 2
 # initial number of parameter sets
 STUDY_OPTIONS['sampling_size'] = 300
 # number of timesteps from Melissa's point of view
@@ -57,7 +57,7 @@ STUDY_OPTIONS['field_names'] = ["TempC"]
 STUDY_OPTIONS['simulation_timeout'] = 400
 # number of seconds between checkpointing the server
 STUDY_OPTIONS['checkpoint_interval'] = 30
- # option for Sobol' simulation groups coupling
+# option for Sobol' simulation groups coupling
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI"
 STUDY_OPTIONS['xml_name'] = "case1.xml"
 # verbosity (the default level is 2):
@@ -85,5 +85,3 @@ MELISSA_STATS['threshold_exceedance'] = False
 MELISSA_STATS['quantiles'] = False
 # This example does not work for Sobol' indices yet.
 MELISSA_STATS['sobol_indices'] = False
-
-USER_FUNCTIONS = { 'draw_parameter_set': draw_param_set }
