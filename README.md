@@ -22,7 +22,7 @@
 
 Melissa is a scientific computing software for global sensitivity analysis.
 
-Abstract : Global sensitivity analysis is an important step for analyzing and validating numerical simulations. One classical approach consists in computing statistics on the outputs from well-chosen multiple simulation runs. Simulation results are stored to disk and statistics are computed postmortem. Even if supercomputers enable to run large studies, scientists are constrained to run low resolution simulations with a limited number of probes to keep the amount of intermediate storage manageable. In this paper we propose a file avoiding, adaptive, fault tolerant and elastic framework that enables high resolution global sensitivity analysis at large scale. Our approach combines iterative statistics and in transit processing to compute Sobol' indices without any intermediate storage. Statistics are updated on-the-fly as soon as the in transit parallel server receives results from one of the running simulations. For one experiment, we computed the Sobol' indices on 10M hexahedra and 100 timesteps, running 8000 parallel simulations executed in 1h27 on up to 28672 cores, avoiding 48TB of file storage. 
+Abstract : Global sensitivity analysis is an important step for analyzing and validating numerical simulations. One classical approach consists in computing statistics on the outputs from well-chosen multiple simulation runs. Simulation results are stored to disk and statistics are computed postmortem. Even if supercomputers enable to run large studies, scientists are constrained to run low resolution simulations with a limited number of probes to keep the amount of intermediate storage manageable. In this paper we propose a file avoiding, adaptive, fault tolerant and elastic framework that enables high resolution global sensitivity analysis at large scale. Our approach combines iterative statistics and in transit processing to compute Sobol' indices without any intermediate storage. Statistics are updated on-the-fly as soon as the in transit parallel server receives results from one of the running simulations. For one experiment, we computed the Sobol' indices on 10M hexahedra and 100 timesteps, running 8000 parallel simulations executed in 1h27 on up to 28672 cores, avoiding 48TB of file storage.
 
 
 ## News
@@ -47,12 +47,14 @@ Abstract : Global sensitivity analysis is an important step for analyzing and va
 
 ## Getting Started
 
-### Get the software
+### Install MELISSA
+
+
+#### Code Download
 
 Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 
-
-### Dependencies
+#### Dependencies
 
 * CMake 3.7.2 or newer
 * GNU Make
@@ -68,7 +70,7 @@ CMake can download and install ZeroMQ if the flag `-DINSTALL_ZMQ=ON` is passed t
 If you are unsure if all dependencies are installed, simply run CMake because it will find all required software packages automatically and check their version numbers or print error messages otherwise.
 
 
-### Compilation and Installation
+#### Compilation and Installation
 
 Create a build directory and change directories:
 ```sh
@@ -88,17 +90,8 @@ source ../install/bin/melissa-setup-env.sh
 ```
 This command needs to be executed whenever you start a new shell.
 
-For a sensitivity analysis,
-* simulation software must be augmented to share its state with Melissa
-* the Melissa configuration must be put into a file called `options.py`, and
-* the Melissa launcher must be started.
 
-```sh
-melissa-launcher openmpi options.py simulation-executable
-```
-
-
-### Build Options
+#### Build Options
 
 | CMake option | Default value | Description |
 | -- | -- | -- |
@@ -107,6 +100,12 @@ melissa-launcher openmpi options.py simulation-executable
 | `-DINSTALL_ZMQ` | `OFF` | Download, build, and install ZeroMQ |
 | `-DBUILD_DOCUMENTATION` | `OFF` | Build the documentation (requires Doxygen) |
 | `-DBUILD_TESTING` | `ON` | Build tests; run with `make test` in build directory |
+
+
+### Run a first example
+
+
+Go to  the heat example [README.md](examples/heat-pde/README.md) to run your first sensitivity analysis with melissa
 
 
 ## Reporting Issues
