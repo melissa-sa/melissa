@@ -56,6 +56,7 @@ MELISSA_STATS['sobol_indices'] = True
 #  STUDY / PARAMETER SWEEP / SIMULATIONS
 
 # Sampling function: called to set the parameter value for each simulation 
+# FOr the heat example we have 5 parameters (initial temperatures for the 4 borders  + grid cells)
 def draw_param_set():
     return np.random.uniform(0, 1, size=5)
 USER_FUNCTIONS = {'draw_parameter_set': draw_param_set}
