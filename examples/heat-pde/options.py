@@ -34,41 +34,13 @@
 
 import numpy as np
 
-
-def draw_param_set():
-    return np.random.uniform(0, 1, size=5)
-
-
-USER_FUNCTIONS = {'draw_parameter_set': draw_param_set}
-
 STUDY_OPTIONS = {}
-# initial number of parameter sets
-STUDY_OPTIONS['sampling_size'] = 6
-# number of timesteps from Melissa's point of view
-STUDY_OPTIONS['nb_timesteps'] = 100
-STUDY_OPTIONS['threshold_values'] = [0.7, 0.8]
-STUDY_OPTIONS['quantile_values'] = [0.05, 0.25, 0.5, 0.75, 0.95]
-# list of field names
-STUDY_OPTIONS['field_names'] = ["heat1"]
-# simulations are restarted after this amount of seconds
-STUDY_OPTIONS['simulation_timeout'] = 400
-# server checkpoint interval in seconds
-STUDY_OPTIONS['checkpoint_interval'] = 300
-# option for Sobol' simulation groups coupling
-STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI"
-# verbosity (the default level is 2):
-# * 0: show only errors
-# * 1: show errors and warnings
-# * 2: show errors, warnings, and useful information
-# * 3: show errors, warnings, useful information, and debugging data
-STUDY_OPTIONS['verbosity'] = 2
-
-STUDY_OPTIONS['batch_size'] = 2
-STUDY_OPTIONS['resp_port'] = 5546
-STUDY_OPTIONS['recv_port'] = 5547
-STUDY_OPTIONS['send_port'] = 5548
-
 MELISSA_STATS = {}
+
+#  STATISTICS 
+
+# Fields: name of the ouputs fields sent to Melissa server (on set of statitics are computed per field)
+STUDY_OPTIONS['field_names'] = ["heat1"]
 MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = False
 MELISSA_STATS['skewness'] = False
@@ -76,5 +48,53 @@ MELISSA_STATS['kurtosis'] = False
 MELISSA_STATS['min'] = True
 MELISSA_STATS['max'] = True
 MELISSA_STATS['threshold_exceedance'] = True
+STUDY_OPTIONS['threshold_values'] = [0.7, 0.8]
 MELISSA_STATS['quantiles'] = True
+STUDY_OPTIONS['quantile_values'] = [0.05, 0.25, 0.5, 0.75, 0.95]
 MELISSA_STATS['sobol_indices'] = True
+
+#  STUDY / PARAMETER SWEEP / SIMULATIONS
+
+# Sampling function: called to set the parameter value for each simulation 
+def draw_param_set():
+    return np.random.uniform(0, 1, size=5)
+USER_FUNCTIONS = {'draw_parameter_set': draw_param_set}
+
+# Size of the parameter sweep  (= number of simulations to execute)
+STUDY_OPTIONS['sampling_size'] = 6
+
+# Number of timesteps Melissa is expected to receive (the simulation do not have to send all the computed timesteps)
+STUDY_OPTIONS['nb_timesteps'] = 100
+
+
+# SYSTEM
+
+# verbosity (the default level is 2):
+# * 0: show only errors
+# * 1: show errors and warnings
+# * 2: show errors, warnings, and useful information
+# * 3: show errors, warnings, useful information, and debugging data
+STUDY_OPTIONS['verbosity'] = 2
+
+# Number of simulations started per client / scheduler batch. Option ignored when Sobol' indices are computed.
+# For Sobol's inidices the batch size is always  P+2 where P is the number of parameters 
+# (constraint related to the pick-freeze method)
+STUDY_OPTIONS['batch_size'] = 2
+
+# Fault tolerance protocol control
+# Timeouts (trigger the fault tolerance protocol when reached)
+# A simulation/client is restarted after being silent for (seconds):
+STUDY_OPTIONS['simulation_timeout'] = 400
+
+# Server checkpoint interval (seconds)
+STUDY_OPTIONS['checkpoint_interval'] = 300
+
+# Method used to couple the simulation in a pick-freeze batch (specific to Sobol's Indicies)
+STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI"
+
+# Port numbers used  to connect launcher, clients and server through ZMQ. 
+STUDY_OPTIONS['resp_port'] = 5546
+STUDY_OPTIONS['recv_port'] = 5547
+STUDY_OPTIONS['send_port'] = 5548
+
+
