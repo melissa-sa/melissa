@@ -20,9 +20,25 @@
 
 ## About
 
-Melissa is a scientific computing software for global sensitivity analysis.
+Melissa is a scientific computing software for global sensitivity analysis. Melissa computes statistics on-the-fly while simulations are running including basics such as the minimum, the maximum, and the (arithmetic) mean as well as higher-order statistics, quantiles, and Sobol' indices. The advantages of Melissa are avoidance of temporary files, fault tolerance, and elastic use of available computational resources.
 
-Abstract : Global sensitivity analysis is an important step for analyzing and validating numerical simulations. One classical approach consists in computing statistics on the outputs from well-chosen multiple simulation runs. Simulation results are stored to disk and statistics are computed postmortem. Even if supercomputers enable to run large studies, scientists are constrained to run low resolution simulations with a limited number of probes to keep the amount of intermediate storage manageable. In this paper we propose a file avoiding, adaptive, fault tolerant and elastic framework that enables high resolution global sensitivity analysis at large scale. Our approach combines iterative statistics and in transit processing to compute Sobol' indices without any intermediate storage. Statistics are updated on-the-fly as soon as the in transit parallel server receives results from one of the running simulations. For one experiment, we computed the Sobol' indices on 10M hexahedra and 100 timesteps, running 8000 parallel simulations executed in 1h27 on up to 28672 cores, avoiding 48TB of file storage.
+The goal of a _sensitivity analysis_ (SA) is to determine which input variables of a numerical model affect given output variables and how much changes in the input have an effect on the output (that is, how _sensitive_ the output is to a certain input). An SA helps to understand the relationships between input and output variables, it highlights outputs that may respond strongly to small changes in inputs, and it can help to simplify models by omitting uninfluential variables. For example, in computer-aided engineering an SA could identify product designs that are strongly affected by small manufacturing deviations. SA is related to (but distinct from) uncertainty analyses which attempts to describe the impact of input changes of a model on the outputs.
+
+Sensitivity analysis is based on a statistical approach and works the better the more data is available. The classical approach for SA in scientific computing is to derive possibly interesting ranges for each input parameter, to run numerical simulations for each possible combination of input parameters (grid search), and to evaluate the collected model outputs with statistical software.
+
+This approach has several problems:
+* It is necessary to guess in advance which input parameters may be influential but this is exactly what the SA is supposed to find out.
+* If the grid search is run with to few simulations, the analysis may miss inputs where numerical models responds strongly to small input changes.
+* Finally, large-scale numerical simulations may fully exploit the resources provided by the world's most powerful computer cluster. Storing thousands of model outputs for statistical simulation may not be (physically) possible.
+
+Melissa solves the problems with its iterative statistics computations.
+
+Melissa consists of three components: Simulations, servers, and the launcher. The simulations are started by the launcher and run numerical models with input value provided by the launcher. The simulations send model outputs to the server which iteratively computes model outputs. The server makes requests to the launcher to start more simulations. The launcher manages all started simulations and servers. Upon request, it starts new simulations and generates input parameters for them.
+
+To run a sensitivity analysis with Melissa, a user needs to
+* update the simulation with three function calls to the Melissa API (initialization, sending data, deinitialization),
+* create a configuration file for Melissa, and
+* start the Melissa launcher.
 
 
 ## News
