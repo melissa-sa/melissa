@@ -12,10 +12,10 @@ ubuntu/20.04:
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
 
 
-centos/8:
-  image: datamove/centos/8/amd64
+centos_8:
+  image: datamove/centos/8
   tags:
-    - lxd
+    - docker
   script:
     - export MALLOC_CHECK_=3
     - export MALLOC_PERTURB_=1
