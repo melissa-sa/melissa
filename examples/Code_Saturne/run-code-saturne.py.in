@@ -123,7 +123,6 @@ def initialize(sid):
         f.write(output_xml)
 
     os.chdir(working_directory)
-    code_saturne(sid, "case1.xml", "--stage")
     code_saturne(sid, "case1.xml", "--initialize")
 
 
@@ -136,11 +135,8 @@ def execute(sid):
     sys.stderr.flush()
 
     # run Code_Saturne
-    cs_args = [
-        "code_saturne", "run", "--id={:s}".format(cs_id), "--param=case1.xml",
-        "--execute"
-    ]
-    os.execvp("code_saturne", cs_args)
+    run_solver = os.path.join(working_directory, "RESU", cs_id, "run_solver")
+    os.execvp(run_solver, [run_solver])
 
 
 def main():
