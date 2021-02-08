@@ -26,8 +26,20 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-configure_file(melissa/api.h.in melissa/api.h @ONLY)
+configure_file(melissa/config.h.in melissa/config.h @ONLY)
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/melissa/api.h
+    FILES
+        melissa/api.h
+        melissa/api.f90
+        ${CMAKE_CURRENT_BINARY_DIR}/melissa/config.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/melissa/
 )
+
+if(MELISSA_ENABLE_NO_MPI_API)
+    install(
+        FILES
+            melissa_api.h
+            melissa_api_no_mpi.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endif()

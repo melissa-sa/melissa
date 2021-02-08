@@ -53,14 +53,14 @@ class OpenMpiJob(Job):
         return self.state_
 
     def __repr__(self):
-        r = "OpenMpiJob(id={:d},state={:s})".format(self.id(), str(self.state_))
+        r = "OpenMpiJob(id={:d},state={:s})".format(self.id(),
+                                                    str(self.state_))
         return r
 
     def set_state(self, new_state):
         assert isinstance(new_state, State)
 
         self.state_ = new_state
-
 
 
 class OpenMpiScheduler(Scheduler):
@@ -70,11 +70,12 @@ class OpenMpiScheduler(Scheduler):
         try:
             mpirun = subprocess.run( \
                 ["mpirun", "--do-not-launch", "-x", "ABC=1", "-n", "1", "true"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 check=True
             )
         except subprocess.CalledProcessError as e:
             raise RuntimeError("error in mpirun test call") from e
-
 
     def sanity_check_impl(self, options):
         args = options.raw_arguments
@@ -130,21 +131,16 @@ class OpenMpiScheduler(Scheduler):
 
             ompi_commands = ompi_commands + ompi_cmd
 
-
-        ompi_call = [ "mpirun" ] + ompi_commands
+        ompi_call = ["mpirun"] + ompi_commands
         print(ompi_call)
 
-        mpirun = subprocess.Popen(
-            ompi_call,
-            env=ompi_env,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
-        )
+        mpirun = subprocess.Popen(ompi_call,
+                                  env=ompi_env,
+                                  stdin=subprocess.DEVNULL,
+                                  stdout=subprocess.PIPE,
+                                  universal_newlines=True)
 
         return OpenMpiJob(mpirun)
-
 
     def cancel_jobs_impl(self, jobs):
         for j in jobs:
@@ -161,7 +157,6 @@ class OpenMpiScheduler(Scheduler):
 
             j.state_ = State.TERMINATED
 
-
     def update_jobs_impl(self, jobs):
         for j in jobs:
             returncode = j.process_.poll()
@@ -173,7 +168,6 @@ class OpenMpiScheduler(Scheduler):
                 state = State.FAILED
 
             j.set_state(state)
-
 
 
 class TestOpenMpiScheduler(unittest.TestCase):

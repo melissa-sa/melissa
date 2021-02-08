@@ -37,9 +37,13 @@ find_package(Melissa CONFIG REQUIRED)
 find_package(MPI REQUIRED)
 find_package(PythonInterp 3.5.3 REQUIRED)
 
-# fixes compilation on CentOS 8 with CMake 3.11
+# fixes compilation on CentOS 8 with CMake 3.11.4, OpenMPI 4.0.2
 separate_arguments(MPI_C_COMPILE_FLAGS)
 separate_arguments(MPI_Fortran_COMPILE_FLAGS)
+
+
+# this is a convenience operation for users following the README instructions
+configure_file(options.py options.py COPYONLY)
 
 
 add_library(heat_utils STATIC heat_utils.f90)
@@ -53,24 +57,17 @@ add_executable(heatc heat.c)
 target_compile_options(heatc PRIVATE ${MPI_C_COMPILE_FLAGS})
 target_include_directories(heatc PRIVATE ${MPI_C_INCLUDE_PATH})
 target_link_libraries(
-    heatc heat_utils ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
+    heatc heat_utils melissa ${MPI_C_LINK_FLAGS} ${MPI_C_LIBRARIES}
 )
 
 add_executable(heatf heat.f90)
 target_compile_options(heatf PRIVATE ${MPI_Fortran_COMPILE_FLAGS})
 target_include_directories(heatf PRIVATE ${MPI_Fortran_INCLUDE_PATH})
 target_link_libraries(
-    heatf heat_utils ${MPI_Fortran_LINK_FLAGS} ${MPI_Fortran_LIBRARIES}
+    heatf heat_utils melissa ${MPI_Fortran_LINK_FLAGS} ${MPI_Fortran_LIBRARIES}
 )
 
 install(
     TARGETS heatc heatf
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-
-configure_file(heat.py heat.py.in @ONLY)
-install(
-    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/heat.py
     DESTINATION ${CMAKE_INSTALL_BINDIR}
 )

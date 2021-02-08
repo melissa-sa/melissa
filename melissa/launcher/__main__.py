@@ -2,7 +2,7 @@
 
 # Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
 #               2017, EDF (https://www.edf.fr/)
-#               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2020, 2021 Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 import argparse
 import importlib.util
 import logging
@@ -49,19 +48,45 @@ from .study import Study
 def main():
     cwd = os.getcwd()
 
-    parser = argparse.ArgumentParser(prog="launcher", description="Melissa SA Launcher")
+    parser = argparse.ArgumentParser(prog="launcher",
+                                     description="Melissa SA Launcher")
     parser.add_argument( \
         "scheduler",
         choices=["oar", "openmpi", "slurm"],
-        default="openmpi"
+        default="openmpi",
+        help="select batch scheduler"
     )
-    parser.add_argument("options")
-    parser.add_argument("simulation")
-    parser.add_argument("--scheduler-arg", action="append", default=[])
-    parser.add_argument("--scheduler-arg-client", action="append", default=[])
-    parser.add_argument("--scheduler-arg-server", action="append", default=[])
-    parser.add_argument("--num-client-processes", type=int, default=1)
-    parser.add_argument("--num-server-processes", type=int, default=1)
+    parser.add_argument("options", help="path to options.py")
+    parser.add_argument("simulation",
+                        help="name of or path to simulation executable")
+    parser.add_argument("--scheduler-arg",
+                        action="append",
+                        default=[],
+                        help="arguments for batch scheduler")
+    parser.add_argument(
+        "--scheduler-arg-client",
+        action="append",
+        default=[],
+        help="arguments for batch scheduler when launching simulations")
+    parser.add_argument(
+        "--scheduler-arg-server",
+        action="append",
+        default=[],
+        help="arguments for batch scheduler when launching servers")
+    parser.add_argument("--num-client-processes",
+                        type=int,
+                        default=1,
+                        help="the number of processes for each simulation")
+    parser.add_argument("--num-server-processes",
+                        type=int,
+                        default=1,
+                        help="the number of processes for each server")
+    parser.add_argument(
+        "--with-simulation-setup",
+        action="store_const",
+        const=True,
+        default=False,
+        help="the simulation needs a setup before parallel execution")
 
     args = parser.parse_args()
 
@@ -97,10 +122,12 @@ def main():
     print_scheduler_argument_error(scheduler.sanity_check(server_options))
     print_scheduler_argument_error(scheduler.sanity_check(client_options))
 
-    # check if the simulation executable exists
-    # do not try to figure out if it is executable for the launcher
-    if shutil.which(args.simulation) is None:
+    maybe_simulation_path = shutil.which(args.simulation)
+    if maybe_simulation_path is None:
         return "simulation executable '{:s}' not found".format(args.simulation)
+
+    # this fixes problems if the user passed something like `./simulation`
+    simulation_path = os.path.realpath(maybe_simulation_path)
 
     # try to open the options file for reading because the importlib module
     # returns only `None` on error
@@ -121,7 +148,7 @@ def main():
     from options import USER_FUNCTIONS as usr_func
 
     usr_func["launch_group"] = jm.make_launch_group_fn( \
-        scheduler, args.simulation, client_options, stdy_opt
+        scheduler, simulation_path, client_options, stdy_opt, args.with_simulation_setup
     )
     launch_server = \
         jm.make_launch_server_fn(scheduler, server_options)
@@ -135,7 +162,6 @@ def main():
     usr_func['restart_server'] = launch_server
     usr_func['check_scheduler_load'] = check_load
     usr_func['cancel_job'] = kill_job
-
 
     # init log for launcher
     # TODO should align the verbosity option (1,2,...) with the logging level (à, 10, 20 ....)

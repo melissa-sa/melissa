@@ -29,7 +29,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set(destination
-    ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/heat-pde-example
+    ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/heat-pde
 )
 
 configure_file(heat.py.in heat.py @ONLY)
@@ -40,9 +40,11 @@ install(FILES
 
 install(
     FILES
+        README.md
         heat.f90 
         heat.c
         heat_utils.f90
+        options.py
         ${CMAKE_CURRENT_BINARY_DIR}/heat.py
         ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
     DESTINATION ${destination}

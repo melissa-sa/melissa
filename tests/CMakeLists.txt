@@ -106,10 +106,6 @@ endif()
 
 
 add_executable(dummy-simulation dummy-simulation.c)
-# enable `erand48()`
-set_source_files_properties(
-    dummy-simulation.c PROPERTIES COMPILE_DEFINITIONS _XOPEN_SOURCE
-)
 target_link_libraries(dummy-simulation melissa)
 
 configure_file(dummy-simulation-options.py.in dummy-simulation-options.py @ONLY)

@@ -1,28 +1,47 @@
-# Table of Contents
- * [News](#news)
- * [Getting Started](#getting-started)
- * [Running Melissa](#running-melissa)
-    * [Local Execution](#local-execution)
-    * [Virtual Cluster](#virtual-cluster)
-    * [Supercomputer](#supercomputer)
-       * [Configuring](#configuring)
-       * [Schedulers](#schedulers)
-       * [Options](#options)
- * [Utility](utility/README.md)
- * [Solver Instrumenting and Study Setup](examples/heat_example/README.md)
- * Developer Documentation
-    * [Server](server/README.md)
-    * [Launcher](launcher/README.md)
-    * [Solver API](api/README.md)
-    * [Common](api/README.md)
- * [How to cite Melissa](#how-to-cite-melissa)
- * [Publications](#publications)
- * [Contacts](#contacts)
- * [Licence](#licence)
+# Melissa Sensitivity Analysis
+
+## Table of Contents
+
+* [About](#about)
+* [News](#news)
+* [Getting Started](#getting-started)
+* [Solver Instrumenting and Study Setup](examples/heat-pde/README.md)
+* Developer Documentation
+* [Server](server/README.md)
+* [Launcher](launcher/README.md)
+* [Solver API](api/README.md)
+* [Common](api/README.md)
+* [How to cite Melissa](#how-to-cite-melissa)
+* [Publications](#publications)
+* [Contacts](#contacts)
+* [Licence](#licence)
 
 
 
-# News
+## About
+
+Melissa is a scientific computing software for global sensitivity analysis. Melissa computes statistics on-the-fly while simulations are running including basics such as the minimum, the maximum, and the (arithmetic) mean as well as higher-order statistics, quantiles, and Sobol' indices. The advantages of Melissa are avoidance of temporary files, fault tolerance, and elastic use of available computational resources.
+
+The goal of a _sensitivity analysis_ (SA) is to determine which input variables of a numerical model affect given output variables and how much changes in the input have an effect on the output (that is, how _sensitive_ the output is to a certain input). An SA helps to understand the relationships between input and output variables, it highlights outputs that may respond strongly to small changes in inputs, and it can help to simplify models by omitting uninfluential variables. For example, in computer-aided engineering an SA could identify product designs that are strongly affected by small manufacturing deviations. SA is related to (but distinct from) uncertainty analyses which attempts to describe the impact of input changes of a model on the outputs.
+
+Sensitivity analysis is based on a statistical approach and works the better the more data is available. The classical approach for SA in scientific computing is to derive possibly interesting ranges for each input parameter, to run numerical simulations for each possible combination of input parameters (grid search), and to evaluate the collected model outputs with statistical software.
+
+This approach has several problems:
+* It is necessary to guess in advance which input parameters may be influential but this is exactly what the SA is supposed to find out.
+* If the grid search is run with to few simulations, the analysis may miss inputs where numerical models responds strongly to small input changes.
+* Finally, large-scale numerical simulations may fully exploit the resources provided by the world's most powerful computer cluster. Storing thousands of model outputs for statistical simulation may not be (physically) possible.
+
+Melissa solves the problems with its iterative statistics computations.
+
+Melissa consists of three components: Simulations, servers, and the launcher. The simulations are started by the launcher and run numerical models with input value provided by the launcher. The simulations send model outputs to the server which iteratively computes model outputs. The server makes requests to the launcher to start more simulations. The launcher manages all started simulations and servers. Upon request, it starts new simulations and generates input parameters for them.
+
+To run a sensitivity analysis with Melissa, a user needs to
+* update the simulation with three function calls to the Melissa API (initialization, sending data, deinitialization),
+* create a configuration file for Melissa, and
+* start the Melissa launcher.
+
+
+## News
  * **Jan 2020: GitHub continuous update**
     * Sync our work repo with the github repo so all changes are immediatly visible to all
     * Major code restructuring  and documentation update
@@ -42,87 +61,78 @@
    * Many bug fixes
 
 
-# Getting Started
+## Getting Started
 
-## Get the software
+### Install MELISSA
+
+
+#### Code Download
 
 Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 
+#### Dependencies
 
-## Dependencies
-
-* CMake 3.2 or newer
-* C, C++, and Fortran90 compilers
+* CMake 3.7.2 or newer
+* GNU Make
+* A C99 compiler
+* A Fortran90 compiler
 * MPI
 * ZeroMQ 4.1.5 or newer
-* OpenMP (for a parallel Melissa server, optional)
 * Python 3.5.3 or newer
-* Python libraries: NumPy, JupyterHub, Traitlets, async\_generator, Jinja, asyncio, Tornado
+* NumPy (for Python3)
 
 CMake can download and install ZeroMQ if the flag `-DINSTALL_ZMQ=ON` is passed to CMake.
 
+If you are unsure if all dependencies are installed, simply run CMake because it will find all required software packages automatically and check their version numbers or print error messages otherwise.
 
-## CMake Options
 
-Most useful CMake options:
-```cmake
--DCMAKE_INSTALL_PREFIX (default: '../install')    ->  Melissa install directory.
--DBUILD_WITH_OpenMP (default: OFF)                ->  Enable OpenMP for Melissa Server.
--DINSTALL_ZMQ (default: OFF)                      ->  Allows CMake to download, build, and install ZeroMQ.
--DBUILD_DOCUMENTATION (default: OFF)              ->  If Doxygen is found, build the Doxygen documentation.
--DBUILD_TESTING (default: ON)                     ->  Build Melissa tests. They can be run with "make test" or "ctest".
+#### Compilation and Installation
+
+Create a build directory and change directories:
+```sh
+mkdir build
+cd build
 ```
-
-## Compile and Install
-
-Compilation, installation and environnent variable setting from the Melissa root directory:
-
-```bash
-    mkdir build
-    cd build
-    cmake ..
-    make
-    make install
-    source ../install/bin/melissa_set_env.sh
+Call CMake and customize the build by passing build options on its command line (see the table below). The build here has a compiler optimizations enabled:
+```sh
+cmake -DCMAKE_BUILD_TYPE=Release -- ../
+make
+make test
+make install
 ```
-
-## Testing
-
-The examples are built if CMake finds a Fortran compiler and if you enabled the `BUILD_EXAMPLES` option. The examples are installed in `install/share/melissa/examples`. We use a heat equation solver example to test the installation.
-To compile the solver from the `install/share/melissa/examples/heat_example/solver` directory, run:
-
-```bash
-    cd ../install/share/melissa/examples/heat_example/
-    mkdir build
-    cd build
-    cmake ../solver
-    make
-    make install
-    cd ..
+Update environment variables to ensure the Melissa launcher and server can be found by the shell:
+```sh
+source ../install/bin/melissa-setup-env.sh
 ```
-To start  the study (from `heat_example` dir):
-
-```bash
-    melissa_launcher  -o ./study_local/options.py
-```
-The results of this sensitivity analysis are stored in:
-```bash
-   ./study_local/STATS
-```
-
-# Running Melissa
-## Local Execution
-
-Running Melissa locally means that all processes run on your local machine, executed directly by the launcher without going through a  batch scheduler. This is a mode useful for initial testing and debugging. The `heat_example` test run from the [Getting Started](## Testing) section is a local execution.
+This command needs to be executed whenever you start a new shell.
 
 
-## Virtual Cluster
+#### Build Options
 
-The virtual cluster enables to run Melissa on a local machine with a batch scheduler managing a virtual cluster build using docker containers.
-All instructions in the [utility/virtual_cluster/README.md](utility/virtual_cluster/README.md).
+| CMake option | Default value | Description |
+| -- | -- | -- |
+| `-DCMAKE_BUILD_TYPE` | `Debug` | Build type (try `Debug` or `Release`) |
+| `-DCMAKE_INSTALL_PREFIX` | `../install` | Melissa installation directory |
+| `-DINSTALL_ZMQ` | `OFF` | Download, build, and install ZeroMQ |
+| `-DBUILD_DOCUMENTATION` | `OFF` | Build the documentation (requires Doxygen) |
+| `-DBUILD_TESTING` | `ON` | Build tests; run with `make test` in build directory |
 
 
-# How to cite Melissa
+### Run a first example
+
+
+Go to  the heat example [README.md](examples/heat-pde/README.md) to run your first sensitivity analysis with melissa
+
+
+## Reporting Issues
+
+
+## License
+
+Melissa is open source under the [BSD 3-Clause License](LICENSE).
+
+
+## How to cite Melissa
 
 Melissa: Large Scale In Transit Sensitivity Analysis Avoiding Intermediate Files. Théophile Terraz, Alejandro Ribes, Yvan Fournier, Bertrand Iooss, Bruno Raffin. The International Conference for High Performance Computing, Networking, Storage and Analysis (Supercomputing), Nov 2017, Denver, United States. pp.1 - 14.
 
@@ -144,25 +154,11 @@ inproceedings{terraz:hal-01607479,
 ```
 
 
-# Publications
+## Publications
    * Melissa: Large Scale In Transit Sensitivity Analysis Avoiding Intermediate Files. Théophile Terraz, Alejandro Ribes, Yvan Fournier, Bertrand Iooss, Bruno Raffin. The International Conference for High Performance Computing, Networking, Storage and Analysis (Supercomputing), Nov 2017, Denver, United States. pp.1 - 14. [PDF](https://hal.inria.fr/hal-01607479/file/main-Sobol-SC-2017-HALVERSION.pdf)
 
 
-# Contacts
-
- * Theophile TERRAZ - theophile.terraz@inria.fr
- * Bruno RAFFIN - bruno.raffin@inria.fr
- * Alejandro RIBES CORTES - alejandro.ribes@edf.fr
- * Bertrand IOOSS - bertrand.iooss@edf.fr
- * Sebastian FRIEDEMANN - sebastian.friedemann@inria.fr
- * Christoph CONRADS - christoph.conrads@inria.fr
-
-
-# Licence
-     Melissa is open source under the [BSD 3-Clause License](LICENSE)
-
-
-# Dependencies
+## Dependencies
 
 Melissa would not exist without high-quality C compilers, Fortran compilers, Python interpreters, standard language libraries, build systems, development tools, text editors, command line tools, and Linux distributions. The Melissa developers want to thank all developers, maintainers, forum moderators and everybody else who helped to improve these pieces of software.
 
@@ -174,9 +170,9 @@ Copies of the licenses can be found in the folder [`licenses`](licenses).
 
 
 
-# Development Hints
+## Development Hints
 
-## C and C++
+### C and C++
 
 C and C++ are easily susceptible to memory bugs and undefined behavior. For example, the following C99 code shows undefined behavior because the literal `1` is taken to be a _signed_ integer by compiler:
 ```c
@@ -214,13 +210,13 @@ export MALLOC_PERTURB_=1
 This approach works with _any_ application and without _any_ code modification.
 
 
-## MPI
+### MPI
 
 MPI code may lead to false positives when checking for leaks with Valgrind or the address sanitizer. The address sanitizer can be instructed not to check for memory leaks on exit (update the environment variable `ASAN_OPTIONS='leak_check_on_exit=0'`) and the Valgrind manual contains instructions for MPI applications (see [§4.9 _Debugging MPI Parallel Programs with Valgrind_](https://www.valgrind.org/docs/manual/mc-manual.html#mc-manual.mpiwrap).
 
 Open MPI is known to leak (usually) small amounts of statically allocated memory. For this reason recent Open MPI releases ship with a Valgrind suppression file, see the Open MPI FAQ [13. _Is Open MPI 'Valgrind-clean' or how can I identify real errors?_](https://www-lb.open-mpi.org/faq/?category=debugging#valgrind_clean)
 
 
-## ZeroMQ
+### ZeroMQ
 
 Building ZeroMQ causes linker errors when the GNU ld options `-z defs` is used.

@@ -58,6 +58,7 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 # options
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(MELISSA_INSTALL_PYTHON_PACKAGE "Install Melissa Python package" OFF)
+option(MELISSA_ENABLE_NO_MPI_API "Enable deprecated *_no_mpi functions" OFF)
 
 
 
@@ -153,7 +154,7 @@ if(INSTALL_ZMQ)
         message(WARNING "INSTALL_ZMQ and ZeroMQ_ROOT both set. ZeroMQ_ROOT will be ignored.")
     endif()
 else()
-    find_package(ZeroMQ REQUIRED)
+    find_package(ZeroMQ 4.1.5 REQUIRED)
 endif()
 
 add_library(zmq IMPORTED SHARED GLOBAL)
@@ -212,7 +213,7 @@ if (BUILD_DOCUMENTATION)
     find_package(Doxygen)
     if(NOT DOXYGEN_FOUND)
         message(SEND_ERROR "Doxygen not found. Cannot build documentation.")
-    endif(DOXYGEN_FOUND)
+    endif()
     configure_file(doc/doxygen/Doxyfile.in doc/doxygen/Doxyfile @ONLY)
     # Add a custom target to run Doxygen when ever the project is built
     add_custom_target(

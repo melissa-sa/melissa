@@ -29,6 +29,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 add_subdirectory(heat_example_base)
-add_subdirectory(heat-pde-example)
+add_subdirectory(heat-pde)
 add_subdirectory(Code_Saturne)
 add_subdirectory(TELEMAC-2D)

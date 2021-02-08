@@ -37,9 +37,9 @@ foreach(component IN ITEMS launcher)
     )
 endforeach()
 
-configure_file(melissa-set-env.sh.in melissa-set-env.sh @ONLY)
+configure_file(melissa-setup-env.sh.in melissa-setup-env.sh @ONLY)
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/melissa-set-env.sh
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/melissa-setup-env.sh
     DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 

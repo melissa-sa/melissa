@@ -14,13 +14,13 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
+#include <melissa/api.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <mpi.h>
-#include "melissa_api.h"
 
 // Fortran interfaces:
 

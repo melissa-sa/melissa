@@ -86,4 +86,16 @@ install(
 )
 
 
+if(MELISSA_ENABLE_NO_MPI_API)
+    # TODO: fix filenames
+    install(
+        CODE "execute_process( \
+            COMMAND ${CMAKE_COMMAND} -E create_symlink \
+                libmelissa.so \
+                ${CMAKE_INSTALL_FULL_LIBDIR}/libmelissa_api.so \
+        )"
+    )
+endif()
+
+
 add_subdirectory(server)
