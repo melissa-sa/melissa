@@ -12,6 +12,17 @@ ubuntu/20.04:
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
 
 
+centos/7:
+  image: datamove/centos/7/amd64
+  tags:
+    - lxd
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug -DINSTALL_ZMQ=ON
+
 centos_8:
   image: datamove/centos/8
   tags:
