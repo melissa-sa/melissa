@@ -152,7 +152,7 @@ class OpenMpiScheduler(Scheduler):
         for j in jobs:
             try:
                 j.process_.wait(timeout_sec)
-            except TimeoutExpired:
+            except subprocess.TimeoutExpired:
                 j.process_.kill()
 
             j.state_ = State.TERMINATED
