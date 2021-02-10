@@ -42,6 +42,25 @@ canonicalize_path() {
 	readlink -v -f "${1:?}"
 }
 
+# This function calls CMake 3.x on CentOS 7 when CMake 3.x was installed from
+# the EPEL repository; the executables are called `cmake3` and `ctest3`. By
+# default, CentOS 7 ships with CMake 2.8.12.
+run() {
+	local command="${1:?}"
+	shift
+
+	if [ "$command" != cmake -a "$command" != ctest ]; then
+		>/dev/stderr echo "unknown CMake command '$command'"
+		exit 1
+	fi
+
+	if $(which cmake3 >/dev/null 2>/dev/null); then
+		"${command}3" $@
+	else
+		"$command" $@
+	fi
+}
+
 melissa_sa_source_dir="$(canonicalize_path "$raw_melissa_sa_source_dir")"
 melissa_sa_binary_dir="$cwd/build.melissa-sa"
 melissa_sa_prefix_dir="$cwd/prefix.melissa-sa"
@@ -49,13 +68,13 @@ melissa_sa_prefix_dir="$cwd/prefix.melissa-sa"
 
 mkdir -- "$melissa_sa_binary_dir"
 cd -- "$melissa_sa_binary_dir"
-cmake \
+run cmake \
 	-DCMAKE_INSTALL_PREFIX="$melissa_sa_prefix_dir" \
 	$@ \
 	-- "$melissa_sa_source_dir"
-cmake --build . -- --jobs="$num_jobs"
-ctest --output-on-failure --timeout 300
-cmake --build . --target install
+run cmake --build . -- --jobs="$num_jobs"
+run ctest --output-on-failure --timeout 300
+run cmake --build . --target install
 
 
 find_and_link_source_dir="$cwd/find-and-link"
@@ -87,7 +106,7 @@ EOF
 
 mkdir -- "$find_and_link_binary_dir"
 cd -- "$find_and_link_binary_dir"
-cmake \
+run cmake \
 	-DCMAKE_PREFIX_PATH="$melissa_sa_prefix_dir" \
 	-- "$find_and_link_source_dir"
-cmake --build .
+run cmake --build .
