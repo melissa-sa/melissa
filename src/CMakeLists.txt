@@ -26,12 +26,13 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# make gethostname() declaration accessible
+# make strnlen() declaration available
 set_source_files_properties(
-    comm4py.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+    api/melissa_api.c PROPERTIES COMPILE_DEFINITIONS _POSIX_C_SOURCE=200809L
 )
+# make gethostname(), struct timespec, clock_gettime() declaration available
 set_source_files_properties(
-    utils.c PROPERTIES COMPILE_DEFINITIONS _DEFAULT_SOURCE
+    utils.c PROPERTIES COMPILE_DEFINITIONS "_BSD_SOURCE;_DEFAULT_SOURCE;_POSIX_C_SOURCE=199309L"
 )
 
 
