@@ -1,18 +1,4 @@
-ubuntu/20.04:
-  image: datamove/ubuntu/20.04
-  tags:
-    - docker
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - export CC=clang
-    - export CXX=clang++
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
-
-
-centos/7:
+centos/7/amd64:
   image: datamove/centos/7/amd64
   tags:
     - lxd
@@ -23,13 +9,30 @@ centos/7:
     - cd build
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug -DINSTALL_ZMQ=ON
 
-centos_8:
+
+centos/8:
   image: datamove/centos/8
   tags:
     - docker
   script:
     - export MALLOC_CHECK_=3
     - export MALLOC_PERTURB_=1
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
+
+
+debian/9/amd64:
+  image: datamove/debian/9/amd64
+  tags:
+    - lxd
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - export CC=clang
+    - export CXX=clang++
+    - export CFLAGS='-fstack-protector-all'
+    - export CXXFLAGS="$CFLAGS"
     - mkdir build
     - cd build
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
@@ -47,3 +50,47 @@ debian/9/i386:
     - mkdir build
     - cd build
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Release
+
+
+debian/10/amd64:
+  image: datamove/debian/10/amd64
+  tags:
+    - lxd
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - export CFLAGS='-march=native'
+    - export CXXFLAGS='-march=native'
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Release
+
+
+debian/10/i386:
+  image: datamove/debian/10/i386
+  tags:
+    - lxd
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - export CC=clang
+    - export CXX=clang++
+    - export CFLAGS='-fstack-protector-all'
+    - export CXXFLAGS="$CFLAGS"
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
+
+
+ubuntu/20.04:
+  image: datamove/ubuntu/20.04
+  tags:
+    - docker
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - export CC=clang
+    - export CXX=clang++
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
