@@ -42,23 +42,33 @@ To run a sensitivity analysis with Melissa, a user needs to
 
 
 ## News
- * **Jan 2020: GitHub continuous update**
-    * Sync our work repo with the github repo so all changes are immediatly visible to all
-    * Major code restructuring  and documentation update
-    * New tools for supporting a virtual cluster mode  and using Jupyter notebook for controlling a Melissa run
- * **Nov 2018: Melissa release 0.5 available on GitHub**
-    * Changes in the API: remove arguments from the `melissa_send` function
-    * Add batch mode
-    * Improve launcher fault tolerance
-    * Improve the examples and the install tree
-    * Many fixes
- * **Nov 2017: Melissa release 0.4 available on GitHub**
-   * Improve quantiles and threshold exceedances
-   * Add iterative skewness and kurtosis
-   * Add a restart mechanism over results of previous study
-   * Add FlowVR coupling mechanism for Sobol' groups
-   * Add Telemac2D example, including FlowVR coupling mechanism
-   * Many bug fixes
+
+* **February 2021 Update** (Version 0.7)
+  * Melissa additionally works on CentOS 7, CentOS 8, and Alpine Linux now
+  * Fixed the CMake target import
+  * Made import of launcher as Python3 package easier
+  * Reduced the amount of user-provided code in `options.py` needed to run simulations
+  * Updated Slurm support for clusters without mpirun (cf. [Spack package manager issue #10340](https://github.com/spack/spack/pull/10340))
+  * Updated the Code\_Saturne example for Code\_Saturne 6
+  * Improved code quality (e.g., more tests, fixed compiler warnings)
+  * Removed deprecated code including Python2 code, obsolete Python modules, and old C functions
+* **Jan 2020: GitHub continuous update**
+  * Sync our work repo with the github repo so all changes are immediately visible to all
+  * Major code restructuring  and documentation update
+  * New tools for supporting a virtual cluster mode  and using Jupyter notebook for controlling a Melissa run
+* **Nov 2018: Melissa release 0.5 available on GitHub**
+  * Changes in the API: remove arguments from the `melissa_send` function
+  * Add batch mode
+  * Improve launcher fault tolerance
+  * Improve the examples and the install tree
+  * Many fixes
+* **Nov 2017: Melissa release 0.4 available on GitHub**
+  * Improve quantiles and threshold exceedances
+  * Add iterative skewness and kurtosis
+  * Add a restart mechanism over results of previous study
+  * Add FlowVR coupling mechanism for Sobol' groups
+  * Add Telemac2D example, including FlowVR coupling mechanism
+  * Many bug fixes
 
 
 ## Getting Started
