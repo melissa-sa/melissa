@@ -82,6 +82,18 @@ debian/10/i386:
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
 
 
+ubuntu/18.04:
+  image: datamove/ubuntu/18.04
+  tags:
+    - docker
+  script:
+    - export MALLOC_CHECK_=3
+    - export MALLOC_PERTURB_=1
+    - mkdir build
+    - cd build
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+
 ubuntu/20.04:
   image: datamove/ubuntu/20.04
   tags:
