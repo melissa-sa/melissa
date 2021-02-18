@@ -30,3 +30,5 @@
 
 bindir = "@CMAKE_INSTALL_FULL_BINDIR@"
 libdir = "@CMAKE_INSTALL_FULL_LIBDIR@"
+
+version = "@PROJECT_VERSION@"

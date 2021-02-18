@@ -38,6 +38,7 @@ import shutil
 import sys
 import warnings
 
+from ..config import version as melissa_version
 from ..scheduler.options import Options as SchedulerOptions
 from ..scheduler.oar import OarScheduler
 from ..scheduler.openmpi import OpenMpiScheduler
@@ -86,14 +87,19 @@ def main():
         action="append",
         default=[],
         help="arguments for batch scheduler when launching servers")
+    parser.add_argument("--version",
+                        action="store_true",
+                        help="show the Melissa version")
     parser.add_argument(
         "--with-simulation-setup",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="the simulation needs a setup before parallel execution")
 
     args = parser.parse_args()
+
+    if args.version:
+        print("melissa version {:s}".format(melissa_version))
+        return
 
     if args.scheduler == "oar":
         scheduler = OarScheduler()
