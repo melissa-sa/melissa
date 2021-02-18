@@ -51,6 +51,8 @@ def main():
 
     parser = argparse.ArgumentParser(prog="melissa-launcher",
                                      description="Melissa SA Launcher")
+
+    # positional arguments
     parser.add_argument( \
         "scheduler",
         choices=["oar", "openmpi", "slurm"],
@@ -60,6 +62,16 @@ def main():
     parser.add_argument("options", help="path to options.py")
     parser.add_argument("simulation",
                         help="name of or path to simulation executable")
+
+    # optional arguments
+    parser.add_argument("--num-client-processes",
+                        type=int,
+                        default=1,
+                        help="the number of processes for each simulation")
+    parser.add_argument("--num-server-processes",
+                        type=int,
+                        default=1,
+                        help="the number of processes for each server")
     parser.add_argument("--scheduler-arg",
                         action="append",
                         default=[],
@@ -74,14 +86,6 @@ def main():
         action="append",
         default=[],
         help="arguments for batch scheduler when launching servers")
-    parser.add_argument("--num-client-processes",
-                        type=int,
-                        default=1,
-                        help="the number of processes for each simulation")
-    parser.add_argument("--num-server-processes",
-                        type=int,
-                        default=1,
-                        help="the number of processes for each server")
     parser.add_argument(
         "--with-simulation-setup",
         action="store_const",
