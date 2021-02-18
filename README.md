@@ -5,16 +5,13 @@
 * [About](#about)
 * [News](#news)
 * [Getting Started](#getting-started)
-* [Solver Instrumenting and Study Setup](examples/heat-pde/README.md)
-* Developer Documentation
-* [Server](server/README.md)
-* [Launcher](launcher/README.md)
-* [Solver API](api/README.md)
-* [Common](api/README.md)
+* [Sensitivity Analysis with Melissa](#sensitivity-analysis-with-melissa)
+* [Command Reference](#command-reference)
+* [License](#license)
 * [How to cite Melissa](#how-to-cite-melissa)
 * [Publications](#publications)
-* [Contacts](#contacts)
-* [Licence](#licence)
+* [Dependencies](#dependencies)
+* [Development Hints](#development-hints)
 
 
 
@@ -135,7 +132,7 @@ Go to  the heat example [README.md](examples/heat-pde/README.md) to run your fir
 
 
 
-### Sensitivity Analysis with Melissa
+## Sensitivity Analysis with Melissa
 
 A sensitivity analysis with Melissa requires
 * simulation code augmented with Melissa function calls,
@@ -220,6 +217,82 @@ In some cases the simulation needs a special setup. For example, certain directo
 * In the first step, the simulation script is called on the user's computer once and the additional argument `initialize` will be passed on the command line in addition to the simulation's input values (e.g., `./code-sol.sh initialize 3.14 159.0`).
 * After the simulation script exited successfully, the launcher will start the MPI jobs. Every MPI job will invoke the simulation script with the argument `execute` and the input parameters (e.g., `./code-sol.sh execute 3.14 159.0`).
 
+
+
+## Command Reference
+
+### Launcher
+
+The launcher command line looks as follows:
+```sh
+melissa-launcher <scheduler> <options> <simulation>
+```
+Scheduler is one of the available schedulers (call `melissa-launcher --help` for an up-to-date list), `options` is a path to a Python file with the Melissa options, and simulation is the name or the complete path to a simulation executable.
+
+
+
+#### `--help`
+
+The launcher will shows an overview of all command line options, all available schedulers and exit.
+
+#### `--version`
+
+The launcher will show the Melissa version and exit.
+
+
+#### `--scheduler-arg SCHEDULER_ARG`
+
+This option allows one to pass arguments directly to the batch scheduler. This can be used, e.g., on a supercomputer to pass accounting information or select queues. For example, with the Slurm batch scheduler, the account can be selected as follows:
+```sh
+srun --account='melissa-devs' --ntasks=1 code-sol 3.14 159.0
+```
+Continuing the example, Melissa can be made to use this account as follows:
+```sh
+melissa-launcher --scheduler-arg=--account=melissa-devs slurm options.py code-sol
+```
+
+**CAUTION**: The Melissa command line parser cannot handle spaces in the argument value, e.g.,
+* `--scheduler-arg '--account=melissa-devs'` works whereas
+* `--scheduler-arg='-A melissa-devs'` does not work.
+
+**CAUTION**: Do not modify the number of processes (or tasks) using `--scheduler-arg`, use `--num-client-processes` and `--num-server-processes` instead. Melissa needs to track the number of server and client processes to make proper resource allocation requests but since the launcher does not examine scheduler arguments, it cannot inrporate this data into its requests.
+
+
+#### `--scheduler-arg-client SCHEDULER_ARG_CLIENT`
+
+This option is identical to `--scheduler-arg` except that the argument values are only passed to the batch scheduler when launching clients.
+
+#### `--scheduler-arg-server SCHEDULER_ARG_SERVER`
+
+This option is identical to `--scheduler-arg` except that the argument values are only passed to the batch scheduler when launching servers.
+
+
+#### `--num-client-processes NUM_CLIENT_PROCESSES`
+
+The number of MPI processes of clients.
+
+
+#### `--num-server-processes NUM_SERVER_PROCESSES`
+
+The number of MPI processes of servers.
+
+
+#### `--with-simulation-setup`
+
+This option makes the Melissa launcher run the simulation once without MPI on the local computer before actually starting the simulation via the batch scheduler. This can useful, e.g., to set up directories or modify simulation input files.
+
+Without this option, every MPI processes will start the simulation as follows (3.14, 159.0 are the input values passed by the launcher to the simulation):
+```sh
+mpirun -n 10 -- simulation 3.14 159.0
+```
+With this option, the simulation will be run twice and an additional argument will be passed on the command line. The first run is local without MPI:
+```sh
+simulation initialize 3.14 159.0
+```
+Only the second run invokes MPI (and may take place on another computer when working on computer clusters):
+```sh
+mpirun -n 10 -- simulation execute 3.14 159.0
+```
 
 
 ## License
