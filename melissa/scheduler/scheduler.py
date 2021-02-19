@@ -90,7 +90,7 @@ class Scheduler:
     def sanity_check_impl(self, options):
         return []
 
-    def submit_heterogeneous_job_impl(self, command, environment, name):
+    def submit_heterogeneous_job_impl(self, command, environment, name, options):
         raise NotImplementedError("Scheduler.submit_heterogeneous_job_impl not implemented")
 
     def cancel_jobs_impl(self, jobs):
