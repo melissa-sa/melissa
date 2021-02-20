@@ -65,6 +65,8 @@ class OarScheduler(Scheduler):
         mpirun_env_args = []
 
         if self.mpi_provider == "openmpi":
+            machinefile_arg = ["-machinefile", "$OAR_NODE_FILE"]
+
             for key in sorted(environment.keys()):
                 mpirun_env_args.extend(["-x", key])
         else:
@@ -80,7 +82,8 @@ class OarScheduler(Scheduler):
             args_str = " ".join(args)
             mpirun_args.append(args_str)
 
-        mpirun_command = "mpirun " + " : ".join(mpirun_args)
+        mpirun_command = "mpirun" + " " + " ".join(
+            machinefile_arg) + " " + " : ".join(mpirun_args)
 
         # avoid irritating `env executable arg1 arg2`
         # DEBUG
