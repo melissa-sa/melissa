@@ -3,7 +3,7 @@
 import os
 import re
 import subprocess
-from typing import Dict
+from typing import Dict, List
 
 from .job import Job, State
 from .scheduler import Scheduler
@@ -11,30 +11,30 @@ from .options import Options
 
 
 class OarJob(Job):
-    def __init__(self, job_id):
+    def __init__(self, job_id: int):
         assert isinstance(job_id, int)
 
         super(OarJob, self).__init__()
         self.id_ = job_id
         self.state_ = State.WAITING
 
-    def id(self):
+    def id(self) -> int:
         return self.id_
 
-    def state(self):
+    def state(self) -> State:
         return self.state_
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "OarJob(id={:d},state={:s})".format(self.id_, str(self.state_))
 
-    def set_state(self, new_state):
+    def set_state(self, new_state: State) -> None:
         assert isinstance(new_state, State)
 
         self.state_ = new_state
 
 
 class OarScheduler(Scheduler):
-    def __init__(self, mpi_provider):
+    def __init__(self, mpi_provider: str):
         assert isinstance(mpi_provider, str)
 
         if mpi_provider not in ["openmpi"]:
@@ -102,8 +102,6 @@ class OarScheduler(Scheduler):
             + options.raw_arguments \
             + ["--", oar_script]
 
-        print(oar_command)
-
         oarsub = subprocess.run(oar_command,
                                 stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE,
@@ -120,7 +118,7 @@ class OarScheduler(Scheduler):
 
         return OarJob(int(m.group(1)))
 
-    def update_jobs_impl(self, jobs):
+    def update_jobs_impl(self, jobs: List[OarJob]) -> None:
         assert isinstance(jobs, list)
 
         if jobs == []:
@@ -171,7 +169,7 @@ class OarScheduler(Scheduler):
                 fmt = "unknown OAR job state '{:s}'"
                 raise RuntimeError(fmt.format(oar_state))
 
-    def cancel_jobs_impl(self, jobs):
+    def cancel_jobs_impl(self, jobs: List[OarJob]) -> None:
         assert isinstance(jobs, list)
 
         jobs_str = ["{:d}".format(job.id()) for job in jobs]
