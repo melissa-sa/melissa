@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright (c) 2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2020, 2021, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,25 +28,24 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import enum
+import unittest
 
-class State:
-    def __init__(self, name):
-        assert isinstance(name, str)
-        self.name = name
 
-    def __repr__(self):
+@enum.unique
+class State(enum.Enum):
+    # There job failed for reasons unrelated to program execution.
+    # The program may have never run.
+    ERROR = enum.auto()
+    WAITING = enum.auto()
+    RUNNING = enum.auto()
+    # The job ran and the program terminated successfully.
+    TERMINATED = enum.auto()
+    # The job ran but the program terminated unsuccessfully.
+    FAILED = enum.auto()
+
+    def __str__(self) -> str:
         return self.name
-
-
-# There job failed for reasons unrelated to program execution.
-# The program may have never run.
-State.ERROR = State("ERROR")
-State.WAITING = State("WAITING")
-State.RUNNING = State("RUNNING")
-# The job ran and the program terminated successfully.
-State.TERMINATED = State("TERMINATED")
-# The job ran but the program terminated unsuccessfully.
-State.FAILED = State("FAILED")
 
 
 
@@ -59,3 +58,16 @@ class Job:
 
     def __repr__(self):
         raise NotImplementedError("Job.__repr__ not implemented")
+
+
+
+class TestState(unittest.TestCase):
+    def test_simple(self):
+        self.assertEqual(State.ERROR, State.ERROR)
+        self.assertNotEqual(State.ERROR, State.FAILED)
+
+        self.assertEqual(str(State.WAITING), "WAITING")
+
+
+if __name__ == "__main__":
+    unittest.main()
