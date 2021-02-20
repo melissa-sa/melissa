@@ -36,13 +36,13 @@ import unittest
 class State(enum.Enum):
     # There job failed for reasons unrelated to program execution.
     # The program may have never run.
-    ERROR = enum.auto()
-    WAITING = enum.auto()
-    RUNNING = enum.auto()
+    ERROR = 1
+    WAITING = 2
+    RUNNING = 3
     # The job ran and the program terminated successfully.
-    TERMINATED = enum.auto()
+    TERMINATED = 4
     # The job ran but the program terminated unsuccessfully.
-    FAILED = enum.auto()
+    FAILED = 5
 
     def __str__(self) -> str:
         return self.name
