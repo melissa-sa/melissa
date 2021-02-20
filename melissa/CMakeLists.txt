@@ -35,7 +35,6 @@ set(python_files
     launcher/__init__.py
     launcher/__main__.py
     launcher/job_management.py
-    launcher/options.py
     launcher/simulation.py
     launcher/study.py
     scheduler/__init__.py
