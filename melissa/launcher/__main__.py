@@ -102,7 +102,7 @@ def main():
         return
 
     if args.scheduler == "oar":
-        scheduler = OarScheduler()
+        scheduler = OarScheduler(mpi_provider="openmpi")
     elif args.scheduler == "openmpi":
         scheduler = OpenMpiScheduler()
     elif args.scheduler == "slurm":
