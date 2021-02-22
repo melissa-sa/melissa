@@ -134,11 +134,12 @@ def main():
         return "simulation executable '{:s}' not found".format(args.simulation)
 
     # this fixes problems if the user passed something like `./simulation`
-    simulation_path = os.path.realpath(maybe_simulation_path)
+    simulation_path = os.path.abspath(maybe_simulation_path)
+
 
     # copy options.py into the current working directory
-    options_path = os.path.join(os.getcwd(), "options.py")
-    user_options_path = os.path.realpath(args.options)
+    options_path = os.path.abspath("options.py")
+    user_options_path = os.path.abspath(args.options)
     user_options_filename = os.path.basename(user_options_path)
 
     if user_options_filename != "options.py":
