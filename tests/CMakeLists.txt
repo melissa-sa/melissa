@@ -110,9 +110,6 @@ target_link_libraries(dummy-simulation melissa)
 
 configure_file(dummy-simulation-options.py.in dummy-simulation-options.py @ONLY)
 
-# TODO:
-# this test clutters the test directory; this may be a problem when re-running
-# the test
 add_test(
     NAME dummy-simulation
     COMMAND env PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}

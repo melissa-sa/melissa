@@ -31,6 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import datetime
 import importlib.util
 import logging
 import os
@@ -95,6 +96,12 @@ def main():
         "--with-simulation-setup",
         action="store_true",
         help="the simulation needs a setup before parallel execution")
+    parser.add_argument(
+        "--output-dir",
+        default="melissa-%Y%m%dT%H%M%S",
+        help=
+        "directory for Melissa temporary and output files; the argument will be passed to strftime"
+    )
 
     args = parser.parse_args()
 
@@ -133,19 +140,36 @@ def main():
     if maybe_simulation_path is None:
         return "simulation executable '{:s}' not found".format(args.simulation)
 
-    # this fixes problems if the user passed something like `./simulation`
-    simulation_path = os.path.abspath(maybe_simulation_path)
+    # output directory
+    now = datetime.datetime.now()
+    output_dir_name = now.strftime(args.output_dir)
+    output_dir = os.path.abspath(output_dir_name)
 
-
-    # copy options.py into the current working directory
-    options_path = os.path.abspath("options.py")
+    # make user-provided paths absolute to prevent problems when changing dirs
+    options_path = os.path.join(output_dir, "options.py")
     user_options_path = os.path.abspath(args.options)
     user_options_filename = os.path.basename(user_options_path)
 
+    simulation_path = os.path.abspath(maybe_simulation_path)
+
+    #
+    # Change working directory
+    #
+    # ATTENTION
+    # User-provided paths may refer to the original working dir!
+    #
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    os.chdir(output_dir)
+
+    # copy options.py into the current working directory
     if user_options_filename != "options.py":
         fmt = "copy of options file '{:s}' will be renamed to 'options.py'"
         warnings.warn(fmt.format(user_options_path))
 
+    # check if these files are identical because the user may have passed
+    # `--output-dir=.` on the command line
     if options_path != user_options_path:
         shutil.copy(src=user_options_path, dst=options_path)
 
