@@ -121,3 +121,10 @@ add_test(
                     ${CMAKE_CURRENT_BINARY_DIR}/dummy-simulation-options.py
                     ${CMAKE_CURRENT_BINARY_DIR}/dummy-simulation
 )
+
+
+add_test(
+    NAME show-version
+    COMMAND env PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}
+                python3 -m melissa.launcher --version
+)

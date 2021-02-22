@@ -88,18 +88,15 @@ def main():
         default=[],
         help="arguments for batch scheduler when launching servers")
     parser.add_argument("--version",
-                        action="store_true",
-                        help="show the Melissa version")
+                        action="version",
+                        help="show the Melissa version",
+                        version="%(prog)s {:s}".format(melissa_version))
     parser.add_argument(
         "--with-simulation-setup",
         action="store_true",
         help="the simulation needs a setup before parallel execution")
 
     args = parser.parse_args()
-
-    if args.version:
-        print("melissa version {:s}".format(melissa_version))
-        return
 
     if args.scheduler == "oar":
         scheduler = OarScheduler(mpi_provider="openmpi")
