@@ -1,6 +1,7 @@
 # Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
 #               2017, EDF (https://www.edf.fr/)
 #               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2021, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,7 +31,7 @@
 
 cmake_minimum_required(VERSION 3.7.2)
 
-project(melissa VERSION 0.7.0 LANGUAGES C Fortran)
+project(melissa VERSION 0.7.0 LANGUAGES C)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
