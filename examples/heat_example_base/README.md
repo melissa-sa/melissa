@@ -1,1 +1,0 @@
-This `heat_example_base` code is a raw standalone simulation code using C, Fortran, and MPI that users can adapt for training purpose to make it Melissa compliant. The results should lead to the [`heat_example`](../heat_example/README.md).

@@ -1,6 +1,4 @@
-# Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (Inria)
-#               2017, EDF (https://www.edf.fr/)
-#               2020, Institut National de Recherche en Informatique et en Automatique (Inria)
+# Copyright (c) 2021, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,31 +26,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(destination ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/examples/TELEMAC-2D)
+cmake_minimum_required(VERSION 3.7.2)
+project(melissa-to-serafin VERSION 0.1.0 LANGUAGES Fortran)
 
-foreach(file IN ITEMS
-    README.txt
-    geo_gouttedo.cli
-    geo_gouttedo.slf
-    melissa_to_serafin.f
-    t2d_gouttedo.cas
-    user_fortran/condin.f
-    user_fortran/href.f
-)
-    get_filename_component(directory ${file} DIRECTORY)
-    install(
-        FILES ${file}
-        DESTINATION ${destination}/${directory}
-    )
-endforeach()
+include(GNUInstallDirs)
 
-configure_file(CMakeLists.txt.in CMakeLists.txt @ONLY)
-configure_file(options.py.in options.py @ONLY)
-configure_file(create_group.py.in create_group.py @ONLY)
-install(
-    FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-        ${CMAKE_CURRENT_BINARY_DIR}/options.py
-        ${CMAKE_CURRENT_BINARY_DIR}/create_group.py
-    DESTINATION ${destination}
-)
+add_executable(melissa_to_serafin melissa_to_serafin.f)
+target_compile_options(melissa_to_serafin BEFORE PUBLIC "-fconvert=big-endian")
+install(TARGETS melissa_to_serafin RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
