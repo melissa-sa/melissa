@@ -240,6 +240,26 @@ The launcher will shows an overview of all command line options, all available s
 The launcher will show the Melissa version and exit.
 
 
+### `--output-dir <directory-template>`
+
+A sensitivity analysis may generate a large number of files and for this reason, Melissa creates a new subdirectory of the current working directory for all of its outputs. By default, the directory name is the local time and date in [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) basic format, e.g., on December 7, 1999, at 12:34:56pm local time, the ISO 8601 timestamp is `19991207T123456`.
+
+
+The `--output-dir` options allows users to change the directory name. Furthermore, the argument value will be given to the standard C function [`strftime`](https://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html).
+
+Examples:
+* `--output-dir='..'` makes Melissa write to the parent directory.
+* `--output-dir='project-alpha'` makes Melissa write to a directory called `project-alpha`.
+* `--output-dir='project-beta-%T'`: output directory `project-beta-19:12:00` (local time 7:12pm).
+
+
+**CAUTION**:
+* Existing content in the output directory will be overwritten and/or erased.
+* Clock changes (e.g., from winter to summer time) may cause Melissa to generate the same output directory name twice.
+* Leap seconds may cause timestamps with "60" as the number of seconds (instead of only 00 to 59).
+* The single ticks in the examples above stop POSIX-compliants shells from modifying the argument value.
+
+
 #### `--scheduler-arg SCHEDULER_ARG`
 
 This option allows one to pass arguments directly to the batch scheduler. This can be used, e.g., on a supercomputer to pass accounting information or select queues. For example, with the Slurm batch scheduler, the account can be selected as follows:
