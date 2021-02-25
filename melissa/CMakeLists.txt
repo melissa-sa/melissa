@@ -58,7 +58,7 @@ foreach(file IN LISTS python_files)
     if(NOT ${filename} STREQUAL __init__.py AND NOT ${filename} STREQUAL __main__.py)
         add_test(
             NAME ${file}
-            COMMAND python3 -m unittest ${CMAKE_CURRENT_BINARY_DIR}/${file}
+            COMMAND python3 -m unittest melissa/${file}
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         )
     endif()
