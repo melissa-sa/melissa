@@ -36,7 +36,7 @@ foreach(_language IN ITEMS C CXX Fortran)
     endif()
 
     if(MelissaMPI_FIND_REQUIRED AND NOT MPI_${_language}_FOUND)
-        message(SEND_FATAL "MPI_${_language} not found")
+        message(SEND_ERROR "MPI_${_language} not found")
     endif()
 
     # fix compilation on CentOS 8 with CMake 3.11.4, OpenMPI 4.0.2
