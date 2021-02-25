@@ -7,6 +7,7 @@
 * [Getting Started](#getting-started)
 * [Sensitivity Analysis with Melissa](#sensitivity-analysis-with-melissa)
 * [Command Reference](#command-reference)
+* [Troubleshooting](#troubleshooting)
 * [License](#license)
 * [How to cite Melissa](#how-to-cite-melissa)
 * [Publications](#publications)
@@ -312,6 +313,22 @@ simulation initialize 3.14 159.0
 Only the second run invokes MPI (and may take place on another computer when working on computer clusters):
 ```sh
 mpirun -n 10 -- simulation execute 3.14 159.0
+```
+
+
+
+## Troubleshooting
+
+### CMake does not find MPI with Intel Compilers 19
+
+Error message:
+```
+-- Could NOT find MPI_C (missing: MPI_C_WORKS)
+```
+
+Solution: Make CMake invoke the Intel Compiler instead of GCC.
+```sh
+env CC=icc CXX=icpc cmake -- /path/to/melissa
 ```
 
 
