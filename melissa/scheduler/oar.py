@@ -136,7 +136,7 @@ class OarScheduler(Scheduler):
             check=True
         )
 
-        oarstat_output = re.compile("([0-9]+): ([A-Z][a-z]+)")
+        oarstat_output = re.compile("([0-9]+): ([A-Za-z]+)")
         jobs_map = {job.id(): job for job in jobs}
         states_map = { \
             "Error": State.ERROR,
