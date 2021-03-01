@@ -97,7 +97,10 @@ class OarScheduler(Scheduler):
         total_num_procs = num_procs * len(commands)
 
         oar_command = \
-            ["oarsub", "--resource=core={:d}".format(total_num_procs)] \
+            ["oarsub",
+             "--directory={:s}".format(os.getcwd()),
+             "--resource=core={:d}".format(total_num_procs)
+            ] \
             + maybe_job_name \
             + options.raw_arguments \
             + ["--", oar_script]
