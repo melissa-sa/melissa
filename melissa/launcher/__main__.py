@@ -49,8 +49,6 @@ from .study import Study
 
 
 def main():
-    cwd = os.getcwd()
-
     parser = argparse.ArgumentParser(prog="melissa-launcher",
                                      description="Melissa SA Launcher")
 
