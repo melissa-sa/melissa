@@ -69,9 +69,8 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options,
     assert isinstance(study_options, dict)
 
     def launch_group(group):
-        cwd = os.getcwd()
         working_directory = "group{:d}".format(group.group_id)
-        working_directory_path = os.path.join(cwd, working_directory)
+        working_directory_path = os.path.abspath(working_directory)
 
         if not os.path.isdir(working_directory_path):
             os.mkdir(working_directory_path)
@@ -239,8 +238,7 @@ fi
         launch_group(group)
 
         for simu_id, _ in enumerate(param_sets):
-            setup_file_fmt = os.path.join(os.getcwd(), "group{:d}",
-                                          "setup-{:d}.txt")
+            setup_file_fmt = os.path.abspath("group{:d}", "setup-{:d}.txt")
             setup_file = setup_file_fmt.format(gid, simu_id)
 
             self.assertTrue(os.path.isfile(setup_file))

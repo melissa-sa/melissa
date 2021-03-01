@@ -49,8 +49,6 @@ from .study import Study
 
 
 def main():
-    cwd = os.getcwd()
-
     parser = argparse.ArgumentParser(prog="melissa-launcher",
                                      description="Melissa SA Launcher")
 
@@ -209,8 +207,7 @@ def main():
     except Exception as e:
         print("Fatal launcher error: {}".format(e), file=sys.stderr)
 
-        server_jobs = [server.job_id for server in melissa_study.server_obj]
-        server_job_ids = [j.id() for j in server_jobs]
+        server_jobs = [server.job_id.id() for server in melissa_study.server_obj if server.job_id]
 
         print("Cancelling server jobs. Job IDs {}".format(server_job_ids))
         scheduler.cancel_jobs(server_jobs)

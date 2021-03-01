@@ -97,7 +97,10 @@ class OarScheduler(Scheduler):
         total_num_procs = num_procs * len(commands)
 
         oar_command = \
-            ["oarsub", "--resource=core={:d}".format(total_num_procs)] \
+            ["oarsub",
+             "--directory={:s}".format(os.getcwd()),
+             "--resource=core={:d}".format(total_num_procs)
+            ] \
             + maybe_job_name \
             + options.raw_arguments \
             + ["--", oar_script]
@@ -136,7 +139,7 @@ class OarScheduler(Scheduler):
             check=True
         )
 
-        oarstat_output = re.compile("([0-9]+): ([A-Z][a-z]+)")
+        oarstat_output = re.compile("([0-9]+): ([A-Za-z]+)")
         jobs_map = {job.id(): job for job in jobs}
         states_map = { \
             "Error": State.ERROR,

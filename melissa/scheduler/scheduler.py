@@ -52,6 +52,9 @@ class Scheduler:
         assert name is None or isinstance(name, str)
         assert options is None or isinstance(options, Options)
 
+        if commands == []:
+            raise ValueError("expected at least one command, got none")
+
         # allow None as dictionary value so that callers can pass, for example,
         #   env = { "PYTHONPATH": os.getenv("PYTHONPATH") }
         # without having to check if the environment variable was set
@@ -76,6 +79,9 @@ class Scheduler:
         for j in jobs:
             assert isinstance(j, Job)
 
+        if jobs == []:
+            return
+
         self.cancel_jobs_impl(jobs)
 
 
@@ -83,6 +89,9 @@ class Scheduler:
         assert isinstance(jobs, list)
         for j in jobs:
             assert isinstance(j, Job)
+
+        if jobs == []:
+            return
 
         self.update_jobs_impl(jobs)
 
