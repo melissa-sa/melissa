@@ -72,7 +72,7 @@ class Job(object):
             Job constructor
         """
         self.job_status = NOT_SUBMITTED
-        self.job_id = 0
+        self.job_id = None
         self.cmd_opt = []
         self.start_time = 0.0
         self.job_type = 0
@@ -102,7 +102,7 @@ class Job(object):
         if self.job_status == NOT_SUBMITTED:
             return
 
-        assert self.job_id != 0
+        assert self.job_id
 
         if "cancel_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_job']:
@@ -191,7 +191,7 @@ class Group(Job):
         if self.job_status == NOT_SUBMITTED:
             return
 
-        assert self.job_id != 0
+        assert self.job_id
 
         if "cancel_group_job" in Job.usr_func.keys() \
         and Job.usr_func['cancel_group_job']:
