@@ -61,8 +61,8 @@ def create_run_server_slurm(server):
     signal_handler+="killall -USR1 melissa_server          \n"
     signal_handler+="wait %1                               \n"
     signal_handler+="}                                     \n"
+    # TODO use multiline strings
     content=""
-    file=open("run_server.sh", "w")
     content += "#!/bin/bash                                                        \n"
     content += "#SBATCH -N "+str(NODES_SERVER)+"                                   \n"
     content += "#SBATCH --time="+str(WALLTIME_SERVER)+"                            \n"
@@ -84,9 +84,11 @@ def create_run_server_slurm(server):
     content += "wait %1                                                            \n"
     content += "date +\"%d/%m/%y %T\"                                              \n"
     content += "cd ..                                                              \n"
+    # TODO use with statement
+    file=open("run_server.sh", "w")
     file.write(content)
     file.close()
-    os.system("chmod 744 run_server.sh")
+    os.chmod("run_server.sh", mode=0o744)
 
 def launch_server_slurm(server):
     if (not os.path.isdir(STUDY_OPTIONS['working_directory']+"/STATS")):
