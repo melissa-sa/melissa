@@ -45,20 +45,20 @@ MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = False
 MELISSA_STATS['skewness'] = False
 MELISSA_STATS['kurtosis'] = False
-MELISSA_STATS['min'] = True
-MELISSA_STATS['max'] = True
-MELISSA_STATS['threshold_exceedance'] = True
+MELISSA_STATS['min'] = False
+MELISSA_STATS['max'] = False
+MELISSA_STATS['threshold_exceedance'] = False
 STUDY_OPTIONS['threshold_values'] = [0.7, 0.8]
-MELISSA_STATS['quantiles'] = True
+MELISSA_STATS['quantiles'] = False
 STUDY_OPTIONS['quantile_values'] = [0.05, 0.25, 0.5, 0.75, 0.95]
 MELISSA_STATS['sobol_indices'] = True
 
 #  STUDY / PARAMETER SWEEP / SIMULATIONS
 
 # Sampling function: called to set the parameter value for each simulation 
-# FOr the heat example we have 5 parameters (initial temperatures for the 4 borders  + grid cells)
+# For the heat example we have at least two and up to five parameters (initial temperatures for the 4 borders  + grid cells)
 def draw_param_set():
-    return np.random.uniform(0, 1, size=5)
+    return np.random.uniform(0, 1, size=2)
 USER_FUNCTIONS = {'draw_parameter_set': draw_param_set}
 
 # Size of the parameter sweep  (= number of simulations to execute)
