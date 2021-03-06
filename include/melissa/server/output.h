@@ -28,16 +28,16 @@
 #ifndef SERVER_OUTPUT_H
 #define SERVER_OUTPUT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <melissa/server/data.h>
 #include <melissa/server/options.h>
 #include <melissa/utils.h>
 #include <melissa/vector.h>
 
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void melissa_write_stats_seq(melissa_data_t    **data,
                              melissa_options_t  *options,

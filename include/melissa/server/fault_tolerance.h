@@ -25,12 +25,12 @@
 #ifndef FAULT_TOLERANCE_H
 #define FAULT_TOLERANCE_H
 
+#include <melissa/utils.h>
+#include <melissa/vector.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <melissa/utils.h>
-#include <melissa/vector.h>
 
 /**
  *******************************************************************************
