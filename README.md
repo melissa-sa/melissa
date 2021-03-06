@@ -82,13 +82,13 @@ Download Melissa sources [here](https://github.com/melissa-sa/melissa).
 * CMake 3.7.2 or newer
 * GNU Make
 * A C99 compiler
-* A Fortran90 compiler
+* A C++ compiler
 * MPI
 * ZeroMQ 4.1.5 or newer
 * Python 3.5.3 or newer
 * NumPy (for Python3)
 
-CMake can download and install ZeroMQ if the flag `-DINSTALL_ZMQ=ON` is passed to CMake.
+CMake can download and install ZeroMQ if the flag `-DINSTALL_ZMQ=ON` is passed to CMake. The Melissa header for Fortran90 will always be installed.
 
 If you are unsure if all dependencies are installed, simply run CMake because it will find all required software packages automatically and check their version numbers or print error messages otherwise.
 
