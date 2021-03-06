@@ -25,10 +25,6 @@
 #ifndef MELISSA_DATA_H
 #define MELISSA_DATA_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <melissa/server/options.h>
 #include <melissa/stats/covariance.h>
 #include <melissa/stats/general_moments.h>
@@ -40,6 +36,10 @@ extern "C" {
 #include <melissa/stats/variance.h>
 #include <melissa/utils.h>
 #include <melissa/vector.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  *******************************************************************************

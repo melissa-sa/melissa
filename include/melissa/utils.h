@@ -25,13 +25,13 @@
 #ifndef MELISSA_UTILS_H
 #define MELISSA_UTILS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <mpi.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef MPI_MAX_PROCESSOR_NAME
 #define MPI_MAX_PROCESSOR_NAME 256 /**< Define the macro if mpi.h not present */

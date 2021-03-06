@@ -1,6 +1,7 @@
 # Copyright (c) 2017, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
 #               2017, EDF (https://www.edf.fr/)
 #               2020, Institut National de Recherche en Informatique et en Automatique (https://www.inria.fr/)
+#               2021, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,6 +30,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # do not move executables from this directory around
+unset(CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY)
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
 
@@ -125,3 +128,7 @@ add_test(
     COMMAND env PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}
                 python3 -m melissa.launcher --version
 )
+
+
+add_library(regression-105 STATIC regression-105.cpp)
+target_link_libraries(regression-105 melissa)

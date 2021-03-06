@@ -25,11 +25,11 @@
 #ifndef MELISSA_FIELDS_H
 #define MELISSA_FIELDS_H
 
+#include <melissa/server/data.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <melissa/server/data.h>
 
 /**
  *******************************************************************************

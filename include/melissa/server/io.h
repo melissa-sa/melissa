@@ -25,12 +25,12 @@
 #ifndef MELISSA_IO_H
 #define MELISSA_IO_H
 
+#include <melissa/server/data.h>
+#include <melissa/server/options.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <melissa/server/data.h>
-#include <melissa/server/options.h>
 
 void write_stats_bin(melissa_data_t    **data,
                      melissa_options_t  *options,

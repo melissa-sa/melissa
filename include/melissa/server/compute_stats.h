@@ -25,11 +25,11 @@
 #ifndef COMPUTE_STATS_H
 #define COMPUTE_STATS_H
 
+#include <melissa/server/data.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <melissa/server/data.h>
 
 void compute_stats (melissa_data_t  *data,
                     const int        time_step,

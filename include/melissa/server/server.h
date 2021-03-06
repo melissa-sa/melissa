@@ -25,10 +25,6 @@
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <melissa/server/data.h>
 #include <melissa/server/fault_tolerance.h>
 #include <melissa/server/fields.h>
@@ -36,6 +32,10 @@ extern "C" {
 #include <melissa/vector.h>
 
 #include <mpi.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct melissa_server_s
 {
