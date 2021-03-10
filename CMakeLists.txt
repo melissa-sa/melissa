@@ -31,7 +31,7 @@
 
 cmake_minimum_required(VERSION 3.7.2)
 
-project(melissa VERSION 0.7.0 LANGUAGES C CXX)
+project(melissa VERSION 0.7.0 LANGUAGES C)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 

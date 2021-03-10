@@ -83,16 +83,29 @@ find_and_link_binary_dir="$cwd/build.find-and-link"
 mkdir --parents -- "$find_and_link_source_dir"
 cat >"$find_and_link_source_dir/CMakeLists.txt" <<EOF
 cmake_minimum_required(VERSION 3.2.3)
-project(find-and-link-test-melissa-sa VERSION 0.7.0 LANGUAGES C)
+project(find-and-link-test-melissa-sa VERSION 0.7.0 LANGUAGES C CXX)
 find_package(Melissa CONFIG REQUIRED)
 add_executable(main main.c)
 target_link_libraries(main melissa)
+# do not add an executable or a shared library for C++ to avoid having to link
+# against a library providing the C++ MPI bindings
+add_library(main-cpp STATIC main.cpp)
+target_link_libraries(main-cpp melissa)
 EOF
 
 cat >"$find_and_link_source_dir/main.c" <<EOF
-#include <stdio.h>
-#include <stdlib.h>
+#include <melissa/api.h>
 
+int main(int argc, char** argv) {
+    MPI_Init(&argc, &argv);
+    melissa_init("foo", 1, MPI_COMM_WORLD);
+    melissa_send("foo", NULL);
+    melissa_finalize();
+    MPI_Finalize();
+}
+EOF
+
+cat >"$find_and_link_source_dir/main.cpp" <<EOF
 #include <melissa/api.h>
 
 int main(int argc, char** argv) {

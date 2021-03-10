@@ -128,7 +128,3 @@ add_test(
     COMMAND env PYTHONPATH=${CMAKE_BINARY_DIR}:$ENV{PYTHONPATH}
                 python3 -m melissa.launcher --version
 )
-
-
-add_library(regression-105 STATIC regression-105.cpp)
-target_link_libraries(regression-105 melissa)
