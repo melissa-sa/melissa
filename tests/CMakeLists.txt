@@ -47,7 +47,7 @@ endfunction()
 
 
 add_melissa_executable(base base.c)
-add_test(NAME base COMMAND mpirun -np 2 base)
+add_test(NAME base COMMAND mpirun -np 2 ${CMAKE_CURRENT_BINARY_DIR}/base)
 
 add_melissa_executable(mean mean.c)
 add_test(mean mean)
