@@ -39,7 +39,7 @@ import subprocess
 import sys
 import warnings
 
-example_directory = "@CMAKE_CURRENT_BINARY_DIR@"
+example_directory = "@CMAKE_CURRENT_SOURCE_DIR@"
 cs_id = "melissa"
 
 
