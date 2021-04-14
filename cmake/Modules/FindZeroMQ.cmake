@@ -5,9 +5,11 @@
 #
 find_package(PkgConfig REQUIRED QUIET)
 
+include(GNUInstallDirs)
+
 if(ZeroMQ_ROOT)
     set(_ZeroMQ_ORIGINAL_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
-    set(ENV{PKG_CONFIG_PATH} ${ZeroMQ_ROOT}/lib/pkgconfig)
+    set(ENV{PKG_CONFIG_PATH} ${ZeroMQ_ROOT}/${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
 
 # usually pkg-config omits standard search paths so PACKAGE_LIBARIES and
