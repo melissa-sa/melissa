@@ -10,10 +10,10 @@ centos/7/amd64:
     - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug -DINSTALL_ZMQ=ON
 
 
-centos/8:
-  image: datamove/centos/8
+centos/8/amd64:
+  image: datamove/centos/8/amd64
   tags:
-    - docker
+    - lxd
   script:
     - export MALLOC_CHECK_=3
     - export MALLOC_PERTURB_=1
