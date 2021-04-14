@@ -71,7 +71,7 @@ cd -- "$melissa_sa_binary_dir"
 run cmake \
 	-DCMAKE_INSTALL_PREFIX="$melissa_sa_prefix_dir" \
 	$@ \
-	-- "$melissa_sa_source_dir"
+	"$melissa_sa_source_dir"
 run cmake --build . -- --jobs="$num_jobs"
 run ctest --output-on-failure --timeout 300
 run cmake --build . --target install
@@ -121,5 +121,5 @@ mkdir -- "$find_and_link_binary_dir"
 cd -- "$find_and_link_binary_dir"
 run cmake \
 	-DCMAKE_PREFIX_PATH="$melissa_sa_prefix_dir" \
-	-- "$find_and_link_source_dir"
+	"$find_and_link_source_dir"
 run cmake --build .
