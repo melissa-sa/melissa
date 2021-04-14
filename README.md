@@ -43,6 +43,7 @@ To run a sensitivity analysis with Melissa, a user needs to
 
 * **February 2021 Update** (Version 0.7)
   * Melissa additionally works on CentOS 7, CentOS 8, and Alpine Linux now
+  * Renamed CMake variable `ZeroMQ_DIR` to `ZeroMQ_ROOT`; starting with CMake 3.12, CMake began transparently uses these variables to search for packages, before that many programmers were using this naming scheme in their CMake setup
   * Fixed the CMake target import
   * Made import of launcher as Python3 package easier
   * Reduced the amount of user-provided code in `options.py` needed to run simulations
@@ -121,6 +122,7 @@ This command needs to be executed whenever you start a new shell.
 | -- | -- | -- |
 | `-DCMAKE_BUILD_TYPE` | `Debug` | Build type (try `Debug` or `Release`) |
 | `-DCMAKE_INSTALL_PREFIX` | `../install` | Melissa installation directory |
+| `-DZeroMQ_ROOT` | -- | The path to the ZeroMQ installation directory (only needed for nonstandard paths) |
 | `-DINSTALL_ZMQ` | `OFF` | Download, build, and install ZeroMQ |
 | `-DBUILD_DOCUMENTATION` | `OFF` | Build the documentation (requires Doxygen) |
 | `-DBUILD_TESTING` | `ON` | Build tests; run with `make test` in build directory |
