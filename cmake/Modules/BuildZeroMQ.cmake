@@ -49,6 +49,7 @@ if(INSTALL_ZMQ)
         URL https://github.com/zeromq/libzmq/releases/download/v4.3.1/zeromq-4.3.1.tar.gz
         URL_HASH SHA256=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d835cd21eb
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ZeroMQ
+        DOWNLOAD_NO_PROGRESS 1
         CMAKE_ARGS
             -DBUILD_SHARED:BOOL=ON
             -DBUILD_STATIC:BOOL=OFF
