@@ -99,9 +99,15 @@ endif()
 
 if(HAS_SANITIZERS)
     add_executable(regression_16 regression_16.c)
-    target_compile_options(regression_16 PRIVATE -fsanitize=undefined -fno-sanitize-recover=all)
+    target_compile_options(regression_16 PRIVATE -fsanitize=undefined)
+    if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang"
+        AND ${CMAKE_C_COMPILER_VERSION} VERSION_LESS 3.5)
+        target_compile_options(regression_16 PRIVATE -fno-sanitize-recover)
+    else()
+        target_compile_options(regression_16 PRIVATE -fno-sanitize-recover=all)
+    endif()
     target_include_directories(regression_16 PRIVATE ${CMAKE_SOURCE_DIR})
-# this flag must also be passed at link time
+    # this flag must also be passed at link time
     target_link_libraries(regression_16 "-fsanitize=undefined")
     target_link_libraries(regression_16 melissa)
     add_test(Regression16 regression_16)
