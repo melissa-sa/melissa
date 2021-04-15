@@ -24,7 +24,9 @@ build-and-test:
     - if [ "$COMPILER" = clang ]; then export CXX=clang++; fi
     - mkdir build
     - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+    - build_args=''
+    - if [ "$DISTRIBUTION" = centos/7 ]; then build_args='-DINSTALL_ZMQ=ON'; fi
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE="$BUILD_TYPE" $build_args
 
 
 ubuntu/18.04:
