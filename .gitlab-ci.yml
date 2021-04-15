@@ -16,6 +16,8 @@ build-and-test:
     - echo "$DISTRIBUTION", "$ARCH", "$BUILD_TYPE", "$COMPILER"
     - fgrep PRETTY_NAME /etc/os-release
     - uname -m
+    - export CFLAGS='-Werror'
+    - export CXXFLAGS='-Werror'
     - export MALLOC_CHECK_=3
     - export MALLOC_PERTURB_=1
     - if [ "$COMPILER" = clang ]; then export CC=clang; fi
