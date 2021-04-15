@@ -5,15 +5,15 @@ build-and-test:
     matrix:
       - DISTRIBUTION: [alpine/edge, debian/9, debian/10]
         ARCH: [amd64, i386]
-        BUILD_TYPE: [Debug, Release]
         COMPILER: [gcc, clang]
+        BUILD_TYPE: [Debug, Release]
       - DISTRIBUTION: [centos/7, centos/8]
         ARCH: [amd64]
-        BUILD_TYPE: [Debug, Release]
         COMPILER: [gcc, clang]
+        BUILD_TYPE: [Debug, Release]
   image: datamove/$DISTRIBUTION/$ARCH
   script:
-    - echo "$DISTRIBUTION", "$ARCH", "$BUILD_TYPE", "$COMPILER"
+    - echo "$DISTRIBUTION", "$ARCH", "$COMPILER", "$BUILD_TYPE"
     - fgrep PRETTY_NAME /etc/os-release
     - uname -m
     - export CFLAGS='-Werror'
