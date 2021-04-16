@@ -1,120 +1,29 @@
-alpine/edge/amd64:
-  image: datamove/alpine/edge/amd64
+build-and-test:
   tags:
     - lxd
+  parallel:
+    matrix:
+      - DISTRIBUTION: [alpine/edge, debian/9, debian/10]
+        ARCH: [amd64, i386]
+        COMPILER: [gcc, clang]
+        BUILD_TYPE: [Debug, Release]
+      - DISTRIBUTION: [centos/7, centos/8]
+        ARCH: [amd64]
+        COMPILER: [gcc, clang]
+        BUILD_TYPE: [Debug, Release]
+  image: datamove/$DISTRIBUTION/$ARCH
   script:
+    - echo "$DISTRIBUTION", "$ARCH", "$COMPILER", "$BUILD_TYPE"
+    - fgrep PRETTY_NAME /etc/os-release
+    - uname -m
+    - export CFLAGS='-Werror'
+    - export CXXFLAGS='-Werror'
     - export MALLOC_CHECK_=3
     - export MALLOC_PERTURB_=1
+    - if [ "$COMPILER" = clang ]; then export CC=clang; fi
+    - if [ "$COMPILER" = clang ]; then export CXX=clang++; fi
     - mkdir build
     - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
-
-
-centos/7/amd64:
-  image: datamove/centos/7/amd64
-  tags:
-    - lxd
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug -DINSTALL_ZMQ=ON
-
-
-centos/8/amd64:
-  image: datamove/centos/8/amd64
-  tags:
-    - lxd
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
-
-
-debian/9/amd64:
-  image: datamove/debian/9/amd64
-  tags:
-    - lxd
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - export CC=clang
-    - export CXX=clang++
-    - export CFLAGS='-fstack-protector-all'
-    - export CXXFLAGS="$CFLAGS"
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
-
-
-debian/9/i386:
-  image: datamove/debian/9/i386
-  tags:
-    - lxd
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - export CFLAGS='-march=native'
-    - export CXXFLAGS='-march=native'
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Release
-
-
-debian/10/amd64:
-  image: datamove/debian/10/amd64
-  tags:
-    - lxd
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - export CFLAGS='-march=native'
-    - export CXXFLAGS='-march=native'
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Release
-
-
-debian/10/i386:
-  image: datamove/debian/10/i386
-  tags:
-    - lxd
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - export CC=clang
-    - export CXX=clang++
-    - export CFLAGS='-fstack-protector-all'
-    - export CXXFLAGS="$CFLAGS"
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
-
-
-ubuntu/18.04:
-  image: datamove/ubuntu/18.04
-  tags:
-    - docker
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
-
-
-ubuntu/20.04:
-  image: datamove/ubuntu/20.04
-  tags:
-    - docker
-  script:
-    - export MALLOC_CHECK_=3
-    - export MALLOC_PERTURB_=1
-    - export CC=clang
-    - export CXX=clang++
-    - mkdir build
-    - cd build
-    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE=Debug
+    - build_args=''
+    - if [ "$DISTRIBUTION" = centos/7 ]; then build_args='-DINSTALL_ZMQ=ON'; fi
+    - bash ../build-and-test.sh .. -DCMAKE_BUILD_TYPE="$BUILD_TYPE" $build_args
