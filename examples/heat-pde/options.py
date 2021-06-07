@@ -78,7 +78,7 @@ STUDY_OPTIONS['nb_timesteps'] = 100
 STUDY_OPTIONS['verbosity'] = 2
 
 # Number of simulations started per client / scheduler batch. Option ignored when Sobol' indices are computed.
-# For Sobol's inidices the batch size is always  P+2 where P is the number of parameters 
+# For Sobol' indices the batch size is always  P+2 where P is the number of parameters 
 # (constraint related to the pick-freeze method)
 STUDY_OPTIONS['batch_size'] = 2
 
@@ -90,7 +90,7 @@ STUDY_OPTIONS['simulation_timeout'] = 400
 # Server checkpoint interval (seconds)
 STUDY_OPTIONS['checkpoint_interval'] = 300
 
-# Method used to couple the simulation in a pick-freeze batch (specific to Sobol's Indicies)
+# Method used to couple the simulation in a pick-freeze batch (specific to Sobol' Indices)
 STUDY_OPTIONS['coupling'] = "MELISSA_COUPLING_MPI"
 
 # Port numbers used  to connect launcher, clients and server through ZMQ. 
