@@ -48,7 +48,6 @@ struct melissa_server_s
     char                  node_name[MPI_MAX_PROCESSOR_NAME];
     void                 *context;
     void                 *connexion_responder;
-    void                 *deconnexion_responder;
     void                 *data_puller;
     void                 *text_puller;
     void                 *text_pusher;

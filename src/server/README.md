@@ -28,15 +28,12 @@ This function is called once when the server starts. First it allocates the serv
 
 *TODO* 2020-08-12 Is the `connexion_responder` still present in the code?
 
-Then the server creates five or six ZeroMQ sockets:
+Then the server creates five ZeroMQ sockets:
 1. `connexion_responder`: This is a req/rep communication channel with the individual simulations
-2. `deconnexion_responder` (optional): This is another req/rep communication channel with the individual simulations
-3. `data_puller`: A pull port for receiving simulation data
-4. `text_puller`: A one-way communication channel receiving from the launcher
-5. `text_pusher`: A one-way communication channel send to the launcher
-6. `text_requester`: This is a req/rep communication channel with the launcher
-
-The `deconnexion_responder` allows simulations to notify the server before deconnecting. This socket has to be enabled at build time by passing `-DCHECK_SIMU_DECONNECTION=ON` to CMake.
+2. `data_puller`: A pull port for receiving simulation data
+3. `text_puller`: A one-way communication channel receiving from the launcher
+4. `text_pusher`: A one-way communication channel send to the launcher
+5. `text_requester`: This is a req/rep communication channel with the launcher
 
 `melissa_server_init` initializes MPI, gets the options given by the launcher through the command line and opens all communication channels. Each MPI process sends its node name to the launcher and initialize all the fields and fault-tolerance structures.
 
@@ -45,7 +42,7 @@ The `deconnexion_responder` allows simulations to notify the server before decon
 
 This is the main loop of the Melissa server. In this loop, the Melissa server checks the heartbeats of the simulations and the launcher. The launcher sends a regular heartbeat but for the simulations, the Melissa server uses data messages. To select an appropriate time-out, it is necessary to have a good estimate of the duration of one simulation timestep. The Melissa server checkpoints whenever the last checkpoint is older than the amount of time given in `check_interval`.
 
-In its main event loop, the Melissa server waits for messages on the first three ZeroMQ sockets (four, respectively with if `CHECK_SIMU_DECONNECTION` is on). ~~If no message is detected after 100 ms, then the loop cycle. Else, melissa first checks the launcher messages, then the simulation connexion messages, and finaly the data messages.~~
+In its main event loop, the Melissa server waits for messages on the first three ZeroMQ sockets. ~~If no message is detected after 100 ms, then the loop cycle. Else, melissa first checks the launcher messages, then the simulation connexion messages, and finaly the data messages.~~
 
 Only the MPI rank 0 process can receive simulation connection messages. It then replies with the server information. Before the first connection is accepted, all the other MPI ranks are blocked in `mpi_bcast`. When the rank 0 process receives its first message, it enters `mpi_bcast` and unblocks the other processes. At this point, the Melissa server creates the right number of field data structures but does not allocate memory for the iterative statistics as it does not know the size of the fields yet.
 
