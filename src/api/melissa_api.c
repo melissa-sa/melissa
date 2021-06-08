@@ -62,9 +62,6 @@ struct global_data_s
 {
     void    *context;               /**< ZeroMQ context                            */
     void    *connexion_requester;   /**< connexion ZeroMQ port                     */
-#ifdef CHECK_SIMU_DECONNECTION
-    void    *deconnexion_requester; /**< connexion ZeroMQ port                     */
-#endif // CHECK_SIMU_DECONNECTION
     void   **sobol_requester;       /**< data ZeroMQ Sobol port                    */
     int      rinit_tab[5];          /**< array used to receive data                */
     int      sobol;                 /**< 1 if sobol computation, 0 otherwhise      */
@@ -436,9 +433,6 @@ static void melissa_init_internal (const char *field_name,
         global_data.buff_size = 0;
         global_data.context = zmq_ctx_new (); // initialize zmq context
         global_data.connexion_requester = zmq_socket (global_data.context, ZMQ_REQ); // create a REQ socket to send a request to the server
-#ifdef CHECK_SIMU_DECONNECTION
-        global_data.deconnexion_requester = zmq_socket (global_data.context, ZMQ_REQ);
-#endif // CHECK_SIMU_DECONNECTION
         global_data.sobol_requester = NULL;
         global_data.comm_size = comm_size;
         assert(comm);
@@ -497,10 +491,6 @@ static void melissa_init_internal (const char *field_name,
         sprintf (port_name, "tcp://%s:2003", server_node_name);
         // we connect to the rank 0 of the server on port 2003
         melissa_connect (global_data.connexion_requester, port_name);
-#ifdef CHECK_SIMU_DECONNECTION
-        sprintf (port_name, "tcp://%s:2002", server_node_name);
-        melissa_connect (global_data.deconnexion_requester, port_name);
-#endif // CHECK_SIMU_DECONNECTION
         // we send the message
         if (zmq_msg_send (&msg, global_data.connexion_requester, 0) < 0)
         {
@@ -1366,47 +1356,6 @@ void melissa_finalize (void)
     }
 
     // in certain cases, we have to ask the server for the permission to disconect.
-#ifdef CHECK_SIMU_DECONNECTION
-    if (global_data.rank == 0 && global_data.sobol_rank == 0)
-    {
-        zmq_msg_t  msg;
-//        sleep(2);
-        i = 0;
-        while (i<2)
-        {
-            melissa_print (VERBOSE_DEBUG, "Group %d ready to disconnect \n", global_data.sample_id);
-            zmq_msg_init_size (&msg, sizeof(int));
-            memcpy (zmq_msg_data (&msg), &global_data.sample_id, sizeof(int));
-            if (zmq_msg_send (&msg, global_data.deconnexion_requester, 0) < 0)
-            {
-				die(errno);
-            }
-            zmq_msg_close (&msg);
-            melissa_print (VERBOSE_DEBUG, "Group %d waiting... \n", global_data.sample_id);
-            zmq_msg_init (&msg);
-            if (zmq_msg_recv (&msg, global_data.deconnexion_requester, 0) < 0)
-            {
-                die(errno);
-            }
-            memcpy(&i, zmq_msg_data (&msg), sizeof(int));
-            zmq_msg_close (&msg);
-            melissa_print (VERBOSE_DEBUG, "Group status: %d \n", i);
-            if (i==1)
-            {
-                sleep(2);
-            }
-        }
-    }
-    zmq_close (global_data.deconnexion_requester);
-
-
-    if (global_data.comm_size > 1)
-    {
-        // wait every processes here again
-        MPI_Barrier(global_data.comm);
-    }
-#endif // CHECK_SIMU_DECONNECTION
-
     if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_ZMQ)
     {
         if (global_data.sobol_rank == 0)
