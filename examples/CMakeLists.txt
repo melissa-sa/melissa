@@ -30,4 +30,3 @@
 
 add_subdirectory(heat-pde)
 add_subdirectory(Code_Saturne)
-add_subdirectory(TELEMAC-2D)
