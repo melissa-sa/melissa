@@ -42,22 +42,10 @@
 #define MELISSA_COUPLING_DEFAULT 0 /**< Default coupling */
 #define MELISSA_COUPLING_ZMQ 0     /**< ZeroMQ coupling */
 #define MELISSA_COUPLING_MPI 1     /**< MPI coupling */
-#define MELISSA_COUPLING_FLOWVR 2  /**< FlowVR coupling */
 
 #ifndef MPI_MAX_PROCESSOR_NAME
 #define MPI_MAX_PROCESSOR_NAME 256 /**< maximum size of processor names */
 #endif
-
-#ifdef BUILD_WITH_FLOWVR
-void flowvr_init(int *comm_size, int *rank);
-
-void send_to_group(void* buff,
-                   int buff_size);
-
-void recv_from_group(void* buff);
-
-void flowvr_close();
-#endif // BUILD_WITH_FLOWVR
 
 /**
  *******************************************************************************
@@ -621,7 +609,7 @@ static void melissa_init_internal (const char *field_name,
                 exit(1);
             }
             global_data.coupling = atoi(coupling_a);
-            // coupling method can be ZMQ, MPI or FlowVR
+            // coupling method can be ZMQ or MPI
 
             // The simulation's Sobol' rank is retrieved through its simu ID
             global_data.sobol_rank = simu_id % (global_data.nb_parameters + 2);
@@ -724,7 +712,7 @@ static void melissa_init_internal (const char *field_name,
 
     if (global_data.sobol == 1 && first_init != 0) // in this section of code, we define the communication patern between members of the Sobol' group.
     {
-        // Three coupling scenarios: MPI, FlowVR, or ZMQ (default).
+        // Three coupling scenarios: MPI or ZMQ (default).
         switch (global_data.coupling)
         {
         case MELISSA_COUPLING_MPI:
@@ -733,16 +721,6 @@ static void melissa_init_internal (const char *field_name,
             // all the simulation's comm communicator of the group must form a partition of the MPI_COMM_WORLD communicator.
             // here we create a communicator that connects all the simulations processes with the same rank in the comm communicator.
             MPI_Comm_split(MPI_COMM_WORLD, rank, global_data.sobol_rank, &global_data.comm_sobol);
-            break;
-
-        case MELISSA_COUPLING_FLOWVR:
-#ifdef BUILD_WITH_FLOWVR
-            // flowvr coupling script is outside the C code
-            flowvr_init(&comm_size, &rank);
-#else // BUILD_WITH_FLOWVR
-            fprintf (stderr, "ERROR: Build with FlowVR to use FlowVR coupling");
-            exit(1);
-#endif // BUILD_WITH_FLOWVR
             break;
 
         case MELISSA_COUPLING_ZMQ:
@@ -1182,21 +1160,6 @@ void melissa_send (const char   *field_name,
         // gather data from the Sobol' group to sobol_rank 0
         switch (global_data.coupling)
         {
-#ifdef BUILD_WITH_FLOWVR
-        case MELISSA_COUPLING_FLOWVR:
-            // gather data from other ranks of the sobol group
-            if (global_data.sobol_rank == 0)
-            {
-                recv_from_group ((void*)&global_data.buffer_data[local_vect_size]);
-            }
-            else // *sobol_rank != 0
-            {
-                //send data to rank 0 of the sobol group
-                send_to_group (send_vect_ptr, local_vect_size * sizeof(double));
-            }
-            break;
-#endif // BUILD_WITH_FLOWVR
-
         case MELISSA_COUPLING_ZMQ:
             if (global_data.sobol_rank == 0)
             {
@@ -1444,12 +1407,6 @@ void melissa_finalize (void)
     }
 #endif // CHECK_SIMU_DECONNECTION
 
-#ifdef BUILD_WITH_FLOWVR
-    if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_FLOWVR)
-    {
-        flowvr_close();
-    }
-#endif // BUILD_WITH_FLOWVR
     if (global_data.sobol == 1 && global_data.coupling == MELISSA_COUPLING_ZMQ)
     {
         if (global_data.sobol_rank == 0)

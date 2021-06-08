@@ -84,10 +84,6 @@ def make_launch_group_fn(scheduler, simulation_path, options, study_options,
         # param_set is a list of size group.nb_param + 2 of numpy arrays of
         # size group.nb_param, corresponding to the sets of n parameters of the
         # n+2 simulations in the Sobol' group.
-        if group.ml_stats["sobol_indices"] \
-            and study_options["coupling"] == "MELISSA_COUPLING_FLOWVR":
-            raise NotImplementedError("launch_group with FlowVR coupling")
-
         if not group.ml_stats["sobol_indices"]:
             assert "sampling_size" in study_options
             assert "batch_size" in study_options

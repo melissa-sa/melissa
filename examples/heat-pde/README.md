@@ -196,9 +196,7 @@ The solver can take from one to five input parameters, stored in five doubles. T
 ```
 
 
-In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the `MELISSA_COUPLING_MPI` coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on `MPI_COMM_WORL`D for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called `MELISSA_COUPLING_ZMQ`.
-A third coupling mechanism is also available if you have the FlowVR software installed in your environment. It is called `MELISSA_COUPLING_FLOWVR`, and we will not use it in this example.
-All these coupling mechanisms are transparent to the user.
+In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the `MELISSA_COUPLING_MPI` coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on `MPI_COMM_WORL`D for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called `MELISSA_COUPLING_ZMQ`. The coupling mechanisms are transparent to the user.
 In the heat solver, we can easily split MPI communicator, so we will use `MELISSA_COUPLING_MPI`. We split `MPI_COMM_WORLD` by simulation in the simulation group:
 
 

@@ -183,29 +183,6 @@ set_target_properties(
 find_package(MelissaMPI REQUIRED)
 
 
-# FlowVR #
-
-option(BUILD_WITH_FLOWVR "Build with FlowVR interface" OFF)
-
-if(BUILD_WITH_FLOWVR)
-  find_package(FlowVR)
-  if(FLOWVR_FOUND)
-    message(STATUS "FlowVR Found")
-    add_definitions( -DBUILD_WITH_FLOWVR )
-    include_directories(${FLOWVR_INCLUDE_DIR})
-    set(FLOWVR_LIBS ${EXTRA_LIBS}
-                    ${FLOWVR_base_LIBRARY}
-                    ${FLOWVR_ftl_LIBRARY}
-                    ${FLOWVR_mod_LIBRARY}
-                    ${CMAKE_THREAD_LIBS_INIT} )
-    set(EXTRA_LIBS ${EXTRA_LIBS}
-                   ${FLOWVR_LIBS})
-  else(FLOWVR_FOUND)
-    # Disable  Option if missing dependencies
-    set(BUILD_WITH_FLOWVR FALSE CACHE BOOL "Build with FlowVR interface" FORCE)
-    message(STATUS "FlowVR Not Found. BUILD_WITH_FLOWVR option turned OFF")
-  endif(FLOWVR_FOUND)
-endif(BUILD_WITH_FLOWVR)
 
 # Doxygen #
 
