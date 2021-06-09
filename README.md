@@ -3,6 +3,7 @@
 ## Table of Contents
 
 * [About](#about)
+* [Documentation](#melissa-documentation)
 * [News](#news)
 * [Getting Started](#getting-started)
 * [Sensitivity Analysis with Melissa](#sensitivity-analysis-with-melissa)
@@ -41,7 +42,6 @@ For more details on the Melissa model for sensibility analysis  refer to [PDF](h
 ![](doc/melissa_framework2.png)
 
 
-
 ## News
 
 * **February 2021 Update** (Version 0.7)
@@ -71,6 +71,11 @@ For more details on the Melissa model for sensibility analysis  refer to [PDF](h
   * Add FlowVR coupling mechanism for Sobol' groups
   * Add Telemac2D example, including FlowVR coupling mechanism
   * Many bug fixes
+
+
+## Melissa Documentation
+
+Melissa documentation comes with the code and  is spread in README.md files as close as possible to the concerned code.  You are right now at the root README.md of this doc. 
 
 
 ## Getting Started
