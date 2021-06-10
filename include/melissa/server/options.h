@@ -78,6 +78,7 @@ void melissa_print_options (melissa_options_t *options);
  * the command line.
  *
  * @param[in,out] optarg The argument of the `-f` option
+ * @param[in,out] server The server state
  */
 int melissa_options_get_fields(char* optarg, struct melissa_server_s* server);
 

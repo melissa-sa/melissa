@@ -45,17 +45,11 @@ void init_min_max (min_max_t *min_max,
  * This function updates the min and the max values of min and max vectors
  * using the input vector.
  *
- * @param[in,out] *min_max
- * the min and max structure
- *
- * @param[in] in_vect[]
- * input vector of double values
- *
- * @param[in] vect_size
- * size of the input vectors
- *
+ * @param[in,out] min_max A reference to a min_max structure
+ * @param[in] in_vect A reference to a list of values
+ * @param[in] simu_id The ID of the simulation generating the values
+ * @param[in] vect_size The number of values in the list
  */
-
 void min_and_max (min_max_t *min_max,
                   double     in_vect[],
                   const int  simu_id,

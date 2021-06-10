@@ -123,16 +123,11 @@ int check_simu_state(melissa_field_t *fields,
 
 
 /**
- * This function parses messages from launcher
+ * This function parses messages from launcher.
  *
- * @param[in] msg message from launcher
- * number of timeouts detected
- *
- * @param[in] *simulations
- * pointer to the simulation vector
- *
+ * @param[in] msg_data A reference to a serialized launcher message
+ * @param[in] server_ptr A reference to the server state
  */
-
 void process_launcher_message (void*             msg_data,
                                melissa_server_t *server_ptr)
 {

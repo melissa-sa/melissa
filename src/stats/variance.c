@@ -146,31 +146,12 @@ void update_variance (variance_t *variance1,
 /**
  * This function agregates the partial variances from all process on precess 0.
  *
- * @param[in] mean[]
- * input: partial mean vector
- *
- * @param[in,out] *variance[]
- * input: partial variance vector,
- * output: global variance vector on process 0
- *
- * @param[in,out] increment
- * input: local increment,
- * output: global increment on process 0
- *
- * @param[in] vect_size
- * size of the input vector
- *
- * @param[in] rank
- * process rank in "comm"
- *
- * @param[in] comm_size
- * nomber of process in "comm"
- *
- * @param[in] comm
- * MPI communicator
- *
+ * @param[in,out] variance A reference to a partial variance vector
+ * @param[in] vect_size The number of variances in the vector
+ * @param[in] rank Caller rank in the given MPI communicator
+ * @param[in] comm_size The size of the group of the given MPI communicator
+ * @param[in] comm An MPI communicator
  */
-
 void update_global_variance (variance_t *variance,
                              const int   vect_size,
                              const int   rank,
@@ -187,24 +168,13 @@ void update_global_variance (variance_t *variance,
 /**
  * This function agregates the partial means and variances from all process on precess 0.
  *
- * @param[in,out] *variance
- * input: partial variance,
- * output: global variance on process 0
- *
- * @param[in] vect_size
- * size of the input vector
- *
- * @param[in] rank
- * process rank in "comm"
- *
- * @param[in] comm_size
- * nomber of process in "comm"
- *
- * @param[in] comm
- * MPI communicator
- *
+ * @param[in,out] variance A list of partial variances; on exit global variance
+ * on rank 0
+ * @param[in] vect_size The number of partial variances
+ * @param[in] rank Caller rank in the given MPI communicator
+ * @param[in] comm_size The size of the group of of the given MPI communicator
+ * @param[in] comm An MPI communicator
  */
-
 void update_global_mean_and_variance (variance_t *variance,
                                       const int   vect_size,
                                       const int   rank,

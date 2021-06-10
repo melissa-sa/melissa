@@ -232,14 +232,14 @@ double melissa_get_time ()
 }
 
 /**
- * Returns the name of the current node.
- * The string copied into `node_name` may not be null-terminated if the node
- * name is too long.
+ * This function returns the name of the current node.
+ *
+ * \post The string copied into node_name may not be null-terminated if the
+ * node name is too long.
  *
  * @param[out] node_name Contains the node name, may not be null-terminated
- *
+ * @param[in] buf_len The capacity of the buffer referenced by node_name
  */
-
 void melissa_get_node_name (char* node_name, size_t buf_len)
 {
 	assert(node_name);
@@ -289,16 +289,12 @@ void init_verbose_lvl (int verbose_level)
 }
 
 /**
- * Print a message depending on the verbose level
+ * Print a message depending on the verbosity level.
  *
- * @param[in] *msg_priority
- * The level of priority for this message
- *
- * @param[out] *format
- * The format of the message to output
- *
+ * @param[in] msg_priority The priority level
+ * @param[in] func_name The name of the function causing a message to be printed
+ * @param[out] format The format of the message to print
  */
-
 void melissa_print (int msg_priority, const char* func_name, const char* format, ...)
 {
     va_list args;

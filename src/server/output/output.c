@@ -512,12 +512,8 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 /**
  * This function writes the simu_id and the corresponding parameter set
  *
- * @param[out] *simu
- * simulations vector
- *
- * @param[out] nb_parameters
- * number of simulation parameters
- *
+ * @param[out] simulations The list of running simulations
+ * @param[out] nb_parameters the number of simulation parameters
  */
 
 void write_simu_param (vector_t *simulations,

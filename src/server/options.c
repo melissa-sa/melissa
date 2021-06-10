@@ -383,15 +383,9 @@ void melissa_print_options (melissa_options_t *options)
 /**
  * This function parses command line options and fill the parameter structure
  *
- * @param[in] argc
- * argc
- *
- * @param[in] **argv
- * argv
- *
- * @param[out] *options
- * pointer to the structure containing options parameters
- *
+ * @param[in] argc argc
+ * @param[in] argv argv
+ * @param[out] server A reference to the server state
  */
 
 void melissa_get_options(int argc, char **argv, melissa_server_t* server)

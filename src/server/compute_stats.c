@@ -20,22 +20,14 @@
 #include <stdlib.h>
 
 /**
- * This function updates the statistics stored in the data structure
+ * This function updates the statistics stored in the data structure.
  *
- * @param[in] *data
- * pointer to the structure containing global parameters
- *
- * @param[in] time_step
- * time step of the current simulation
- *
- * @param[in] nb_vect
- * number of input vectors
- *
- * @param[in] **in_vect_tab
- * array of input vectors
- *
+ * @param[in] data A reference to the global data
+ * @param[in] time_step The current simulation time step
+ * @param[in] simu_id The ID of the simulation generating the input vectors
+ * @param[in] nb_vect The number of input vectors
+ * @param[in] in_vect_tab An array of input vectors
  */
-
 void compute_stats (melissa_data_t  *data,
                     const int        time_step,
                     const int        simu_id,
