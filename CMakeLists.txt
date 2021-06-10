@@ -184,20 +184,36 @@ find_package(MelissaMPI REQUIRED)
 
 
 
-# Doxygen #
+# Doxygen
 
-option(BUILD_DOCUMENTATION "Use Doxygen to create the documentation" OFF)
-if (BUILD_DOCUMENTATION)
+option(BUILD_DOCUMENTATION "Build Doxygen documentation" OFF)
+
+if(BUILD_DOCUMENTATION)
+    # do not use `find_package(Doxygen REQUIRED dot)` because if Doxygen is
+    # installed but Graphviz is not, then CMake 3.13 prints an error message
+    # where a user must look closely to see that Graphviz is missing and not
+    # Doxygen:
+    # CMake Error at /usr/share/cmake-3.13/Modules/FindPackageHandleStandardArgs.cmake:137 (message):
+    #   Could NOT find Doxygen (missing: dot) (found version "1.8.13")
+    # Call Stack (most recent call first):
+    #   /usr/share/cmake-3.13/Modules/FindPackageHandleStandardArgs.cmake:378 (_FPHSA_FAILURE_MESSAGE)
+    #   /usr/share/cmake-3.13/Modules/FindDoxygen.cmake:615 (find_package_handle_standard_args)
+    #   CMakeLists.txt:191 (find_package)
     find_package(Doxygen)
     if(NOT DOXYGEN_FOUND)
         message(SEND_ERROR "Doxygen not found. Cannot build documentation.")
+    endif()
+    if(NOT DOXYGEN_DOT_FOUND)
+        message(
+            WARNING
+            "Graphviz not found. Documentation will be built without dependency graphs.")
     endif()
     configure_file(doc/doxygen/Doxyfile.in doc/doxygen/Doxyfile @ONLY)
     # Add a custom target to run Doxygen when ever the project is built
     add_custom_target(
         doc ALL
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/doc/doxygen/Doxyfile
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/doc
         COMMENT "Generating API documentation with Doxygen"
         VERBATIM
     )
