@@ -20,8 +20,6 @@
 #include <stdlib.h>
 
 /**
- * @ingroup intern_API
- *
  * This function updates the statistics stored in the data structure
  *
  * @param[in] *data
@@ -129,8 +127,6 @@ void compute_stats (melissa_data_t  *data,
 }
 
 /**
- * @ingroup intern_API
- *
  * This function finalize the statistics stored in the data structure
  *
  * @param[in] *data

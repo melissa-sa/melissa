@@ -138,8 +138,6 @@ static void melissa_alloc_data (melissa_data_t *data)
 }
 
 /**
- * @ingroup melissa_data
- *
  * This function initializes the data structure
  *
  * @param[out] *data
@@ -176,8 +174,6 @@ void melissa_init_data (melissa_data_t    *data,
 }
 
 /**
- * @ingroup stats_data
- *
  * This function checks the data structure. It terminates the program if one of
  * the mandatory option is missing or invalid, and correct mistakes for other options
  *
@@ -199,8 +195,6 @@ void melissa_check_data (melissa_data_t *data)
 }
 
 /**
- * @ingroup melissa_data
- *
  * This function frees the memory in the data structure
  *
  * @param[in] *data

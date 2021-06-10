@@ -25,8 +25,6 @@
 #include <mpi.h>
 
 /**
- * @ingroup melissa_io
- *
  * This function saves stats on disc
  *
  * @param[in] *data
@@ -102,8 +100,6 @@ void save_stats (melissa_data_t *data,
 }
 
 /**
- * @ingroup melissa_io
- *
  * This function reads stats saved on disc
  *
  * @param[in] *data
@@ -186,8 +182,6 @@ void read_saved_stats (melissa_data_t *data,
 }
 
 /**
- * @ingroup melissa_io
- *
  * This function saves current simulation states on disc
  *
  * @param[in] *simu
@@ -224,8 +218,6 @@ void save_simu_states (vector_t    *simu,
 }
 
 /**
- * @ingroup melissa_io
- *
  * This function reads simulation states from disc
  *
  * @param[out] *simu

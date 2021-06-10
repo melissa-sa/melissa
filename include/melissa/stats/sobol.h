@@ -24,8 +24,6 @@ extern "C" {
 #endif
 
 /**
- * @ingroup sobol
- *
  * @struct sobol_jansen_s
  *
  * Structure containing a sobol indices vector with all structures needed by Jansen update formula
@@ -43,8 +41,6 @@ struct sobol_jansen_s
 typedef struct sobol_jansen_s sobol_jansen_t; /**< type corresponding to sobol_martinez_s */
 
 /**
- * @ingroup sobol
- *
  * @struct sobol_martinez_s
  *
  * Structure containing a sobol indices vector with all structures needed by Martinez update formula
@@ -64,8 +60,6 @@ struct sobol_martinez_s
 typedef struct sobol_martinez_s sobol_martinez_t; /**< type corresponding to sobol_martinez_s */
 
 /**
- * @ingroup sobol
- *
  * @struct sobol_array_s
  *
  * Structure containing an array of sobol index structures

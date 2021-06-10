@@ -24,8 +24,6 @@ extern "C" {
 #endif
 
 /**
- * @ingroup stats_base
- *
  * @struct threshold_s
  *
  * Structure containing threshold exceedance arrays

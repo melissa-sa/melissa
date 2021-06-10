@@ -26,8 +26,6 @@
 #include <string.h>
 
 /**
- * @ingroup melissa_fields
- *
  * This function initializes the fields after first contact with a client
  *
  * @param[in,out] *fields
@@ -60,8 +58,6 @@ void add_fields (melissa_field_t *fields,
 }
 
 /**
- * @ingroup melissa_fields
- *
  * This function returns a field id given its name
  *
  * @param[in] fields[]
@@ -101,8 +97,6 @@ int get_field_id(melissa_field_t fields[],
 }
 
 /**
- * @ingroup melissa_fields
- *
  * This function returns a pointer to a data structure given its field name
  *
  * @param[in] fields[]
@@ -143,8 +137,6 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
 }
 
 /**
- * @ingroup melissa_fields
- *
  * This function writes the data and frees the fields structure
  *
  * @param[in] *fields

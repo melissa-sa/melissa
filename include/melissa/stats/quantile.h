@@ -24,8 +24,6 @@ extern "C" {
 #endif
 
 /**
- * @ingroup stats_base
- *
  * @struct quantile_s
  *
  * Structure containing an array of quantiles,

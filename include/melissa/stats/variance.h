@@ -28,8 +28,6 @@ extern "C" {
 #endif
 
 /**
- * @ingroup stats_base
- *
  * @struct variance_s
  *
  * Structure containing an array of variances and the corresponding mean structure

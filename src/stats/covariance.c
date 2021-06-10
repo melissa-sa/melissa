@@ -22,8 +22,6 @@
 #include <stdio.h>
 
 /**
- * @ingroup stats_base
- *
  * This function initializes a covariance structure.
  *
  * @param[in,out] *covariance
@@ -44,8 +42,6 @@ void init_covariance (covariance_t *covariance,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function updates the incremental covariance.
  *
  * @param[in,out] *covariance
@@ -87,8 +83,6 @@ void increment_covariance (covariance_t *covariance,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function updates the incremental covariance.
  *
  * @param[in] *covariance1
@@ -128,8 +122,6 @@ void update_covariance (covariance_t *covariance1,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of covariances structures on disc
  *
  * @param[in] *covars
@@ -162,8 +154,6 @@ void save_covariance(covariance_t *covars,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of covariances structures on disc
  *
  * @param[in] *covars
@@ -196,8 +186,6 @@ void read_covariance(covariance_t *covars,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function frees a covariance structure.
  *
  * @param[in] *covariance

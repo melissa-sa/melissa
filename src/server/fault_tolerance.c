@@ -20,8 +20,6 @@
 #include <string.h>
 
 /**
- * @ingroup melissa_fault_tolerance
- *
  * This function allocates and return a pointer to a simulation structure
  *
  */
@@ -44,8 +42,6 @@ melissa_simulation_t* add_simulation()
 }
 
 /**
- * @ingroup melissa_fault_tolerance
- *
  * This function frees a simulation vector
  *
  * @param[in] *v
@@ -69,8 +65,6 @@ void free_simu_vector(vector_t v)
 }
 
 /**
- * @ingroup melissa_fault_tolerance
- *
  * This function checks if the simulations are in a timeout situation
  *
  * @param[in] *simulations
@@ -108,8 +102,6 @@ int check_timeouts (vector_t *simulations,
 }
 
 /**
- * @ingroup melissa_fault_tolerance
- *
  * This function sends the timeouts detected by check_timeouts
  *
  * @param[in] *detected_timeouts
@@ -150,8 +142,6 @@ void send_timeouts (int       detected_timeouts,
 
 
 /**
- * @ingroup melissa_fault_tolerance
- *
  * This function counts the number of simulations in a given job status
  *
  * @param[in] *simulations

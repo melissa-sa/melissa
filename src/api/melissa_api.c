@@ -39,8 +39,6 @@
 #endif
 
 /**
- * @ingroup melissa_api
- *
  * @struct global_data_s
  *
  * Structure containing some global data
@@ -72,8 +70,6 @@ struct global_data_s
 typedef struct global_data_s global_data_t; /**< type corresponding to global_data_s */
 
 /**
- * @ingroup melissa_api
- *
  * @struct field_data_s
  *
  * Structure containing data for each field
@@ -363,8 +359,6 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
 }
 
 /**
- * @ingroup melissa_api
- *
  * This function initialise connexion with melissa server
  *
  * @param[in] *field_name

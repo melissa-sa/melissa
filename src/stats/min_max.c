@@ -21,8 +21,6 @@
 #include <stdio.h>
 
 /**
- * @ingroup stats_base
- *
  * This function initializes a min and max structure.
  *
  * @param[in,out] *min_max
@@ -44,8 +42,6 @@ void init_min_max (min_max_t *min_max,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function updates the min and the max values of min and max vectors
  * using the input vector.
  *
@@ -91,8 +87,6 @@ void min_and_max (min_max_t *min_max,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of min and max structures on disc
  *
  * @param[in] *minmax
@@ -126,8 +120,6 @@ void save_min_max(min_max_t *minmax,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of min and max structures on disc
  *
  * @param[in] *minmax
@@ -161,8 +153,6 @@ void read_min_max(min_max_t *minmax,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function frees a min and max structure.
  *
  * @param[in] *min_max

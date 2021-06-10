@@ -335,8 +335,6 @@ static inline void get_operations (char              *name,
 }
 
 /**
- * @ingroup melissa_options
- *
  * This function displays the global parameters on stdout
  *
  * @param[in] *options
@@ -383,8 +381,6 @@ void melissa_print_options (melissa_options_t *options)
 }
 
 /**
- * @ingroup melissa_options
- *
  * This function parses command line options and fill the parameter structure
  *
  * @param[in] argc
@@ -534,8 +530,6 @@ void melissa_get_options(int argc, char **argv, melissa_server_t* server)
 }
 
 /**
- * @ingroup melissa_options
- *
  * This function validates the option structure
  *
  * @param[out] *options

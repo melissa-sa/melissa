@@ -19,8 +19,6 @@
 
 
 /**
- * @ingroup stats_base
- *
  * This function initializes a threshold structure.
  *
  * @param[in,out] *threshold
@@ -43,8 +41,6 @@ void init_threshold (threshold_t  *threshold,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function updates the number of values exceeding a given threshold
  *
  * @param[in,out] threshold
@@ -74,8 +70,6 @@ void update_threshold_exceedance (threshold_t *threshold,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of threshold exceedance vectors on disc
  *
  * @param[in] threshold
@@ -113,8 +107,6 @@ void save_threshold(threshold_t **threshold,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of threshold exceedance vectors on disc
  *
  * @param[in] threshold
@@ -152,8 +144,6 @@ void read_threshold(threshold_t **threshold,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function frees a threshold structure.
  *
  * @param[in,out] *threshold

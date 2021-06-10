@@ -21,8 +21,6 @@
 #include <string.h>
 
 /**
- * @ingroup stats_base
- *
  * This function initializes a quantile structure.
  *
  * @param[in,out] *quantile
@@ -46,8 +44,6 @@ void init_quantile (quantile_t   *quantile,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function updates the incremental quantile.
  *
  * @param[in,out] *quantile
@@ -98,8 +94,6 @@ void increment_quantile (quantile_t *quantile,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of quantile structures on disc
  *
  * @param[in] *quantiles
@@ -138,8 +132,6 @@ void save_quantile(quantile_t **quantiles,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of quantile structures on disc
  *
  * @param[in] *quantiles
@@ -178,8 +170,6 @@ void read_quantile(quantile_t **quantiles,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function frees a quantile structure.
  *
  * @param[in,out] *quantile

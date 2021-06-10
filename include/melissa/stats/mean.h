@@ -26,8 +26,6 @@ extern "C" {
 #endif
 
 /**
- * @ingroup stats_base
- *
  * @struct mean_s
  *
  * Structure containing an array of means, and the corresponding increment

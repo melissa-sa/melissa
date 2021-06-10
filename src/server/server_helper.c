@@ -68,8 +68,6 @@ int create_port_number (comm_data_t *comm_data,
 }
 
 /**
- * @ingroup melissa_utils
- *
  * This function checks the status of a simulation
  *
  * @param[in] *fields
@@ -125,8 +123,6 @@ int check_simu_state(melissa_field_t *fields,
 
 
 /**
- * @ingroup melissa_fault_tolerance
- *
  * This function parses messages from launcher
  *
  * @param[in] msg message from launcher
@@ -238,8 +234,6 @@ int check_last_timestep(melissa_field_t *fields,
 }
 
 /**
- * @ingroup melissa_utils
- *
  * This function counts the amount of data writen on disk
  *
  * @param[in] *options
@@ -275,8 +269,6 @@ long int count_mbytes_written (melissa_options_t  *options)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * This function recieves a string from the launcher
  *
  * @param[in] *socket
@@ -305,8 +297,6 @@ int string_recv (void  *socket,
 }
 
 /**
- * @ingroup sobol
- *
  * This function computes the confidence interval for Martinez Sobol indices
  *
  * @param[in] field

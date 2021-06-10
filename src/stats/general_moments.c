@@ -54,8 +54,6 @@ static inline void update_moments_mean (double    *m1,
     }}
 
 /**
- * @ingroup stats_base
- *
  * This function initializes a moments structure.
  *
  * @param[in,out] *moments
@@ -97,8 +95,6 @@ void init_moments(moments_t *moments,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function incrementes a moment structure.
  *
  * @param[in,out] *moments
@@ -160,8 +156,6 @@ void increment_moments (moments_t *moments,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function agregates two moment structures.
  *
  * @param[in] *moments1
@@ -245,8 +239,6 @@ void update_moments (moments_t *moments1,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of moment structures on disc
  *
  * @param[in] *moments
@@ -293,8 +285,6 @@ void save_moments(moments_t *moments,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of moment structures on disc
  *
  * @param[in] *moments
@@ -341,8 +331,6 @@ void read_moments(moments_t *moments,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function computes the mean from general moments.
  *
  * @param[in] *moments
@@ -368,8 +356,6 @@ void compute_mean (moments_t *moments,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function computes the variance from general moments.
  *
  * @param[in] *moments
@@ -395,8 +381,6 @@ void compute_variance (moments_t *moments,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function computes the skewness from general moments.
  *
  * @param[in] *moments
@@ -422,8 +406,6 @@ void compute_skewness (moments_t *moments,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function computes the kurtosis from general moments.
  *
  * @param[in] *moments
@@ -449,8 +431,6 @@ void compute_kurtosis (moments_t *moments,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function frees a moment_t structure.
  *
  * @param[in,out] *moments

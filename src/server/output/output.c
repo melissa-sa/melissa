@@ -90,8 +90,6 @@ static inline void igather_data(comm_data_t *comm_data,
 }
 
 /**
- * @ingroup melissa_output
- *
  * This function writes the computed statistics on files
  *
  * @param[in] **data
@@ -512,8 +510,6 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 }
 
 /**
- * @ingroup melissa_output
- *
  * This function writes the computed statistics on files
  *
  * @param[in] **data
@@ -762,8 +758,6 @@ void write_stats_bin (melissa_data_t    **data,
 
 
 /**
- * @ingroup melissa_output
- *
  * This function writes the simu_id and the corresponding parameter set
  *
  * @param[out] *simu

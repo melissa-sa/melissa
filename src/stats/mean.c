@@ -22,8 +22,6 @@
 
 
 /**
- * @ingroup stats_base
- *
  * This function initializes a mean structure.
  *
  * @param[in,out] *mean
@@ -42,8 +40,6 @@ void init_mean (mean_t    *mean,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function updates the incremental mean.
  *
  * @param[in,out] *mean
@@ -75,8 +71,6 @@ void increment_mean (mean_t    *mean,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function agregates two partial means.
  *
  * @param[in] *mean1
@@ -111,8 +105,6 @@ void update_mean (mean_t    *mean1,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function agregates the partial means from all process on precess 0.
  *
  * @param[in,out] *mean[]
@@ -178,8 +170,6 @@ void update_global_mean (mean_t    *mean,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of mean structures on disc
  *
  * @param[in] *means
@@ -210,8 +200,6 @@ void save_mean(mean_t *means,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of mean structures on disc
  *
  * @param[in] *means
@@ -242,8 +230,6 @@ void read_mean(mean_t *means,
 }
 
 /**
- * @ingroup stats_base
- *
  * This function frees a mean structure.
  *
  * @param[in] *mean

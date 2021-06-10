@@ -43,8 +43,6 @@ static inline void increment_sobol_covariance (double    *covariance,
 }
 
 /**
- * @ingroup sobol
- *
  * This function initialise a Jansen Sobol indices structure
  *
  * @param[in,out] *sobol_array
@@ -77,8 +75,6 @@ void init_sobol_jansen (sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup sobol
- *
  * This function initialise a Martinez Sobol indices structure
  *
  * @param[in,out] *sobol_array
@@ -118,8 +114,6 @@ void init_sobol_martinez (sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup sobol
- *
  * This function computes Sobol indices using Jansen formula
  *
  * @param[out] *sobol_array
@@ -190,8 +184,6 @@ void increment_sobol_jansen (sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup sobol
- *
  * This function computes Sobol indices using Martinez formula
  *
  * @param[out] *sobol_array
@@ -273,8 +265,6 @@ void increment_sobol_martinez (sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup sobol
- *
  * This function computes the confidence interval for Martinez Sobol indices
  *
  * @param[out] *sobol_array
@@ -329,8 +319,6 @@ void confidence_sobol_martinez(sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup sobol
- *
  * This function computes the confidence interval for Martinez Sobol indices
  * as if the worst value was 0
  *
@@ -352,8 +340,6 @@ double simplified_confidence_sobol_martinez(int iteration)
 }
 
 /**
- * @ingroup sobol
- *
  * This function check if the Sobol indice convergence has been reached
  *
  * @param[out] **sobol_array
@@ -398,8 +384,6 @@ int check_convergence_sobol_martinez(sobol_array_t **sobol_array,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of sobol_jansen structures on disc
  *
  * @param[in] *sobol_array
@@ -441,8 +425,6 @@ void save_sobol_jansen(sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function writes an array of sobol_martinez structures on disc
  *
  * @param[in] *sobol_array
@@ -487,8 +469,6 @@ void save_sobol_martinez(sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of sobol_jansen structures on disc
  *
  * @param[in] *sobol_array
@@ -530,8 +510,6 @@ void read_sobol_jansen(sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup save_stats
- *
  * This function reads an array of sobol_martinez structures on disc
  *
  * @param[in] *sobol_array
@@ -576,8 +554,6 @@ void read_sobol_martinez(sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup sobol
- *
  * This function frees a Jansen Sobol array structure
  *
  * @param[in] *sobol_array
@@ -604,8 +580,6 @@ void free_sobol_jansen (sobol_array_t *sobol_array,
 }
 
 /**
- * @ingroup sobol
- *
  * This function frees a Martinez Sobol indices structure
  *
  * @param[in] *sobol_array

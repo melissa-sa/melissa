@@ -51,8 +51,6 @@ static void die(int error, const char* port_name)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Prints Melissa logo
  *
  */
@@ -70,8 +68,6 @@ void melissa_logo ()
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Wraper around melissa_malloc
  *
  * @param[in] size
@@ -98,8 +94,6 @@ void* melissa_malloc (size_t size)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Wraper around melissa_calloc
  *
  * @param[in] num
@@ -130,8 +124,6 @@ void* melissa_calloc (size_t num,
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Wraper around melissa_realloc
  *
  * @param[in] *ptr
@@ -161,8 +153,6 @@ void* melissa_realloc (void   *ptr,
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Free and nullify a pointer
  *
  * @param[in] *ptr
@@ -180,8 +170,6 @@ void melissa_free (void *ptr)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Wraper around zmq_bind
  *
  * @param[in] *socket
@@ -202,8 +190,6 @@ void melissa_bind (void       *socket,
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Wraper around zmq_connect
  *
  * @param[in] *socket
@@ -224,8 +210,6 @@ void melissa_connect (void *socket,
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Return the time passed since some point in the past. The point in time is
  * system-dependent (e.g., the uptime) and only the difference between two
  * values is meaningful.
@@ -248,8 +232,6 @@ double melissa_get_time ()
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Returns the name of the current node.
  * The string copied into `node_name` may not be null-terminated if the node
  * name is too long.
@@ -294,8 +276,6 @@ void melissa_get_node_name (char* node_name, size_t buf_len)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * init verbose lvl
  *
  * @param[in] *verbose_level
@@ -309,8 +289,6 @@ void init_verbose_lvl (int verbose_level)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Print a message depending on the verbose level
  *
  * @param[in] *msg_priority
@@ -367,8 +345,6 @@ void melissa_print (int msg_priority, const char* func_name, const char* format,
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Sets a bit to 1 in an array of bits
  *
  * @param[out] *vect
@@ -385,8 +361,6 @@ void set_bit (uint32_t *vect, int pos)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Sets a bit to 0 in an array of bits
  *
  * @param[out] *vect
@@ -403,8 +377,6 @@ void clear_bit (uint32_t *vect, int pos)
 }
 
 /**
- * @ingroup melissa_utils
- *
  * Tests a value in an array of bits
  *
  * @param[out] *vect
