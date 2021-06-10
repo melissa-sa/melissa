@@ -90,13 +90,9 @@ static inline void igather_data(comm_data_t *comm_data,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_output
  *
  * This function writes the computed statistics on files
- *
- *******************************************************************************
  *
  * @param[in] **data
  * pointer to the array of structures containing statistics data
@@ -110,7 +106,7 @@ static inline void igather_data(comm_data_t *comm_data,
  * @param[in] *field
  * name of the statistic field to write
  *
- *******************************************************************************/
+ */
 
 void melissa_write_stats_seq(melissa_data_t    **data,
                              melissa_options_t  *options,
@@ -516,13 +512,9 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_output
  *
  * This function writes the computed statistics on files
- *
- *******************************************************************************
  *
  * @param[in] **data
  * pointer to the array of structures containing statistics data
@@ -536,7 +528,7 @@ void melissa_write_stats_seq(melissa_data_t    **data,
  * @param[in] *field
  * name of the statistic field to write
  *
- *******************************************************************************/
+ */
 
 void write_stats_bin (melissa_data_t    **data,
                       melissa_options_t  *options,
@@ -770,13 +762,9 @@ void write_stats_bin (melissa_data_t    **data,
 
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_output
  *
  * This function writes the simu_id and the corresponding parameter set
- *
- *******************************************************************************
  *
  * @param[out] *simu
  * simulations vector
@@ -784,7 +772,7 @@ void write_stats_bin (melissa_data_t    **data,
  * @param[out] nb_parameters
  * number of simulation parameters
  *
- *******************************************************************************/
+ */
 
 void write_simu_param (vector_t *simulations,
                        int       nb_parameters)

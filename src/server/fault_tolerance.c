@@ -20,13 +20,11 @@
 #include <string.h>
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_fault_tolerance
  *
  * This function allocates and return a pointer to a simulation structure
  *
- *******************************************************************************/
+ */
 
 melissa_simulation_t* add_simulation()
 {
@@ -46,18 +44,14 @@ melissa_simulation_t* add_simulation()
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_fault_tolerance
  *
  * This function frees a simulation vector
  *
- *******************************************************************************
- *
  * @param[in] *v
  * pointer to the simulation vector to free
  *
- *******************************************************************************/
+ */
 
 void free_simu_vector(vector_t v)
 {
@@ -75,13 +69,9 @@ void free_simu_vector(vector_t v)
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_fault_tolerance
  *
  * This function checks if the simulations are in a timeout situation
- *
- *******************************************************************************
  *
  * @param[in] *simulations
  * pointer to the simulation vector to check
@@ -89,7 +79,7 @@ void free_simu_vector(vector_t v)
  * @param[in] timeout_simu
  * time before timeout
  *
- *******************************************************************************/
+ */
 
 int check_timeouts (vector_t *simulations,
                     int       timeout_simu)
@@ -118,13 +108,9 @@ int check_timeouts (vector_t *simulations,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_fault_tolerance
  *
  * This function sends the timeouts detected by check_timeouts
- *
- *******************************************************************************
  *
  * @param[in] *detected_timeouts
  * number of timeouts detected
@@ -135,7 +121,7 @@ int check_timeouts (vector_t *simulations,
  * @param[in] *python_pusher
  * ZMQ socket to the python launcher
  *
- *******************************************************************************/
+ */
 
 void send_timeouts (int       detected_timeouts,
                     vector_t *simulations,
@@ -164,13 +150,9 @@ void send_timeouts (int       detected_timeouts,
 
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_fault_tolerance
  *
  * This function counts the number of simulations in a given job status
- *
- *******************************************************************************
  *
  * @param[in] *simulations
  * pointer to the simulation vector
@@ -178,7 +160,7 @@ void send_timeouts (int       detected_timeouts,
  * @param[in] job_status
  * the job status to count
  *
- *******************************************************************************/
+ */
 
 int count_job_status(vector_t *simulations,
                       int       job_status)

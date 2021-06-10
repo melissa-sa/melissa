@@ -54,13 +54,9 @@ static inline void update_moments_mean (double    *m1,
     }}
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function initializes a moments structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *moments
  * the moments_t structure to initialize
@@ -71,7 +67,7 @@ static inline void update_moments_mean (double    *m1,
  * @param[in] max_order
  * maximum moment order
  *
- *******************************************************************************/
+ */
 
 void init_moments(moments_t *moments,
                   const int  vect_size,
@@ -101,13 +97,9 @@ void init_moments(moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function incrementes a moment structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *moments
  * the moments_t structure to increment
@@ -118,7 +110,7 @@ void init_moments(moments_t *moments,
  * @param[in] vect_size
  * size of the input vector
  *
- *******************************************************************************/
+ */
 
 void increment_moments (moments_t *moments,
                         double     in_vect[],
@@ -168,13 +160,9 @@ void increment_moments (moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function agregates two moment structures.
- *
- *******************************************************************************
  *
  * @param[in] *moments1
  * first input moments_t structure
@@ -188,7 +176,7 @@ void increment_moments (moments_t *moments,
  * @param[in] vect_size
  * size of the input vector
  *
- *******************************************************************************/
+ */
 
 void update_moments (moments_t *moments1,
                      moments_t *moments2,
@@ -257,13 +245,9 @@ void update_moments (moments_t *moments1,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup save_stats
  *
  * This function writes an array of moment structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *moments
  * moment structures to save, size nb_time_steps
@@ -277,7 +261,7 @@ void update_moments (moments_t *moments1,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void save_moments(moments_t *moments,
                   int        vect_size,
@@ -309,13 +293,9 @@ void save_moments(moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup save_stats
  *
  * This function reads an array of moment structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *moments
  * moment structures to save, size nb_time_steps
@@ -329,7 +309,7 @@ void save_moments(moments_t *moments,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void read_moments(moments_t *moments,
                   int        vect_size,
@@ -361,13 +341,9 @@ void read_moments(moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function computes the mean from general moments.
- *
- *******************************************************************************
  *
  * @param[in] *moments
  * the input moments_t structure
@@ -378,7 +354,7 @@ void read_moments(moments_t *moments,
  * @param[in] vect_size
  * size of the input vector
  *
- *******************************************************************************/
+ */
 
 void compute_mean (moments_t *moments,
                    double     mean[],
@@ -392,13 +368,9 @@ void compute_mean (moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function computes the variance from general moments.
- *
- *******************************************************************************
  *
  * @param[in] *moments
  * the input moments_t structure
@@ -409,7 +381,7 @@ void compute_mean (moments_t *moments,
  * @param[in] vect_size
  * size of the input vector
  *
- *******************************************************************************/
+ */
 
 void compute_variance (moments_t *moments,
                        double     variance[],
@@ -423,13 +395,9 @@ void compute_variance (moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function computes the skewness from general moments.
- *
- *******************************************************************************
  *
  * @param[in] *moments
  * the input moments_t structure
@@ -440,7 +408,7 @@ void compute_variance (moments_t *moments,
  * @param[in] vect_size
  * size of the input vector
  *
- *******************************************************************************/
+ */
 
 void compute_skewness (moments_t *moments,
                        double     skewness[],
@@ -454,13 +422,9 @@ void compute_skewness (moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function computes the kurtosis from general moments.
- *
- *******************************************************************************
  *
  * @param[in] *moments
  * the input moments_t structure
@@ -471,7 +435,7 @@ void compute_skewness (moments_t *moments,
  * @param[in] vect_size
  * size of the input vector
  *
- *******************************************************************************/
+ */
 
 void compute_kurtosis (moments_t *moments,
                        double     kurtosis[],
@@ -485,18 +449,14 @@ void compute_kurtosis (moments_t *moments,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function frees a moment_t structure.
  *
- *******************************************************************************
- *
  * @param[in,out] *moments
  * the moments structure to free
  *
- *******************************************************************************/
+ */
 
 void free_moments (moments_t *moments)
 {

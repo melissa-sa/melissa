@@ -24,15 +24,13 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * @struct covariance_s
  *
  * Structure containing an array of covariances and the corresponding mean structures
  *
- *******************************************************************************/
+ */
 
 struct covariance_s
 {

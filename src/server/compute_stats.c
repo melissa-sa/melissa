@@ -20,13 +20,9 @@
 #include <stdlib.h>
 
 /**
- *******************************************************************************
- *
  * @ingroup intern_API
  *
  * This function updates the statistics stored in the data structure
- *
- *******************************************************************************
  *
  * @param[in] *data
  * pointer to the structure containing global parameters
@@ -40,7 +36,7 @@
  * @param[in] **in_vect_tab
  * array of input vectors
  *
- *******************************************************************************/
+ */
 
 void compute_stats (melissa_data_t  *data,
                     const int        time_step,
@@ -133,18 +129,14 @@ void compute_stats (melissa_data_t  *data,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup intern_API
  *
  * This function finalize the statistics stored in the data structure
  *
- *******************************************************************************
- *
  * @param[in] *data
  * pointer to the structure containing global parameters
  *
- *******************************************************************************/
+ */
 
 void finalize_stats (melissa_data_t *data)
 {

@@ -68,13 +68,9 @@ int create_port_number (comm_data_t *comm_data,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_utils
  *
  * This function checks the status of a simulation
- *
- *******************************************************************************
  *
  * @param[in] *fields
  * Melissa fields
@@ -91,7 +87,7 @@ int create_port_number (comm_data_t *comm_data,
  * @param[in] *comm_data
  * Structure containing communication informations
  *
- *******************************************************************************/
+ */
 
 int check_simu_state(melissa_field_t *fields,
                      int              nb_fields,
@@ -129,13 +125,9 @@ int check_simu_state(melissa_field_t *fields,
 
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_fault_tolerance
  *
  * This function parses messages from launcher
- *
- *******************************************************************************
  *
  * @param[in] msg message from launcher
  * number of timeouts detected
@@ -143,7 +135,7 @@ int check_simu_state(melissa_field_t *fields,
  * @param[in] *simulations
  * pointer to the simulation vector
  *
- *******************************************************************************/
+ */
 
 void process_launcher_message (void*             msg_data,
                                melissa_server_t *server_ptr)
@@ -246,18 +238,14 @@ int check_last_timestep(melissa_field_t *fields,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_utils
  *
  * This function counts the amount of data writen on disk
  *
- *******************************************************************************
- *
  * @param[in] *options
  * Melissa options structure
  *
- *******************************************************************************/
+ */
 
 long int count_mbytes_written (melissa_options_t  *options)
 {
@@ -287,13 +275,9 @@ long int count_mbytes_written (melissa_options_t  *options)
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_utils
  *
  * This function recieves a string from the launcher
- *
- *******************************************************************************
  *
  * @param[in] *socket
  * ZMQ socket
@@ -301,7 +285,7 @@ long int count_mbytes_written (melissa_options_t  *options)
  * @param[in, out] *recv_buff
  * the recieve buffer
  *
- *******************************************************************************/
+ */
 
 int string_recv (void  *socket,
                  char  *recv_buff)
@@ -321,13 +305,9 @@ int string_recv (void  *socket,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup sobol
  *
  * This function computes the confidence interval for Martinez Sobol indices
- *
- *******************************************************************************
  *
  * @param[in] field
  * array of field structures
@@ -344,7 +324,7 @@ int string_recv (void  *socket,
  * @param[out] *interval_tot
  * worst confidence interval (total order)
  *
- *******************************************************************************/
+ */
 
 void global_confidence_sobol_martinez(melissa_field_t *field,
                                       int              nb_fields,

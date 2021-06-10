@@ -24,13 +24,11 @@ extern "C" {
 struct melissa_server_s;
 
 /**
- *******************************************************************************
- *
  * @struct melissa_options_s
  *
  * Structure to store options parsed from command line
  *
- *******************************************************************************/
+ */
 
 struct melissa_options_s
 {

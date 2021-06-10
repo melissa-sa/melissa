@@ -19,13 +19,9 @@
 
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function initializes a threshold structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *threshold
  * the threshold exceedance structure to initialize
@@ -36,7 +32,7 @@
  * @param[in] vect_size
  * size of the variance vector
  *
- *******************************************************************************/
+ */
 
 void init_threshold (threshold_t  *threshold,
                      const int     vect_size,
@@ -47,13 +43,9 @@ void init_threshold (threshold_t  *threshold,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function updates the number of values exceeding a given threshold
- *
- *******************************************************************************
  *
  * @param[in,out] threshold
  * number of threshold exceedance occurences
@@ -64,7 +56,7 @@ void init_threshold (threshold_t  *threshold,
  * @param[in] vect_size
  * size of the input vector
  *
- *******************************************************************************/
+ */
 
 void update_threshold_exceedance (threshold_t *threshold,
                                   double       in_vect[],
@@ -82,13 +74,9 @@ void update_threshold_exceedance (threshold_t *threshold,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup save_stats
  *
  * This function writes an array of threshold exceedance vectors on disc
- *
- *******************************************************************************
  *
  * @param[in] threshold
  * threshold exceedance structure to save
@@ -105,7 +93,7 @@ void update_threshold_exceedance (threshold_t *threshold,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void save_threshold(threshold_t **threshold,
                     int           vect_size,
@@ -125,13 +113,9 @@ void save_threshold(threshold_t **threshold,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup save_stats
  *
  * This function reads an array of threshold exceedance vectors on disc
- *
- *******************************************************************************
  *
  * @param[in] threshold
  * threshold exceedance structure to read
@@ -148,7 +132,7 @@ void save_threshold(threshold_t **threshold,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void read_threshold(threshold_t **threshold,
                     int           vect_size,
@@ -168,18 +152,14 @@ void read_threshold(threshold_t **threshold,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function frees a threshold structure.
  *
- *******************************************************************************
- *
  * @param[in,out] *threshold
  * the threshold exceedance structure to free
  *
- *******************************************************************************/
+ */
 
 void free_threshold (threshold_t *threshold)
 {

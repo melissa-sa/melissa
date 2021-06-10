@@ -138,13 +138,9 @@ static void melissa_alloc_data (melissa_data_t *data)
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_data
  *
  * This function initializes the data structure
- *
- *******************************************************************************
  *
  * @param[out] *data
  * pointer to the structure containing global parameters
@@ -155,7 +151,7 @@ static void melissa_alloc_data (melissa_data_t *data)
  * @param[in] vect_size
  * sise of the local input vector
  *
- *******************************************************************************/
+ */
 
 void melissa_init_data (melissa_data_t    *data,
                         melissa_options_t *options,
@@ -180,19 +176,15 @@ void melissa_init_data (melissa_data_t    *data,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_data
  *
  * This function checks the data structure. It terminates the program if one of
  * the mandatory option is missing or invalid, and correct mistakes for other options
  *
- *******************************************************************************
- *
  * @param[in,out] *data
  * pointer to the structure containing global parameters
  *
- *******************************************************************************/
+ */
 
 void melissa_check_data (melissa_data_t *data)
 {
@@ -207,18 +199,14 @@ void melissa_check_data (melissa_data_t *data)
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup melissa_data
  *
  * This function frees the memory in the data structure
  *
- *******************************************************************************
- *
  * @param[in] *data
  * pointer to the structure containing global parameters
  *
- *******************************************************************************/
+ */
 
 void melissa_free_data (melissa_data_t *data)
 {

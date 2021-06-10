@@ -22,13 +22,9 @@
 
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function initializes a mean structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *mean
  * the mean structure to initialize
@@ -36,7 +32,7 @@
  * @param[in] vect_size
  * size of the mean vector
  *
- *******************************************************************************/
+ */
 
 void init_mean (mean_t    *mean,
                 const int  vect_size)
@@ -46,13 +42,9 @@ void init_mean (mean_t    *mean,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function updates the incremental mean.
- *
- *******************************************************************************
  *
  * @param[in,out] *mean
  * input: previously computed iterative mean,
@@ -64,7 +56,7 @@ void init_mean (mean_t    *mean,
  * @param[in] vect_size
  * size of the input vectors
  *
- *******************************************************************************/
+ */
 
 void increment_mean (mean_t    *mean,
                      double     in_vect[],
@@ -83,13 +75,9 @@ void increment_mean (mean_t    *mean,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function agregates two partial means.
- *
- *******************************************************************************
  *
  * @param[in] *mean1
  * first input vector of partial means
@@ -103,7 +91,7 @@ void increment_mean (mean_t    *mean,
  * @param[in] vect_size
  * size of the input and output vectors
  *
- *******************************************************************************/
+ */
 
 void update_mean (mean_t    *mean1,
                   mean_t    *mean2,
@@ -123,13 +111,9 @@ void update_mean (mean_t    *mean1,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function agregates the partial means from all process on precess 0.
- *
- *******************************************************************************
  *
  * @param[in,out] *mean[]
  * input: partial mean,
@@ -147,7 +131,7 @@ void update_mean (mean_t    *mean1,
  * @param[in] comm
  * MPI communicator
  *
- *******************************************************************************/
+ */
 
 void update_global_mean (mean_t    *mean,
                          const int  vect_size,
@@ -194,13 +178,9 @@ void update_global_mean (mean_t    *mean,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup save_stats
  *
  * This function writes an array of mean structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *means
  * mean structures to save, size nb_time_steps
@@ -214,7 +194,7 @@ void update_global_mean (mean_t    *mean,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void save_mean(mean_t *means,
                int     vect_size,
@@ -230,13 +210,9 @@ void save_mean(mean_t *means,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup save_stats
  *
  * This function reads an array of mean structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *means
  * mean structures to read, size nb_time_steps
@@ -250,7 +226,7 @@ void save_mean(mean_t *means,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void read_mean(mean_t *means,
                int     vect_size,
@@ -266,18 +242,14 @@ void read_mean(mean_t *means,
 }
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * This function frees a mean structure.
  *
- *******************************************************************************
- *
  * @param[in] *mean
  * the mean structure to free
  *
- *******************************************************************************/
+ */
 
 void free_mean (mean_t *mean)
 {

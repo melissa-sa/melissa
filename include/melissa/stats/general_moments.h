@@ -24,15 +24,13 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * @struct moments_s
  *
  * Structure containing general moments intermediate values
  *
- *******************************************************************************/
+ */
 
 struct moments_s
 {

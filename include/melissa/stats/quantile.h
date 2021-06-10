@@ -24,8 +24,6 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @ingroup stats_base
  *
  * @struct quantile_s
@@ -34,7 +32,7 @@ extern "C" {
  * the corresponding increment,
  * alpha (the quantile partition) and gamma parameters.
  *
- *******************************************************************************/
+ */
 
 struct quantile_s
 {

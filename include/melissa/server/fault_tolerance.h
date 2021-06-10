@@ -25,13 +25,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @struct melissa_simulation_s
  *
  * Structure to store simulation informations for fault tolerance
  *
- *******************************************************************************/
+ */
 
 struct melissa_simulation_s
 {

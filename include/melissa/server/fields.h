@@ -24,13 +24,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @struct melissa_field_s
  *
  * Field structure
  *
- *******************************************************************************/
+ */
 
 struct melissa_field_s /**< Structure for a linked list of output fields */
 {
