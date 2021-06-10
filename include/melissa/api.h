@@ -37,7 +37,7 @@
 
 #include <mpi.h>
 
-#if defined(c_plusplus) || defined(__cplusplus)
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -94,7 +94,7 @@ void melissa_finalize();
  */
 const char* melissa_version();
 
-#if defined(c_plusplus) || defined(__cplusplus)
+#ifdef __cplusplus
 }
 #endif
 
