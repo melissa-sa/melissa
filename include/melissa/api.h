@@ -48,6 +48,8 @@ void melissa_send(const char   *field_name,
 
 void melissa_finalize(void);
 
+const char* melissa_version();
+
 #if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
