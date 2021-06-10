@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file variance.c
- * @brief Variance related functions.
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #include <melissa/stats/variance.h>
 #include <melissa/utils.h>
 

@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_data.c
- * @brief Routines related to the melissa_data structure.
- * @author Terraz Théophile
- * @date 2016-24-05
- *
- * @defgroup melissa_data Melissa data
- *
- **/
-
 #include <melissa/server/data.h>
 #include <melissa/stats/sobol.h>
 #include <melissa/utils.h>

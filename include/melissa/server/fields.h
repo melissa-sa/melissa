@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/fields.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef MELISSA_FIELDS_H
 #define MELISSA_FIELDS_H
 

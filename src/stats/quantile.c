@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file quantile.c
- * @brief Quantile related functions.
- * @author Terraz Théophile
- * @date 2017-18-05
- *
- **/
-
 #include <melissa/stats/quantile.h>
 #include <melissa/utils.h>
 

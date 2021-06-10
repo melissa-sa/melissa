@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file threshold.c
- * @brief Threshold exceedance related functions.
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #include <melissa/stats/threshold.h>
 #include <melissa/utils.h>
 

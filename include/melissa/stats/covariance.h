@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/covariance.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef COVARIANCE_H
 #define COVARIANCE_H
 

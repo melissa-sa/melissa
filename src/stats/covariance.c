@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file covariance.c
- * @brief Functions needed to compute covariances.
- * @author Terraz Théophile
- * @date 2016-01-07
- *
- **/
-
 #include <melissa/stats/covariance.h>
 #include <melissa/stats/mean.h>
 #include <melissa/stats/variance.h>

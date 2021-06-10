@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_api.c
- * @brief API Functions.
- * @author Terraz Théophile
- * @date 2016-09-05
- *
- **/
-
 #include <melissa/api.h>
 #include <melissa/messages.h>
 #include <melissa/utils.h>

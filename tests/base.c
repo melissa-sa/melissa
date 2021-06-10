@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file test_base.c
- * @brief Basic tests to try basic statistic computations.
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #include <melissa/server/data.h>
 
 #include <stdio.h>

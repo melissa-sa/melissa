@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/options.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef MELISSA_OPTIONS_H
 #define MELISSA_OPTIONS_H
 

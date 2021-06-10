@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file min_max.c
- * @brief Min and max related functions.
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #include <melissa/stats/min_max.h>
 #include <melissa/utils.h>
 

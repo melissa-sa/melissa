@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_io.c
- * @brief Inputs, outputs and checkpoints.
- * @author Terraz Théophile
- * @date 2017-19-01
- *
- * @defgroup melissa_io input, output and checkpoint functions
- *
- **/
-
 #include <melissa/server/data.h>
 #include <melissa/server/fault_tolerance.h>
 #include <melissa/utils.h>

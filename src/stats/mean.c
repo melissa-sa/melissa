@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file mean.c
- * @brief Mean related functions.
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #include <melissa/stats/mean.h>
 #include <melissa/utils.h>
 

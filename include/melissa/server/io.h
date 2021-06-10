@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
-*
-* @file melissa/server/io.h
-* @author Terraz Théophile
-* @date 2017-15-01
-*
-**/
-
 #ifndef MELISSA_IO_H
 #define MELISSA_IO_H
 

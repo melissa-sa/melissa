@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_fields.c
- * @brief Routines related to the melissa_fields structure.
- * @author Terraz Théophile
- * @date 2017-01-09
- *
- * @defgroup melissa_fields Melissa fields
- *
- **/
-
 #include <melissa/server/compute_stats.h>
 #include <melissa/server/data.h>
 #include <melissa/server/fields.h>

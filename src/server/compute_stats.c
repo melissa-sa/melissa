@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file compute_stats.c
- * @brief Functions called by the server.
- * @author Terraz Théophile
- * @date 2016-15-03
- *
- * @defgroup intern_API internal API
- *
- **/
-
 #include <melissa/server/data.h>
 #include <melissa/utils.h>
 

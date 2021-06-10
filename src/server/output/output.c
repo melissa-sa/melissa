@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_output.c
- * @brief Writes stats on disc.
- * @author Terraz Théophile
- * @date 2017-19-01
- *
- * @defgroup melissa_output output statistics on disc
- *
- **/
-
 #include <melissa/server/fault_tolerance.h>
 #include <melissa/server/output.h>
 #include <melissa/utils.h>

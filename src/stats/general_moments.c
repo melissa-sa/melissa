@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-
-/**
- *
- * @file general_moments.c
- * @author Terraz Théophile
- * @date 2017-19-10
- *
- **/
-
 #include <melissa/stats/general_moments.h>
 #include <melissa/stats/mean.h>
 #include <melissa/stats/variance.h>

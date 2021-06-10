@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_utils.c
- * @brief Functions used in Melissa.
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- * @defgroup melissa_utils misc functions
- *
- **/
-
 #include <melissa/utils.h>
 
 #include <arpa/inet.h>

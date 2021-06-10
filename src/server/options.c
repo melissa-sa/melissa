@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_options.c
- * @brief Parse commande line to get stats options.
- * @author Terraz Théophile
- * @date 2016-03-03
- *
- * @defgroup melissa_options Get options from command line
- *
- **/
-
 #include <melissa/server/data.h>
 #include <melissa/server/server.h>
 #include <melissa/utils.h>

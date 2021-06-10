@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/quantile.h
- * @author Terraz Théophile
- * @date 2017-18-05
- *
- **/
-
 #ifndef QUANTILE_H
 #define QUANTILE_H
 

@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file fault_tolerance.c
- * @brief Routines related to the melissa fault tolerance.
- * @author Terraz Théophile
- * @date 2017-30-06
- *
- * @defgroup melissa_fault_tolerance Melissa fault tolerance
- *
- **/
-
 #include <melissa/server/fault_tolerance.h>
 #include <melissa/messages.h>
 

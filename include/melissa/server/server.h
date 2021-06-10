@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/server.h
- * @author Terraz Théophile
- * @date 2016-15-03
- *
- **/
-
 #ifndef SERVER_HELPER_H
 #define SERVER_HELPER_H
 

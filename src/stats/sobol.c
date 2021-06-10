@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file sobol.c
- * @brief Functions needed to compute sobol indices.
- * @author Terraz Théophile
- * @date 2016-29-02
- *
- **/
-
 #include <melissa/stats/sobol.h>
 #include <melissa/utils.h>
 

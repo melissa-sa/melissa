@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/compute_stats.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef COMPUTE_STATS_H
 #define COMPUTE_STATS_H
 

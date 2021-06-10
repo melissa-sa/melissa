@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/threshold.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef THRESHOLD_H
 #define THRESHOLD_H
 

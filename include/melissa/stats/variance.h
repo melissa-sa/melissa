@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file variance.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef VARIANCE_H
 #define VARIANCE_H
 

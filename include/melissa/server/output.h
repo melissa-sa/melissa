@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/output.h
- * @brief Writes stats on disc.
- * @author Terraz Théophile
- * @date 2017-19-01
- *
- * @defgroup melissa_output output statistics on disc
- *
- **/
-
 #ifndef SERVER_OUTPUT_H
 #define SERVER_OUTPUT_H
 

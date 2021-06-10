@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/sobol.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef SOBOL_H
 #define SOBOL_H
 
