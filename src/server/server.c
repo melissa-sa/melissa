@@ -56,16 +56,6 @@ void sig_handler(int signo) {
         end_signal = signo;
 }
 
-void log_confidence_sobol_martinez(
-    sobol_array_t* sobol_array, int nb_parameters) {
-    int j;
-    for(j = 0; j < nb_parameters; j++) {
-        melissa_print(
-            VERBOSE_INFO, "sobol confidence 1st order - parameter %d: %g\n", j,
-            sobol_array->sobol_martinez[j].confidence_interval[0]);
-    }
-}
-
 void melissa_server_init(int argc, char** argv, void** server_handle) {
     melissa_server_t* server_ptr;
     int i;

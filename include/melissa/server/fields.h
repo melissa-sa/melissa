@@ -57,10 +57,6 @@ int get_field_id(melissa_field_t fields[],
                  int             nb_fields,
                  char*           field_name);
 
-melissa_data_t* get_data_ptr (melissa_field_t fields[],
-                              int             nb_fields,
-                              char*           field_name);
-
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,
                           melissa_options_t *options,

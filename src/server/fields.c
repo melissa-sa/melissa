@@ -97,46 +97,6 @@ int get_field_id(melissa_field_t fields[],
 }
 
 /**
- * This function returns a pointer to a data structure given its field name
- *
- * @param[in] fields[]
- * Melissa field array
- *
- * @param[in] nb_fields
- * number of fields
- *
- * @param[in] *field_name
- * name of the field to find
- *
- * @retval stats_data
- * pointer to the corresponding melissa_data_t structure
- *
- */
-
-melissa_data_t* get_data_ptr (melissa_field_t fields[],
-                              int             nb_fields,
-                              char*           field_name)
-{
-    int i;
-    if (fields != NULL)
-    {
-        for (i=0; i<nb_fields; i++)
-        {
-            if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME_LEN) == 0)
-            {
-                return fields[i].stats_data;
-            }
-        }
-    }
-    else
-    {
-        return NULL;
-    }
-    melissa_print (VERBOSE_ERROR, "Wrong field name (get_data_ptr)\n");
-    return NULL;
-}
-
-/**
  * This function writes the data and frees the fields structure
  *
  * @param[in] *fields
