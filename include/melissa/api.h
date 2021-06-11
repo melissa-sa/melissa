@@ -44,33 +44,39 @@ extern "C" {
 /**
  * This function initializes the connection with the Melissa Server for MPI
  * simulations.
+ * This function must be called once for every scalar field to be analyzed by
+ * Melissa. A scalar field is an array of double-precision floating-point
+ * numbers representing the simulation state at a given time step without any
+ * other metadata (in particular, without mesh).
  *
+ * @remark The field names must have been declared in the launcher options file.
  * @remark
  * Each rank in the given MPI communicator must participate in the
  * Melissa communications and call melissa_init, melissa_send, and
  * melissa_finalize.
  *
+ * @pre MPI_Init was called before.
+ *
  * @param[in] field_name name of the field to initialize
- * @param[in] vect_size size of the data vector
+ * @param[in] vect_size The number of values
  * @param[in] comm MPI communicator
  */
 void melissa_init(const char* field_name, const int vect_size, MPI_Comm comm);
 
 /**
- * Fortran wrapper for melissa_init (convert MPI communicator)
+ * Fortran wrapper for melissa_init that converts the MPI communicator.
  *
  * @param[in] field_name name of the field to initialize
  * @param[in] local_vect_size size of the local data vector to send to the
  * library
  * @param[in] comm_fortran Fortran MPI communicator
  */
-
 void melissa_init_f(
     const char* field_name, int* local_vect_size, MPI_Fint* comm_fortran);
 
 /**
  * This function sends the of the values of the given field at the current
- * time-step.
+ * time step.
  *
  * @pre melissa_init was called for the field before.
  *
@@ -81,8 +87,10 @@ void melissa_send(const char* field_name, const double* send_vect);
 
 
 /**
- * This function sends all remaining data to the Melissa server and disconnects
- * the simulation afterwards.
+ * This function sends all remaining simulaton data queued by melissa_send and
+ * then disconnects from the Melissa server.
+ *
+ * @pre MPI_Finalize was not called yet.
  */
 void melissa_finalize();
 
