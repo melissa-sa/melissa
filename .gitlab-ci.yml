@@ -7,7 +7,7 @@ build-and-test:
         ARCH: [amd64, i386]
         COMPILER: [gcc, clang]
         BUILD_TYPE: [Debug, Release]
-      - DISTRIBUTION: [centos/7, centos/8]
+      - DISTRIBUTION: [centos/7]
         ARCH: [amd64]
         COMPILER: [gcc, clang]
         BUILD_TYPE: [Debug, Release]
