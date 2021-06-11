@@ -54,21 +54,19 @@ extern "C" {
  * @param[in] vect_size size of the data vector
  * @param[in] comm MPI communicator
  */
-void melissa_init(const char* field_name,
-                  const int  vect_size,
-                  MPI_Comm   comm);
+void melissa_init(const char* field_name, const int vect_size, MPI_Comm comm);
 
 /**
  * Fortran wrapper for melissa_init (convert MPI communicator)
  *
  * @param[in] field_name name of the field to initialize
- * @param[in] local_vect_size size of the local data vector to send to the library
+ * @param[in] local_vect_size size of the local data vector to send to the
+ * library
  * @param[in] comm_fortran Fortran MPI communicator
  */
 
-void melissa_init_f(const char *field_name,
-                    int        *local_vect_size,
-                    MPI_Fint   *comm_fortran);
+void melissa_init_f(
+    const char* field_name, int* local_vect_size, MPI_Fint* comm_fortran);
 
 /**
  * This function sends the of the values of the given field at the current
@@ -79,8 +77,7 @@ void melissa_init_f(const char *field_name,
  * @param[in] field_name name of the field to send to Melissa Server
  * @param[in] send_vect local data array to send to the statistic library
  */
-void melissa_send(const char   *field_name,
-                  const double *send_vect);
+void melissa_send(const char* field_name, const double* send_vect);
 
 
 /**
