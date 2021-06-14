@@ -58,10 +58,10 @@ extern "C" {
  * @pre MPI_Init was called before.
  *
  * @param[in] field_name name of the field to initialize
- * @param[in] vect_size The number of values
+ * @param[in] num_values The number of values contained in the field
  * @param[in] comm MPI communicator
  */
-void melissa_init(const char* field_name, const int vect_size, MPI_Comm comm);
+void melissa_init(const char* field_name, int num_values, MPI_Comm comm);
 
 /**
  * Fortran wrapper for melissa_init that converts the MPI communicator.
