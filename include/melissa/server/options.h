@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/options.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef MELISSA_OPTIONS_H
 #define MELISSA_OPTIONS_H
 
@@ -32,13 +24,11 @@ extern "C" {
 struct melissa_server_s;
 
 /**
- *******************************************************************************
- *
  * @struct melissa_options_s
  *
  * Structure to store options parsed from command line
  *
- *******************************************************************************/
+ */
 
 struct melissa_options_s
 {
@@ -88,6 +78,7 @@ void melissa_print_options (melissa_options_t *options);
  * the command line.
  *
  * @param[in,out] optarg The argument of the `-f` option
+ * @param[in,out] server The server state
  */
 int melissa_options_get_fields(char* optarg, struct melissa_server_s* server);
 

@@ -14,45 +14,20 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file compute_stats.c
- * @brief Functions called by the server.
- * @author Terraz Théophile
- * @date 2016-15-03
- *
- * @defgroup intern_API internal API
- *
- **/
-
 #include <melissa/server/data.h>
 #include <melissa/utils.h>
 
 #include <stdlib.h>
 
 /**
- *******************************************************************************
+ * This function updates the statistics stored in the data structure.
  *
- * @ingroup intern_API
- *
- * This function updates the statistics stored in the data structure
- *
- *******************************************************************************
- *
- * @param[in] *data
- * pointer to the structure containing global parameters
- *
- * @param[in] time_step
- * time step of the current simulation
- *
- * @param[in] nb_vect
- * number of input vectors
- *
- * @param[in] **in_vect_tab
- * array of input vectors
- *
- *******************************************************************************/
-
+ * @param[in] data A reference to the global data
+ * @param[in] time_step The current simulation time step
+ * @param[in] simu_id The ID of the simulation generating the input vectors
+ * @param[in] nb_vect The number of input vectors
+ * @param[in] in_vect_tab An array of input vectors
+ */
 void compute_stats (melissa_data_t  *data,
                     const int        time_step,
                     const int        simu_id,
@@ -144,18 +119,12 @@ void compute_stats (melissa_data_t  *data,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup intern_API
- *
  * This function finalize the statistics stored in the data structure
- *
- *******************************************************************************
  *
  * @param[in] *data
  * pointer to the structure containing global parameters
  *
- *******************************************************************************/
+ */
 
 void finalize_stats (melissa_data_t *data)
 {

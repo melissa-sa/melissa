@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/vector.h
- * @author Terraz Théophile
- * @date 2017-01-07
- *
- **/
-
 #ifndef MELISSA_VECTOR_H
 #define MELISSA_VECTOR_H
 

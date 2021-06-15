@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/utils.h
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #ifndef MELISSA_UTILS_H
 #define MELISSA_UTILS_H
 

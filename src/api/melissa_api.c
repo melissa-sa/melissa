@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_api.c
- * @brief API Functions.
- * @author Terraz Théophile
- * @date 2016-09-05
- *
- **/
-
 #include <melissa/api.h>
 #include <melissa/messages.h>
 #include <melissa/utils.h>
@@ -48,15 +39,11 @@
 #endif
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
  * @struct global_data_s
  *
  * Structure containing some global data
  *
- *******************************************************************************/
+ */
 
 struct global_data_s
 {
@@ -83,15 +70,11 @@ struct global_data_s
 typedef struct global_data_s global_data_t; /**< type corresponding to global_data_s */
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
  * @struct field_data_s
  *
  * Structure containing data for each field
  *
- *******************************************************************************/
+ */
 
 struct field_data_s
 {
@@ -376,13 +359,7 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
  * This function initialise connexion with melissa server
- *
- *******************************************************************************
  *
  * @param[in] *field_name
  * name of the field to initialize
@@ -399,7 +376,7 @@ static inline void comm_n_to_m_init (global_data_t *data_glob,
  * @param[in] comm
  * MPI communicator
  *
- *******************************************************************************/
+ */
 
 static void melissa_init_internal (const char *field_name,
                             const int  local_vect_size,
@@ -1003,26 +980,6 @@ static void melissa_init_internal (const char *field_name,
     first_init = 0;
 }
 
-/**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
- * Fortran wrapper for melissa_init (convert MPI communicator)
- *
- *******************************************************************************
- *
- * @param[in] *field_name
- * name of the field to initialize
- *
- * @param[in] *local_vect_size
- * size of the local data vector to send to the library
- *
- * @param[in] *comm_fortran
- * Fortran MPI communicator
- *
- *******************************************************************************/
-
 void melissa_init_f (const char *field_name,
                      int        *local_vect_size,
                      MPI_Fint   *comm_fortran)
@@ -1030,29 +987,6 @@ void melissa_init_f (const char *field_name,
     MPI_Comm comm = MPI_Comm_f2c(*comm_fortran);
     melissa_init(field_name, *local_vect_size, comm);
 }
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
- * This function initializes the connection with the Melissa Server for mpi
- * simulations. It gives an easier interface than calling melissa_init directly
- * and thus should be used instead if possible.
- *
- *******************************************************************************
- *
- * @param[in] *field_name
- * name of the field to initialize
- *
- * @param[in] *vect_size
- * size of the data vector to send to the library
- *
- * @param[in] comm
- * MPI communicator. Each rank in it must call melissa_init. Later each rank must
- * send its part of every field to melissa.
- *
- *******************************************************************************/
 
 void melissa_init (const char *field_name,
                    const int  vect_size,
@@ -1069,23 +1003,6 @@ void melissa_init (const char *field_name,
                            rank,
                            comm);
 }
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
- * This function sends data to Melissa Server
- *
- *******************************************************************************
- *
- * @param[in] *field_name
- * name of the field to send to Melissa Server
- *
- * @param[in] *send_vect
- * local data array to send to the statistic library
- *
- *******************************************************************************/
 
 void melissa_send (const char   *field_name,
                    const double *send_vect)
@@ -1327,15 +1244,6 @@ void melissa_send (const char   *field_name,
 #endif
 }
 
-/**
- *******************************************************************************
- *
- * @ingroup melissa_api
- *
- * This function disconects the simulation from the statistic library
- *
- *******************************************************************************/
-
 void melissa_finalize (void)
 {
     int i;
@@ -1382,6 +1290,12 @@ void melissa_finalize (void)
     melissa_print(VERBOSE_INFO, " --- Simulation comm time: %g s\n",total_comm_time);
 #endif
     melissa_print(VERBOSE_INFO, " --- Bytes sent: %ld bytes\n",total_bytes_sent);
+}
+
+
+
+const char* melissa_version() {
+	return MELISSA_VERSION;
 }
 
 

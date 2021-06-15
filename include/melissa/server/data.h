@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/data.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef MELISSA_DATA_H
 #define MELISSA_DATA_H
 
@@ -42,13 +34,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @struct comm_data_s
  *
  * Structure to store communications parameters
  *
- *******************************************************************************/
+ */
 
 struct comm_data_s
 {
@@ -61,13 +51,11 @@ struct comm_data_s
 typedef struct comm_data_s comm_data_t; /**< type corresponding to comm_data_s */
 
 /**
- *******************************************************************************
- *
  * @struct melissa_data_s
  *
  * Structure to store global parameters
  *
- *******************************************************************************/
+ */
 
 struct melissa_data_s
 {

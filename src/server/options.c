@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_options.c
- * @brief Parse commande line to get stats options.
- * @author Terraz Théophile
- * @date 2016-03-03
- *
- * @defgroup melissa_options Get options from command line
- *
- **/
-
 #include <melissa/server/data.h>
 #include <melissa/server/server.h>
 #include <melissa/utils.h>
@@ -346,18 +335,12 @@ static inline void get_operations (char              *name,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_options
- *
  * This function displays the global parameters on stdout
- *
- *******************************************************************************
  *
  * @param[in] *options
  * pointer to the structure containing the options parsed from command line
  *
- *******************************************************************************/
+ */
 
 void melissa_print_options (melissa_options_t *options)
 {
@@ -398,24 +381,12 @@ void melissa_print_options (melissa_options_t *options)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_options
- *
  * This function parses command line options and fill the parameter structure
  *
- *******************************************************************************
- *
- * @param[in] argc
- * argc
- *
- * @param[in] **argv
- * argv
- *
- * @param[out] *options
- * pointer to the structure containing options parameters
- *
- *******************************************************************************/
+ * @param[in] argc argc
+ * @param[in] argv argv
+ * @param[out] server A reference to the server state
+ */
 
 void melissa_get_options(int argc, char **argv, melissa_server_t* server)
 {
@@ -553,18 +524,12 @@ void melissa_get_options(int argc, char **argv, melissa_server_t* server)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_options
- *
  * This function validates the option structure
- *
- *******************************************************************************
  *
  * @param[out] *options
  * pointer to the structure containing options parameters
  *
- *******************************************************************************/
+ */
 
 void melissa_check_options (melissa_options_t  *options)
 {

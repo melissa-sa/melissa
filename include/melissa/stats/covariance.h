@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/covariance.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef COVARIANCE_H
 #define COVARIANCE_H
 
@@ -32,15 +24,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * @struct covariance_s
  *
  * Structure containing an array of covariances and the corresponding mean structures
  *
- *******************************************************************************/
+ */
 
 struct covariance_s
 {

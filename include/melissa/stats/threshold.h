@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/threshold.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef THRESHOLD_H
 #define THRESHOLD_H
 
@@ -32,15 +24,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * @struct threshold_s
  *
  * Structure containing threshold exceedance arrays
  *
- *******************************************************************************/
+ */
 
 struct threshold_s
 {

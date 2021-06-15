@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_utils.c
- * @brief Functions used in Melissa.
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- * @defgroup melissa_utils misc functions
- *
- **/
-
 #include <melissa/utils.h>
 
 #include <arpa/inet.h>
@@ -62,15 +51,9 @@ static void die(int error, const char* port_name)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Prints Melissa logo
  *
- *******************************************************************************
- *
- *******************************************************************************/
+ */
 
 void melissa_logo ()
 {
@@ -85,20 +68,14 @@ void melissa_logo ()
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Wraper around melissa_malloc
- *
- *******************************************************************************
  *
  * @param[in] size
  * Number of bytes to allocate
  *
  * @return The pointer to the allocated memory
  *
- *******************************************************************************/
+ */
 
 void* melissa_malloc (size_t size)
 {
@@ -117,13 +94,7 @@ void* melissa_malloc (size_t size)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Wraper around melissa_calloc
- *
- *******************************************************************************
  *
  * @param[in] num
  * Number of elements to allocate
@@ -133,7 +104,7 @@ void* melissa_malloc (size_t size)
  *
  * @return The pointer to the allocated memory
  *
- *******************************************************************************/
+ */
 
 void* melissa_calloc (size_t num,
                       size_t size)
@@ -153,13 +124,7 @@ void* melissa_calloc (size_t num,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Wraper around melissa_realloc
- *
- *******************************************************************************
  *
  * @param[in] *ptr
  * The pointer to the previously allocated memory
@@ -169,7 +134,7 @@ void* melissa_calloc (size_t num,
  *
  * @return The pointer to the new allocated memory
  *
- *******************************************************************************/
+ */
 
 void* melissa_realloc (void   *ptr,
                        size_t  size)
@@ -188,18 +153,12 @@ void* melissa_realloc (void   *ptr,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Free and nullify a pointer
- *
- *******************************************************************************
  *
  * @param[in] *ptr
  * The pointer to free and nullify
  *
- *******************************************************************************/
+ */
 
 void melissa_free (void *ptr)
 {
@@ -211,13 +170,7 @@ void melissa_free (void *ptr)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Wraper around zmq_bind
- *
- *******************************************************************************
  *
  * @param[in] *socket
  * ZMQ socket handler
@@ -225,7 +178,7 @@ void melissa_free (void *ptr)
  * @param[in] port_name
  * Port name
  *
- *******************************************************************************/
+ */
 
 void melissa_bind (void       *socket,
                    const char *port_name)
@@ -237,13 +190,7 @@ void melissa_bind (void       *socket,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Wraper around zmq_connect
- *
- *******************************************************************************
  *
  * @param[in] *socket
  * ZMQ socket handler
@@ -251,7 +198,7 @@ void melissa_bind (void       *socket,
  * @param[in] port_name
  * Port name
  *
- *******************************************************************************/
+ */
 
 void melissa_connect (void *socket,
                       char *port_name)
@@ -263,19 +210,13 @@ void melissa_connect (void *socket,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Return the time passed since some point in the past. The point in time is
  * system-dependent (e.g., the uptime) and only the difference between two
  * values is meaningful.
  *
- *******************************************************************************
- *
  * @return Time passed since an arbitrary fixed points in the past in seconds
  *
- *******************************************************************************/
+ */
 
 double melissa_get_time ()
 {
@@ -291,18 +232,14 @@ double melissa_get_time ()
 }
 
 /**
- *******************************************************************************
+ * This function returns the name of the current node.
  *
- * @ingroup melissa_utils
- *
- * Returns the name of the current node.
- * The string copied into `node_name` may not be null-terminated if the node
- * name is too long.
+ * \post The string copied into node_name may not be null-terminated if the
+ * node name is too long.
  *
  * @param[out] node_name Contains the node name, may not be null-terminated
- *
- *******************************************************************************/
-
+ * @param[in] buf_len The capacity of the buffer referenced by node_name
+ */
 void melissa_get_node_name (char* node_name, size_t buf_len)
 {
 	assert(node_name);
@@ -339,18 +276,12 @@ void melissa_get_node_name (char* node_name, size_t buf_len)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * init verbose lvl
- *
- *******************************************************************************
  *
  * @param[in] *verbose_level
  * The requested verbose level for melissa_print
  *
- *******************************************************************************/
+ */
 
 void init_verbose_lvl (int verbose_level)
 {
@@ -358,22 +289,12 @@ void init_verbose_lvl (int verbose_level)
 }
 
 /**
- *******************************************************************************
+ * Print a message depending on the verbosity level.
  *
- * @ingroup melissa_utils
- *
- * Print a message depending on the verbose level
- *
- *******************************************************************************
- *
- * @param[in] *msg_priority
- * The level of priority for this message
- *
- * @param[out] *format
- * The format of the message to output
- *
- *******************************************************************************/
-
+ * @param[in] msg_priority The priority level
+ * @param[in] func_name The name of the function causing a message to be printed
+ * @param[out] format The format of the message to print
+ */
 void melissa_print (int msg_priority, const char* func_name, const char* format, ...)
 {
     va_list args;
@@ -420,13 +341,7 @@ void melissa_print (int msg_priority, const char* func_name, const char* format,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Sets a bit to 1 in an array of bits
- *
- *******************************************************************************
  *
  * @param[out] *vect
  * pointer to the array of bits
@@ -434,7 +349,7 @@ void melissa_print (int msg_priority, const char* func_name, const char* format,
  * @param[in] *pos
  * position in the array of bits to set to 1
  *
- *******************************************************************************/
+ */
 
 void set_bit (uint32_t *vect, int pos)
 {
@@ -442,13 +357,7 @@ void set_bit (uint32_t *vect, int pos)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Sets a bit to 0 in an array of bits
- *
- *******************************************************************************
  *
  * @param[out] *vect
  * pointer to the array of bits
@@ -456,7 +365,7 @@ void set_bit (uint32_t *vect, int pos)
  * @param[in] *pos
  * position in the array of bits to set to 0
  *
- *******************************************************************************/
+ */
 
 void clear_bit (uint32_t *vect, int pos)
 {
@@ -464,13 +373,7 @@ void clear_bit (uint32_t *vect, int pos)
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * Tests a value in an array of bits
- *
- *******************************************************************************
  *
  * @param[out] *vect
  * pointer to the array of bits
@@ -478,7 +381,7 @@ void clear_bit (uint32_t *vect, int pos)
  * @param[in] *pos
  * position to test in the array of bits
  *
- *******************************************************************************/
+ */
 
 int test_bit (uint32_t *vect, int pos)
 {

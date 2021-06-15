@@ -106,75 +106,21 @@ Melissa API is a shared library composed of three functions, to be integrated in
 * `melissa_send`
 * `melissa_finalize`
 
-In order to use these functions, you have to link `melissa_api.so` and include `melissa_api.h` in your solver.
+In order to use these functions, you have to link the `melissa` library with `-lmelissa` and include `melissa/api.h` in your solver.
 
 ```c
-#include <melissa_api.h>
+#include <melissa/api.h>
 ```
 
-We will now explain how to use each one of these functions.
-
-#### melissa_init
-
-This function must be called once for every scalar field to send to Melissa Server. The field names have to be declared in the launcher option file, as we will see later. A scalar field is an array of doubles. It is the simulation result at a given timestep without any other metadata (in particular, without mesh).
-
-Prototype:
-
-```c
-void melissa_init(const char *field_name,
-                  const int  *local_vect_size,
-                  MPI_Comm   *comm);
-```
-
-
-variables:
-
-* `field_name`: a unique name to identify the field
-* `vect_size`: the size of the local result vector (in number of elements)
-* `comm`: the local MPI communicator
-
-#### `melissa_send`
-
-This function must be called at each time step that needs to be sent to Melissa Server, for each field. It can replace the I/O phase of the code. The field name is used by Melissa to identify the field, and must be declared in the launcher option file. If a field name not declared in the launcher is passed, Melissa will ignore the field. Melissa guaranties to keep the order of the cells (the array of double) and the order of the calls (in the form of timestamps), and it is up to the user to map them to the mesh and to the timesteps afterwards.
-
-Prototype:
-
-```c
-void melissa_send(const char *field_name,
-                  double     *send_vect);
-```
-
-
-variables:
-
-* `field_name`: the name of the field sent
-* `send_vect`: the vector to send to Melissa Server
-
-#### `melissa_finalize`
-
-This function terminates the Melissa environment.
-It must be called only once, at the end of the solver, before `MPI_Finalize()`.
-
-Prototype:
-
-```c
-void melissa_finalize();
-```
-
-<details>
-<summary><em> Example </em></summary>
-
-***
+We will now demonstrate how to use these functions.
 
 Open the file `solver/src/heat.c` in your favorite editor.
-To use the Melissa functions in the code, we first have to include `melissa_api.h` at the beginning of the code.
+To use the Melissa functions in the code, we first have to include `melissa/api.h` at the beginning of the code.
 
 ```c
-    #include <melissa_api.h>
+    #include <melissa/api.h>
 ```
-
 The solver can take from one to five input parameters, stored in five doubles. The code to get the input parameters looks like this:
-
 
 ```c
     double param[5];
@@ -194,11 +140,8 @@ The solver can take from one to five input parameters, stored in five doubles. T
         }
     }
 ```
-
-
-In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the `MELISSA_COUPLING_MPI` coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on `MPI_COMM_WORL`D for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called `MELISSA_COUPLING_ZMQ`. The coupling mechanisms are transparent to the user.
+In general, if all the simulations in a Sobol' group can easily be launched in a single MPMD MPI call, we can use the `MELISSA_COUPLING_MPI` coupling mechanism (see Launcher section). Links between simulations will be MPI communications in that case. Otherwise, if the simulation relies on `MPI_COMM_WORLD` for MPI routines or is not MPI at all, simulations have to be connected via ZeroMQ. This is the default coupling mechanism, called `MELISSA_COUPLING_ZMQ`. The coupling mechanisms are transparent to the user.
 In the heat solver, we can easily split MPI communicator, so we will use `MELISSA_COUPLING_MPI`. We split `MPI_COMM_WORLD` by simulation in the simulation group:
-
 
 ```c
     int *appnum, info;
@@ -210,7 +153,7 @@ We also need to give a "name" to the computed field. It must be the same name yo
 
 
 ```c
-    char *field_name = "heat1";
+    const char *field_name = "heat1";
 ```
 
 The first Melissa function can be called before the main "for" loop. It has to be called exactly once by process and by field. It takes 3 arguments:
@@ -264,4 +207,3 @@ Melissa Launcher can supervise the whole sensitivity analysis, as long as it kno
 Important note: Sobol' indices iterative computation requires a special way of managing the simulations. For more details about the algorithm, refer to this [article](https://hal.archives-ouvertes.fr/hal-01607479). Basically, simulations have to run in groups of size nb_parameters+2. This does not impact the computation of the other statistics. From now, keep in mind that the computation of Sobol' indices implies some specific customizations, and we will now distinguish this case from the classical case.
 
 The launcher sees simulations as "groups". In the case of classical statistics (i.e. not Sobol' indices), one group corresponds to a batch of simulations. When Sobol' indices are requested, simulations have to be launched by groups of nb_parameters+2 coupled simulations, in the same job allocation.
-

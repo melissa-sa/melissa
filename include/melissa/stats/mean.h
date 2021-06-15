@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/mean.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef MEAN_H
 #define MEAN_H
 
@@ -34,15 +26,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * @struct mean_s
  *
  * Structure containing an array of means, and the corresponding increment
  *
- *******************************************************************************/
+ */
 
 struct mean_s
 {

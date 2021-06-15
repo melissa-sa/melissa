@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file covariance.c
- * @brief Functions needed to compute covariances.
- * @author Terraz Théophile
- * @date 2016-01-07
- *
- **/
-
 #include <melissa/stats/covariance.h>
 #include <melissa/stats/mean.h>
 #include <melissa/stats/variance.h>
@@ -31,13 +22,7 @@
 #include <stdio.h>
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function initializes a covariance structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *covariance
  * the covariance structure to initialize
@@ -45,7 +30,7 @@
  * @param[in] vect_size
  * size of the covariance vector
  *
- *******************************************************************************/
+ */
 
 void init_covariance (covariance_t *covariance,
                       const int     vect_size)
@@ -57,13 +42,7 @@ void init_covariance (covariance_t *covariance,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function updates the incremental covariance.
- *
- *******************************************************************************
  *
  * @param[in,out] *covariance
  * input: previously computed covariance,
@@ -78,7 +57,7 @@ void init_covariance (covariance_t *covariance,
  * @param[in] vect_size
  * size of the input vectors
  *
- *******************************************************************************/
+ */
 
 void increment_covariance (covariance_t *covariance,
                            double        in_vect1[],
@@ -104,13 +83,7 @@ void increment_covariance (covariance_t *covariance,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function updates the incremental covariance.
- *
- *******************************************************************************
  *
  * @param[in] *covariance1
  * first input partial covariance
@@ -124,7 +97,7 @@ void increment_covariance (covariance_t *covariance,
  * @param[in] vect_size
  * size of the input vectors
  *
- *******************************************************************************/
+ */
 
 void update_covariance (covariance_t *covariance1,
                         covariance_t *covariance2,
@@ -149,13 +122,7 @@ void update_covariance (covariance_t *covariance1,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function writes an array of covariances structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *covars
  * covariance structures to save, size nb_time_steps
@@ -169,7 +136,7 @@ void update_covariance (covariance_t *covariance1,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void save_covariance(covariance_t *covars,
                      int           vect_size,
@@ -187,13 +154,7 @@ void save_covariance(covariance_t *covars,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function reads an array of covariances structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *covars
  * covariance structures to read, size nb_time_steps
@@ -207,7 +168,7 @@ void save_covariance(covariance_t *covars,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void read_covariance(covariance_t *covars,
                      int           vect_size,
@@ -225,18 +186,12 @@ void read_covariance(covariance_t *covars,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function frees a covariance structure.
- *
- *******************************************************************************
  *
  * @param[in] *covariance
  * the covariance structure to free
  *
- *******************************************************************************/
+ */
 
 void free_covariance (covariance_t *covariance)
 {

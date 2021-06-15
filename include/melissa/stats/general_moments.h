@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
- 
-/**
- *
- * @file melissa/stats/general_moments.h
- * @author Terraz Théophile
- * @date 2017-19-10
- *
- **/
-
 #ifndef MOMENTS_H
 #define MOMENTS_H
 
@@ -33,15 +24,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * @struct moments_s
  *
  * Structure containing general moments intermediate values
  *
- *******************************************************************************/
+ */
 
 struct moments_s
 {

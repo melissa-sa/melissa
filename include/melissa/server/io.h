@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
-*
-* @file melissa/server/io.h
-* @author Terraz Théophile
-* @date 2017-15-01
-*
-**/
-
 #ifndef MELISSA_IO_H
 #define MELISSA_IO_H
 
@@ -31,11 +23,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void write_stats_bin(melissa_data_t    **data,
-                     melissa_options_t  *options,
-                     comm_data_t        *comm_data,
-                     char               *field);
 
 void write_stats_txt(melissa_data_t    **data,
                      melissa_options_t  *options,

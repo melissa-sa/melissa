@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/messages.h
- * @author Terraz Théophile
- * @date 2019-16-07
- *
- **/
-
 #ifndef MELISSA_MESSAGES_H_
 #define MELISSA_MESSAGES_H_
 

@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/fault_tolerance.h
- * @author Terraz Théophile
- * @date 2017-30-06
- *
- **/
-
 #ifndef FAULT_TOLERANCE_H
 #define FAULT_TOLERANCE_H
 
@@ -33,13 +25,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @struct melissa_simulation_s
  *
  * Structure to store simulation informations for fault tolerance
  *
- *******************************************************************************/
+ */
 
 struct melissa_simulation_s
 {

@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file min_max.c
- * @brief Min and max related functions.
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #include <melissa/stats/min_max.h>
 #include <melissa/utils.h>
 
@@ -30,13 +21,7 @@
 #include <stdio.h>
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function initializes a min and max structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *min_max
  * the min and max structure to initialize
@@ -44,7 +29,7 @@
  * @param[in] vect_size
  * size of the vectors
  *
- *******************************************************************************/
+ */
 
 void init_min_max (min_max_t *min_max,
                    const int  vect_size)
@@ -57,26 +42,14 @@ void init_min_max (min_max_t *min_max,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function updates the min and the max values of min and max vectors
  * using the input vector.
  *
- *******************************************************************************
- *
- * @param[in,out] *min_max
- * the min and max structure
- *
- * @param[in] in_vect[]
- * input vector of double values
- *
- * @param[in] vect_size
- * size of the input vectors
- *
- *******************************************************************************/
-
+ * @param[in,out] min_max A reference to a min_max structure
+ * @param[in] in_vect A reference to a list of values
+ * @param[in] simu_id The ID of the simulation generating the values
+ * @param[in] vect_size The number of values in the list
+ */
 void min_and_max (min_max_t *min_max,
                   double     in_vect[],
                   const int  simu_id,
@@ -108,13 +81,7 @@ void min_and_max (min_max_t *min_max,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function writes an array of min and max structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *minmax
  * min and max structures to save, size nb_time_steps
@@ -128,7 +95,7 @@ void min_and_max (min_max_t *min_max,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void save_min_max(min_max_t *minmax,
                   int        vect_size,
@@ -147,13 +114,7 @@ void save_min_max(min_max_t *minmax,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function reads an array of min and max structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *minmax
  * min and max structures to read, size nb_time_steps
@@ -167,7 +128,7 @@ void save_min_max(min_max_t *minmax,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void read_min_max(min_max_t *minmax,
                   int        vect_size,
@@ -186,18 +147,12 @@ void read_min_max(min_max_t *minmax,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function frees a min and max structure.
- *
- *******************************************************************************
  *
  * @param[in] *min_max
  * the min and max structure to free
  *
- *******************************************************************************/
+ */
 
 void free_min_max (min_max_t *min_max)
 {

@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file test_getoptions.c
- * @brief Basic test to try stats_get_options.
- * @author Terraz Théophile
- * @date 2016-04-03
- *
- **/
-
 #include <melissa/server/options.h>
 #include <melissa/server/server.h>
 

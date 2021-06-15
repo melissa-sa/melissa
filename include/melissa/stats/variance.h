@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file variance.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef VARIANCE_H
 #define VARIANCE_H
 
@@ -36,15 +28,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * @struct variance_s
  *
  * Structure containing an array of variances and the corresponding mean structure
  *
- *******************************************************************************/
+ */
 
 struct variance_s
 {

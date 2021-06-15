@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file test_base.c
- * @brief Basic tests to try basic statistic computations.
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #include <melissa/stats/general_moments.h>
 #include <melissa/stats/variance.h>
 #include <melissa/utils.h>

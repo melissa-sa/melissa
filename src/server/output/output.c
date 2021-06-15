@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_output.c
- * @brief Writes stats on disc.
- * @author Terraz Théophile
- * @date 2017-19-01
- *
- * @defgroup melissa_output output statistics on disc
- *
- **/
-
 #include <melissa/server/fault_tolerance.h>
 #include <melissa/server/output.h>
 #include <melissa/utils.h>
@@ -101,13 +90,7 @@ static inline void igather_data(comm_data_t *comm_data,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_output
- *
  * This function writes the computed statistics on files
- *
- *******************************************************************************
  *
  * @param[in] **data
  * pointer to the array of structures containing statistics data
@@ -121,7 +104,7 @@ static inline void igather_data(comm_data_t *comm_data,
  * @param[in] *field
  * name of the statistic field to write
  *
- *******************************************************************************/
+ */
 
 void melissa_write_stats_seq(melissa_data_t    **data,
                              melissa_options_t  *options,
@@ -527,275 +510,11 @@ void melissa_write_stats_seq(melissa_data_t    **data,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_output
- *
- * This function writes the computed statistics on files
- *
- *******************************************************************************
- *
- * @param[in] **data
- * pointer to the array of structures containing statistics data
- *
- * @param[in] *options
- * Melissa option structure
- *
- * @param[in] comm_data
- * structure containing communications parameters
- *
- * @param[in] *field
- * name of the statistic field to write
- *
- *******************************************************************************/
-
-void write_stats_bin (melissa_data_t    **data,
-                      melissa_options_t  *options,
-                      comm_data_t        *comm_data,
-                      char               *field
-                      )
-{
-    long int   i, temp_offset = 0;
-    int        t, offset = 0;
-    MPI_File   f;
-    MPI_Status status;
-    char       file_name[256];
-    int        max_size_time;
-    int        vect_size = 0;
-    int       *local_vect_sizes;
-    int        global_vect_size = 0;
-
-//// https://support.hdfgroup.org/HDF5/Tutor/parallel.html
-//    /*
-//     * HDF5 APIs definitions
-//     */
-//    hid_t   file_id;         /* file and dataset identifiers */
-//    hid_t	plist_id;        /* property list identifier( access template) */
-//    herr_t	status2;
-
-    max_size_time=floor(log10(options->nb_time_steps))+1;
-
-    // ============================================ //
-    //                                              //
-    // Communicate local vect size to every process //
-    //                                              //
-    // ============================================ //
-
-    local_vect_sizes = melissa_calloc (comm_data->comm_size, sizeof(int));
-    for (i=0; i<comm_data->client_comm_size; i++)
-    {
-        vect_size += (*data)[i].vect_size;
-    }
-    MPI_Allgather (&vect_size, 1, MPI_INT, local_vect_sizes, 1, MPI_INT, comm_data->comm);
-
-    for (i=0; i<comm_data->comm_size; i++)
-    {
-        global_vect_size += local_vect_sizes[i];
-    }
-
-    // ============================================ //
-
-    for (i=0; i<comm_data->rank; i++)
-    {
-        offset += local_vect_sizes[i];
-    }
-
-    if (options->mean_op == 1)
-    {
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            snprintf(file_name, sizeof(file_name), "%s_mean_%.*d", field, max_size_time, t+1);
-//            /*
-//             * Set up file access property list with parallel I/O access
-//             */
-//             plist_id = H5Pcreate(H5P_FILE_ACCESS);
-//             H5Pset_fapl_mpio(plist_id, comm_data->comm, info);
-
-//             /*
-//              * Create a new file collectively.
-//              */
-//             file_id = H5Fcreate(file_name, H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            temp_offset = 0;
-            for (i=0; i<comm_data->client_comm_size; i++)
-            {
-                if ((*data)[i].vect_size > 0)
-                {
-                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].moments[t].m1, (*data)[i].vect_size, MPI_DOUBLE, &status);
-                    temp_offset += (*data)[i].vect_size;
-                }
-            }
-            MPI_File_close (&f);
-
-//        /*
-//         * Close property list.
-//         */
-//        H5Pclose(plist_id);
-
-//        /*
-//         * Close the file.
-//         */
-//        H5Fclose(file_id);
-        }
-    }
-
-    if (options->variance_op == 1)
-    {
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            snprintf(file_name, sizeof(file_name), "%s_variance_%.*d", field, max_size_time, t+1);
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            temp_offset = 0;
-            for (i=0; i<comm_data->client_comm_size; i++)
-            {
-                if ((*data)[i].vect_size > 0)
-                {
-                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].moments[t].theta2, (*data)[i].vect_size, MPI_DOUBLE, &status);
-                    temp_offset += (*data)[i].vect_size;
-                }
-            }
-            MPI_File_close (&f);
-        }
-    }
-
-    if (options->min_and_max_op == 1)
-    {
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            snprintf(file_name, sizeof(file_name), "%s_min_%.*d", field, max_size_time, t+1);
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            temp_offset = 0;
-            for (i=0; i<comm_data->client_comm_size; i++)
-            {
-                if ((*data)[i].vect_size > 0)
-                {
-                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].min_max[t].min, (*data)[i].vect_size, MPI_DOUBLE, &status);
-                    temp_offset += (*data)[i].vect_size;
-                }
-            }
-            MPI_File_close (&f);
-        }
-
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            snprintf(file_name, sizeof(file_name), "%s_max_%.*d", field, max_size_time, t+1);
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            temp_offset = 0;
-            for (i=0; i<comm_data->client_comm_size; i++)
-            {
-                if ((*data)[i].vect_size > 0)
-                {
-                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].min_max[t].max, (*data)[i].vect_size, MPI_DOUBLE, &status);
-                    temp_offset += (*data)[i].vect_size;
-                }
-            }
-            MPI_File_close (&f);
-        }
-    }
-
-    if (options->threshold_op == 1)
-    {
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            snprintf(file_name, sizeof(file_name), "%s_threshold_exceedance_%.*d", field, max_size_time, t+1);
-            MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-            temp_offset = 0;
-            for (i=0; i<comm_data->client_comm_size; i++)
-            {
-                if ((*data)[i].vect_size > 0)
-                {
-                    MPI_File_write_at (f, offset + temp_offset, (*data)[i].thresholds[t], (*data)[i].vect_size, MPI_INT, &status);
-                    temp_offset += (*data)[i].vect_size;
-                }
-            }
-            MPI_File_close (&f);
-        }
-    }
-
-    if (options->quantile_op == 1)
-    {
-        int value;
-        for (value=0; value<options->nb_quantiles; value++)
-        {
-            for (t=0; t<options->nb_time_steps; t++)
-            {
-                snprintf(file_name, sizeof(file_name), "%s_quantile%g_%.*d", field, options->quantile_order[value], max_size_time, t+1);
-                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-                temp_offset = 0;
-                for (i=0; i<comm_data->client_comm_size; i++)
-                {
-                    if ((*data)[i].vect_size > 0)
-                    {
-                        MPI_File_write_at (f, offset + temp_offset, (*data)[i].quantiles[t][value].quantile, (*data)[i].vect_size, MPI_DOUBLE, &status);
-                        temp_offset += (*data)[i].vect_size;
-                    }
-                }
-                MPI_File_close (&f);
-            }
-        }
-    }
-
-    if (options->sobol_op == 1)
-    {
-        int p;
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            for (p=0; p<options->nb_parameters; p++)
-            {
-                snprintf(file_name, sizeof(file_name), "%s_sobol_indices_%.*d.%d",field,  max_size_time, t+1, p);
-                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-                temp_offset = 0;
-                for (i=0; i<comm_data->client_comm_size; i++)
-                {
-                    if ((*data)[i].vect_size > 0)
-                    {
-                        MPI_File_write_at (f, offset + temp_offset, (*data)[i].sobol_indices[t].sobol_martinez[p].first_order_values, (*data)[i].vect_size, MPI_INT, &status);
-                        temp_offset += (*data)[i].vect_size;
-                    }
-                }
-                MPI_File_close (&f);
-            }
-        }
-        // total order
-        for (t=0; t<options->nb_time_steps; t++)
-        {
-            for (p=0; p<options->nb_parameters; p++)
-            {
-                snprintf(file_name, sizeof(file_name), "%s_sobol_total_indices_%.*d.%d",field,  max_size_time, t+1, p);
-                MPI_File_open (comm_data->comm, file_name, MPI_MODE_CREATE|MPI_MODE_WRONLY, MPI_INFO_NULL, &f);
-                temp_offset = 0;
-                for (i=0; i<comm_data->client_comm_size; i++)
-                {
-                    if ((*data)[i].vect_size > 0)
-                    {
-                        MPI_File_write_at (f, offset + temp_offset, (*data)[i].sobol_indices[t].sobol_martinez[p].total_order_values, (*data)[i].vect_size, MPI_INT, &status);
-                        temp_offset += (*data)[i].vect_size;
-                    }
-                }
-                MPI_File_close (&f);
-            }
-        }
-    }
-    melissa_free (local_vect_sizes);
-}
-
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_output
- *
  * This function writes the simu_id and the corresponding parameter set
  *
- *******************************************************************************
- *
- * @param[out] *simu
- * simulations vector
- *
- * @param[out] nb_parameters
- * number of simulation parameters
- *
- *******************************************************************************/
+ * @param[out] simulations The list of running simulations
+ * @param[out] nb_parameters the number of simulation parameters
+ */
 
 void write_simu_param (vector_t *simulations,
                        int       nb_parameters)

@@ -14,28 +14,13 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file variance.c
- * @brief Variance related functions.
- * @author Terraz Théophile
- * @date 2016-15-02
- *
- **/
-
 #include <melissa/stats/variance.h>
 #include <melissa/utils.h>
 
 #include <string.h>
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function initializes a variance structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *variance
  * the variance structure to initialize
@@ -43,7 +28,7 @@
  * @param[in] vect_size
  * size of the variance vector
  *
- *******************************************************************************/
+ */
 
 void init_variance (variance_t *variance,
                     const int   vect_size)
@@ -54,13 +39,7 @@ void init_variance (variance_t *variance,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function updates the incremental mean and variance.
- *
- *******************************************************************************
  *
  * @param[in,out] *partial_variance
  * input: previously computed partial variance,
@@ -72,7 +51,7 @@ void init_variance (variance_t *variance,
  * @param[in] vect_size
  * size of the input vectors
  *
- *******************************************************************************/
+ */
 
 void increment_mean_and_variance (variance_t *partial_variance,
                                   double      in_vect[],
@@ -95,13 +74,7 @@ void increment_mean_and_variance (variance_t *partial_variance,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function updates the incremental variance.
- *
- *******************************************************************************
  *
  * @param[in,out] *partial_variance
  * input: previously computed partial variance,
@@ -113,7 +86,7 @@ void increment_mean_and_variance (variance_t *partial_variance,
  * @param[in] vect_size
  * size of the input vectors
  *
- *******************************************************************************/
+ */
 
 void increment_variance (variance_t *partial_variance,
                          double      in_vect[],
@@ -125,13 +98,7 @@ void increment_variance (variance_t *partial_variance,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function agregates two partial variances.
- *
- *******************************************************************************
  *
  * @param[in] *variance1
  * first input partial variances
@@ -145,7 +112,7 @@ void increment_variance (variance_t *partial_variance,
  * @param[in] vect_size
  * size of the input and output vectors
  *
- *******************************************************************************/
+ */
 
 void update_variance (variance_t *variance1,
                       variance_t *variance2,
@@ -177,39 +144,14 @@ void update_variance (variance_t *variance1,
 
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function agregates the partial variances from all process on precess 0.
  *
- *******************************************************************************
- *
- * @param[in] mean[]
- * input: partial mean vector
- *
- * @param[in,out] *variance[]
- * input: partial variance vector,
- * output: global variance vector on process 0
- *
- * @param[in,out] increment
- * input: local increment,
- * output: global increment on process 0
- *
- * @param[in] vect_size
- * size of the input vector
- *
- * @param[in] rank
- * process rank in "comm"
- *
- * @param[in] comm_size
- * nomber of process in "comm"
- *
- * @param[in] comm
- * MPI communicator
- *
- *******************************************************************************/
-
+ * @param[in,out] variance A reference to a partial variance vector
+ * @param[in] vect_size The number of variances in the vector
+ * @param[in] rank Caller rank in the given MPI communicator
+ * @param[in] comm_size The size of the group of the given MPI communicator
+ * @param[in] comm An MPI communicator
+ */
 void update_global_variance (variance_t *variance,
                              const int   vect_size,
                              const int   rank,
@@ -224,32 +166,15 @@ void update_global_variance (variance_t *variance,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function agregates the partial means and variances from all process on precess 0.
  *
- *******************************************************************************
- *
- * @param[in,out] *variance
- * input: partial variance,
- * output: global variance on process 0
- *
- * @param[in] vect_size
- * size of the input vector
- *
- * @param[in] rank
- * process rank in "comm"
- *
- * @param[in] comm_size
- * nomber of process in "comm"
- *
- * @param[in] comm
- * MPI communicator
- *
- *******************************************************************************/
-
+ * @param[in,out] variance A list of partial variances; on exit global variance
+ * on rank 0
+ * @param[in] vect_size The number of partial variances
+ * @param[in] rank Caller rank in the given MPI communicator
+ * @param[in] comm_size The size of the group of of the given MPI communicator
+ * @param[in] comm An MPI communicator
+ */
 void update_global_mean_and_variance (variance_t *variance,
                                       const int   vect_size,
                                       const int   rank,
@@ -307,13 +232,7 @@ void update_global_mean_and_variance (variance_t *variance,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function writes an array of variances structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *vars
  * variance structures to save, size nb_time_steps
@@ -327,7 +246,7 @@ void update_global_mean_and_variance (variance_t *variance,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void save_variance(variance_t *vars,
                    int         vect_size,
@@ -343,13 +262,7 @@ void save_variance(variance_t *vars,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function reads an array of variances structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *vars
  * variance structures to read, size nb_time_steps
@@ -363,7 +276,7 @@ void save_variance(variance_t *vars,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void read_variance(variance_t *vars,
                    int         vect_size,
@@ -379,18 +292,12 @@ void read_variance(variance_t *vars,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function frees a variance structure.
- *
- *******************************************************************************
  *
  * @param[in] *variance
  * the variance structure to free
  *
- *******************************************************************************/
+ */
 
 void free_variance (variance_t *variance)
 {

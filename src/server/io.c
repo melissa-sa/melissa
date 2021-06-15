@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_io.c
- * @brief Inputs, outputs and checkpoints.
- * @author Terraz Théophile
- * @date 2017-19-01
- *
- * @defgroup melissa_io input, output and checkpoint functions
- *
- **/
-
 #include <melissa/server/data.h>
 #include <melissa/server/fault_tolerance.h>
 #include <melissa/utils.h>
@@ -36,13 +25,7 @@
 #include <mpi.h>
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_io
- *
  * This function saves stats on disc
- *
- *******************************************************************************
  *
  * @param[in] *data
  * data structure to save
@@ -53,7 +36,7 @@
  * @param[in] *field_name
  * name of the field to write
  *
- *******************************************************************************/
+ */
 
 void save_stats (melissa_data_t *data,
                  comm_data_t    *comm_data,
@@ -117,13 +100,7 @@ void save_stats (melissa_data_t *data,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_io
- *
  * This function reads stats saved on disc
- *
- *******************************************************************************
  *
  * @param[in] *data
  * data structure to read
@@ -137,7 +114,7 @@ void save_stats (melissa_data_t *data,
  * @param[in] client_rank
  * mpi rank of sending client process
  *
- *******************************************************************************/
+ */
 
 void read_saved_stats (melissa_data_t *data,
                        comm_data_t    *comm_data,
@@ -205,13 +182,7 @@ void read_saved_stats (melissa_data_t *data,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_io
- *
  * This function saves current simulation states on disc
- *
- *******************************************************************************
  *
  * @param[in] *simu
  * simulations vector
@@ -219,7 +190,7 @@ void read_saved_stats (melissa_data_t *data,
  * @param[in] *comm_data
  * communication structure
  *
- *******************************************************************************/
+ */
 
 void save_simu_states (vector_t    *simu,
                        comm_data_t *comm_data)
@@ -247,13 +218,7 @@ void save_simu_states (vector_t    *simu,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_io
- *
  * This function reads simulation states from disc
- *
- *******************************************************************************
  *
  * @param[out] *simu
  * simulations vector
@@ -264,7 +229,7 @@ void save_simu_states (vector_t    *simu,
  * @param[in] *comm_data
  * communication structure
  *
- *******************************************************************************/
+ */
 
 void read_simu_states (vector_t          *simu,
                        melissa_options_t *options,

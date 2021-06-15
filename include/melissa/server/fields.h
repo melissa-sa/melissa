@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/fields.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef MELISSA_FIELDS_H
 #define MELISSA_FIELDS_H
 
@@ -32,13 +24,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
  * @struct melissa_field_s
  *
  * Field structure
  *
- *******************************************************************************/
+ */
 
 struct melissa_field_s /**< Structure for a linked list of output fields */
 {
@@ -66,10 +56,6 @@ void add_fields (melissa_field_t *fields,
 int get_field_id(melissa_field_t fields[],
                  int             nb_fields,
                  char*           field_name);
-
-melissa_data_t* get_data_ptr (melissa_field_t fields[],
-                              int             nb_fields,
-                              char*           field_name);
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,

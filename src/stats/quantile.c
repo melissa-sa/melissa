@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file quantile.c
- * @brief Quantile related functions.
- * @author Terraz Théophile
- * @date 2017-18-05
- *
- **/
-
 #include <melissa/stats/quantile.h>
 #include <melissa/utils.h>
 
@@ -30,13 +21,7 @@
 #include <string.h>
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function initializes a quantile structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *quantile
  * the quantile structure to initialize
@@ -47,7 +32,7 @@
  * @param[in] alpha
  * the quantile order
  *
- *******************************************************************************/
+ */
 
 void init_quantile (quantile_t   *quantile,
                     const int     vect_size,
@@ -59,13 +44,7 @@ void init_quantile (quantile_t   *quantile,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function updates the incremental quantile.
- *
- *******************************************************************************
  *
  * @param[in,out] *quantile
  * input: previously computed iterative quantile,
@@ -80,7 +59,7 @@ void init_quantile (quantile_t   *quantile,
  * @param[in] vect_size
  * size of the input vectors
  *
- *******************************************************************************/
+ */
 
 void increment_quantile (quantile_t *quantile,
                          const int   nmax,
@@ -115,13 +94,7 @@ void increment_quantile (quantile_t *quantile,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function writes an array of quantile structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *quantiles
  * quantile structures to save, size nb_time_steps
@@ -138,7 +111,7 @@ void increment_quantile (quantile_t *quantile,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void save_quantile(quantile_t **quantiles,
                    int          vect_size,
@@ -159,13 +132,7 @@ void save_quantile(quantile_t **quantiles,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup save_stats
- *
  * This function reads an array of quantile structures on disc
- *
- *******************************************************************************
  *
  * @param[in] *quantiles
  * quantile structures to read, size nb_time_steps
@@ -182,7 +149,7 @@ void save_quantile(quantile_t **quantiles,
  * @param[in] f
  * file descriptor
  *
- *******************************************************************************/
+ */
 
 void read_quantile(quantile_t **quantiles,
                    int          vect_size,
@@ -203,18 +170,12 @@ void read_quantile(quantile_t **quantiles,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * This function frees a quantile structure.
- *
- *******************************************************************************
  *
  * @param[in,out] *quantile
  * the quantile structure to free
  *
- *******************************************************************************/
+ */
 
 void free_quantile (quantile_t *quantile)
 {

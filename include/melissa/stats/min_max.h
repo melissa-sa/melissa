@@ -14,14 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/stats/min_max.h
- * @author Terraz Théophile
- * @date 2017-15-01
- *
- **/
-
 #ifndef MIN_MAX_H
 #define MIN_MAX_H
 
@@ -32,15 +24,11 @@ extern "C" {
 #endif
 
 /**
- *******************************************************************************
- *
- * @ingroup stats_base
- *
  * @struct min_max_s
  *
  * Structure containing two arrays of min and max values
  *
- *******************************************************************************/
+ */
 
 struct min_max_s
 {

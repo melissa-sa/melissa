@@ -68,13 +68,7 @@ int create_port_number (comm_data_t *comm_data,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
  * This function checks the status of a simulation
- *
- *******************************************************************************
  *
  * @param[in] *fields
  * Melissa fields
@@ -91,7 +85,7 @@ int create_port_number (comm_data_t *comm_data,
  * @param[in] *comm_data
  * Structure containing communication informations
  *
- *******************************************************************************/
+ */
 
 int check_simu_state(melissa_field_t *fields,
                      int              nb_fields,
@@ -129,22 +123,11 @@ int check_simu_state(melissa_field_t *fields,
 
 
 /**
- *******************************************************************************
+ * This function parses messages from launcher.
  *
- * @ingroup melissa_fault_tolerance
- *
- * This function parses messages from launcher
- *
- *******************************************************************************
- *
- * @param[in] msg message from launcher
- * number of timeouts detected
- *
- * @param[in] *simulations
- * pointer to the simulation vector
- *
- *******************************************************************************/
-
+ * @param[in] msg_data A reference to a serialized launcher message
+ * @param[in] server_ptr A reference to the server state
+ */
 void process_launcher_message (void*             msg_data,
                                melissa_server_t *server_ptr)
 {
@@ -211,183 +194,5 @@ void process_launcher_message (void*             msg_data,
         break;
     default:
         melissa_print(VERBOSE_WARNING, "Unknown message type: %d\n", message_type);
-    }
-}
-
-int check_last_timestep(melissa_field_t *fields,
-                        int              nb_fields,
-                        int              group_id,
-                        int              nb_time_steps,
-                        comm_data_t     *comm_data)
-{
-    int i, j;
-
-    if (fields == NULL)
-    {
-        return 0;
-    }
-    else
-    {
-        for (j=0; j<nb_fields; j++)
-        {
-            for (i=0; i<comm_data->client_comm_size; i++)
-            {
-                if (fields[j].stats_data[i].steps_init > 0)
-                {
-                    if (test_bit (fields[j].stats_data[i].step_simu.items[group_id], nb_time_steps-1) == 0)
-                    {
-                        return 1;
-                    }
-                }
-            }
-        }
-    }
-    return 2;
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
- * This function counts the amount of data writen on disk
- *
- *******************************************************************************
- *
- * @param[in] *options
- * Melissa options structure
- *
- *******************************************************************************/
-
-long int count_mbytes_written (melissa_options_t  *options)
-{
-	(void) options;
-    long int mbytes_written = 0;
-//    if (options->mean_op == 1)
-//    {
-//        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-//    }
-//    if (options->variance_op == 1)
-//    {
-//        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-//    }
-//    if (options->min_and_max_op == 1)
-//    {
-//        mbytes_written += 2*options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-//    }
-//    if (options->threshold_op == 1)
-//    {
-//        mbytes_written += options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-//    }
-//    if (options->sobol_op == 1)
-//    {
-//        mbytes_written += options->nb_parameters * 2 *options->global_vect_size*sizeof(float)*options->nb_time_steps/1000000;
-//    }
-    return mbytes_written;
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_utils
- *
- * This function recieves a string from the launcher
- *
- *******************************************************************************
- *
- * @param[in] *socket
- * ZMQ socket
- *
- * @param[in, out] *recv_buff
- * the recieve buffer
- *
- *******************************************************************************/
-
-int string_recv (void  *socket,
-                 char  *recv_buff)
-{
-    char buffer [MELISSA_MESSAGE_LEN];
-    int size = zmq_recv (socket, buffer, MELISSA_MESSAGE_LEN-1, 0);
-    if (size == -1)
-    {
-        recv_buff[0] = 0;
-        return 0;
-    }
-    if (size > MELISSA_MESSAGE_LEN-1)
-        size = MELISSA_MESSAGE_LEN-1;
-    buffer [size] = 0;
-    memcpy (recv_buff, buffer, size * sizeof(char));
-    return size;
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup sobol
- *
- * This function computes the confidence interval for Martinez Sobol indices
- *
- *******************************************************************************
- *
- * @param[in] field
- * array of field structures
- *
- * @param[in] nb_fields
- * size of field array
- *
- * @param[out] *comm_data
- * comm data structure
- *
- * @param[out] *interval1
- * worst confidence interval (first order)
- *
- * @param[out] *interval_tot
- * worst confidence interval (total order)
- *
- *******************************************************************************/
-
-void global_confidence_sobol_martinez(melissa_field_t *field,
-                                      int              nb_fields,
-                                      comm_data_t     *comm_data,
-                                      double          *interval1,
-                                      double          *interval_tot)
-{
-    int i, j, t, p, f;
-    melissa_data_t *data;
-    if (field == NULL)
-    {
-        return;
-    }
-
-    for (f=0; f<nb_fields; f++)
-    {
-        for (i=0; i<comm_data->client_comm_size; i++)
-        {
-            data = &(field[f].stats_data[i]);
-            if (data->vect_size > 0)
-            {
-                for (t=0; t<data->options->nb_time_steps; t++)
-                {
-                    for (p=0; p<data->options->nb_parameters; p++)
-                    {
-                        if (data->sobol_indices[t].iteration < 4)
-                        {
-                            return;
-                        }
-                        for (j=0; j< data->options->nb_parameters; j++)
-                        {
-                            if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[0] > *interval1)
-                            {
-                                *interval1 = data->sobol_indices[t].sobol_martinez[p].confidence_interval[0];
-                            }
-                            if (data->sobol_indices[t].sobol_martinez[p].confidence_interval[1] > *interval_tot)
-                            {
-                                *interval_tot = data->sobol_indices[t].sobol_martinez[p].confidence_interval[1];
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }

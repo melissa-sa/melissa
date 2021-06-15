@@ -14,15 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_messages.c
- * @brief pre-defined messages for launcher-server communication.
- * @author Terraz Théophile
- * @date 2019-16-07
- *
- **/
-
 #include <melissa/messages.h>
 #include <melissa/utils.h>
 

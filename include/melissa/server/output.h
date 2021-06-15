@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa/server/output.h
- * @brief Writes stats on disc.
- * @author Terraz Théophile
- * @date 2017-19-01
- *
- * @defgroup melissa_output output statistics on disc
- *
- **/
-
 #ifndef SERVER_OUTPUT_H
 #define SERVER_OUTPUT_H
 
@@ -45,11 +34,6 @@ void melissa_write_stats_seq(melissa_data_t    **data,
                              const char         *field);
 
 void write_stats_txt(melissa_data_t    **data,
-                     melissa_options_t  *options,
-                     comm_data_t        *comm_data,
-                     char               *field);
-
-void write_stats_bin(melissa_data_t    **data,
                      melissa_options_t  *options,
                      comm_data_t        *comm_data,
                      char               *field);

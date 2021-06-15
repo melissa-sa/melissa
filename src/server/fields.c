@@ -14,17 +14,6 @@
 *    Bertrand Iooss,                                              *
 ******************************************************************/
 
-/**
- *
- * @file melissa_fields.c
- * @brief Routines related to the melissa_fields structure.
- * @author Terraz Théophile
- * @date 2017-01-09
- *
- * @defgroup melissa_fields Melissa fields
- *
- **/
-
 #include <melissa/server/compute_stats.h>
 #include <melissa/server/data.h>
 #include <melissa/server/fields.h>
@@ -37,13 +26,7 @@
 #include <string.h>
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_fields
- *
  * This function initializes the fields after first contact with a client
- *
- *******************************************************************************
  *
  * @param[in,out] *fields
  * Melissa field array
@@ -54,7 +37,7 @@
  * @param[in] nb_fields
  * number of fields
  *
- *******************************************************************************/
+ */
 
 void add_fields (melissa_field_t *fields,
                  int              data_size,
@@ -75,13 +58,7 @@ void add_fields (melissa_field_t *fields,
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_fields
- *
  * This function returns a field id given its name
- *
- *******************************************************************************
  *
  * @param[in] fields[]
  * Melissa field array
@@ -95,7 +72,7 @@ void add_fields (melissa_field_t *fields,
  * @retval field_id
  * the field id
  *
- *******************************************************************************/
+ */
 
 int get_field_id(melissa_field_t fields[],
                  int             nb_fields,
@@ -120,59 +97,7 @@ int get_field_id(melissa_field_t fields[],
 }
 
 /**
- *******************************************************************************
- *
- * @ingroup melissa_fields
- *
- * This function returns a pointer to a data structure given its field name
- *
- *******************************************************************************
- *
- * @param[in] fields[]
- * Melissa field array
- *
- * @param[in] nb_fields
- * number of fields
- *
- * @param[in] *field_name
- * name of the field to find
- *
- * @retval stats_data
- * pointer to the corresponding melissa_data_t structure
- *
- *******************************************************************************/
-
-melissa_data_t* get_data_ptr (melissa_field_t fields[],
-                              int             nb_fields,
-                              char*           field_name)
-{
-    int i;
-    if (fields != NULL)
-    {
-        for (i=0; i<nb_fields; i++)
-        {
-            if (strncmp(fields[i].name, field_name, MAX_FIELD_NAME_LEN) == 0)
-            {
-                return fields[i].stats_data;
-            }
-        }
-    }
-    else
-    {
-        return NULL;
-    }
-    melissa_print (VERBOSE_ERROR, "Wrong field name (get_data_ptr)\n");
-    return NULL;
-}
-
-/**
- *******************************************************************************
- *
- * @ingroup melissa_fields
- *
  * This function writes the data and frees the fields structure
- *
- *******************************************************************************
  *
  * @param[in] *fields
  * Melissa field array
@@ -186,7 +111,7 @@ melissa_data_t* get_data_ptr (melissa_field_t fields[],
  * @param[in] *total_write_time
  * time counter
  *
- *******************************************************************************/
+ */
 
 void finalize_field_data (melissa_field_t   *fields,
                           comm_data_t       *comm_data,

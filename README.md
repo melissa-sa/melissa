@@ -326,6 +326,31 @@ mpirun -n 10 -- simulation execute 3.14 159.0
 ```
 
 
+## Melissa Client API
+
+The Melissa Client API provides functions for sending simulation data to a Melissa server for statistical analysis. The client API header file is `melissa/api.h`. the Melissa client code can be found in a library called `melissa`; link with `-lmelissa`.
+
+
+### Augmenting a Simulation
+
+To make a simulation send data to the Melissa server one has to
+* identify the fields (or quantities) that shall be analyzed by Melissa,
+* identify where the quantities are stored in the simulation memory,
+* call `MPI_Init()` if needed,
+* call `melissa_init()` once for every quantity to be analyzed,
+* call `melissa_send()` once for every quantity to be analyzed and for every time step, and
+* call `melissa_finalize()` before terminating the simulation and/or calling `MPI_Finalize()`.
+
+Pay attention to the following items:
+* The list of quantities to be analyzed must be added and be kept up-to-date in the Melissa options file `options.py`.
+* A Melissa time step does not necessarily equal one simulation time step.
+* The dimension of the field to be analyzed must be constant. Melissa does not support fields of variable dimension.
+
+
+### Client API
+
+The most interesting headers for Melissa users are `melissa/api.h` and `melissa/config.h`. The latter file defines preprocessor macros for the Melissa version and the enabled features.
+
 
 ## Troubleshooting
 
