@@ -40,7 +40,7 @@ MELISSA_STATS = {}
 #  STATISTICS 
 
 # Fields: name of the ouputs fields sent to Melissa server (on set of statitics are computed per field)
-STUDY_OPTIONS['field_names'] = ["heat1"]
+STUDY_OPTIONS['field_names'] = ['temperature']
 MELISSA_STATS['mean'] = True
 MELISSA_STATS['variance'] = False
 MELISSA_STATS['skewness'] = False
@@ -56,9 +56,12 @@ MELISSA_STATS['sobol_indices'] = True
 #  STUDY / PARAMETER SWEEP / SIMULATIONS
 
 # Sampling function: called to set the parameter value for each simulation 
-# For the heat example we have at least two and up to five parameters (initial temperatures for the 4 borders  + grid cells)
+# For the heat example we have at least one and up to five parameters (the
+# initial temperature and temperatures for the four boundaries)
 def draw_param_set():
-    return np.random.uniform(0, 1, size=2)
+    x = np.random.uniform(200, 300)
+    y = np.random.uniform(100, 200)
+    return np.array([x, y])
 USER_FUNCTIONS = {'draw_parameter_set': draw_param_set}
 
 # Size of the parameter sweep  (= number of simulations to execute)
