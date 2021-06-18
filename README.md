@@ -154,7 +154,7 @@ A sensitivity analysis with Melissa requires
 
 #### Augmenting the Simulation Code
 
-From the point of view of Melissa, a simulation manages the state of a **fixed** grid over time. Each grid point can be associated with multiple kinds of values (e.g., energy, temperature, or pressure). For each kind of value to be analyzed by Melissa, the simulation must call
+From the point of view of Melissa, a simulation manages the state of one or more fields or quantities (e.g., energy, temperature, or pressure). Each field or quantity can have its own mesh but these meshes must be **fixed**. For each kind of value to be analyzed by Melissa, the simulation must call
 ```c
 #include <melissa/api.h>
 melissa_init("value-kind", grid_size, mpi_communicator);
@@ -345,6 +345,7 @@ Pay attention to the following items:
 * The list of quantities to be analyzed must be added and be kept up-to-date in the Melissa options file `options.py`.
 * A Melissa time step does not necessarily equal one simulation time step.
 * The dimension of the field to be analyzed must be constant. Melissa does not support fields of variable dimension.
+* If Sobol' indices are to be computed and if the MPI coupling shall be used, then the MPI communicator passed to Melissa must be simulation-specific, i.e., the communicator returned by `MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, ...)`.
 
 
 ### Client API
