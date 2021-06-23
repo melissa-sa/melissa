@@ -1,4 +1,6 @@
-# Copyright (c) 2020, 2021 Institut National de Recherche en Informatique et en Automatique (Inria)
+#!/usr/bin/python3
+
+# Copyright (c) 2021, Institut National de Recherche en Informatique et en Automatique (Inria)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,26 +28,32 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-configure_file(melissa-config.py.in melissa-config @ONLY)
-install(
-    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa-config
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+import argparse
 
-configure_file(melissa-launcher.sh.in melissa-launcher @ONLY)
-install(
-    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/melissa-launcher
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
 
-configure_file(melissa-setup-env.sh.in melissa-setup-env.sh @ONLY)
-install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/melissa-setup-env.sh
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+def main():
+    parser = argparse.ArgumentParser(prog="melissa-config",
+                                     description="Melissa SA Configuration")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--prefix",
+                        action="store_true",
+                        help="show the Melissa install prefix")
+    # do not use action=version for otherwise you can call
+    #     melissa-config --version --prefix
+    # but not
+    #     melissa-config --prefix --version
+    # (both variants shall be forbidden)
+    group.add_argument("--version",
+                        action="store_true",
+                        help="show the Melissa version")
 
-configure_file(redirect-io.py redirect-io COPYONLY)
-install(
-    PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/redirect-io
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+    args = parser.parse_args()
+
+    if args.prefix:
+        print("@CMAKE_INSTALL_PREFIX@")
+    if args.version:
+        print("@PROJECT_VERSION@")
+
+
+if __name__ == "__main__":
+    main()
