@@ -98,6 +98,13 @@ function(find_python_module module)
     find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
 endfunction(find_python_module)
 
+# ensure all current Python3 versions are found
+if(CMAKE_VERSION VERSION_LESS_EQUAL 3.11)
+    set(Python_ADDITIONAL_VERSIONS 3.9 3.8)
+elseif(CMAKE_VERSION VERSION_LESS_EQUAL 3.16)
+    set(Python_ADDITIONAL_VERSIONS 3.9)
+endif()
+# PythonInterp has been deprecated in CMake 3.12 (November 2018)
 find_package(PythonInterp 3.5.3 REQUIRED)
 find_python_module(numpy REQUIRED)
 
