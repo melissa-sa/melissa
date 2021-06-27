@@ -75,38 +75,28 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 
 
 # Python configuration
-include(FindPackageHandleStandardArgs)
-
-function(find_python_module module)
-    string(TOUPPER ${module} module_upper)
-    if(NOT PY_${module_upper})
-        if(ARGC GREATER 1 AND ARGV1 STREQUAL "REQUIRED")
-            set(${module}_FIND_REQUIRED TRUE)
-        endif()
-        # A module's location is usually a directory, but for binary modules
-        # it's a .so file.
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                        "import re, ${module}; print(re.compile('/__init__.py.*').sub('',${module}.__file__))"
-                        RESULT_VARIABLE _${module}_status
-                        OUTPUT_VARIABLE _${module}_location
-                        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-        if(NOT _${module}_status)
-            set(PY_${module_upper} ${_${module}_location} CACHE STRING
-                "Location of Python module ${module}")
-        endif(NOT _${module}_status)
-    endif(NOT PY_${module_upper})
-    find_package_handle_standard_args(PY_${module} DEFAULT_MSG PY_${module_upper})
-endfunction(find_python_module)
-
 # ensure all current Python3 versions are found
 if(CMAKE_VERSION VERSION_LESS_EQUAL 3.11)
     set(Python_ADDITIONAL_VERSIONS 3.9 3.8)
 elseif(CMAKE_VERSION VERSION_LESS_EQUAL 3.16)
     set(Python_ADDITIONAL_VERSIONS 3.9)
 endif()
-# PythonInterp has been deprecated in CMake 3.12 (November 2018)
-find_package(PythonInterp 3.5.3 REQUIRED)
-find_python_module(numpy REQUIRED)
+
+# TODO: PythonInterp has been deprecated in CMake 3.12 (November 2018)
+#
+# Work around the issue described at github.com/spack/spack/issues/24527
+# (FindPythonInterp ignores order of interpreters in CMAKE_PREFIX_PATH if a
+# minimum version is set)
+find_package(PythonInterp 3 REQUIRED)
+if(PYTHON_VERSION_STRING VERSION_LESS 3.5.3)
+    message(
+        FATAL_ERROR
+        "Python 3.5.3 required, Python ${PYTHON_VERSION_STRING} found")
+endif()
+
+# The newer FindPython3 module sets the variable Python3_EXECUTABLE
+set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
+find_package(NumPy REQUIRED)
 
 
 # determine Python3 package installation directory
