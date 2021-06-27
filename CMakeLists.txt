@@ -81,8 +81,19 @@ if(CMAKE_VERSION VERSION_LESS_EQUAL 3.11)
 elseif(CMAKE_VERSION VERSION_LESS_EQUAL 3.16)
     set(Python_ADDITIONAL_VERSIONS 3.9)
 endif()
-# PythonInterp has been deprecated in CMake 3.12 (November 2018)
-find_package(PythonInterp 3.5.3 REQUIRED)
+
+# TODO: PythonInterp has been deprecated in CMake 3.12 (November 2018)
+#
+# Work around the issue described at github.com/spack/spack/issues/24527
+# (FindPythonInterp ignores order of interpreters in CMAKE_PREFIX_PATH if a
+# minimum version is set)
+find_package(PythonInterp 3 REQUIRED)
+if(PYTHON_VERSION_STRING VERSION_LESS 3.5.3)
+    message(
+        FATAL_ERROR
+        "Python 3.5.3 required, Python ${PYTHON_VERSION_STRING} found")
+endif()
+
 # The newer FindPython3 module sets the variable Python3_EXECUTABLE
 set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
 find_package(NumPy REQUIRED)
