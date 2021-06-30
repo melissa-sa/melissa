@@ -1,1 +1,1 @@
-# JUne 2021: Melissa moved to  https://gitlab.inria.fr/melissa
+# Melissa now at   https://gitlab.inria.fr/melissa (since june 2021)
